@@ -460,7 +460,9 @@ typer==0.15.1
 
 #### Flutter / Dart (the shipped app)
 
-Pin the SDK with **FVM** (`.fvmrc` committed) so the Flutter version is as reproducible as `uv.lock`. Target the current stable channel at setup time **[VERIFY]**; Dart 3.x with sound null safety is the requirement.
+Pin the SDK with **FVM** so the Flutter version is as reproducible as `uv.lock`. **As built: Flutter 3.47.0 with Dart 3.13.0**, pinned in `app/.fvmrc` (committed).
+
+Note the location: `.fvmrc` lives in `app/`, next to `pubspec.yaml`, not at the repo root. That is where FVM resolves it from, and it matches the `cd app && fvm flutter ...` form the justfile uses.
 
 | Package | Pin | Why | Runner-up rejected |
 | --- | --- | --- | --- |
@@ -469,14 +471,18 @@ Pin the SDK with **FVM** (`.fvmrc` committed) so the Flutter version is as repro
 | `go_router` | `^14.6.0` | Declarative routing, deep-link ready, testable | Imperative `Navigator`: fine but harder to test route guards (app lock later) |
 | `flutter_local_notifications` | `^18.0.1` | Fully local scheduled reminders, no FCM, no network | `awesome_notifications`: heavier, more permissions surface |
 | `fl_chart` | `^0.69.2` | Cycle-length trend and variability charts, pure Dart | `syncfusion_flutter_charts`: licensing friction |
-| `freezed` + `freezed_annotation` + `json_serializable` | `^2.5.7` / `^6.9.0` | Immutable domain models, exhaustive `when`, and free export/import serialization | Hand-written models: 10x the boilerplate and a guaranteed source of export bugs |
+| `freezed` + `freezed_annotation` + `json_serializable` | **`^4.0.0-dev.3`** / `^3.1.0` / `^6.14.1` | Immutable domain models, native Dart 3 exhaustive pattern matching (freezed 3 removed `when`/`map`), and free export/import serialization | Hand-written models: more boilerplate, though see the pre-release caveat below |
 | `path_provider` | `^2.1.5` | Locate the app-private DB directory |
 | `share_plus` / `file_picker` | `^10.1.2` / `^8.1.6` | User-initiated export and import |
 | `package_info_plus` | `^8.1.2` | Stamp the app version into every export file |
 | `intl` + `flutter_localizations` | sdk-pinned | Date formatting and l10n readiness from day one |
 | ExecuTorch via Kotlin channel | `org.pytorch:executorch-android` **[VERIFY coordinate and version]** | Tier B only. Deliberately **not** a pub package, because on-device training is unreachable from Dart | `executorch_flutter ^0.7.2` is inference-only and cannot serve Tier B |
 
-Dev: `flutter_lints` or `very_good_analysis ^7.0.0` (stricter, recommended), `build_runner ^2.4.14`, `mocktail ^1.0.4`, `drift_dev`, `integration_test` (sdk).
+Dev, as built: **`very_good_analysis ^10.3.0`** (adopted; `flutter_lints` was removed rather than kept alongside it), **`build_runner ^2.16.0`**, plus `mocktail ^1.0.4`, `drift_dev` and `integration_test` (sdk) when the data layer and widget tests land.
+
+Also a direct dependency: **`meta ^1.19.0`**, for `@immutable` on the hand-written value types in `lib/core/`. It cannot come from `package:flutter/foundation.dart` because `core/` and `domain/` must not import Flutter (ADR-0002).
+
+> **Pre-release caveat.** `freezed` is pinned to `4.0.0-dev.3` because the current stable, 3.2.5, emits invalid Dart against the Dart 3.13 SDK: it writes `final` onto a named parameter for any collection-typed field, which the front end rejects. Root cause is ecosystem lag, since Dart 3.13 shipped days before this was built and freezed 3.2.5 still resolves `analyzer` 10.2.0. Tracked in the deferred-decision log in [DECISIONS.md](DECISIONS.md#backlog-of-deferred-decisions); move to 4.0.0 stable when it ships.
 
 #### Tier B integration: one Kotlin platform channel, not two runtimes
 
@@ -495,11 +501,13 @@ The channel exposes exactly four methods: `load(assetPath)`, `infer(features)`, 
 
 | Item | Value | Reason |
 | --- | --- | --- |
-| JDK | **17** (pin explicitly) | **This machine has JDK 25.** The Android Gradle Plugin does not support it; builds will fail with a confusing toolchain error. Install Temurin 17 and point Flutter at it: `flutter config --jdk-dir "C:\Program Files\Eclipse Adoptium\jdk-17..."` **[VERIFY exact AGP-supported JDK range for your AGP version]** |
+| JDK | **21**, the Android Studio JBR (`flutter config --jdk-dir "C:\Program Files\Android\Android Studio\jbr"`) | The binding constraint was never "use 17", it was **"do not use the system JDK 25"**, which AGP does not support. This machine already had JBR 21.0.8, which AGP 9.x fully supports, so it was used instead of installing a second JDK: zero download, and CLI builds match IDE builds. Verified by a successful release build, with `flutter doctor -v` reporting the JBR path. CI uses 21 too, for parity |
 | `minSdk` | 26 (Android 8.0) | Native `java.time`, modern notification channels, and still very high device coverage. Lower only if you have a specific old device |
-| `compileSdk` / `targetSdk` | latest stable **[VERIFY]** | Required for Play; also gates notification permission behavior |
+| `compileSdk` / `targetSdk` | **36** (resolved from `flutter.compileSdkVersion`) | Required for Play; also gates notification permission behavior |
 | Core library desugaring | enabled | `flutter_local_notifications` requires it |
-| Permissions | `POST_NOTIFICATIONS` only | And an explicit **removal** of INTERNET (see below) |
+| Permissions | `POST_NOTIFICATIONS` only | And an explicit **removal** of INTERNET, ACCESS_NETWORK_STATE and ACCESS_WIFI_STATE (see below) |
+| Gradle toolchain, as scaffolded | **AGP 9.1.0**, **Gradle 9.3.1**, **Kotlin 2.4.0**, Java 17 bytecode target | Resolved by `flutter create` on Flutter 3.47.0, not chosen by hand. Recorded because these were `[VERIFY]` placeholders in the original draft |
+| Desugaring library | `com.android.tools:desugar_jdk_libs:2.1.5` | Needed once `isCoreLibraryDesugaringEnabled` is on |
 
 The manifest must actively strip INTERNET, because Flutter's debug manifest injects it for hot reload and it is easy to let it leak into a merged release manifest:
 
@@ -531,7 +539,9 @@ dash:          cd research && uv run streamlit run dashboards/backtest_app.py
 app-get:       cd app && fvm flutter pub get
 app-gen:       cd app && fvm dart run build_runner build --delete-conflicting-outputs
 app-test:      cd app && fvm flutter test --coverage
-app-lint:      cd app && fvm dart format --set-exit-if-changed . && fvm flutter analyze
+# `dart format .` is NOT safe here: it walks build/ and crashes on a Gradle
+# desugar intermediate with a very long path. Always scope it.
+app-lint:      cd app && fvm dart format --output=none --set-exit-if-changed lib test && fvm flutter analyze
 app-apk:       cd app && fvm flutter build apk --release
 verify-apk:    bash tools/scripts/assert_no_network.sh app/build/app/outputs/flutter-apk/app-release.apk
 
@@ -611,7 +621,6 @@ Period-Tracker/
 │     ├─ flutter.yml              # format, analyze, test+coverage, build apk (debug)
 │     ├─ golden.yml               # regenerates golden vectors and fails if they drift
 │     └─ release.yml              # tag-triggered signed release APK
-├─ .fvmrc                         # pinned Flutter SDK version
 ├─ .pre-commit-config.yaml
 ├─ justfile
 ├─ README.md
@@ -623,11 +632,12 @@ Period-Tracker/
 │  └─ THREAT_MODEL.md
 │
 ├─ app/                           # ===== Flutter app: everything that ships =====
-│  ├─ .fvm/
+│  ├─ .fvmrc                       # pinned Flutter SDK version (3.47.0)
+│  ├─ .fvm/                        # resolved SDK symlink, gitignored
 │  ├─ pubspec.yaml
 │  ├─ analysis_options.yaml        # very_good_analysis + extra rules for lib/domain
 │  ├─ android/
-│  │  ├─ app/build.gradle.kts      # minSdk 26, desugaring, signing config, JDK 17 toolchain
+│  │  ├─ app/build.gradle.kts      # minSdk 26, desugaring, signing config, JDK 21 toolchain
 │  │  ├─ app/src/main/AndroidManifest.xml   # INTERNET removed, allowBackup=false
 │  │  └─ app/src/main/kotlin/.../ExecuTorchChannel.kt
 │  │                                # Tier B ONLY. load/infer/trainStep/saveCheckpoint
@@ -744,6 +754,7 @@ Period-Tracker/
 │
 └─ tools/scripts/
    ├─ assert_no_network.sh
+   ├─ check_no_datetime_now.sh    # forbids DateTime.now() outside core/clock.dart
    ├─ sync_priors.sh
    └─ new_migration.sh
 ```
@@ -813,7 +824,7 @@ The one rule that keeps this clean: **`app/lib/domain/` may not import Flutter, 
 
 | Concern | Choice |
 | --- | --- |
-| Format | `dart format` with `--set-exit-if-changed` in CI. No debate, no config |
+| Format | `dart format --output=none --set-exit-if-changed lib test` in CI. No debate, no config. **Scoped to `lib test` deliberately**: a bare `dart format .` crashes walking `build/` after an Android build |
 | Lint | `very_good_analysis` plus `public_member_api_docs: error` scoped to `lib/domain/` |
 | Types | Sound null safety, no `dynamic` outside JSON boundaries, `implicit-casts: false` |
 | Docs | `///` doc comments on everything public in `domain/` |
@@ -866,7 +877,7 @@ repos:
     hooks:
       - id: dart-format
         name: dart format
-        entry: bash -c 'cd app && fvm dart format --set-exit-if-changed .'
+        entry: bash -c 'cd app && fvm dart format --output=none --set-exit-if-changed lib test'
         language: system
         files: ^app/.*\.dart$
         pass_filenames: false
@@ -1009,7 +1020,7 @@ Breaking changes to the export format or the DB schema get a `!` and a `BREAKING
 | Workflow | Steps |
 | --- | --- |
 | `python.yml` | checkout, `astral-sh/setup-uv` with cache, `uv sync --frozen --group dev`, `ruff check`, `ruff format --check`, `mypy`, `pytest -n auto --cov`, upload coverage |
-| `flutter.yml` | checkout, `subosito/flutter-action` pinned to `.fvmrc`, JDK 17 via `actions/setup-java`, `flutter pub get`, `build_runner build`, `dart format --set-exit-if-changed`, `flutter analyze`, `flutter test --coverage` (includes the accessibility guideline gate and the text-scale goldens), `flutter build apk --debug`, run `assert_no_network.sh` |
+| `flutter.yml` | checkout, **assert the workflow and `app/.fvmrc` agree on the Flutter version**, JDK 21 via `actions/setup-java`, `subosito/flutter-action`, `flutter pub get`, `build_runner build`, `dart format --output=none --set-exit-if-changed lib test`, `flutter analyze`, `flutter test --coverage` (will include the accessibility gate and text-scale goldens at AND-18), `check_no_datetime_now.sh`, debug **and** release APK builds, `assert_no_network.sh` on the release APK, then a **negative control** asserting the debug APK *fails* that same check |
 | `golden.yml` | regenerate golden vectors from Python and `git diff --exit-code artifacts/golden/`. Fails if the committed vectors are stale |
 | `release.yml` | tag-triggered: build signed release APK from secrets, attach to a GitHub release |
 
@@ -1114,7 +1125,7 @@ Likelihood and impact: L / M / H.
 | R7 | **Date, timezone, and DST bugs** corrupt cycle lengths. This is the highest-probability *correctness* bug in any calendar app | H | M | Store timezone-naive civil dates, never UTC instants. Injectable `Clock` with a lint rule banning `DateTime.now()` in domain code. Hypothesis-driven property tests over DST boundaries, leap days, and month ends | Bugs are caught by the property suite before release. Post-release, a data-repair migration recomputes derived lengths from stored dates, which are the source of truth |
 | R8 | **Data loss with no cloud backup.** Phone lost or reset means all history gone, and there is no server to restore from | M | H | Export/import is an MVP feature, not a nice-to-have. Prompt for an export after every 3 completed cycles. Round-trip fuzz test. DB corruption detection on open with automatic side-copy | The user restores from their last export. If they never exported, the data is gone; this is the honest cost of no-cloud and belongs in the README |
 | R9 | **Scope creep.** Fertility windows, BBT, wearables, widgets, encryption, iOS, Play Store all feel small individually | H | M | The MVP checklist in 2.1 is frozen. Everything else goes into a `docs/BACKLOG.md` and is not touched until every M3 box is ticked. Milestones have explicit exit criteria | If M3 slips badly, cut Tier B (M5) and the Streamlit dashboard (M4) entirely. Neither is on the user-facing path |
-| R10 | **Android build toolchain friction on this machine.** JDK 25 is installed and AGP does not support it; Flutter is not installed at all; the current `.gitignore` ignores `lib/` and `build/`, which would exclude every Dart source file from git | H | M | Do M0 first and completely: install Temurin JDK 17 and pin it via `flutter config --jdk-dir`, install Flutter via FVM, and **rewrite `.gitignore`** to un-ignore `app/lib/` before any Dart file is written | If AGP and JDK fight, pin the Gradle and AGP versions explicitly in `gradle-wrapper.properties` and `settings.gradle.kts` rather than accepting Flutter's defaults |
+| R10 | ~~**Android build toolchain friction on this machine.**~~ **RESOLVED at AND-01.** JDK 25 was present and unsupported by AGP; Flutter was not installed; the `.gitignore` ignored `lib/` and `build/` and would have excluded every Dart source file | H | M | Pinned the Android Studio JBR 21 rather than installing a second JDK, installed Flutter 3.47.0 via FVM, and rewrote `.gitignore` with the Python patterns scoped to `research/`. Verified: `git check-ignore -v app/lib/main.dart` prints nothing, and a release APK builds | n/a, resolved. The residual finding is that ecosystem lag behind a days-old Dart release is real: see the freezed pre-release caveat in 3.5 |
 | R11 | **On-device personalization is unstable at n=1 to 3 cycles**, producing wild interval swings that destroy trust | M | M | The per-user hyperparameter refit is disabled below 5 cycles; the model falls back to population-level sigma and drift. Interval width is floored by a config constant. Calibration is measured per history length | Freeze the per-user refit entirely and ship the population-hyperparameter filter, which is still fully personalized in its mean estimate |
 | R12 | **Notification reliability on Android.** OEM battery optimizers (Xiaomi, Samsung, Huawei) silently kill scheduled local notifications | H | L | Use inexact alarms and reschedule on app open and on `BOOT_COMPLETED`. Detect a missed reminder on next open. Add a Settings note about battery optimization with a deep link to the system screen | Downgrade the reminder to an in-app banner on next open. The reminder is a convenience, not the product |
 | R13 | **Tier B never beats the Bayesian baseline** after significant effort | M | L | The gate in `ml/gate.dart` is designed to reject it: the ML head only activates if it beats Tier A on the user's own rolling backtest. Effort is capped at one milestone | Delete `ml/` and ship Tier A. This is a fully acceptable outcome and the plan is structured so it costs nothing user-facing |
@@ -1152,8 +1163,10 @@ Working in logs keeps lengths positive and makes variability multiplicative, whi
 
 ## 9. Next 3 actions
 
-1. **Fix the toolchain and the `.gitignore`, in that order.** Install Temurin **JDK 17** and Flutter via FVM, then rewrite the root `.gitignore`: the current Python-flavored file ignores `lib/` and `build/`, which would silently exclude every Flutter Dart source file from git. Scope the Python patterns to `research/` and add proper Flutter and Android entries. Verify with `git check-ignore -v app/lib/main.dart` returning nothing.
+Tasks AND-01 through AND-05 are complete (see [ANDROID_TASKS.md](ANDROID_TASKS.md)): toolchain, manifest hardening with a CI-proven no-network guarantee, lint and CI, core primitives, and the domain models. 125 Dart tests pass and a release APK builds. What remains next:
 
-2. **Scaffold both runtimes and get CI green on an empty project.** `flutter create app` plus `uv init` in `research/`, the `justfile`, `.pre-commit-config.yaml`, and the two GitHub Actions workflows. Exit criteria: `just ci` passes locally and in CI, and `just app-apk && just verify-apk` produces an APK with no INTERNET permission. Doing this before writing features means the guardrails exist before there is anything to guard.
+1. **Write the Python reference filter and the golden-vector exporter (PY-A).** `research/` does not exist yet, and it is the blocker for AND-07. Build `data/synthetic.py` first so the project never depends on a dataset that might not be licensable (R1), then `models/bayes_filter.py`, then `export/golden_vectors.py`. Target: `uv run cyclecore export-golden` writes `artifacts/golden/predictor_cases_v1.json`, and `test_overfit_one_user.py` plus `test_calibration.py` pass. Keep every operation in the filter portable to Dart: no special functions on the forward path, and bake the fixed-`nu` Student-t quantiles into `priors.json` as constants so the Dart port needs only arithmetic.
 
-3. **Write `research/src/cyclecore/data/synthetic.py` and `models/bayes_filter.py`, plus the golden-vector exporter.** This is the highest-information work: it makes the model real, removes the dataset dependency (R1), and produces `predictor_cases_v1.json`, which is the contract the Dart port will be built against. Target: `uv run cyclecore export-golden` writes the artifact, and `test_overfit_one_user.py` plus `test_calibration.py` pass.
+2. **Fit and export the population hyperpriors (PY-B).** `artifacts/priors/priors_v1.json`, with an embedded `{schema_version, git_sha, created_utc}` header the app refuses to load if it does not recognise. This unblocks AND-15.
+
+3. **Port the filter to Dart against the golden vectors (AND-07).** The one task where the two runtimes must agree to 1e-9. Watch the rounding: Python's `round()` is banker's rounding and Dart's `.round()` is half-away-from-zero, so both sides must use an explicit `floor(x + 0.5)` on day counts.
