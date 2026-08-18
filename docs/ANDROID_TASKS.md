@@ -345,7 +345,11 @@ Build:
   Student-t observation model (nu=4). Roughly 200 lines, no dependencies.
 - personalize.dart: periodic refit of per-user observation and drift variance by
   maximizing one-step-ahead predictive likelihood over a small grid. Disabled
-  below 5 cycles.
+  below 5 cycles. This is NOT optional: without it every user gets the same
+  interval width regardless of how variable their cycles are, and 80% intervals
+  cover only 41% of outcomes for irregular users. See PLAN.md section 8.
+  The grid values ship inside priors_v1.json; iterate them exactly, and use
+  strictly-greater comparison so ties resolve to the first candidate.
 - intervals.dart: predictive distribution to {median, 50% window, 80% window,
   confidence class}.
 - explain.dart: plain-language rationale for each prediction.

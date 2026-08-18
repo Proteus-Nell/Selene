@@ -1152,6 +1152,16 @@ Working in logs keeps lengths positive and makes variability multiplicative, whi
 - **Inference:** a scalar Kalman filter with an IRLS-style robust reweighting step for the t-likelihood. O(1) per cycle, closed form, roughly 200 lines of Dart, no dependencies.
 - **Population priors** (`priors_v1.json`): `mu_0 ~ Normal(log 29, tau^2)`, plus priors on `q` and `s`, fitted offline with NumPyro NUTS. This is the only thing the research pipeline ships into the app.
 - **On-device personalization:** every K cycles (K=5 default), refit `(s_user, q_user)` by maximizing the filter's one-step-ahead predictive log-likelihood over a small 2D grid. A few thousand floating-point operations. This is genuine on-device learning: it runs on the phone, on the user's data, and nothing leaves the device.
+
+  > **Measured at PY-A, and it changes how you should read this section.** The refit is **required for correctness, not an enhancement**. Without it the filter learns a user's mean but never their variability, because `obs_var` is a population constant, so every user converges to the same interval width. Backtest on 400 simulated users, nominal 80% coverage:
+  >
+  > | stratum | without refit | with refit |
+  > | --- | --- | --- |
+  > | pooled | 0.78 | 0.80 |
+  > | regular | 0.90 | 0.86 |
+  > | irregular | **0.41** | **0.67** |
+  >
+  > Note the trap: the pooled figure without the refit was 0.78, which would have passed a pooled gate at plus or minus 3 points while the model covered 41% of outcomes for irregular users behind a label saying 80%. This is the concrete evidence for the "never report pooled" rule, and for treating calibration rather than MAE as the primary metric. The residual gap for irregular users is tracked by a strict xfail in `research/tests/test_calibration.py`; closing it needs a time-varying variance, not a finer grid.
 - **Output:** the one-step-ahead predictive distribution over `y_{n+1}`, converted to a start-date distribution and then to `{median, p25-p75 window, p10-p90 window, confidence class}`.
 - **Confidence class:** derived from predictive interval width and history length. `high` (80% window under 4 days), `medium` (under 8), `low` (under 14), `TooIrregular` above that.
 - **Baselines it must beat** in backtest, or the complexity is not justified: last-cycle-length, mean-of-last-3, mean-of-last-6, median-of-last-6. Report all of them in every MLflow run.

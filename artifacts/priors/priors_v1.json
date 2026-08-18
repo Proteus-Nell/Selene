@@ -1,0 +1,66 @@
+{
+  "confidence_thresholds_days": {
+    "high_below": 4,
+    "low_below": 14,
+    "medium_below": 8
+  },
+  "filter_priors": {
+    "drift_var": 0.0005955908946064671,
+    "log_mean_center": 3.367295829986474,
+    "log_mean_var": 0.010000000000000002,
+    "min_obs_var": 0.0004,
+    "obs_var": 0.005368255831169181,
+    "student_t_df": 4.0
+  },
+  "generated_by": "cyclecore.export.priors_json",
+  "personalisation": {
+    "drift_sd_grid": [
+      0.004,
+      0.008,
+      0.014,
+      0.024,
+      0.04,
+      0.066,
+      0.1
+    ],
+    "min_cycles": 5,
+    "obs_sd_grid": [
+      0.02,
+      0.026,
+      0.033,
+      0.042,
+      0.053,
+      0.067,
+      0.085,
+      0.107,
+      0.135,
+      0.17,
+      0.215,
+      0.271,
+      0.342
+    ]
+  },
+  "population_source": {
+    "level_sd_log": 0.1,
+    "mean_cycle_days": 29.0,
+    "note": "Centre and between-user spread are taken from published summary statistics, not individual records. See docs/PLAN.md 6.1. [VERIFY against the cited paper before any wider release.]"
+  },
+  "schema_version": 1,
+  "t_quantiles": {
+    "df": 4.0,
+    "levels": {
+      "p10": 0.1,
+      "p25": 0.25,
+      "p50": 0.5,
+      "p75": 0.75,
+      "p90": 0.9
+    },
+    "values": {
+      "p10": -1.5332062740589436,
+      "p25": -0.7406970841126829,
+      "p50": 0.0,
+      "p75": 0.7406970841126829,
+      "p90": 1.533206274058944
+    }
+  }
+}
