@@ -1,181 +1,192 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+# ============================================================================
+# Period-Tracker
+# Monorepo: research/ (Python)  +  app/ (Flutter)
+#
+# WARNING: the stock Python .gitignore template ignores `lib/`, `build/`, and
+# `dist/`. In a Flutter repo that silently excludes ALL Dart source, because
+# Flutter's main source directory is app/lib/. Every Python pattern below is
+# therefore SCOPED to research/ and no bare `lib/` rule exists anywhere.
+#
+# Verify after any edit (all three must print NOTHING):
+#   git check-ignore -v app/lib/main.dart
+#   git check-ignore -v app/lib/domain/predict/bayes_filter.dart
+#   git check-ignore -v research/uv.lock
+# ============================================================================
 
-# C extensions
-*.so
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+# ---------------------------------------------------------------------------
+# Python  (scoped to research/ so it can never touch app/lib)
+# ---------------------------------------------------------------------------
+research/**/__pycache__/
+research/**/*.py[cod]
+research/**/*$py.class
+research/**/*.so
+research/.Python
+research/build/
+research/develop-eggs/
+research/dist/
+research/downloads/
+research/eggs/
+research/.eggs/
+research/lib/
+research/lib64/
+research/parts/
+research/sdist/
+research/var/
+research/wheels/
+research/share/python-wheels/
+research/*.egg-info/
+research/.installed.cfg
+research/*.egg
+research/MANIFEST
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# UV
-#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#uv.lock
-
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
-
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/latest/usage/project/#working-with-version-control
-.pdm.toml
-.pdm-python
-.pdm-build/
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
+# Virtual environments
+research/.venv/
+research/venv/
+research/ENV/
+.venv/
 venv/
-ENV/
-env.bak/
-venv.bak/
 
-# Spyder project settings
-.spyderproject
-.spyproject
+# Test, coverage, and type caches
+research/.pytest_cache/
+research/.mypy_cache/
+research/.ruff_cache/
+research/.hypothesis/
+research/.tox/
+research/.nox/
+research/.coverage
+research/.coverage.*
+research/coverage.xml
+research/htmlcov/
 
-# Rope project settings
-.ropeproject
+# Notebooks (outputs are stripped by nbstripout; checkpoints are never wanted)
+research/.ipynb_checkpoints/
+research/**/*.nbconvert.ipynb
 
-# mkdocs documentation
-/site
+# NOTE: uv.lock and requirements.txt ARE committed. Do not add them here.
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
 
-# Pyre type checker
-.pyre/
+# ---------------------------------------------------------------------------
+# Flutter / Dart
+# NOTE: app/lib/ is SOURCE and must be committed. Never add a bare `lib/`.
+# ---------------------------------------------------------------------------
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+app/.pub-cache/
+app/.pub/
+app/build/
+app/coverage/
+app/doc/api/
+app/*.lcov
+.flutter-versions
 
-# pytype static type analyzer
-.pytype/
+# FVM pins the SDK version. .fvmrc IS committed; the resolved SDK symlink is not.
+app/.fvm/
+.fvm/
 
-# Cython debug symbols
-cython_debug/
+# Generated code. CI runs `build_runner build` before analyze/test, so these are
+# reproducible and are ignored to keep diffs readable.
+# If you ever want fresh clones to analyze without a codegen step, delete these
+# three lines and commit the generated files instead.
+app/**/*.g.dart
+app/**/*.freezed.dart
+app/**/generated_plugin_registrant.dart
 
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+# Golden test failure output (the accepted goldens themselves ARE committed)
+app/test/**/failures/
 
-# Ruff stuff:
-.ruff_cache/
 
-# PyPI configuration file
-.pypirc
+# ---------------------------------------------------------------------------
+# Android
+# ---------------------------------------------------------------------------
+app/android/.gradle/
+app/android/.kotlin/
+app/android/captures/
+app/android/local.properties
+app/android/.idea/
+app/android/app/debug/
+app/android/app/profile/
+app/android/app/release/
+app/android/**/GeneratedPluginRegistrant.java
 
-# Cursor  
-#  Cursor is an AI-powered code editor.`.cursorignore` specifies files/directories to 
-#  exclude from AI features like autocomplete and code analysis. Recommended for sensitive data
-#  refer to https://docs.cursor.com/context/ignore-files
-.cursorignore
-.cursorindexingignore
+# SIGNING SECRETS. Committing any of these compromises the release key and
+# means you can never safely upgrade an installed app again.
+app/android/key.properties
+*.jks
+*.keystore
+*.p12
+
+
+# ---------------------------------------------------------------------------
+# iOS / macOS  (deferred build target, ignores staged in advance)
+# ---------------------------------------------------------------------------
+app/ios/Pods/
+app/ios/.symlinks/
+app/ios/Flutter/ephemeral/
+app/ios/Flutter/Flutter.framework
+app/ios/Flutter/Flutter.podspec
+app/ios/Flutter/Generated.xcconfig
+app/ios/Flutter/flutter_export_environment.sh
+app/ios/Flutter/app.flx
+app/ios/Flutter/app.zip
+app/ios/Flutter/flutter_assets/
+app/ios/ServiceDefinitions.json
+app/ios/Runner/GeneratedPluginRegistrant.*
+**/xcuserdata/
+**/*.pbxuser
+**/*.mode1v3
+**/*.mode2v3
+**/*.perspectivev3
+**/*.moved-aside
+*.ipa
+*.dSYM.zip
+
+
+# ---------------------------------------------------------------------------
+# Project data and experiment artifacts
+# ---------------------------------------------------------------------------
+# Datasets are NEVER committed: licensing and participant consent live upstream.
+# data/DATASETS.md IS committed. It records source, license, checksum, and
+# row count for every dataset, and is how "dataset versioning" works here.
+data/*
+!data/DATASETS.md
+
+# MLflow local tracking store (file:./mlruns). Runs are reproducible from
+# params + seed + dataset checksum, so the store itself is disposable.
+mlruns/
+research/mlruns/
+
+# The Python -> Dart contract artifacts under artifacts/ ARE committed:
+# priors_*.json, golden/predictor_cases_*.json, models/*.pte
+# Do not add artifacts/ here.
+
+
+# ---------------------------------------------------------------------------
+# Secrets and local config
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+secrets/
+
+
+# ---------------------------------------------------------------------------
+# Editors and OS
+# ---------------------------------------------------------------------------
+.idea/
+*.iml
+*.iws
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
