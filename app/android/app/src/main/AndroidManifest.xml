@@ -1,8 +1,29 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ==================================================================
+         OFFLINE BY CONSTRUCTION. See PLAN.md 6.5 and DECISIONS.md ADR-0004.
+
+         These removals are NOT redundant. Flutter injects INTERNET into the
+         debug and profile manifests for hot reload, and any third-party
+         plugin may declare network permissions in its own manifest, which
+         manifest merging would silently pull into the release APK.
+         tools:node="remove" strips them no matter who asked.
+
+         tools/scripts/assert_no_network.sh proves this on the built APK and
+         runs in CI, so it cannot regress unnoticed.
+         ================================================================== -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" tools:node="remove" />
+
     <application
         android:label="period_tracker"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"

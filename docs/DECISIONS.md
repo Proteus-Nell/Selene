@@ -267,6 +267,7 @@ Recorded so they are not silently re-litigated. Promote to a numbered ADR when t
 | Ovulation range estimation | Only after the calibration story is solid | Off by default if ever added, and never framed as contraception |
 | Hydra instead of pydantic-settings | If backtest sweeps exceed roughly 50 configurations | Switch at that point; not before |
 | DVC or similar for data versioning | If datasets exceed a few hundred MB or multiply | Checksums in `DATASETS.md` are sufficient today |
+| `freezed` pinned to a **pre-release** (`^4.0.0-dev.3`) | When `freezed` 4.0.0 stable ships | Move to stable. Accepted deliberately: `freezed` 3.2.5 emits invalid Dart against the Dart 3.13 SDK (`final` on named parameters for any collection field), so the pre-release is currently the only version that generates compiling code. Alternatives weighed and rejected were pinning Flutter back to 3.44.9, and dropping codegen for hand-written models |
 
 ---
 
