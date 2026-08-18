@@ -1,0 +1,12 @@
+# Stricter rules for lib/domain/ only.
+#
+# domain/ is pure Dart with no Flutter imports (ADR-0002). It holds the cycle
+# segmentation and the Bayesian prediction core, so every public member must
+# carry a doc comment: this is the code a future reader most needs explained,
+# and the code the Python reference implementation must stay in sync with.
+
+include: ../../analysis_options.yaml
+
+linter:
+  rules:
+    public_member_api_docs: true

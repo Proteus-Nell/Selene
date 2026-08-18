@@ -1,0 +1,70 @@
+# Pre-commit hooks for the Period-Tracker monorepo. See docs/PLAN.md 5.1.
+#
+# Install once:  pre-commit install --install-hooks
+#
+# The Dart hooks require `fvm` on PATH. The Python hooks are scoped to research/
+# and simply do not run until that directory exists.
+
+default_install_hook_types: [pre-commit, commit-msg]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ["--maxkb=2048"]
+      - id: check-merge-conflict
+      - id: no-commit-to-branch
+        args: ["--branch", "main"]
+
+  # ---- Python (research/). Inert until research/ exists. ----
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^research/
+      - id: ruff-format
+        files: ^research/
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
+    hooks:
+      - id: nbstripout
+        files: ^research/
+
+  # ---- Commit message convention ----
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.6.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+
+  # ---- Dart / Flutter ----
+  - repo: local
+    hooks:
+      - id: dart-format
+        name: dart format (lib, test)
+        # Scoped to lib and test: `dart format .` crashes walking build/ after
+        # an Android build. See .github/workflows/flutter.yml for the same note.
+        entry: bash -c 'cd app && fvm dart format --output=none --set-exit-if-changed lib test'
+        language: system
+        files: ^app/.*\.dart$
+        pass_filenames: false
+
+      - id: flutter-analyze
+        name: flutter analyze
+        entry: bash -c 'cd app && fvm flutter analyze'
+        language: system
+        files: ^app/.*\.(dart|yaml)$
+        pass_filenames: false
+
+      - id: no-datetime-now
+        name: forbid DateTime.now() outside core/clock.dart
+        entry: bash tools/scripts/check_no_datetime_now.sh
+        language: system
+        files: ^app/lib/.*\.dart$
+        pass_filenames: false
