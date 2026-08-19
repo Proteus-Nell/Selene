@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/app.dart';
 import 'package:period_tracker/core/clock.dart';
@@ -8,7 +10,11 @@ import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/db/connection.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/data/repositories/cycle_repository.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
+import 'package:period_tracker/domain/models/day_log.dart';
+import 'package:period_tracker/notifications/notification_gateway.dart';
+import 'package:period_tracker/notifications/scheduler.dart';
 import 'package:period_tracker/routing/router.dart';
 
 /// The file a damaged database was moved aside to, if that happened on this
@@ -94,7 +100,38 @@ Future<Widget> buildAppScope({
       loggerProvider.overrideWithValue(logger),
       onboardingCompleteProvider.overrideWithValue(onboarded),
       quarantinedDatabaseProvider.overrideWithValue(quarantined),
+      // The gateway defaults to a no-op so no widget test ever schedules a
+      // real notification. This is the one place that must replace it, and
+      // `notifications_test.dart` asserts that it does: a silently no-op
+      // notification system looks exactly like a working one until someone
+      // needs a reminder.
+      notificationGatewayProvider.overrideWith(
+        (ref) => buildNotificationGateway(clock: clock, database: database),
+      ),
     ],
     child: const PeriodTrackerApp(),
+  );
+}
+
+/// Builds the plugin-backed gateway used by the shipped app.
+///
+/// The one-tap action is wired here: it writes the log through the same
+/// repository the UI uses, so the validation and the invalidation are the same
+/// whether the entry came from a lock-screen button or from a tap in the app.
+NotificationGateway buildNotificationGateway({
+  required Clock clock,
+  required AppDatabase database,
+}) {
+  return LocalNotificationGateway(
+    plugin: FlutterLocalNotificationsPlugin(),
+    clock: clock,
+    onAction: (actionId) {
+      if (actionId != logPeriodActionId) return;
+      unawaited(
+        CycleRepository(database: database, clock: clock).upsert(
+          DayLog(date: clock.today(), flow: FlowIntensity.medium),
+        ),
+      );
+    },
   );
 }

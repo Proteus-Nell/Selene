@@ -7,6 +7,7 @@ import 'package:period_tracker/features/log/log_screen.dart';
 import 'package:period_tracker/features/onboarding/onboarding_screen.dart';
 import 'package:period_tracker/features/settings/settings_screen.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
+import 'package:period_tracker/notifications/notification_sync.dart';
 
 /// Where each screen lives.
 ///
@@ -129,7 +130,10 @@ class AppScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      body: shell,
+      // Wrapped here rather than in a screen: the requirement is to reschedule
+      // on every prediction change, and a screen only does that while it is on
+      // top.
+      body: NotificationSync(child: shell),
       bottomNavigationBar: NavigationBar(
         selectedIndex: shell.currentIndex,
         onDestinationSelected: (index) =>

@@ -430,6 +430,94 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get notificationChannelPredictions => 'Predictions';
+
+  @override
+  String get notificationChannelPredictionsDescription =>
+      'When a period is expected, and when one looks late.';
+
+  @override
+  String get notificationChannelReminders => 'Logging reminders';
+
+  @override
+  String get notificationChannelRemindersDescription =>
+      'An occasional prompt if nothing has been logged for a while. Off unless you turn it on.';
+
+  @override
+  String get notificationGenericTitle => 'Period Tracker';
+
+  @override
+  String get notificationGenericBody =>
+      'Open the app to see what this is about.';
+
+  @override
+  String get notificationWindowOpeningTitle => 'A period is expected soon';
+
+  @override
+  String notificationWindowOpeningBody(String start, String end) {
+    return 'The predicted window runs from $start to $end.';
+  }
+
+  @override
+  String get notificationLikelyStartedTitle => 'Has it started?';
+
+  @override
+  String get notificationLikelyStartedBody =>
+      'The predicted window is open and nothing is logged yet.';
+
+  @override
+  String get notificationNudgeTitle => 'Nothing logged for a while';
+
+  @override
+  String get notificationNudgeBody =>
+      'Logging a day keeps the predictions useful. No hurry.';
+
+  @override
+  String get notificationLateNoticeTitle => 'The predicted window has passed';
+
+  @override
+  String get notificationLateNoticeBody =>
+      'Nothing has been logged since the window closed. Cycles vary for many reasons, and a prediction being wrong is one of them.';
+
+  @override
+  String get notificationLogAction => 'Started today';
+
+  @override
+  String get logMissedReminder =>
+      'A reminder was due while the app was closed. Some phones stop scheduled reminders to save battery.';
+
+  @override
+  String get settingsNudgeEnabled => 'Nudge me if I stop logging';
+
+  @override
+  String get settingsNudgeSubtitle =>
+      'Off by default. At most one every seven days, and never after the app has lost track.';
+
+  @override
+  String get settingsDetailedNotifications => 'Show details on the lock screen';
+
+  @override
+  String get settingsDetailedNotificationsSubtitle =>
+      'Off by default. With this off, notifications say only the app name until the phone is unlocked.';
+
+  @override
+  String get settingsBatteryNoteTitle => 'If reminders do not arrive';
+
+  @override
+  String get settingsBatteryNoteBody =>
+      'Some phones stop scheduled reminders to save battery. If reminders stop arriving, allow this app to run in the background in the system battery settings.';
+
+  @override
+  String get settingsNotificationPermissionTitle => 'Turn on reminders?';
+
+  @override
+  String get settingsNotificationPermissionBody =>
+      'Now that you have logged a cycle, this app can remind you before the next one is expected. You can change this at any time.';
+
+  @override
+  String get settingsNotificationPermissionAllow => 'Turn on reminders';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override

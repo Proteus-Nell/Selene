@@ -258,7 +258,9 @@ void main() {
       // notification will arrive: scheduling lands in AND-17.
       expect(find.text(l10n.settingsReminderNotYetScheduled), findsOneWidget);
 
-      await tester.tap(find.byType(Switch));
+      await tester.tap(
+        find.widgetWithText(SwitchListTile, l10n.settingsReminderEnabled),
+      );
       await tester.pumpAndSettle();
       expect(
         await db.settingsDao.readBool(
@@ -266,6 +268,45 @@ void main() {
           orElse: true,
         ),
         isFalse,
+      );
+    });
+
+    testWidgets('default the nudge and lock-screen detail to off', (
+      tester,
+    ) async {
+      // Both are the defaults the plan argues for: the nudge because it is the
+      // only notification that is neither a prediction nor actionable (2.4.1),
+      // and lock-screen detail because a visible banner about a cycle is a
+      // real data leak (risk R16).
+      await pumpSettings(tester);
+      final l10n = l10nOf(tester);
+      for (final title in <String>[
+        l10n.settingsNudgeEnabled,
+        l10n.settingsDetailedNotifications,
+      ]) {
+        expect(
+          tester
+              .widget<SwitchListTile>(
+                find.widgetWithText(SwitchListTile, title),
+              )
+              .value,
+          isFalse,
+          reason: '"$title" must default to off',
+        );
+      }
+    });
+
+    testWidgets('warn that some phones kill scheduled reminders', (
+      tester,
+    ) async {
+      // Risk R12. Saying so is cheaper than the user concluding the app is
+      // broken.
+      await pumpSettings(tester);
+      await tester.drag(find.byType(ListView), const Offset(0, -260));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(l10nOf(tester).settingsBatteryNoteTitle),
+        findsOneWidget,
       );
     });
   });

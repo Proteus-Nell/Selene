@@ -178,6 +178,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Divider(),
             _SectionHeading(l10n.settingsRemindersSection),
             const _ReminderSettings(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    l10n.settingsBatteryNoteTitle,
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 4),
+                  // Risk R12: several manufacturers silently kill scheduled
+                  // alarms to save battery. Saying so here is cheaper than the
+                  // user concluding the app is broken.
+                  Text(
+                    l10n.settingsBatteryNoteBody,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
             const Divider(),
             _SectionHeading(l10n.settingsPrivacySection),
             const PrivacySection(),
@@ -245,6 +265,8 @@ class _ReminderSettings extends ConsumerStatefulWidget {
 class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
   bool? _enabled;
   int? _leadDays;
+  bool _nudge = false;
+  bool _detailed = false;
 
   @override
   void initState() {
@@ -263,10 +285,24 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
       SettingKey.reminderLeadDays,
       orElse: 2,
     );
+    // Both default to off, and are re-read as off. The nudge is the only
+    // notification that is neither a prediction nor actionable, and lock-screen
+    // detail is the one place this project's privacy story would otherwise leak
+    // by default (risk R16).
+    final nudge = await settings.readBool(
+      SettingKey.nudgeEnabled,
+      orElse: false,
+    );
+    final detailed = await settings.readBool(
+      SettingKey.detailedNotifications,
+      orElse: false,
+    );
     if (!mounted) return;
     setState(() {
       _enabled = enabled;
       _leadDays = lead;
+      _nudge = nudge;
+      _detailed = detailed;
     });
   }
 
@@ -291,6 +327,27 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
             setState(() => _enabled = value);
             await settings.writeBool(
               SettingKey.reminderEnabled,
+              value: value,
+            );
+          },
+        ),
+        SwitchListTile(
+          value: _nudge,
+          title: Text(l10n.settingsNudgeEnabled),
+          subtitle: Text(l10n.settingsNudgeSubtitle),
+          onChanged: (value) async {
+            setState(() => _nudge = value);
+            await settings.writeBool(SettingKey.nudgeEnabled, value: value);
+          },
+        ),
+        SwitchListTile(
+          value: _detailed,
+          title: Text(l10n.settingsDetailedNotifications),
+          subtitle: Text(l10n.settingsDetailedNotificationsSubtitle),
+          onChanged: (value) async {
+            setState(() => _detailed = value);
+            await settings.writeBool(
+              SettingKey.detailedNotifications,
               value: value,
             );
           },

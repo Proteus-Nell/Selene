@@ -783,6 +783,156 @@ abstract class AppLocalizations {
   /// **'You logged {logged} of the {total} days in this cycle.'**
   String insightsLoggingCompleteness(int logged, int total);
 
+  /// No description provided for @notificationChannelPredictions.
+  ///
+  /// In en, this message translates to:
+  /// **'Predictions'**
+  String get notificationChannelPredictions;
+
+  /// No description provided for @notificationChannelPredictionsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When a period is expected, and when one looks late.'**
+  String get notificationChannelPredictionsDescription;
+
+  /// No description provided for @notificationChannelReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging reminders'**
+  String get notificationChannelReminders;
+
+  /// No description provided for @notificationChannelRemindersDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'An occasional prompt if nothing has been logged for a while. Off unless you turn it on.'**
+  String get notificationChannelRemindersDescription;
+
+  /// No description provided for @notificationGenericTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Period Tracker'**
+  String get notificationGenericTitle;
+
+  /// No description provided for @notificationGenericBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the app to see what this is about.'**
+  String get notificationGenericBody;
+
+  /// No description provided for @notificationWindowOpeningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A period is expected soon'**
+  String get notificationWindowOpeningTitle;
+
+  /// No description provided for @notificationWindowOpeningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The predicted window runs from {start} to {end}.'**
+  String notificationWindowOpeningBody(String start, String end);
+
+  /// No description provided for @notificationLikelyStartedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Has it started?'**
+  String get notificationLikelyStartedTitle;
+
+  /// No description provided for @notificationLikelyStartedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The predicted window is open and nothing is logged yet.'**
+  String get notificationLikelyStartedBody;
+
+  /// No description provided for @notificationNudgeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing logged for a while'**
+  String get notificationNudgeTitle;
+
+  /// No description provided for @notificationNudgeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging a day keeps the predictions useful. No hurry.'**
+  String get notificationNudgeBody;
+
+  /// No description provided for @notificationLateNoticeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The predicted window has passed'**
+  String get notificationLateNoticeTitle;
+
+  /// No description provided for @notificationLateNoticeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing has been logged since the window closed. Cycles vary for many reasons, and a prediction being wrong is one of them.'**
+  String get notificationLateNoticeBody;
+
+  /// No description provided for @notificationLogAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Started today'**
+  String get notificationLogAction;
+
+  /// No description provided for @logMissedReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'A reminder was due while the app was closed. Some phones stop scheduled reminders to save battery.'**
+  String get logMissedReminder;
+
+  /// No description provided for @settingsNudgeEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Nudge me if I stop logging'**
+  String get settingsNudgeEnabled;
+
+  /// No description provided for @settingsNudgeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Off by default. At most one every seven days, and never after the app has lost track.'**
+  String get settingsNudgeSubtitle;
+
+  /// No description provided for @settingsDetailedNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Show details on the lock screen'**
+  String get settingsDetailedNotifications;
+
+  /// No description provided for @settingsDetailedNotificationsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Off by default. With this off, notifications say only the app name until the phone is unlocked.'**
+  String get settingsDetailedNotificationsSubtitle;
+
+  /// No description provided for @settingsBatteryNoteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'If reminders do not arrive'**
+  String get settingsBatteryNoteTitle;
+
+  /// No description provided for @settingsBatteryNoteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Some phones stop scheduled reminders to save battery. If reminders stop arriving, allow this app to run in the background in the system battery settings.'**
+  String get settingsBatteryNoteBody;
+
+  /// No description provided for @settingsNotificationPermissionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on reminders?'**
+  String get settingsNotificationPermissionTitle;
+
+  /// No description provided for @settingsNotificationPermissionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Now that you have logged a cycle, this app can remind you before the next one is expected. You can change this at any time.'**
+  String get settingsNotificationPermissionBody;
+
+  /// No description provided for @settingsNotificationPermissionAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on reminders'**
+  String get settingsNotificationPermissionAllow;
+
   /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:

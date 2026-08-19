@@ -20,7 +20,35 @@ enum SettingKey {
   reminderLeadDays('reminder_lead_days'),
 
   /// Epoch day of the most recent successful export, for the backup nudge.
-  lastExportEpochDay('last_export_epoch_day');
+  lastExportEpochDay('last_export_epoch_day'),
+
+  /// Whether the low-priority logging nudge is enabled.
+  ///
+  /// Defaults to **off**, and stays that way unless the user turns it on. It is
+  /// the one notification that is neither a prediction nor actionable, and
+  /// docs/PLAN.md 2.4.1 rules out pressure mechanics on this data.
+  nudgeEnabled('nudge_enabled'),
+
+  /// Whether notifications may show cycle detail on the lock screen.
+  ///
+  /// Defaults to **off**. A banner reading "your period is expected tomorrow",
+  /// visible to anyone glancing at the phone, is a real data leak, and it is
+  /// the one place this project's otherwise offline privacy story leaks by
+  /// default (risk R16).
+  detailedNotifications('detailed_notifications'),
+
+  /// Epoch day the logging nudge last fired, for its one-per-seven-days cap.
+  lastNudgeEpochDay('last_nudge_epoch_day'),
+
+  /// Epoch day the app was last opened, for missed-reminder detection.
+  lastOpenedEpochDay('last_opened_epoch_day'),
+
+  /// Whether the notification permission has already been asked for.
+  ///
+  /// Recorded so the app asks once. On Android 13+ a denial is close to final,
+  /// so re-prompting spends the user's patience on a request that cannot
+  /// succeed.
+  notificationPermissionAsked('notification_permission_asked');
 
   const SettingKey(this.wireName);
 
