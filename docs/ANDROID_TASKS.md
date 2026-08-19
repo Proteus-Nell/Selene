@@ -319,11 +319,13 @@ Do not: implement prediction. That is AND-07.
 **Blocked until** `artifacts/golden/predictor_cases_v1.json` exists.
 
 **Done when.**
-- [ ] Every golden vector matches the Python reference to 1e-9
-- [ ] Golden cases include cold start, 1 cycle, an outlier cycle, a 90-day gap, and edited history
-- [ ] Constant-28-day synthetic user collapses the posterior to 28 with a narrowing interval
-- [ ] Alternating 26/34 user makes the interval **widen**, not narrow
-- [ ] App refuses to load a priors file with an unknown `schema_version`
+- [x] Every golden vector matches the Python reference to 1e-9 — `app/test/golden_vectors_test.dart`. All 237 compared floats are in fact bit-identical, so the 1e-9 tolerance is headroom rather than something the port is spending.
+- [x] Golden cases include cold start, 1 cycle, an outlier cycle, a 90-day gap, and edited history — asserted by name in the same file, so dropping a case fails the suite rather than quietly reducing coverage
+- [x] Constant-28-day synthetic user collapses the posterior to 28 with a narrowing interval
+- [x] Alternating 26/34 user makes the interval **widen**, not narrow — the widening happens the moment the refit becomes eligible at 5 cycles, taking the 80% window from 9 days to 14
+- [x] App refuses to load a priors file with an unknown `schema_version`
+
+**Landed as.** `domain/predict/{bayes_filter,personalize,intervals,explain,priors}.dart`, plus `priors_bundled.dart`, which is generated from `artifacts/priors/priors_v1.json` by `tools/scripts/gen_priors_dart.py` and carries the artifact's SHA-256. That generated file is where PLAN.md 3.5's `priors_checksum.dart` ended up: one file holding both the constants and the checksum, rather than a constants file and a checksum file that can disagree. CI runs the generator in `--check` mode, so exporting new priors without regenerating fails the build.
 
 **Prompt to paste.**
 

@@ -31,6 +31,13 @@ jobs:
           fi
           echo "Flutter pin agrees: $pinned"
 
+      - name: Verify the generated priors match the committed artifact
+        # priors_bundled.dart is generated from artifacts/priors/priors_v1.json.
+        # Exporting new priors without regenerating it would ship an app whose
+        # model no longer matches the artifact the golden vectors were built
+        # from, which is the drift ADR-0002 exists to prevent.
+        run: python3 tools/scripts/gen_priors_dart.py --check
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

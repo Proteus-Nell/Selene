@@ -40,6 +40,11 @@ dependencies:
 
 dev_dependencies:
   build_runner: ^2.15.1
+  # Test-only, deliberately not a runtime dependency: it exists so the priors
+  # test can hash artifacts/priors/priors_v1.json and prove the generated
+  # constants in lib/domain/predict/priors_bundled.dart are not stale. Nothing
+  # under lib/ imports it, which keeps the prediction core dependency-free.
+  crypto: ^3.0.6
   flutter_test:
     sdk: flutter
 
