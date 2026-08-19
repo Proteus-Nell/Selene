@@ -1173,15 +1173,19 @@ Working in logs keeps lengths positive and makes variability multiplicative, whi
 
 ## 9. Next 3 actions
 
-Tasks AND-01 through AND-10 are complete (see [ANDROID_TASKS.md](ANDROID_TASKS.md)): toolchain, manifest hardening with a CI-proven no-network guarantee, lint and CI, core primitives, domain models, cycle segmentation, the Tier A filter port, persistence with migrations, the repository layer with prediction caching, and export/import. Both Python prerequisites are done: `artifacts/golden/predictor_cases_v1.json` (PY-A) and `artifacts/priors/priors_v1.json` (PY-B) are committed, and the golden file regenerates byte-identically from the reference.
+Tasks AND-01 through AND-16 are complete (see [ANDROID_TASKS.md](ANDROID_TASKS.md)), along with both Python prerequisites. That is the toolchain, the manifest hardening, CI, the whole domain and data layer, and all five screens. **The app is usable end to end**: a new user can read the disclaimer, log a first date, see a predicted window, browse the calendar, read the insights, and export a backup.
 
-503 Dart tests pass. `lib/domain/` is at 100% line coverage and `lib/` overall is at 96% excluding generated code, against the 90% and 70% floors in 5.4. The whole model and data layer is done and tested with no emulator: **everything below the UI is now built.** What remains next:
+594 Dart tests pass. `lib/domain/` is at 100% line coverage and `lib/` overall is at 92% excluding generated code, against the 90% and 70% floors in 5.4. The accessibility matchers in 2.4.4 run over every screen in both themes.
 
-1. **Put something on screen (AND-11, then AND-12).** The app shell — theme, `go_router`, `ProviderScope`, l10n — followed by onboarding and the first-run disclaimer. `main.dart` is still the `flutter create` counter app; the bootstrap it needs is written but not called. That bootstrap has to handle all three outcomes of `openAppDatabase`, including the one where the database was quarantined and the user should be offered an import.
+What remains for M3:
 
-2. **The three screens that make it usable daily (AND-13, AND-14, AND-15).** Log, calendar, insights. AND-15 is where the honesty rules in 6.2 stop being prose and start being UI: all six `PredictionResult` variants render, and both `TooIrregular` and `LostTrack` show the user their own statistics rather than a dead end.
+1. **Notifications (AND-17).** The only MVP feature with no implementation at all. The settings screen already stores the preference and says plainly that nothing is scheduled yet. Three things there are easy to get wrong and costly: separate channels per type, requesting `POST_NOTIFICATIONS` in context rather than at launch, and lock-screen visibility defaulting to secret. The last is the one place this project's otherwise airtight privacy story leaks by default (risk R16).
 
-3. **Close the export loop (AND-16).** Settings wires the system file picker to `ExportV1.writeTo`, which deliberately ships without one: `export_v1.dart` takes an explicit destination and has no default-location entry point, so the picker is the only thing missing. Adding `file_selector` is a new platform plugin, so that task must re-run `assert_no_network.sh` on the release APK rather than assuming the permission set is unchanged.
+2. **Lift the accessibility gate into CI (AND-18).** `a11y_test.dart` already runs the matchers over all five screens; AND-18 is mostly making the failure block a merge, and adding the text-scale goldens. It has already paid for itself twice: it caught a selected-chip contrast of 1.32:1 and an unlabelled tappable node, neither of which looked wrong on screen.
+
+3. **End-to-end smoke and release signing (AND-19).** Onboard, log three cycles, see a window, export, wipe, import, assert the state came back. The pieces all exist and are unit-tested; what is missing is the one test that runs them in sequence on a device.
+
+**Verify on a real device before release.** Nothing in this repo has been run on Android. This environment cannot build an APK, so the whole UI is proven by widget tests only. Two things specifically need a device: the Storage Access Framework write path behind Export, and that `assert_no_network.sh` still passes now that `file_selector`, `drift` and `path_provider` are dependencies.
 
 **Two CI gaps worth closing when convenient.**
 

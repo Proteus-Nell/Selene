@@ -527,9 +527,11 @@ Do not: build the Settings UI that calls this. That is AND-16.
 **Scope.** `MaterialApp.router`, light and dark themes with contrast-checked tokens, `go_router`, `ProviderScope`, `flutter_localizations` with all strings externalized from day one.
 
 **Done when.**
-- [ ] Dark mode works and both themes meet 4.5:1 on body text
-- [ ] No hardcoded user-facing string anywhere in `lib/`
-- [ ] Route guard hook exists but is a no-op (the app lock will use it later)
+- [x] Dark mode works and both themes meet 4.5:1 on body text — `theme_test.dart` recomputes every ratio from the tokens, so a colour cannot be nudged without the suite noticing
+- [x] No hardcoded user-facing string anywhere in `lib/` — `no_hardcoded_strings_test.dart` scans for `Text()` literals carrying prose, and has its own test, since a scan that cannot fail is not a check
+- [x] Route guard hook exists but is a no-op (the app lock will use it later)
+
+**Landed as.** `app.dart`, `main.dart`, `core/theme.dart`, `routing/router.dart`, `l10n/app_en.arb`. `main.dart` handles all three outcomes of `openAppDatabase`, including rendering a separate app with no database behind it when the stored schema is newer than this build understands.
 
 **Prompt to paste.**
 
@@ -565,9 +567,11 @@ Do not: build feature screens.
 **Scope.** Disclaimer screen, first cycle entry, deferred notification opt-in.
 
 **Done when.**
-- [ ] Disclaimer is a real screen, not a buried EULA, and states the app is not contraception and not medical advice
-- [ ] Notification permission is **not** requested here
-- [ ] A user can reach a working state having entered one date
+- [x] Disclaimer is a real screen, not a buried EULA, and states the app is not contraception and not medical advice — all four non-claims are on it, nothing is gated behind scroll-to-accept, and the tests pin the wording that would be tempting to soften
+- [x] Notification permission is **not** requested here, and a test holds that line
+- [x] A user can reach a working state having entered one date, or by skipping
+
+**Note.** The date picker takes the injected `Clock`. `check_no_datetime_now.sh` caught the first version, and the bug was real rather than stylistic: with the picker anchored on the device clock and the repository anchored on an injected one, every date the user chose was silently refused as being in the future.
 
 **Prompt to paste.**
 
@@ -602,10 +606,12 @@ date.
 **Scope.** Today-state landing screen, persistent primary action, inline day stepper for backdating, symptom chips.
 
 **Done when.**
-- [ ] "Period started today" from cold start is 2 taps, verified by counting taps in an integration test
-- [ ] Backdating 1 to 3 days is 3 taps or fewer
-- [ ] Symptoms for today are 4 taps or fewer
-- [ ] Any logged day is editable by long-press
+- [x] "Period started today" is **1 tap**, counted in `log_screen_test.dart` (budget 2)
+- [x] Backdating 1 to 3 days is **2 taps** (budget 3)
+- [x] Symptoms for today are **1 tap** (budget 4)
+- [x] Any logged day is editable by long-press, from the calendar
+
+**Deviations, both deliberate.** The day selector offers the last four days directly rather than stepping: a stepper costs a tap per day, so backdating three days would take four taps against a budget of three. And the budgets are counted in widget tests rather than an integration test, because those run headless in `flutter test` on every push; the end-to-end version belongs with AND-19.
 
 **Prompt to paste.**
 
@@ -641,10 +647,12 @@ so this is a data-quality requirement, not a polish task.
 **Scope.** Month grid with period days, predicted window, today marker, long-press edit, full per-cell semantics.
 
 **Done when.**
-- [ ] Each day cell announces date **and** state to a screen reader
-- [ ] Period, predicted, and today are distinguishable without colour
-- [ ] Renders without overflow at `textScaler` 2.0
-- [ ] The predicted window renders as a **range**, never a single highlighted day
+- [x] Each day cell announces date **and** state to a screen reader, in the shape the task asks for
+- [x] Period, predicted, and today are distinguishable without colour — filled marker, hollow marker, ring, plus a legend naming all three
+- [x] Renders without overflow at `textScaler` 1.0, 1.5 and 2.0
+- [x] The predicted window renders as a **range**, never a single highlighted day, and is drawn not at all in the four states where a window would assert something the app has just said it cannot support
+
+**On the goldens.** Light, dark and greyscale are committed. The greyscale one first came out byte-identical to the light one: a golden captured from a descendant of `ColorFiltered` renders from that descendant's own layer, so the filter never reached the image. It is now captured at the filter, with a test comparing the two files. The goldens are regression capture; the structural tests are what hold the accessibility line, since a PNG cannot say whether two states are distinguishable.
 
 **Prompt to paste.**
 
@@ -682,10 +690,12 @@ Add golden tests in light, dark, and greyscale.
 **Scope.** Prediction display with interval and confidence, cycle history list, self-metrics, an accessible variability chart, the `TooIrregular` state.
 
 **Done when.**
-- [ ] All four `PredictionResult` variants render, and `TooIrregular` still shows useful statistics rather than a dead end
-- [ ] The chart carries a `Semantics` text summary and has a data-table alternative
-- [ ] Self-metrics include the model's own recent accuracy
-- [ ] A permanent one-line disclaimer is visible on this screen
+- [x] All **six** `PredictionResult` variants render (four at the time this task was written, plus `NoData` and `LostTrack` from AND-09), and `TooIrregular` shows cycle count, observed range, variability and the chart rather than a dead end
+- [x] The chart carries a `Semantics` text summary and a data-table alternative, and prints the summary as well as announcing it
+- [x] Self-metrics include the model's own recent accuracy, computed on device by replaying the filter against already-logged cycles
+- [x] A permanent one-line disclaimer is visible on this screen
+
+**Deviation.** The chart is a `CustomPainter`, not `fl_chart`. A dozen bars is not worth a dependency, and painting it directly makes the greyscale and text-scaling requirements straightforward. The accessibility problem is identical either way, which is why the `Semantics` summary and the table are there regardless.
 
 **Prompt to paste.**
 
@@ -731,9 +741,13 @@ stop and say so.
 **Scope.** Export, import, delete-all with typed confirmation, notification preferences, log viewer and clear, privacy text, about and attribution.
 
 **Done when.**
-- [ ] Delete-all requires typing a confirmation and performs `DELETE` plus `VACUUM`
-- [ ] `docs/PRIVACY.md` content is shipped in-app verbatim, including the honest statement about the unencrypted database
-- [ ] The log viewer shows there is no cycle content in the logs
+- [x] Delete-all requires typing `DELETE`, names how many days are at stake, and performs the real `DELETE` plus `VACUUM`
+- [x] `docs/PRIVACY.md` content is shipped in-app verbatim — the file is new, and `privacy_text_test.dart` fails if either copy is edited without the other. It states plainly that the database is not encrypted and that there is no app lock
+- [x] The log viewer shows there is no cycle content in the logs — the test strips each line's own timestamp and asserts no date, flow level or symptom name survives
+
+**On the file picker.** `file_selector` is wired for both export and import. Its Android manifest declares no permissions at all, read from the package rather than assumed, and it uses the Storage Access Framework. Export uses `getDirectoryPath` because `file_selector_android` implements `openFile` and `getDirectoryPath` but not `getSaveLocation`. **The on-device behaviour of that write is unverified:** this environment cannot build an Android APK, so `assert_no_network.sh` on the release APK remains the gate for the manifest, and the SAF write path needs a real device before release.
+
+**Also here:** `a11y_test.dart`, running `textContrast`, `androidTapTarget` and `labeledTapTarget` across all five screens in both themes. It found two real bugs: selected chips at 1.32:1, and an unlabelled tappable node behind the symptom long-press. Neither looked wrong on screen.
 
 **Prompt to paste.**
 
