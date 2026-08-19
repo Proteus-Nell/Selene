@@ -68,10 +68,6 @@ class DayLogDao extends DatabaseAccessor<AppDatabase> with _$DayLogDaoMixin {
     return rows.map((r) => CivilDate.fromEpochDay(r.epochDay)).toSet();
   }
 
-  /// Whether any day has been logged at all.
-  Future<bool> get isEmpty async =>
-      (await (select(dayLogs)..limit(1)).get()).isEmpty;
-
   /// Writes [log], replacing any existing entry for the same day.
   ///
   /// The whole write is one transaction: a day's flow and its symptoms are one

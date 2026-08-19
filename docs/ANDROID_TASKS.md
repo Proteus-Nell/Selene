@@ -380,10 +380,19 @@ is wrong.
 **Scope.** Drift tables (`PeriodDays`, `DayLogs`, `Symptoms`, `ModelState`, `Settings`), DAOs, `schemaVersion`, migration steps, committed schema snapshots, `tools/scripts/new_migration.sh`.
 
 **Done when.**
-- [ ] Every schema version upgrades cleanly to current, tested against committed snapshots
-- [ ] In-memory Drift used for tests, no emulator needed
-- [ ] Corrupt-database detection on open, with a side-copy rather than a silent empty start
-- [ ] Deletion is a real `DELETE` plus `VACUUM`, not a soft-delete flag
+- [x] Every schema version upgrades cleanly to current, tested against committed snapshots — `app/test/data/db/migration_test.dart` replays every snapshot in `app/drift_schemas/`, plus `onCreate` and a guard that fails if `schemaVersion` outruns the committed snapshots. Verified not vacuous: running `new_migration.sh` to start a v2 made the v1 case fail with "no migration path", as it should, before being reverted.
+- [x] In-memory Drift used for tests, no emulator needed
+- [x] Corrupt-database detection on open, with a side-copy rather than a silent empty start — `openAppDatabase` runs `PRAGMA quick_check` before handing the database out, and returns a sealed union so the caller cannot ignore the case where the user's history is in a quarantined file. Both corruption routes are tested: a file SQLite refuses outright, and a damaged page that opens fine and only `quick_check` catches.
+- [x] Deletion is a real `DELETE` plus `VACUUM`, not a soft-delete flag
+
+**Landed as.** `data/db/{tables,database,connection}.dart` plus three DAOs, `drift_schemas/drift_schema_v1.json`, and `tools/scripts/new_migration.sh`.
+
+Two deviations, both deliberate:
+
+- **No `PeriodDays` table.** The domain model settled at AND-05 makes a `DayLog` carry its own flow, so a separate `PeriodDays` would be a second source of truth for the same fact — and a table of that name would in practice hold non-period days too, since a user can log symptoms without bleeding. The tables are `DayLogs`, `Symptoms`, `ModelStates`, `Settings`.
+- **The executor runs on the calling isolate**, not a background one. drift wraps anything thrown across an isolate in a `DriftRemoteException` from its **experimental** `remote.dart`; recovery code that has to unwrap an experimental type is recovery code that will one day stop matching and quarantine nothing. This app's queries are a few thousand single-column rows. The comment in `connection.dart` says what to change if that ever stops being true.
+
+Enums are stored by **name**, not ordinal: `intEnum` would mean reordering `FlowIntensity` in a later release silently reinterprets every stored row, turning heavy into light with no error anywhere.
 
 **Prompt to paste.**
 
@@ -422,9 +431,20 @@ Do not: write repositories (AND-09) or export/import (AND-10).
 **Scope.** `CycleRepository`, `PredictionRepository` keyed by a hash of the input cycle list so edits invalidate correctly.
 
 **Done when.**
-- [ ] Editing any past entry invalidates the cached prediction
-- [ ] Overlapping or duplicate entries are rejected at the repository boundary with a specific message
-- [ ] A long gap (60+ days with no logs) produces the "we lost track" state rather than silent extrapolation
+- [x] Editing any past entry invalidates the cached prediction — the cache is keyed by a signature over the observed lengths, the anchor date and the priors version. The regression test edits an old start date in a way that leaves the median cycle length unchanged at 28, which a count- or median-keyed cache would sail straight past.
+- [x] Overlapping or duplicate entries are rejected at the repository boundary with a specific message — the refusal carries the offending dates, so the UI can name them rather than saying something went wrong
+- [x] A long gap (60+ days with no logs) produces the "we lost track" state rather than silent extrapolation
+
+**Landed as.** `data/repositories/{cycle_repository,prediction_repository,providers}.dart`.
+
+`PredictionResult` gained two variants, both states the app must render and neither expressible before:
+
+- **`NoData`**, for a user who has logged nothing. Deliberately not an `InsufficientData` measured from today: the model predicts a cycle *length*, and dating it needs a logged start, so anchoring on today would assert that the user's period started today.
+- **`LostTrack`**, for the 60-day gap. It carries the statistics for the same reason `TooIrregular` does.
+
+The sealed union earned its keep immediately: adding the cases broke the exhaustive switch in `prediction_test.dart` at compile time.
+
+The repository also refuses **future-dated** writes. That is not in the task text, but it is what keeps the clock-went-backwards row of PLAN.md 5.5 detectable: with future dates unreachable by normal use, a stored log dated after today means the device clock moved, and the prediction path reports `DataInconsistent` instead of computing a negative cycle length.
 
 **Prompt to paste.**
 
@@ -459,9 +479,15 @@ Do not: build UI.
 **Scope.** `data/transfer/export_v1.dart` and `import_v1.dart`, versioned JSON envelope with a schema hash and app version stamp.
 
 **Done when.**
-- [ ] Round-trip fuzz test: random valid databases export and re-import identically
-- [ ] Import refuses an unknown or newer version with a clear message, never partially imports
-- [ ] Export writes only to a user-chosen location via the system picker
+- [x] Round-trip fuzz test: random valid databases export and re-import identically — 60 generated databases per run from a fixed seed, restored over a *different* non-empty database so the replace semantics are exercised, plus 20 double round trips asserting the second file is byte-identical to the first
+- [x] Import refuses an unknown or newer version with a clear message, never partially imports — validation is a separate pass with no database access at all, and the "leaves the database exactly as it was" test feeds a file whose first added entry is valid and whose second is not
+- [~] Export writes only to a user-chosen location via the system picker — **half done, deliberately.** Every entry point takes an explicit destination, so a silent write to shared storage is not expressible; there is no "export to the default location" function to call by accident. The picker itself is not here: `file_selector` is a platform plugin, and this environment cannot build an Android APK (`dl.google.com` is blocked), so its effect on the merged manifest could not be verified. Adding an unverifiable plugin to the app whose central claim is machine-proven absence of network permissions is the wrong trade. **AND-16 wires the SAF picker to `ExportV1.writeTo` and should re-run `assert_no_network.sh` when it does.**
+
+**Landed as.** `data/transfer/{export_v1,import_v1}.dart`.
+
+Import **replaces** rather than merges. A backup is a snapshot of the whole diary, and merging two snapshots invents a history that never existed, with no way for a snapshot to express a day the user deleted.
+
+The envelope carries a shape fingerprint covering field names only, never enum members. Covering the members would mean that adding one symptom in a later release invalidates every backup any user has ever taken; an unknown value is instead reported per-field, naming the value and saying that updating the app will fix it.
 
 **Prompt to paste.**
 

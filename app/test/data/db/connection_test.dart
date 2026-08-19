@@ -121,6 +121,40 @@ void main() {
       expect(outcome.quarantinedFile.existsSync(), isTrue);
     });
 
+    test('catches damage that leaves the file openable', () async {
+      // The subtler case, and the reason the open path runs an explicit
+      // integrity check rather than trusting that a database which opens is a
+      // database that works. A damaged page past the header lets SQLite open
+      // the file happily and fail later, in the middle of a write.
+      final first = await open() as DatabaseOpened;
+      for (var i = 0; i < 200; i++) {
+        await first.database.dayLogDao.save(
+          DayLog(
+            date: CivilDate.fromEpochDay(20000 + i),
+            flow: FlowIntensity.medium,
+          ),
+        );
+      }
+      await first.database.close();
+
+      final bytes = Uint8List.fromList(databaseFile().readAsBytesSync());
+      for (var i = 5000; i < 6000 && i < bytes.length; i++) {
+        bytes[i] = 0x5A;
+      }
+      databaseFile().writeAsBytesSync(bytes, flush: true);
+
+      final outcome = await open();
+      expect(outcome, isA<DatabaseRecoveredFromCorruption>());
+      final recovered = outcome as DatabaseRecoveredFromCorruption;
+      addTearDown(recovered.database.close);
+      expect(recovered.quarantinedFile.existsSync(), isTrue);
+      expect(await recovered.database.dayLogDao.allLogs(), isEmpty);
+      expect(
+        const DatabaseCorruptException('quick_check reported: bad').toString(),
+        contains('quick_check'),
+      );
+    });
+
     test('quarantines twice without overwriting the first attempt', () async {
       final first = await open() as DatabaseOpened;
       await first.database.close();

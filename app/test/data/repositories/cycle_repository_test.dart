@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/core/clock.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
 import 'package:period_tracker/domain/models/cycle_record.dart';
@@ -72,6 +73,19 @@ void main() {
       final result = await repo.replace(bleeding('2026-06-01'));
       expect(result.errorOrNull!.rejection, WriteRejection.dayNotLogged);
     });
+
+    test('refuses a future date before checking anything else', () async {
+      final result = await repo.replace(bleeding('2026-07-15'));
+      expect(result.errorOrNull!.rejection, WriteRejection.dateInFuture);
+    });
+  });
+
+  group('logFor', () {
+    test('reads back a single day', () async {
+      await repo.add(bleeding('2026-06-01', FlowIntensity.light));
+      expect((await repo.logFor(at('2026-06-01')))!.flow, FlowIntensity.light);
+      expect(await repo.logFor(at('2026-06-02')), isNull);
+    });
   });
 
   group('upsert', () {
@@ -133,6 +147,33 @@ void main() {
     test('an empty batch is accepted and does nothing', () async {
       expect((await repo.addAll(const <DayLog>[])).isOk, isTrue);
       expect(await repo.logs(), isEmpty);
+    });
+
+    test('refuses a batch reaching into the future', () async {
+      final result = await repo.addAll(<DayLog>[
+        bleeding('2026-06-29'),
+        bleeding('2026-07-01'),
+      ]);
+      expect(result.errorOrNull!.rejection, WriteRejection.dateInFuture);
+      expect(result.errorOrNull!.dates, <CivilDate>[at('2026-07-01')]);
+      expect(await repo.logs(), isEmpty);
+    });
+
+    test('logs a count, never the dates themselves', () async {
+      final logger = RingLogger(clock: FixedClock(today));
+      final logged = CycleRepository(
+        database: db,
+        clock: FixedClock(today),
+        logger: logger,
+      );
+      await logged.addAll(<DayLog>[
+        bleeding('2026-06-01'),
+        bleeding('2026-06-02'),
+      ]);
+      expect(logger.dump(), contains('"count":2'));
+      // A log line carrying a period date is a privacy incident on disk
+      // (docs/PLAN.md 5.5).
+      expect(logger.dump(), isNot(contains('2026-06-01')));
     });
   });
 
