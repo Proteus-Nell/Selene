@@ -141,8 +141,8 @@
             "dsl_features": []
           },
           {
-            "name": "input_hash",
-            "getter_name": "inputHash",
+            "name": "input_signature",
+            "getter_name": "inputSignature",
             "moor_type": "string",
             "nullable": false,
             "customConstraints": null,
@@ -345,7 +345,7 @@
       "sql": [
         {
           "dialect": "sqlite",
-          "sql": "CREATE TABLE IF NOT EXISTS \"model_states\" (\"id\" INTEGER NOT NULL, \"input_hash\" TEXT NOT NULL, \"state_mean\" REAL NOT NULL, \"state_variance\" REAL NOT NULL, \"state_observations\" INTEGER NOT NULL, \"obs_sd\" REAL NOT NULL, \"drift_sd\" REAL NOT NULL, \"personalised\" INTEGER NOT NULL CHECK (\"personalised\" IN (0, 1)), \"median_days\" INTEGER NOT NULL, \"lo50\" INTEGER NOT NULL, \"hi50\" INTEGER NOT NULL, \"lo80\" INTEGER NOT NULL, \"hi80\" INTEGER NOT NULL, \"confidence\" TEXT NOT NULL, PRIMARY KEY (\"id\"));"
+          "sql": "CREATE TABLE IF NOT EXISTS \"model_states\" (\"id\" INTEGER NOT NULL, \"input_signature\" TEXT NOT NULL, \"state_mean\" REAL NOT NULL, \"state_variance\" REAL NOT NULL, \"state_observations\" INTEGER NOT NULL, \"obs_sd\" REAL NOT NULL, \"drift_sd\" REAL NOT NULL, \"personalised\" INTEGER NOT NULL CHECK (\"personalised\" IN (0, 1)), \"median_days\" INTEGER NOT NULL, \"lo50\" INTEGER NOT NULL, \"hi50\" INTEGER NOT NULL, \"lo80\" INTEGER NOT NULL, \"hi80\" INTEGER NOT NULL, \"confidence\" TEXT NOT NULL, PRIMARY KEY (\"id\"));"
         }
       ]
     },

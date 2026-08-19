@@ -151,16 +151,24 @@ abstract class Prediction with _$Prediction {
 
 /// The outcome of asking the model for a prediction.
 ///
-/// A sealed union, so every consumer must handle all four cases and the
-/// analyzer rejects a non-exhaustive switch. Two of the cases are load-bearing
-/// product decisions rather than error paths:
+/// A sealed union, so every consumer must handle every case and the analyzer
+/// rejects a non-exhaustive switch. Most of the cases are load-bearing product
+/// decisions rather than error paths:
 ///
 /// * [InsufficientData] still carries a [Prediction], the population prior, so
-///   a brand-new user sees something honest rather than an empty screen.
+///   a user with one logged period sees something honest rather than an empty
+///   screen.
 /// * [TooIrregular] still carries [CycleStatistics], so a user with PCOS or in
 ///   perimenopause is never told only "we cannot predict this" (risk R17).
+/// * [LostTrack] exists so that a long silence produces an admission rather
+///   than an extrapolation. Predicting from data two months stale gives a
+///   confident wrong answer, which is the failure mode this project is most
+///   concerned with (`docs/PLAN.md` 5.5).
 ///
 /// In other words, "show the user nothing" is not representable in this type.
+/// The one case that carries no prediction at all, [NoData], is the state
+/// before the user has told the app anything, and even that names the reason
+/// rather than leaving an empty screen.
 @freezed
 sealed class PredictionResult with _$PredictionResult {
   /// A usable, personalised prediction.
@@ -177,6 +185,25 @@ sealed class PredictionResult with _$PredictionResult {
     required Prediction populationPrior,
     required int cyclesLogged,
   }) = InsufficientData;
+
+  /// Nothing has been logged, so there is no date to anchor a prediction to.
+  ///
+  /// Deliberately not an [InsufficientData] carrying a window measured from
+  /// today. The model predicts a cycle *length*, and turning that into a date
+  /// needs a logged period start; anchoring on today instead would assert that
+  /// the user's period started today, which is a fact the app would have
+  /// invented. What the UI shows here is an invitation to log a first day,
+  /// alongside typical cycle lengths clearly labelled as typical.
+  const factory PredictionResult.noData() = NoData;
+
+  /// No logs for long enough that the app should admit it has lost track.
+  ///
+  /// [statistics] is required for the same reason as in [TooIrregular]: losing
+  /// track must not lose the user their own history.
+  const factory PredictionResult.lostTrack({
+    required CycleStatistics statistics,
+    required int daysSinceLastLog,
+  }) = LostTrack;
 
   /// Cycle variability is too high for a useful window.
   ///

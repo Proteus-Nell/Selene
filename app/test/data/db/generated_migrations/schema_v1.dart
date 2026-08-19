@@ -120,8 +120,8 @@ class ModelStates extends Table with TableInfo {
     requiredDuringInsert: false,
     $customConstraints: 'NOT NULL',
   );
-  late final GeneratedColumn<String> inputHash = GeneratedColumn<String>(
-    'input_hash',
+  late final GeneratedColumn<String> inputSignature = GeneratedColumn<String>(
+    'input_signature',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -227,7 +227,7 @@ class ModelStates extends Table with TableInfo {
   @override
   List<GeneratedColumn> get $columns => [
     id,
-    inputHash,
+    inputSignature,
     stateMean,
     stateVariance,
     stateObservations,

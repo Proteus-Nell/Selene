@@ -5,7 +5,7 @@ import 'package:period_tracker/data/db/database.dart';
 
 ModelStateRow rowWith(String hash) => ModelStateRow(
   id: ModelStateDao.singletonId,
-  inputHash: hash,
+  inputSignature: hash,
   stateMean: 3.33,
   stateVariance: 0.002,
   stateObservations: 6,
@@ -34,7 +34,7 @@ void main() {
   test('stores and reads back the cached posterior', () async {
     await db.modelStateDao.store(rowWith('abc'));
     final row = await db.modelStateDao.current();
-    expect(row!.inputHash, 'abc');
+    expect(row!.inputSignature, 'abc');
     expect(row.stateMean, 3.33);
     expect(row.personalised, isTrue);
     expect(row.confidence, 'high');
@@ -52,7 +52,7 @@ void main() {
     await db.modelStateDao.store(rowWith('abc'));
     await db.modelStateDao.store(rowWith('def'));
     expect(await db.select(db.modelStates).get(), hasLength(1));
-    expect((await db.modelStateDao.current())!.inputHash, 'def');
+    expect((await db.modelStateDao.current())!.inputSignature, 'def');
   });
 
   test('clears', () async {

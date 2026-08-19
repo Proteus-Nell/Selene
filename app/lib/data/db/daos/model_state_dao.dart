@@ -24,13 +24,13 @@ class ModelStateDao extends DatabaseAccessor<AppDatabase>
     modelStates,
   )..where((t) => t.id.equals(singletonId))).getSingleOrNull();
 
-  /// The cached row if it was computed from [inputHash], otherwise null.
+  /// The cached row if it was computed from [signature], otherwise null.
   ///
-  /// The hash comparison is the entire cache-invalidation mechanism, so it lives
+  /// This comparison is the entire cache-invalidation mechanism, so it lives
   /// here rather than at the call site where it could be forgotten.
-  Future<ModelStateRow?> matching(String inputHash) async {
+  Future<ModelStateRow?> matching(String signature) async {
     final row = await current();
-    if (row == null || row.inputHash != inputHash) return null;
+    if (row == null || row.inputSignature != signature) return null;
     return row;
   }
 

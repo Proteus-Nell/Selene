@@ -69,16 +69,21 @@ class Symptoms extends Table {
 /// losing it costs a few milliseconds and never costs data. It exists because
 /// the filter runs on every calendar repaint otherwise.
 ///
-/// [inputHash] is what makes the cache correct. It covers the whole input to the
-/// computation, so a backdated edit to any past day changes it and the cached
-/// row stops matching. See `PredictionRepository`.
+/// [inputSignature] is what makes the cache correct. It covers the whole input
+/// to the computation, so a backdated edit to any past day changes it and the
+/// cached row stops matching. See `PredictionRepository`.
 @DataClassName('ModelStateRow')
 class ModelStates extends Table {
   /// Always zero. There is one posterior per user and one user per device.
   IntColumn get id => integer()();
 
-  /// Hash of everything the prediction was computed from.
-  TextColumn get inputHash => text()();
+  /// Canonical description of everything the prediction was computed from.
+  ///
+  /// Stored in full rather than digested. A digest would be shorter and would
+  /// introduce a collision, however unlikely, whose symptom is a stale
+  /// prediction after an edit: the exact bug this column exists to prevent.
+  /// The full signature is a few hundred bytes even for a decade of cycles.
+  TextColumn get inputSignature => text()();
 
   /// Posterior mean of the log-length level.
   RealColumn get stateMean => real()();
