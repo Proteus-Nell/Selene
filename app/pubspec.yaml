@@ -33,7 +33,10 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   drift: ^2.34.3
+  file_selector: ^1.1.0
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
   # PINNED BELOW 3.x DELIBERATELY. riverpod 3.x declares `test: ^1.0.0` as a
   # regular dependency, not a dev dependency, which pulls package:test and with
@@ -44,6 +47,8 @@ dependencies:
   # dev_dependencies.
   flutter_riverpod: ^2.6.1
   freezed_annotation: ^3.1.0
+  go_router: ^17.5.0
+  intl: ^0.20.3
   json_annotation: ^4.12.0
   meta: ^1.19.0
   path: ^1.9.1
@@ -73,6 +78,10 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  # Generates AppLocalizations from lib/l10n/*.arb. Assumption A4: English only
+  # for MVP, but localization-ready from day one, because retrofitting l10n
+  # after the UI exists is a multi-day refactor.
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

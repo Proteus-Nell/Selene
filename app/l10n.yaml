@@ -1,0 +1,10 @@
+# Flutter's gen-l10n configuration. See docs/PLAN.md assumption A4.
+#
+# Every user-facing string in lib/ lives in app_en.arb and is reached through
+# AppLocalizations. There is no second place to put one, which is the point:
+# a hardcoded string is a string no translator will ever see.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false
