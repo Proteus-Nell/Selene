@@ -211,7 +211,7 @@
   "settingsReminderLeadDays": "How many days ahead",
   "settingsReminderDaysValue": "{count} days before",
   "@settingsReminderDaysValue": {"placeholders": {"count": {"type": "int"}}},
-  "settingsReminderNotYetScheduled": "Reminders are not scheduled yet in this build.",
+  "settingsReminderSubtitle": "A notification in the morning, the chosen number of days ahead.",
 
   "settingsPrivacySection": "Privacy",
   "settingsPrivacyTitle": "What this app does with your data",

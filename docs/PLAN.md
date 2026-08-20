@@ -1173,21 +1173,21 @@ Working in logs keeps lengths positive and makes variability multiplicative, whi
 
 ## 9. Next 3 actions
 
-Tasks AND-01 through AND-16 are complete (see [ANDROID_TASKS.md](ANDROID_TASKS.md)), along with both Python prerequisites. That is the toolchain, the manifest hardening, CI, the whole domain and data layer, and all five screens. **The app is usable end to end**: a new user can read the disclaimer, log a first date, see a predicted window, browse the calendar, read the insights, and export a backup.
+Tasks AND-01 through AND-19 are complete (see [ANDROID_TASKS.md](ANDROID_TASKS.md)), along with both Python prerequisites. **The MVP is code-complete.** A new user can read the disclaimer, log a first date, see a predicted window, browse the calendar, read the insights, be reminded before the next one, export a backup, wipe everything, and restore from that backup — and the whole of that sequence runs as one test on every push.
 
-594 Dart tests pass. `lib/domain/` is at 100% line coverage and `lib/` overall is at 92% excluding generated code, against the 90% and 70% floors in 5.4. The accessibility matchers in 2.4.4 run over every screen in both themes.
+650 Dart tests pass. `lib/domain/` is at 99.8% line coverage and `lib/` overall is at 92.4% excluding generated code, against the 90% and 70% floors in 5.4. The one uncovered domain line is a `const` constructor, which is evaluated at compile time and so can never be executed. The accessibility matchers in 2.4.4 run over every screen in both themes, at `textScaler` 1.0, 1.5 and 2.0, as a named CI step.
 
-What remains for M3:
+What remains is not code:
 
-1. **Notifications (AND-17).** The only MVP feature with no implementation at all. The settings screen already stores the preference and says plainly that nothing is scheduled yet. Three things there are easy to get wrong and costly: separate channels per type, requesting `POST_NOTIFICATIONS` in context rather than at launch, and lock-screen visibility defaulting to secret. The last is the one place this project's otherwise airtight privacy story leaks by default (risk R16).
+1. **Sign a release build (AND-19, three boxes).** The build reads a gitignored `android/key.properties`, `tools/scripts/new_keystore.sh` creates the key outside the repository, and `tools/scripts/release.sh` refuses to hand over an APK that is debug-signed or declares a network permission. None of it has been run: no keystore exists, and this environment has `dl.google.com` blocked, so it cannot build an APK at all. See [RELEASE.md](RELEASE.md).
 
-2. **Lift the accessibility gate into CI (AND-18).** `a11y_test.dart` already runs the matchers over all five screens; AND-18 is mostly making the failure block a merge, and adding the text-scale goldens. It has already paid for itself twice: it caught a selected-chip contrast of 1.32:1 and an unlabelled tappable node, neither of which looked wrong on screen.
+2. **Run the whole thing on a real device.** Nothing in this repo has ever run on Android, so the entire UI is proven by widget tests only. `integration_test/e2e_smoke_test.dart` is the same flow as the headless one and is what to run first. Two things specifically need a device rather than a test: the Storage Access Framework write path behind Export, and whether scheduled notifications survive an OEM battery optimiser (risk R12, which the app already hedges by detecting a missed reminder in-app).
 
-3. **End-to-end smoke and release signing (AND-19).** Onboard, log three cycles, see a window, export, wipe, import, assert the state came back. The pieces all exist and are unit-tested; what is missing is the one test that runs them in sequence on a device.
-
-**Verify on a real device before release.** Nothing in this repo has been run on Android. This environment cannot build an APK, so the whole UI is proven by widget tests only. Two things specifically need a device: the Storage Access Framework write path behind Export, and that `assert_no_network.sh` still passes now that `file_selector`, `drift` and `path_provider` are dependencies.
+3. **Close the two CI gaps below**, or decide out loud that they are not worth closing.
 
 **Two CI gaps worth closing when convenient.**
 
 - ADR-0002 calls for a job that regenerates the artifacts from `research/` and fails if the committed files differ. `flutter test` already fails when the Dart port and the committed golden vectors disagree, and CI fails when the generated priors constants drift from the artifact, so the remaining uncovered case is narrow: the committed artifacts going stale against the Python source that produced them.
 - 5.4 specifies enforcing the coverage floors in `flutter.yml` via lcov filtering. `flutter test --coverage` runs, but nothing fails the build when coverage drops.
+
+**What the end-to-end test found that the unit tests did not.** The notification permission prompt was shown twice, stacked — one logged day produces more than one prediction change, and two overlapping syncs each read the "already asked" flag before either had written it. Android gives an app one usable `POST_NOTIFICATIONS` request, so spending two of them on the same question is the difference between a user who gets reminders and one who does not. Every piece involved was already unit-tested and correct in isolation. That is precisely the class of failure 5.4 puts an end-to-end test in the plan for, and it appeared the first time that test ran.

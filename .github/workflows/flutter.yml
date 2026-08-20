@@ -80,6 +80,14 @@ jobs:
           test/features/text_scale_goldens_test.dart
           test/features/calendar_test.dart
 
+      # Same reasoning as the gate above: this is the one test that runs the
+      # whole app in sequence, so when it breaks it should say so by name
+      # rather than as one red line inside the full suite. It is run again by
+      # the step below; the duplication costs about five seconds.
+      - name: End-to-end smoke flow
+        working-directory: app
+        run: flutter test test/e2e_smoke_test.dart
+
       - name: Test
         working-directory: app
         run: flutter test --coverage

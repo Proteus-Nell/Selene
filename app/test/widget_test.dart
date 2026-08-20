@@ -13,6 +13,7 @@ import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/main.dart';
+import 'package:period_tracker/notifications/scheduler.dart';
 
 void main() {
   late AppDatabase db;
@@ -29,6 +30,7 @@ void main() {
         database: db,
         clock: clock,
         logger: RingLogger(clock: clock),
+        notificationGateway: const NoopNotificationGateway(),
       ),
     );
     await tester.pumpAndSettle();

@@ -1065,11 +1065,11 @@ abstract class AppLocalizations {
   /// **'{count} days before'**
   String settingsReminderDaysValue(int count);
 
-  /// No description provided for @settingsReminderNotYetScheduled.
+  /// No description provided for @settingsReminderSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Reminders are not scheduled yet in this build.'**
-  String get settingsReminderNotYetScheduled;
+  /// **'A notification in the morning, the chosen number of days ahead.'**
+  String get settingsReminderSubtitle;
 
   /// No description provided for @settingsPrivacySection.
   ///

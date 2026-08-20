@@ -85,6 +85,7 @@ Future<Widget> buildAppScope({
   required Clock clock,
   required RingLogger logger,
   File? quarantined,
+  NotificationGateway? notificationGateway,
 }) async {
   // Read once here rather than watching: it changes exactly once per install,
   // and the screen that changes it navigates explicitly.
@@ -100,13 +101,20 @@ Future<Widget> buildAppScope({
       loggerProvider.overrideWithValue(logger),
       onboardingCompleteProvider.overrideWithValue(onboarded),
       quarantinedDatabaseProvider.overrideWithValue(quarantined),
-      // The gateway defaults to a no-op so no widget test ever schedules a
-      // real notification. This is the one place that must replace it, and
+      // The provider's own default is a no-op, so no widget test can schedule
+      // a real notification by forgetting an override. This is the one place
+      // that replaces it with the plugin-backed gateway that ships, and
       // `notifications_test.dart` asserts that it does: a silently no-op
       // notification system looks exactly like a working one until someone
       // needs a reminder.
+      //
+      // A test driving this same bootstrap passes the no-op back in, because
+      // the plugin has no platform behind it off-device — and a test that had
+      // to avoid the real entry point would stop testing the thing that ships.
       notificationGatewayProvider.overrideWith(
-        (ref) => buildNotificationGateway(clock: clock, database: database),
+        (ref) =>
+            notificationGateway ??
+            buildNotificationGateway(clock: clock, database: database),
       ),
     ],
     child: const PeriodTrackerApp(),

@@ -70,8 +70,45 @@ class NotificationSync extends ConsumerStatefulWidget {
 class _NotificationSyncState extends ConsumerState<NotificationSync> {
   bool _prepared = false;
   bool _missedReminder = false;
+  bool _syncing = false;
+  PredictionResult? _queued;
 
+  /// Rebuilds the schedule for [result], one run at a time.
+  ///
+  /// Predictions change in bursts: a single logged day invalidates the cache
+  /// and the recomputed result lands separately, so two runs would otherwise
+  /// overlap. Overlapping runs cancel and re-add the same four ids against each
+  /// other, and — because the "already asked" flag is only written once the
+  /// permission prompt has been *answered* — the second run reads it as still
+  /// unasked and pushes a second dialog on top of the first. The user sees the
+  /// same question twice, and the one underneath is unanswerable until the top
+  /// one goes.
+  ///
+  /// Runs are therefore serialised, and intermediate results are dropped rather
+  /// than queued: scheduling for a prediction that has already been superseded
+  /// is work whose only effect is to be undone by the next run.
   Future<void> _sync(PredictionResult result) async {
+    if (_syncing) {
+      _queued = result;
+      return;
+    }
+    _syncing = true;
+    try {
+      var current = result;
+      while (true) {
+        await _runSync(current);
+        final next = _queued;
+        if (next == null) break;
+        _queued = null;
+        current = next;
+      }
+    } finally {
+      _syncing = false;
+      _queued = null;
+    }
+  }
+
+  Future<void> _runSync(PredictionResult result) async {
     final scheduler = ref.read(notificationSchedulerProvider);
     if (!mounted) return;
     final copy = buildNotificationCopy(context, result);

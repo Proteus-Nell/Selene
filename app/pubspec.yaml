@@ -63,6 +63,7 @@ dev_dependencies:
   # under lib/ imports it, which keeps the prediction core dependency-free.
   crypto: ^3.0.6
   drift_dev: ^2.34.5
+  file_selector_platform_interface: ^2.7.0
   flutter_test:
     sdk: flutter
 
@@ -72,6 +73,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   freezed: ^4.0.0-dev.3
+  integration_test:
+    sdk: flutter
   json_serializable: ^6.14.1
   very_good_analysis: ^10.3.0
   xml: ^7.0.1

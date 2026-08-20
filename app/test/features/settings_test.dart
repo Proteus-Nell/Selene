@@ -36,8 +36,17 @@ void main() {
   /// The order on screen is deliberate, so the tests scroll rather than the
   /// screen being rearranged to suit them: export, import and delete are what
   /// someone opens this screen to do.
-  Future<void> scrollSettings(WidgetTester tester) async {
-    await tester.drag(find.byType(ListView), const Offset(0, -400));
+  /// Scrolls the settings list until [target] is on screen.
+  ///
+  /// Scrolls to the widget rather than by a fixed distance: a fixed drag breaks
+  /// the moment a line of copy above the target wraps onto a second line, which
+  /// is a change to prose failing a test about behaviour.
+  Future<void> scrollSettingsTo(WidgetTester tester, Finder target) async {
+    await tester.scrollUntilVisible(
+      target,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
   }
 
@@ -157,7 +166,7 @@ void main() {
   group('the privacy statement', () {
     testWidgets('is in the app, not behind a link', (tester) async {
       await pumpSettings(tester);
-      await scrollSettings(tester);
+      await scrollSettingsTo(tester, find.byType(PrivacySection));
       expect(find.byType(PrivacySection), findsOneWidget);
 
       await tester.tap(find.text(l10nOf(tester).settingsPrivacyTitle));
@@ -194,7 +203,10 @@ void main() {
           fields: <String, LogField>{'n_cycles': const LogField.count(7)},
         );
       await pumpSettings(tester);
-      await scrollSettings(tester);
+      await scrollSettingsTo(
+        tester,
+        find.text(l10nOf(tester).settingsLogViewer),
+      );
 
       await tester.tap(find.text(l10nOf(tester).settingsLogViewer));
       await tester.pumpAndSettle();
@@ -234,7 +246,10 @@ void main() {
     testWidgets('can be cleared', (tester) async {
       logger.info(LogEvent.appStarted);
       await pumpSettings(tester);
-      await scrollSettings(tester);
+      await scrollSettingsTo(
+        tester,
+        find.text(l10nOf(tester).settingsLogViewer),
+      );
       await tester.tap(find.text(l10nOf(tester).settingsLogViewer));
       await tester.pumpAndSettle();
 
@@ -249,14 +264,13 @@ void main() {
   });
 
   group('reminders', () {
-    testWidgets('store the preference and say it is not yet scheduled', (
+    testWidgets('store the preference and describe what will arrive', (
       tester,
     ) async {
       await pumpSettings(tester);
       final l10n = l10nOf(tester);
-      // Honest about the state of the build rather than implying a
-      // notification will arrive: scheduling lands in AND-17.
-      expect(find.text(l10n.settingsReminderNotYetScheduled), findsOneWidget);
+      // The switch alone does not say when anything would arrive.
+      expect(find.text(l10n.settingsReminderSubtitle), findsOneWidget);
 
       await tester.tap(
         find.widgetWithText(SwitchListTile, l10n.settingsReminderEnabled),

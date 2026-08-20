@@ -895,7 +895,7 @@ Fix whatever fails rather than lowering the bar.
 **Scope.** `integration_test/e2e_smoke_test.dart`, keystore setup, `key.properties` outside git, release build, APK verification.
 
 **Done when.**
-- [ ] E2E: onboard, log 3 cycles, see a prediction window, export, wipe, import, state restored
+- [x] E2E: onboard, log 3 cycles, see a prediction window, export, wipe, import, state restored
 - [ ] `flutter build apk --release --split-per-abi` produces a signed APK
 - [ ] `assert_no_network.sh` passes on the release APK
 - [ ] Keystore is backed up outside the repo, and `key.properties` is gitignored
@@ -921,6 +921,38 @@ Task AND-19: end-to-end test and release signing. This closes out the MVP.
 Done when a signed arm64-v8a APK installs on a real device and the smoke test
 passes.
 ```
+
+**What is done, and what needs a machine with the SDK.** The end-to-end flow is
+written once, in `app/test/e2e/smoke_flow.dart`, and run from two entry points:
+`test/e2e_smoke_test.dart` headless in CI on every push, and
+`integration_test/e2e_smoke_test.dart` on a device. Release signing is wired:
+`android/app/build.gradle.kts` reads the gitignored `android/key.properties`,
+falls back to the debug key so CI and a fresh clone still build, and turns that
+fallback into a hard failure under `-Prelease-signing-required=true`.
+`tools/scripts/new_keystore.sh` creates the key outside the repository and
+refuses to do it inside one; `tools/scripts/release.sh` builds and then rejects
+any APK that is debug-signed or declares a network permission. The procedure is
+`docs/RELEASE.md`.
+
+The last three boxes stay unticked deliberately. No keystore has been generated
+and none is committed, and the remaining checks need an Android SDK and a phone:
+this repository's build environment has `dl.google.com` blocked, so no APK can
+be produced here at all. CI builds the split release APKs and runs
+`assert_no_network.sh` over every one of them, with the debug APK as a negative
+control, but CI has no keystore either, so nothing has yet been signed with a
+real release key.
+
+**Two bugs the flow caught, neither of which a unit test would have.** The
+notification permission prompt was shown *twice*, stacked: one logged day
+produces more than one prediction change, and two overlapping syncs each read
+the "already asked" flag before either had written it. Android gives an app one
+usable request, so that is a real cost, not a cosmetic one. The syncs are now
+serialised and coalesced, and `test/notifications/notification_sync_test.dart`
+fails against the old code. The second was in the test itself and worth
+recording: with the second dialog covering the sheet underneath, every
+subsequent tap landed on its barrier instead of the control it named — and a tap
+on a barrier still dismisses a sheet, so the flow went green while exercising
+nothing. `warnIfMissed` is what said so.
 
 ---
 

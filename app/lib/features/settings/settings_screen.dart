@@ -320,9 +320,10 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
         SwitchListTile(
           value: enabled,
           title: Text(l10n.settingsReminderEnabled),
-          // Honest about the state of the build: the preference is stored, and
-          // AND-17 is what turns it into a scheduled notification.
-          subtitle: Text(l10n.settingsReminderNotYetScheduled),
+          // States what actually arrives and when. The lock-screen half of the
+          // answer belongs to the detail switch below, which is where a user
+          // looking for it will be (risk R16).
+          subtitle: Text(l10n.settingsReminderSubtitle),
           onChanged: (value) async {
             setState(() => _enabled = value);
             await settings.writeBool(

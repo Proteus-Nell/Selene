@@ -599,8 +599,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get settingsReminderNotYetScheduled =>
-      'Reminders are not scheduled yet in this build.';
+  String get settingsReminderSubtitle =>
+      'A notification in the morning, the chosen number of days ahead.';
 
   @override
   String get settingsPrivacySection => 'Privacy';

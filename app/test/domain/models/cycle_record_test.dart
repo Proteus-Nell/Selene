@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/domain/models/converters.dart';
 import 'package:period_tracker/domain/models/cycle_record.dart';
 
 void main() {
@@ -192,6 +193,18 @@ void main() {
           reason: '$validity',
         );
       }
+    });
+
+    test('the nullable date converter maps null both ways', () {
+      // Exercised directly rather than only through generated code: an absent
+      // bleedingEndDate is a normal state (a cycle still in progress), and a
+      // converter that turned it into an epoch-zero date would silently invent
+      // a bleeding day in 1970 in the user's export.
+      const converter = NullableCivilDateConverter();
+      expect(converter.fromJson(null), isNull);
+      expect(converter.toJson(null), isNull);
+      expect(converter.fromJson('2026-08-01'), CivilDate(2026, 8, 1));
+      expect(converter.toJson(CivilDate(2026, 8, 1)), '2026-08-01');
     });
   });
 }
