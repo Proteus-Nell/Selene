@@ -1,0 +1,341 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/data/repositories/providers.dart';
+import 'package:period_tracker/domain/models/day_log.dart';
+import 'package:period_tracker/domain/models/prediction.dart';
+import 'package:period_tracker/features/calendar/day_cell.dart';
+import 'package:period_tracker/features/common/formatting.dart';
+import 'package:period_tracker/features/log/day_editor.dart';
+import 'package:period_tracker/l10n/app_localizations.dart';
+
+/// The month grid: what was logged, and when the next period is expected.
+///
+/// The app's primary surface, and the one most likely to be unusable. Two
+/// requirements shape every decision here, both from `docs/PLAN.md` 2.4.4 and
+/// 6.2:
+///
+/// **A grid of coloured squares announces nothing.** Every cell carries a
+/// hand-written [Semantics] label with the date *and* its state, and every
+/// state is also distinguishable without colour: a logged period day is filled
+/// with a solid marker, a predicted day is outlined with a hollow marker, today
+/// carries a ring. Colour is the fourth cue, not the only one.
+///
+/// **The predicted window is a range.** There is deliberately no code path
+/// here that highlights the median day: marking one day would imply a precision
+/// the model does not have, which is the everyday form of overclaiming.
+class CalendarScreen extends ConsumerStatefulWidget {
+  /// Creates the calendar.
+  const CalendarScreen({super.key});
+
+  @override
+  ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
+}
+
+class _CalendarScreenState extends ConsumerState<CalendarScreen> {
+  int _monthOffset = 0;
+
+  Future<void> _edit(CivilDate date, DayLog? existing) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.viewInsetsOf(sheetContext).bottom + 16,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  date.full(sheetContext),
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 16),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final logs =
+                        ref.watch(dayLogsProvider).valueOrNull ??
+                        const <DayLog>[];
+                    return DayEditor(
+                      date: date,
+                      existing: _entryFor(logs, date),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    child: Text(AppLocalizations.of(sheetContext).commonClose),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final today = ref.watch(clockProvider).today();
+    final month = _monthStart(today).addMonths(_monthOffset);
+    final logs = ref.watch(dayLogsProvider).valueOrNull ?? const <DayLog>[];
+    final window = _predictedWindow(ref.watch(predictionProvider).valueOrNull);
+
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.calendarTitle)),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                IconButton(
+                  onPressed: () => setState(() => _monthOffset -= 1),
+                  icon: const Icon(Icons.chevron_left),
+                  tooltip: l10n.calendarPreviousMonth,
+                ),
+                Expanded(
+                  child: Text(
+                    formatMonth(context, month),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => setState(() => _monthOffset += 1),
+                  icon: const Icon(Icons.chevron_right),
+                  tooltip: l10n.calendarNextMonth,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _MonthGrid(
+              month: month,
+              today: today,
+              logs: logs,
+              predicted: window,
+              onEdit: _edit,
+            ),
+            const SizedBox(height: 16),
+            const CalendarLegend(),
+            const SizedBox(height: 8),
+            Text(l10n.calendarLongPressHint, style: theme.textTheme.bodySmall),
+            if (window == null) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                l10n.calendarNoPredictedWindow,
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  static CivilDate _monthStart(CivilDate date) =>
+      CivilDate(date.year, date.month, 1);
+
+  static DayLog? _entryFor(List<DayLog> logs, CivilDate date) {
+    for (final log in logs) {
+      if (log.date == date) return log;
+    }
+    return null;
+  }
+
+  /// The 80% window, or null when no window may be shown.
+  ///
+  /// [TooIrregular], [LostTrack], [NoData] and [DataInconsistent] all return
+  /// null on purpose: each is a state where drawing a window would be the app
+  /// asserting something it has just said it cannot support.
+  static CivilDateRange? _predictedWindow(PredictionResult? result) =>
+      switch (result) {
+        Predicted(:final prediction) => prediction.window80,
+        InsufficientData(:final populationPrior) => populationPrior.window80,
+        TooIrregular() ||
+        LostTrack() ||
+        NoData() ||
+        DataInconsistent() ||
+        null => null,
+      };
+}
+
+class _MonthGrid extends StatelessWidget {
+  const _MonthGrid({
+    required this.month,
+    required this.today,
+    required this.logs,
+    required this.predicted,
+    required this.onEdit,
+  });
+
+  final CivilDate month;
+  final CivilDate today;
+  final List<DayLog> logs;
+  final CivilDateRange? predicted;
+  final void Function(CivilDate date, DayLog? existing) onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // The grid grows with the text rather than clipping it. Most Flutter
+    // calendar layouts break at textScaler 2.0 because the cell is a fixed
+    // square; this one is measured from the text the device is actually asked
+    // to render (2.4.4).
+    final cellHeight = MediaQuery.textScalerOf(
+      context,
+    ).scale(22).clamp(48.0, 104.0);
+
+    final daysInMonth = CivilDate.daysInMonth(month.year, month.month);
+    // ISO weekday: 1 is Monday. Leading blanks put the 1st under its weekday.
+    final leading = month.weekday - 1;
+    final cells = <Widget>[];
+    for (var i = 0; i < leading; i++) {
+      cells.add(const Expanded(child: SizedBox.shrink()));
+    }
+    for (var day = 1; day <= daysInMonth; day++) {
+      final date = CivilDate(month.year, month.month, day);
+      final entry = _entryFor(logs, date);
+      cells.add(
+        Expanded(
+          child: DayCell(
+            date: date,
+            height: cellHeight,
+            isToday: date == today,
+            periodDayNumber: _periodDayNumber(date),
+            isPredicted: predicted?.contains(date) ?? false,
+            hasSymptoms: entry != null && entry.symptoms.isNotEmpty,
+            onLongPress: () => onEdit(date, entry),
+          ),
+        ),
+      );
+    }
+    while (cells.length % 7 != 0) {
+      cells.add(const Expanded(child: SizedBox.shrink()));
+    }
+
+    final rows = <Widget>[];
+    for (var i = 0; i < cells.length; i += 7) {
+      rows.add(Row(children: cells.sublist(i, i + 7)));
+    }
+
+    return Column(
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            for (var weekday = 1; weekday <= 7; weekday++)
+              Expanded(
+                child: ExcludeSemantics(
+                  child: Center(
+                    child: Text(
+                      _weekdayInitial(context, weekday),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ...rows,
+      ],
+    );
+  }
+
+  /// Which day of a bleeding run [date] is, or null if it is not one.
+  int? _periodDayNumber(CivilDate date) {
+    final entry = _entryFor(logs, date);
+    if (entry == null || !entry.isBleedingDay) return null;
+    var number = 1;
+    var cursor = date.addDays(-1);
+    while (_entryFor(logs, cursor)?.isBleedingDay ?? false) {
+      number++;
+      cursor = cursor.addDays(-1);
+    }
+    return number;
+  }
+
+  DayLog? _entryFor(List<DayLog> entries, CivilDate date) {
+    for (final log in entries) {
+      if (log.date == date) return log;
+    }
+    return null;
+  }
+
+  static String _weekdayInitial(BuildContext context, int weekday) {
+    // 2026-06-01 was a Monday, so this walks Monday to Sunday whatever the
+    // locale's first day happens to be.
+    final date = CivilDate(2026, 6, weekday);
+    return date.weekdayDayAndMonth(context).characters.first;
+  }
+}
+
+/// Explains the shapes, so the encoding is legible without colour vision.
+class CalendarLegend extends StatelessWidget {
+  /// Creates the legend.
+  const CalendarLegend({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Wrap(
+      spacing: 16,
+      runSpacing: 8,
+      children: <Widget>[
+        _LegendEntry(
+          marker: const PeriodMarker(),
+          label: l10n.calendarLegendPeriod,
+        ),
+        _LegendEntry(
+          marker: const PredictedMarker(),
+          label: l10n.calendarLegendPredicted,
+        ),
+        _LegendEntry(
+          marker: Container(
+            width: 14,
+            height: 14,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: theme.colorScheme.onSurface, width: 2),
+            ),
+          ),
+          label: l10n.calendarLegendToday,
+        ),
+      ],
+    );
+  }
+}
+
+class _LegendEntry extends StatelessWidget {
+  const _LegendEntry({required this.marker, required this.label});
+
+  final Widget marker;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        ExcludeSemantics(child: marker),
+        const SizedBox(width: 6),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
+  }
+}

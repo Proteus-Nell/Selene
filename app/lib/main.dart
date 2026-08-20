@@ -1,122 +1,145 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:period_tracker/app.dart';
+import 'package:period_tracker/core/clock.dart';
+import 'package:period_tracker/core/logging.dart';
+import 'package:period_tracker/data/db/connection.dart';
+import 'package:period_tracker/data/db/daos/settings_dao.dart';
+import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/data/repositories/cycle_repository.dart';
+import 'package:period_tracker/data/repositories/providers.dart';
+import 'package:period_tracker/domain/models/day_log.dart';
+import 'package:period_tracker/notifications/notification_gateway.dart';
+import 'package:period_tracker/notifications/scheduler.dart';
+import 'package:period_tracker/routing/router.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+/// The file a damaged database was moved aside to, if that happened on this
+/// launch.
+///
+/// Null on a normal start. When it is set, the user's history is in that file
+/// and the app is running on an empty database, so the UI must say so and offer
+/// an import rather than looking like it deleted everything
+/// (`docs/PLAN.md` 5.5).
+final Provider<File?> quarantinedDatabaseProvider = Provider<File?>(
+  (ref) => null,
+);
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+/// Starts the app.
+///
+/// The three outcomes of opening the database are all handled here, because two
+/// of them are not errors to log and move past: one means the user's data needs
+/// recovering, and the other means this build must not write to the file at
+/// all.
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
+  const clock = SystemClock();
+  final logger = RingLogger(clock: clock)..info(LogEvent.appStarted);
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({required this.title, super.key});
+  final outcome = await openAppDatabase(
+    directory: await defaultDatabaseDirectory(),
+    clock: clock,
+    logger: logger,
+  );
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+  switch (outcome) {
+    case DatabaseRefusedNewerSchema(
+      :final storedVersion,
+      :final supportedVersion,
+    ):
+      runApp(
+        UnreadableDataApp(
+          storedVersion: storedVersion,
+          supportedVersion: supportedVersion,
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
+      );
+    case DatabaseOpened(:final database):
+      runApp(
+        await buildAppScope(database: database, clock: clock, logger: logger),
+      );
+    case DatabaseRecoveredFromCorruption(
+      :final database,
+      :final quarantinedFile,
+    ):
+      runApp(
+        await buildAppScope(
+          database: database,
+          clock: clock,
+          logger: logger,
+          quarantined: quarantinedFile,
+        ),
+      );
   }
+}
+
+/// Wraps the app in a [ProviderScope] carrying the opened database.
+///
+/// Exposed so a widget test can build the same tree over an in-memory database
+/// instead of duplicating the override list and drifting from it.
+Future<Widget> buildAppScope({
+  required AppDatabase database,
+  required Clock clock,
+  required RingLogger logger,
+  File? quarantined,
+  NotificationGateway? notificationGateway,
+}) async {
+  // Read once here rather than watching: it changes exactly once per install,
+  // and the screen that changes it navigates explicitly.
+  final onboarded = await database.settingsDao.readBool(
+    SettingKey.onboardingComplete,
+    orElse: false,
+  );
+
+  return ProviderScope(
+    overrides: <Override>[
+      appDatabaseProvider.overrideWithValue(database),
+      clockProvider.overrideWithValue(clock),
+      loggerProvider.overrideWithValue(logger),
+      onboardingCompleteProvider.overrideWithValue(onboarded),
+      quarantinedDatabaseProvider.overrideWithValue(quarantined),
+      // The provider's own default is a no-op, so no widget test can schedule
+      // a real notification by forgetting an override. This is the one place
+      // that replaces it with the plugin-backed gateway that ships, and
+      // `notifications_test.dart` asserts that it does: a silently no-op
+      // notification system looks exactly like a working one until someone
+      // needs a reminder.
+      //
+      // A test driving this same bootstrap passes the no-op back in, because
+      // the plugin has no platform behind it off-device — and a test that had
+      // to avoid the real entry point would stop testing the thing that ships.
+      notificationGatewayProvider.overrideWith(
+        (ref) =>
+            notificationGateway ??
+            buildNotificationGateway(clock: clock, database: database),
+      ),
+    ],
+    child: const PeriodTrackerApp(),
+  );
+}
+
+/// Builds the plugin-backed gateway used by the shipped app.
+///
+/// The one-tap action is wired here: it writes the log through the same
+/// repository the UI uses, so the validation and the invalidation are the same
+/// whether the entry came from a lock-screen button or from a tap in the app.
+NotificationGateway buildNotificationGateway({
+  required Clock clock,
+  required AppDatabase database,
+}) {
+  return LocalNotificationGateway(
+    plugin: FlutterLocalNotificationsPlugin(),
+    clock: clock,
+    onAction: (actionId) {
+      if (actionId != logPeriodActionId) return;
+      unawaited(
+        CycleRepository(database: database, clock: clock).upsert(
+          DayLog(date: clock.today(), flow: FlowIntensity.medium),
+        ),
+      );
+    },
+  );
 }

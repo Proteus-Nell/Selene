@@ -22,6 +22,12 @@ analyzer:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
     - "**/*.mocks.dart"
+    # Drift's schema snapshots, written by `tools/scripts/new_migration.sh`.
+    # Same reasoning as the generated files above: they are reproduced from
+    # drift_schemas/ by a tool and are never hand-edited. They carry an
+    # `ignore_for_file: type=lint` header of their own, which does not cover the
+    # strict-raw-types warnings this project turns on.
+    - "test/data/db/generated_migrations/**"
 
   language:
     strict-casts: true

@@ -119,10 +119,12 @@ void main() {
   });
 
   group('PredictionResult is exhaustive', () {
-    test('a switch over all four cases needs no default clause', () {
-      // This compiles only because PredictionResult is sealed. Adding a fifth
-      // case turns every switch like this into a compile error, which is what
-      // stops a new state from being silently unhandled in the UI.
+    test('a switch over every case needs no default clause', () {
+      // This compiles only because PredictionResult is sealed. Adding a case
+      // turns every switch like this into a compile error, which is what stops
+      // a new state from being silently unhandled in the UI. That has already
+      // paid for itself once: NoData and LostTrack were added at AND-09 and
+      // this switch refused to compile until both were handled.
       String describe(PredictionResult r) => switch (r) {
         Predicted(:final prediction) =>
           'predicted ${prediction.confidence.name}',
@@ -130,6 +132,8 @@ void main() {
         TooIrregular(:final statistics) =>
           'irregular ${statistics.completedCycles}',
         DataInconsistent(:final reason) => 'inconsistent ${reason.name}',
+        NoData() => 'nothing logged',
+        LostTrack(:final daysSinceLastLog) => 'lost track $daysSinceLastLog',
       };
 
       expect(
@@ -165,6 +169,16 @@ void main() {
           ),
         ),
         'inconsistent duplicateDate',
+      );
+      expect(describe(const PredictionResult.noData()), 'nothing logged');
+      expect(
+        describe(
+          const PredictionResult.lostTrack(
+            statistics: CycleStatistics.empty,
+            daysSinceLastLog: 74,
+          ),
+        ),
+        'lost track 74',
       );
     });
   });

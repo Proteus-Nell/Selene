@@ -1,8 +1,33 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// Release signing. The keystore itself never enters the repository: this reads
+// android/key.properties, which is gitignored, and which points at a .jks file
+// kept outside the working tree. Losing that file means every installed copy of
+// the app is stranded — Android will not accept an upgrade signed by a
+// different key — so docs/RELEASE.md treats backing it up as part of the
+// release, not as housekeeping.
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        FileInputStream(keystorePropertiesFile).use { load(it) }
+    }
+}
+val hasReleaseKeystore = keystorePropertiesFile.exists()
+
+// Opt-in strictness for a build that is actually going to be distributed.
+// Without it the release build falls back to the debug key so that CI, and
+// `flutter run --release` on a fresh clone, still work. With it, a missing
+// keystore fails the build rather than quietly producing an APK that no device
+// will ever accept an upgrade to.
+val releaseSigningRequired =
+    (project.findProperty("release-signing-required") as String?)?.toBoolean() ?: false
 
 android {
     namespace = "io.github.proteusnell.period_tracker"
@@ -17,7 +42,6 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "io.github.proteusnell.period_tracker"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -32,11 +56,35 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                if (releaseSigningRequired) {
+                    throw GradleException(
+                        "Release signing was required but android/key.properties is missing. " +
+                            "See docs/RELEASE.md, or drop -Prelease-signing-required=true to " +
+                            "build an install-only APK signed with the debug key."
+                    )
+                }
+                project.logger.warn(
+                    "WARNING: android/key.properties not found; signing the release build with " +
+                        "the DEBUG key. This APK must not be distributed - see docs/RELEASE.md."
+                )
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
     }
 }

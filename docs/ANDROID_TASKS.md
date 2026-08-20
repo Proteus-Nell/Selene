@@ -319,11 +319,13 @@ Do not: implement prediction. That is AND-07.
 **Blocked until** `artifacts/golden/predictor_cases_v1.json` exists.
 
 **Done when.**
-- [ ] Every golden vector matches the Python reference to 1e-9
-- [ ] Golden cases include cold start, 1 cycle, an outlier cycle, a 90-day gap, and edited history
-- [ ] Constant-28-day synthetic user collapses the posterior to 28 with a narrowing interval
-- [ ] Alternating 26/34 user makes the interval **widen**, not narrow
-- [ ] App refuses to load a priors file with an unknown `schema_version`
+- [x] Every golden vector matches the Python reference to 1e-9 — `app/test/golden_vectors_test.dart`. All 237 compared floats are in fact bit-identical, so the 1e-9 tolerance is headroom rather than something the port is spending.
+- [x] Golden cases include cold start, 1 cycle, an outlier cycle, a 90-day gap, and edited history — asserted by name in the same file, so dropping a case fails the suite rather than quietly reducing coverage
+- [x] Constant-28-day synthetic user collapses the posterior to 28 with a narrowing interval
+- [x] Alternating 26/34 user makes the interval **widen**, not narrow — the widening happens the moment the refit becomes eligible at 5 cycles, taking the 80% window from 9 days to 14
+- [x] App refuses to load a priors file with an unknown `schema_version`
+
+**Landed as.** `domain/predict/{bayes_filter,personalize,intervals,explain,priors}.dart`, plus `priors_bundled.dart`, which is generated from `artifacts/priors/priors_v1.json` by `tools/scripts/gen_priors_dart.py` and carries the artifact's SHA-256. That generated file is where PLAN.md 3.5's `priors_checksum.dart` ended up: one file holding both the constants and the checksum, rather than a constants file and a checksum file that can disagree. CI runs the generator in `--check` mode, so exporting new priors without regenerating fails the build.
 
 **Prompt to paste.**
 
@@ -378,10 +380,19 @@ is wrong.
 **Scope.** Drift tables (`PeriodDays`, `DayLogs`, `Symptoms`, `ModelState`, `Settings`), DAOs, `schemaVersion`, migration steps, committed schema snapshots, `tools/scripts/new_migration.sh`.
 
 **Done when.**
-- [ ] Every schema version upgrades cleanly to current, tested against committed snapshots
-- [ ] In-memory Drift used for tests, no emulator needed
-- [ ] Corrupt-database detection on open, with a side-copy rather than a silent empty start
-- [ ] Deletion is a real `DELETE` plus `VACUUM`, not a soft-delete flag
+- [x] Every schema version upgrades cleanly to current, tested against committed snapshots — `app/test/data/db/migration_test.dart` replays every snapshot in `app/drift_schemas/`, plus `onCreate` and a guard that fails if `schemaVersion` outruns the committed snapshots. Verified not vacuous: running `new_migration.sh` to start a v2 made the v1 case fail with "no migration path", as it should, before being reverted.
+- [x] In-memory Drift used for tests, no emulator needed
+- [x] Corrupt-database detection on open, with a side-copy rather than a silent empty start — `openAppDatabase` runs `PRAGMA quick_check` before handing the database out, and returns a sealed union so the caller cannot ignore the case where the user's history is in a quarantined file. Both corruption routes are tested: a file SQLite refuses outright, and a damaged page that opens fine and only `quick_check` catches.
+- [x] Deletion is a real `DELETE` plus `VACUUM`, not a soft-delete flag
+
+**Landed as.** `data/db/{tables,database,connection}.dart` plus three DAOs, `drift_schemas/drift_schema_v1.json`, and `tools/scripts/new_migration.sh`.
+
+Two deviations, both deliberate:
+
+- **No `PeriodDays` table.** The domain model settled at AND-05 makes a `DayLog` carry its own flow, so a separate `PeriodDays` would be a second source of truth for the same fact — and a table of that name would in practice hold non-period days too, since a user can log symptoms without bleeding. The tables are `DayLogs`, `Symptoms`, `ModelStates`, `Settings`.
+- **The executor runs on the calling isolate**, not a background one. drift wraps anything thrown across an isolate in a `DriftRemoteException` from its **experimental** `remote.dart`; recovery code that has to unwrap an experimental type is recovery code that will one day stop matching and quarantine nothing. This app's queries are a few thousand single-column rows. The comment in `connection.dart` says what to change if that ever stops being true.
+
+Enums are stored by **name**, not ordinal: `intEnum` would mean reordering `FlowIntensity` in a later release silently reinterprets every stored row, turning heavy into light with no error anywhere.
 
 **Prompt to paste.**
 
@@ -420,9 +431,20 @@ Do not: write repositories (AND-09) or export/import (AND-10).
 **Scope.** `CycleRepository`, `PredictionRepository` keyed by a hash of the input cycle list so edits invalidate correctly.
 
 **Done when.**
-- [ ] Editing any past entry invalidates the cached prediction
-- [ ] Overlapping or duplicate entries are rejected at the repository boundary with a specific message
-- [ ] A long gap (60+ days with no logs) produces the "we lost track" state rather than silent extrapolation
+- [x] Editing any past entry invalidates the cached prediction — the cache is keyed by a signature over the observed lengths, the anchor date and the priors version. The regression test edits an old start date in a way that leaves the median cycle length unchanged at 28, which a count- or median-keyed cache would sail straight past.
+- [x] Overlapping or duplicate entries are rejected at the repository boundary with a specific message — the refusal carries the offending dates, so the UI can name them rather than saying something went wrong
+- [x] A long gap (60+ days with no logs) produces the "we lost track" state rather than silent extrapolation
+
+**Landed as.** `data/repositories/{cycle_repository,prediction_repository,providers}.dart`.
+
+`PredictionResult` gained two variants, both states the app must render and neither expressible before:
+
+- **`NoData`**, for a user who has logged nothing. Deliberately not an `InsufficientData` measured from today: the model predicts a cycle *length*, and dating it needs a logged start, so anchoring on today would assert that the user's period started today.
+- **`LostTrack`**, for the 60-day gap. It carries the statistics for the same reason `TooIrregular` does.
+
+The sealed union earned its keep immediately: adding the cases broke the exhaustive switch in `prediction_test.dart` at compile time.
+
+The repository also refuses **future-dated** writes. That is not in the task text, but it is what keeps the clock-went-backwards row of PLAN.md 5.5 detectable: with future dates unreachable by normal use, a stored log dated after today means the device clock moved, and the prediction path reports `DataInconsistent` instead of computing a negative cycle length.
 
 **Prompt to paste.**
 
@@ -457,9 +479,15 @@ Do not: build UI.
 **Scope.** `data/transfer/export_v1.dart` and `import_v1.dart`, versioned JSON envelope with a schema hash and app version stamp.
 
 **Done when.**
-- [ ] Round-trip fuzz test: random valid databases export and re-import identically
-- [ ] Import refuses an unknown or newer version with a clear message, never partially imports
-- [ ] Export writes only to a user-chosen location via the system picker
+- [x] Round-trip fuzz test: random valid databases export and re-import identically — 60 generated databases per run from a fixed seed, restored over a *different* non-empty database so the replace semantics are exercised, plus 20 double round trips asserting the second file is byte-identical to the first
+- [x] Import refuses an unknown or newer version with a clear message, never partially imports — validation is a separate pass with no database access at all, and the "leaves the database exactly as it was" test feeds a file whose first added entry is valid and whose second is not
+- [~] Export writes only to a user-chosen location via the system picker — **half done, deliberately.** Every entry point takes an explicit destination, so a silent write to shared storage is not expressible; there is no "export to the default location" function to call by accident. The picker itself is not here: `file_selector` is a platform plugin, and this environment cannot build an Android APK (`dl.google.com` is blocked), so its effect on the merged manifest could not be verified. Adding an unverifiable plugin to the app whose central claim is machine-proven absence of network permissions is the wrong trade. **AND-16 wires the SAF picker to `ExportV1.writeTo` and should re-run `assert_no_network.sh` when it does.**
+
+**Landed as.** `data/transfer/{export_v1,import_v1}.dart`.
+
+Import **replaces** rather than merges. A backup is a snapshot of the whole diary, and merging two snapshots invents a history that never existed, with no way for a snapshot to express a day the user deleted.
+
+The envelope carries a shape fingerprint covering field names only, never enum members. Covering the members would mean that adding one symptom in a later release invalidates every backup any user has ever taken; an unknown value is instead reported per-field, naming the value and saying that updating the app will fix it.
 
 **Prompt to paste.**
 
@@ -499,9 +527,11 @@ Do not: build the Settings UI that calls this. That is AND-16.
 **Scope.** `MaterialApp.router`, light and dark themes with contrast-checked tokens, `go_router`, `ProviderScope`, `flutter_localizations` with all strings externalized from day one.
 
 **Done when.**
-- [ ] Dark mode works and both themes meet 4.5:1 on body text
-- [ ] No hardcoded user-facing string anywhere in `lib/`
-- [ ] Route guard hook exists but is a no-op (the app lock will use it later)
+- [x] Dark mode works and both themes meet 4.5:1 on body text — `theme_test.dart` recomputes every ratio from the tokens, so a colour cannot be nudged without the suite noticing
+- [x] No hardcoded user-facing string anywhere in `lib/` — `no_hardcoded_strings_test.dart` scans for `Text()` literals carrying prose, and has its own test, since a scan that cannot fail is not a check
+- [x] Route guard hook exists but is a no-op (the app lock will use it later)
+
+**Landed as.** `app.dart`, `main.dart`, `core/theme.dart`, `routing/router.dart`, `l10n/app_en.arb`. `main.dart` handles all three outcomes of `openAppDatabase`, including rendering a separate app with no database behind it when the stored schema is newer than this build understands.
 
 **Prompt to paste.**
 
@@ -537,9 +567,11 @@ Do not: build feature screens.
 **Scope.** Disclaimer screen, first cycle entry, deferred notification opt-in.
 
 **Done when.**
-- [ ] Disclaimer is a real screen, not a buried EULA, and states the app is not contraception and not medical advice
-- [ ] Notification permission is **not** requested here
-- [ ] A user can reach a working state having entered one date
+- [x] Disclaimer is a real screen, not a buried EULA, and states the app is not contraception and not medical advice — all four non-claims are on it, nothing is gated behind scroll-to-accept, and the tests pin the wording that would be tempting to soften
+- [x] Notification permission is **not** requested here, and a test holds that line
+- [x] A user can reach a working state having entered one date, or by skipping
+
+**Note.** The date picker takes the injected `Clock`. `check_no_datetime_now.sh` caught the first version, and the bug was real rather than stylistic: with the picker anchored on the device clock and the repository anchored on an injected one, every date the user chose was silently refused as being in the future.
 
 **Prompt to paste.**
 
@@ -574,10 +606,12 @@ date.
 **Scope.** Today-state landing screen, persistent primary action, inline day stepper for backdating, symptom chips.
 
 **Done when.**
-- [ ] "Period started today" from cold start is 2 taps, verified by counting taps in an integration test
-- [ ] Backdating 1 to 3 days is 3 taps or fewer
-- [ ] Symptoms for today are 4 taps or fewer
-- [ ] Any logged day is editable by long-press
+- [x] "Period started today" is **1 tap**, counted in `log_screen_test.dart` (budget 2)
+- [x] Backdating 1 to 3 days is **2 taps** (budget 3)
+- [x] Symptoms for today are **1 tap** (budget 4)
+- [x] Any logged day is editable by long-press, from the calendar
+
+**Deviations, both deliberate.** The day selector offers the last four days directly rather than stepping: a stepper costs a tap per day, so backdating three days would take four taps against a budget of three. And the budgets are counted in widget tests rather than an integration test, because those run headless in `flutter test` on every push; the end-to-end version belongs with AND-19.
 
 **Prompt to paste.**
 
@@ -613,10 +647,12 @@ so this is a data-quality requirement, not a polish task.
 **Scope.** Month grid with period days, predicted window, today marker, long-press edit, full per-cell semantics.
 
 **Done when.**
-- [ ] Each day cell announces date **and** state to a screen reader
-- [ ] Period, predicted, and today are distinguishable without colour
-- [ ] Renders without overflow at `textScaler` 2.0
-- [ ] The predicted window renders as a **range**, never a single highlighted day
+- [x] Each day cell announces date **and** state to a screen reader, in the shape the task asks for
+- [x] Period, predicted, and today are distinguishable without colour — filled marker, hollow marker, ring, plus a legend naming all three
+- [x] Renders without overflow at `textScaler` 1.0, 1.5 and 2.0
+- [x] The predicted window renders as a **range**, never a single highlighted day, and is drawn not at all in the four states where a window would assert something the app has just said it cannot support
+
+**On the goldens.** Light, dark and greyscale are committed. The greyscale one first came out byte-identical to the light one: a golden captured from a descendant of `ColorFiltered` renders from that descendant's own layer, so the filter never reached the image. It is now captured at the filter, with a test comparing the two files. The goldens are regression capture; the structural tests are what hold the accessibility line, since a PNG cannot say whether two states are distinguishable.
 
 **Prompt to paste.**
 
@@ -654,10 +690,12 @@ Add golden tests in light, dark, and greyscale.
 **Scope.** Prediction display with interval and confidence, cycle history list, self-metrics, an accessible variability chart, the `TooIrregular` state.
 
 **Done when.**
-- [ ] All four `PredictionResult` variants render, and `TooIrregular` still shows useful statistics rather than a dead end
-- [ ] The chart carries a `Semantics` text summary and has a data-table alternative
-- [ ] Self-metrics include the model's own recent accuracy
-- [ ] A permanent one-line disclaimer is visible on this screen
+- [x] All **six** `PredictionResult` variants render (four at the time this task was written, plus `NoData` and `LostTrack` from AND-09), and `TooIrregular` shows cycle count, observed range, variability and the chart rather than a dead end
+- [x] The chart carries a `Semantics` text summary and a data-table alternative, and prints the summary as well as announcing it
+- [x] Self-metrics include the model's own recent accuracy, computed on device by replaying the filter against already-logged cycles
+- [x] A permanent one-line disclaimer is visible on this screen
+
+**Deviation.** The chart is a `CustomPainter`, not `fl_chart`. A dozen bars is not worth a dependency, and painting it directly makes the greyscale and text-scaling requirements straightforward. The accessibility problem is identical either way, which is why the `Semantics` summary and the table are there regardless.
 
 **Prompt to paste.**
 
@@ -703,9 +741,13 @@ stop and say so.
 **Scope.** Export, import, delete-all with typed confirmation, notification preferences, log viewer and clear, privacy text, about and attribution.
 
 **Done when.**
-- [ ] Delete-all requires typing a confirmation and performs `DELETE` plus `VACUUM`
-- [ ] `docs/PRIVACY.md` content is shipped in-app verbatim, including the honest statement about the unencrypted database
-- [ ] The log viewer shows there is no cycle content in the logs
+- [x] Delete-all requires typing `DELETE`, names how many days are at stake, and performs the real `DELETE` plus `VACUUM`
+- [x] `docs/PRIVACY.md` content is shipped in-app verbatim — the file is new, and `privacy_text_test.dart` fails if either copy is edited without the other. It states plainly that the database is not encrypted and that there is no app lock
+- [x] The log viewer shows there is no cycle content in the logs — the test strips each line's own timestamp and asserts no date, flow level or symptom name survives
+
+**On the file picker.** `file_selector` is wired for both export and import. Its Android manifest declares no permissions at all, read from the package rather than assumed, and it uses the Storage Access Framework. Export uses `getDirectoryPath` because `file_selector_android` implements `openFile` and `getDirectoryPath` but not `getSaveLocation`. **The on-device behaviour of that write is unverified:** this environment cannot build an Android APK, so `assert_no_network.sh` on the release APK remains the gate for the manifest, and the SAF write path needs a real device before release.
+
+**Also here:** `a11y_test.dart`, running `textContrast`, `androidTapTarget` and `labeledTapTarget` across all five screens in both themes. It found two real bugs: selected chips at 1.32:1, and an unlabelled tappable node behind the symptom long-press. Neither looked wrong on screen.
 
 **Prompt to paste.**
 
@@ -742,12 +784,24 @@ Requirements:
 **Scope.** Four notification types across two channels, in-context permission request, lock-screen privacy defaults, 1-tap action button, boot reschedule, missed-reminder detection.
 
 **Done when.**
-- [ ] Separate channels so the nudge can be muted without losing predictions
-- [ ] `POST_NOTIFICATIONS` requested in context, after the first cycle is logged
-- [ ] Lock-screen content defaults to secret, asserted by a test
-- [ ] The nudge respects a hard cap of 1 per 7 days
-- [ ] The action button logs a period start without launching the app
-- [ ] Reschedules on prediction change, on edit, and on `BOOT_COMPLETED`
+- [x] Separate channels so the nudge can be muted without losing predictions
+- [x] `POST_NOTIFICATIONS` requested in context, after the first cycle is logged
+- [x] Lock-screen content defaults to secret, asserted by a test
+- [x] The nudge respects a hard cap of 1 per 7 days
+- [x] The action button logs a period start without launching the app
+- [x] Reschedules on prediction change, on edit, and on `BOOT_COMPLETED`
+
+**On the parts a test can and cannot reach.** The scheduling rules, the copy
+rules and the one-per-seven-days cap are unit tested against a recording
+gateway, so they need no device. Two things are asserted structurally instead of
+behaviourally: the manifest is parsed to confirm the boot receiver and
+`POST_NOTIFICATIONS` are declared, and `notifications_test.dart` asserts that the
+real bootstrap replaces the default no-op gateway — a silently no-op notification
+system is indistinguishable from a working one right up until someone needs a
+reminder. Whether an OEM battery optimiser actually lets a scheduled alarm fire
+(risk R12) cannot be tested at all, which is why the app detects a missed
+reminder on next open and says so in place.
+
 
 **Prompt to paste.**
 
@@ -790,9 +844,20 @@ silently kill scheduled alarms, so add a Settings note with a deep link.
 **Scope.** `app/test/features/a11y_test.dart` running Flutter's guideline matchers on every screen, text-scale goldens, greyscale golden.
 
 **Done when.**
-- [ ] `meetsGuideline(textContrastGuideline)`, `androidTapTargetGuideline`, and `labeledTapTargetGuideline` pass on every screen, in CI
-- [ ] Goldens pass at `textScaler` 1.0, 1.5, and 2.0
-- [ ] A greyscale golden proves no information is conveyed by colour alone
+- [x] `meetsGuideline(textContrastGuideline)`, `androidTapTargetGuideline`, and `labeledTapTargetGuideline` pass on every screen, in CI
+- [x] Goldens pass at `textScaler` 1.0, 1.5, and 2.0
+- [x] A greyscale golden proves no information is conveyed by colour alone
+
+**What the gate is and is not.** The guideline matchers and the structural tests
+are what hold the line; the goldens are regression capture, because a PNG cannot
+say whether two states are distinguishable. It runs as its own CI step ahead of
+the full suite so a failure appears in the job list by name rather than as one
+red line inside 600 passing tests. It has now paid for itself three times: a
+selected-chip contrast of 1.32:1, an unlabelled tappable node behind a
+long-press, and a greyscale golden that was byte-identical to the light one
+because it had been captured from a descendant of the `ColorFiltered` widget and
+so never saw the filter at all.
+
 
 **Prompt to paste.**
 
@@ -830,7 +895,7 @@ Fix whatever fails rather than lowering the bar.
 **Scope.** `integration_test/e2e_smoke_test.dart`, keystore setup, `key.properties` outside git, release build, APK verification.
 
 **Done when.**
-- [ ] E2E: onboard, log 3 cycles, see a prediction window, export, wipe, import, state restored
+- [x] E2E: onboard, log 3 cycles, see a prediction window, export, wipe, import, state restored
 - [ ] `flutter build apk --release --split-per-abi` produces a signed APK
 - [ ] `assert_no_network.sh` passes on the release APK
 - [ ] Keystore is backed up outside the repo, and `key.properties` is gitignored
@@ -856,6 +921,38 @@ Task AND-19: end-to-end test and release signing. This closes out the MVP.
 Done when a signed arm64-v8a APK installs on a real device and the smoke test
 passes.
 ```
+
+**What is done, and what needs a machine with the SDK.** The end-to-end flow is
+written once, in `app/test/e2e/smoke_flow.dart`, and run from two entry points:
+`test/e2e_smoke_test.dart` headless in CI on every push, and
+`integration_test/e2e_smoke_test.dart` on a device. Release signing is wired:
+`android/app/build.gradle.kts` reads the gitignored `android/key.properties`,
+falls back to the debug key so CI and a fresh clone still build, and turns that
+fallback into a hard failure under `-Prelease-signing-required=true`.
+`tools/scripts/new_keystore.sh` creates the key outside the repository and
+refuses to do it inside one; `tools/scripts/release.sh` builds and then rejects
+any APK that is debug-signed or declares a network permission. The procedure is
+`docs/RELEASE.md`.
+
+The last three boxes stay unticked deliberately. No keystore has been generated
+and none is committed, and the remaining checks need an Android SDK and a phone:
+this repository's build environment has `dl.google.com` blocked, so no APK can
+be produced here at all. CI builds the split release APKs and runs
+`assert_no_network.sh` over every one of them, with the debug APK as a negative
+control, but CI has no keystore either, so nothing has yet been signed with a
+real release key.
+
+**Two bugs the flow caught, neither of which a unit test would have.** The
+notification permission prompt was shown *twice*, stacked: one logged day
+produces more than one prediction change, and two overlapping syncs each read
+the "already asked" flag before either had written it. Android gives an app one
+usable request, so that is a real cost, not a cosmetic one. The syncs are now
+serialised and coalesced, and `test/notifications/notification_sync_test.dart`
+fails against the old code. The second was in the test itself and worth
+recording: with the second dialog covering the sheet underneath, every
+subsequent tap landed on its barrier instead of the control it named — and a tap
+on a barrier still dismisses a sheet, so the flow went green while exercising
+nothing. `warnIfMissed` is what said so.
 
 ---
 

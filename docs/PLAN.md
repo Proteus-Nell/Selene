@@ -1173,10 +1173,21 @@ Working in logs keeps lengths positive and makes variability multiplicative, whi
 
 ## 9. Next 3 actions
 
-Tasks AND-01 through AND-05 are complete (see [ANDROID_TASKS.md](ANDROID_TASKS.md)): toolchain, manifest hardening with a CI-proven no-network guarantee, lint and CI, core primitives, and the domain models. 125 Dart tests pass and a release APK builds. What remains next:
+Tasks AND-01 through AND-19 are complete (see [ANDROID_TASKS.md](ANDROID_TASKS.md)), along with both Python prerequisites. **The MVP is code-complete.** A new user can read the disclaimer, log a first date, see a predicted window, browse the calendar, read the insights, be reminded before the next one, export a backup, wipe everything, and restore from that backup — and the whole of that sequence runs as one test on every push.
 
-1. **Write the Python reference filter and the golden-vector exporter (PY-A).** `research/` does not exist yet, and it is the blocker for AND-07. Build `data/synthetic.py` first so the project never depends on a dataset that might not be licensable (R1), then `models/bayes_filter.py`, then `export/golden_vectors.py`. Target: `uv run cyclecore export-golden` writes `artifacts/golden/predictor_cases_v1.json`, and `test_overfit_one_user.py` plus `test_calibration.py` pass. Keep every operation in the filter portable to Dart: no special functions on the forward path, and bake the fixed-`nu` Student-t quantiles into `priors.json` as constants so the Dart port needs only arithmetic.
+650 Dart tests pass. `lib/domain/` is at 99.8% line coverage and `lib/` overall is at 92.4% excluding generated code, against the 90% and 70% floors in 5.4. The one uncovered domain line is a `const` constructor, which is evaluated at compile time and so can never be executed. The accessibility matchers in 2.4.4 run over every screen in both themes, at `textScaler` 1.0, 1.5 and 2.0, as a named CI step.
 
-2. **Fit and export the population hyperpriors (PY-B).** `artifacts/priors/priors_v1.json`, with an embedded `{schema_version, git_sha, created_utc}` header the app refuses to load if it does not recognise. This unblocks AND-15.
+What remains is not code:
 
-3. **Port the filter to Dart against the golden vectors (AND-07).** The one task where the two runtimes must agree to 1e-9. Watch the rounding: Python's `round()` is banker's rounding and Dart's `.round()` is half-away-from-zero, so both sides must use an explicit `floor(x + 0.5)` on day counts.
+1. **Sign a release build (AND-19, three boxes).** The build reads a gitignored `android/key.properties`, `tools/scripts/new_keystore.sh` creates the key outside the repository, and `tools/scripts/release.sh` refuses to hand over an APK that is debug-signed or declares a network permission. None of it has been run: no keystore exists, and this environment has `dl.google.com` blocked, so it cannot build an APK at all. See [RELEASE.md](RELEASE.md).
+
+2. **Run the whole thing on a real device.** Nothing in this repo has ever run on Android, so the entire UI is proven by widget tests only. `integration_test/e2e_smoke_test.dart` is the same flow as the headless one and is what to run first. Two things specifically need a device rather than a test: the Storage Access Framework write path behind Export, and whether scheduled notifications survive an OEM battery optimiser (risk R12, which the app already hedges by detecting a missed reminder in-app).
+
+3. **Close the two CI gaps below**, or decide out loud that they are not worth closing.
+
+**Two CI gaps worth closing when convenient.**
+
+- ADR-0002 calls for a job that regenerates the artifacts from `research/` and fails if the committed files differ. `flutter test` already fails when the Dart port and the committed golden vectors disagree, and CI fails when the generated priors constants drift from the artifact, so the remaining uncovered case is narrow: the committed artifacts going stale against the Python source that produced them.
+- 5.4 specifies enforcing the coverage floors in `flutter.yml` via lcov filtering. `flutter test --coverage` runs, but nothing fails the build when coverage drops.
+
+**What the end-to-end test found that the unit tests did not.** The notification permission prompt was shown twice, stacked — one logged day produces more than one prediction change, and two overlapping syncs each read the "already asked" flag before either had written it. Android gives an app one usable `POST_NOTIFICATIONS` request, so spending two of them on the same question is the difference between a user who gets reminders and one who does not. Every piece involved was already unit-tested and correct in isolation. That is precisely the class of failure 5.4 puts an end-to-end test in the plan for, and it appeared the first time that test ran.

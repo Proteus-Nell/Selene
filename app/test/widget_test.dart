@@ -1,30 +1,57 @@
-// This is a basic Flutter widget test.
+// Smoke test for the app shell (AND-11).
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Builds the real widget tree over an in-memory database, so that a broken
+// route, a missing localisation delegate or a theme that fails to construct
+// shows up here rather than on a device.
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:period_tracker/app.dart';
+import 'package:period_tracker/core/clock.dart';
+import 'package:period_tracker/core/logging.dart';
+import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/main.dart';
+import 'package:period_tracker/notifications/scheduler.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  late AppDatabase db;
+  final clock = FixedClock.iso('2026-06-30');
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  setUp(() => db = AppDatabase(NativeDatabase.memory()));
+  tearDown(() => db.close());
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('the app builds and lands on onboarding for a new user', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      await buildAppScope(
+        database: db,
+        clock: clock,
+        logger: RingLogger(clock: clock),
+        notificationGateway: const NoopNotificationGateway(),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(Scaffold).first),
+    );
+    expect(find.text(l10n.onboardingTitle), findsOneWidget);
+    // The non-claims are on the first screen the user sees, not behind a link.
+    expect(find.text(l10n.onboardingNotContraception), findsOneWidget);
+  });
+
+  testWidgets('the newer-schema screen builds without a database', (
+    tester,
+  ) async {
+    // This one has to work when nothing else does: there is no database to
+    // read, which is exactly why it is a separate app widget.
+    await tester.pumpWidget(
+      const UnreadableDataApp(storedVersion: 2, supportedVersion: 1),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.system_update), findsOneWidget);
   });
 }
