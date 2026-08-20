@@ -68,6 +68,18 @@ jobs:
         working-directory: app
         run: flutter analyze
 
+      # Run before the full suite so a failure names itself. `flutter test`
+      # below covers these files again; the cost is a few seconds and the
+      # benefit is that "accessibility gate failed" appears in the job list
+      # rather than being one red line inside 600 passing tests.
+      - name: Accessibility gate
+        working-directory: app
+        run: >
+          flutter test
+          test/features/a11y_test.dart
+          test/features/text_scale_goldens_test.dart
+          test/features/calendar_test.dart
+
       - name: Test
         working-directory: app
         run: flutter test --coverage
@@ -79,12 +91,26 @@ jobs:
         working-directory: app
         run: flutter build apk --debug
 
-      - name: Build release APK
+      # Split per ABI, per docs/PLAN.md 3.7: a universal APK carries every
+      # architecture's native libraries, and this app ships a native SQLite.
+      - name: Build release APKs
         working-directory: app
-        run: flutter build apk --release
+        run: flutter build apk --release --split-per-abi
 
-      - name: Assert release APK declares no network permission
-        run: bash tools/scripts/assert_no_network.sh app/build/app/outputs/flutter-apk/app-release.apk
+      # Every artifact that could be installed is checked, not just one. The
+      # split builds are what actually get distributed, so checking a universal
+      # APK nobody ships would be proving the wrong thing.
+      - name: Assert no release APK declares a network permission
+        run: |
+          shopt -s nullglob
+          apks=(app/build/app/outputs/flutter-apk/app-*-release.apk)
+          if (( ${#apks[@]} == 0 )); then
+            echo "::error::no release APKs were produced"
+            exit 1
+          fi
+          for apk in "${apks[@]}"; do
+            bash tools/scripts/assert_no_network.sh "$apk"
+          done
 
       - name: Negative control, the debug APK must FAIL the same check
         # Without this, assert_no_network.sh could silently degrade into a no-op
@@ -98,9 +124,9 @@ jobs:
           fi
           echo "Negative control OK: debug APK correctly rejected."
 
-      - name: Upload release APK
+      - name: Upload release APKs
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
-          path: app/build/app/outputs/flutter-apk/app-release.apk
+          name: app-release-apks
+          path: app/build/app/outputs/flutter-apk/app-*-release.apk
           if-no-files-found: error

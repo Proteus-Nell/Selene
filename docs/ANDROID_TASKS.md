@@ -784,12 +784,24 @@ Requirements:
 **Scope.** Four notification types across two channels, in-context permission request, lock-screen privacy defaults, 1-tap action button, boot reschedule, missed-reminder detection.
 
 **Done when.**
-- [ ] Separate channels so the nudge can be muted without losing predictions
-- [ ] `POST_NOTIFICATIONS` requested in context, after the first cycle is logged
-- [ ] Lock-screen content defaults to secret, asserted by a test
-- [ ] The nudge respects a hard cap of 1 per 7 days
-- [ ] The action button logs a period start without launching the app
-- [ ] Reschedules on prediction change, on edit, and on `BOOT_COMPLETED`
+- [x] Separate channels so the nudge can be muted without losing predictions
+- [x] `POST_NOTIFICATIONS` requested in context, after the first cycle is logged
+- [x] Lock-screen content defaults to secret, asserted by a test
+- [x] The nudge respects a hard cap of 1 per 7 days
+- [x] The action button logs a period start without launching the app
+- [x] Reschedules on prediction change, on edit, and on `BOOT_COMPLETED`
+
+**On the parts a test can and cannot reach.** The scheduling rules, the copy
+rules and the one-per-seven-days cap are unit tested against a recording
+gateway, so they need no device. Two things are asserted structurally instead of
+behaviourally: the manifest is parsed to confirm the boot receiver and
+`POST_NOTIFICATIONS` are declared, and `notifications_test.dart` asserts that the
+real bootstrap replaces the default no-op gateway — a silently no-op notification
+system is indistinguishable from a working one right up until someone needs a
+reminder. Whether an OEM battery optimiser actually lets a scheduled alarm fire
+(risk R12) cannot be tested at all, which is why the app detects a missed
+reminder on next open and says so in place.
+
 
 **Prompt to paste.**
 
@@ -832,9 +844,20 @@ silently kill scheduled alarms, so add a Settings note with a deep link.
 **Scope.** `app/test/features/a11y_test.dart` running Flutter's guideline matchers on every screen, text-scale goldens, greyscale golden.
 
 **Done when.**
-- [ ] `meetsGuideline(textContrastGuideline)`, `androidTapTargetGuideline`, and `labeledTapTargetGuideline` pass on every screen, in CI
-- [ ] Goldens pass at `textScaler` 1.0, 1.5, and 2.0
-- [ ] A greyscale golden proves no information is conveyed by colour alone
+- [x] `meetsGuideline(textContrastGuideline)`, `androidTapTargetGuideline`, and `labeledTapTargetGuideline` pass on every screen, in CI
+- [x] Goldens pass at `textScaler` 1.0, 1.5, and 2.0
+- [x] A greyscale golden proves no information is conveyed by colour alone
+
+**What the gate is and is not.** The guideline matchers and the structural tests
+are what hold the line; the goldens are regression capture, because a PNG cannot
+say whether two states are distinguishable. It runs as its own CI step ahead of
+the full suite so a failure appears in the job list by name rather than as one
+red line inside 600 passing tests. It has now paid for itself three times: a
+selected-chip contrast of 1.32:1, an unlabelled tappable node behind a
+long-press, and a greyscale golden that was byte-identical to the light one
+because it had been captured from a descendant of the `ColorFiltered` widget and
+so never saw the filter at all.
+
 
 **Prompt to paste.**
 
