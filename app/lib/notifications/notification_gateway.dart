@@ -1,8 +1,8 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:meta/meta.dart';
 import 'package:period_tracker/core/clock.dart';
+import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/notifications/notification_plan.dart';
-import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 /// The words a notification is delivered with.
@@ -144,6 +144,7 @@ final class LocalNotificationGateway implements NotificationGateway {
     required this.plugin,
     required this.clock,
     this.onAction,
+    this.onBackgroundResponse,
   });
 
   /// The platform plugin. Public so it can be an initializing formal; nothing
@@ -153,8 +154,15 @@ final class LocalNotificationGateway implements NotificationGateway {
   /// The app's single source of "now".
   final Clock clock;
 
-  /// Called when the user taps an action on a delivered notification.
+  /// Called when the user taps an action while the app is running.
   final void Function(String actionId)? onAction;
+
+  /// Handles an action tap when the app process is not running.
+  ///
+  /// Must be a top-level or static function annotated with
+  /// `@pragma('vm:entry-point')`: the platform stores a handle to it and looks
+  /// it up from a fresh isolate, so a closure cannot be found again.
+  final DidReceiveBackgroundNotificationResponseCallback? onBackgroundResponse;
 
   /// The hour of day notifications fire at.
   ///
@@ -164,7 +172,6 @@ final class LocalNotificationGateway implements NotificationGateway {
 
   @override
   Future<void> initialize(NotificationCopy copy) async {
-    tz_data.initializeTimeZones();
     await plugin.initialize(
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
@@ -173,6 +180,14 @@ final class LocalNotificationGateway implements NotificationGateway {
         final actionId = response.actionId;
         if (actionId != null) onAction?.call(actionId);
       },
+      // Required for the log action to work at all. An action whose
+      // `showsUserInterface` is false is delivered by broadcast to a *new*
+      // isolate, and the plugin can only start one if a dispatcher handle was
+      // stored here at initialize time. Without this the tap is received by the
+      // platform, finds no callback, logs "Callback information could not be
+      // retrieved", and does nothing — and the app is almost never running at
+      // 09:00, so that is the normal case rather than the edge case.
+      onDidReceiveBackgroundNotificationResponse: onBackgroundResponse,
     );
 
     final android = plugin
@@ -197,19 +212,34 @@ final class LocalNotificationGateway implements NotificationGateway {
   @override
   Future<void> cancelAll() => plugin.cancelAll();
 
+  /// The exact instant [date] at [fireHour] falls on, for the platform.
+  ///
+  /// Built as an instant, in UTC, rather than as a wall-clock time in
+  /// `tz.local`. `initializeTimeZones()` leaves `tz.local` set to UTC — that is
+  /// what the timezone package does until `setLocalLocation` is called with a
+  /// zone name only a platform plugin can supply — and the Android half of the
+  /// plugin schedules by combining the wall-clock string with the zone name it
+  /// is handed. A 09:00 built in `tz.local` therefore means 09:00 UTC: 01:00 in
+  /// Los Angeles, 20:00 in Sydney, and the wrong day in Honolulu.
+  ///
+  /// Dart's own [DateTime] already applies the device's zone rules, DST
+  /// included, for the date in question. Converting that instant to UTC keeps
+  /// the right moment and needs no zone database and no extra dependency.
+  ///
+  /// Static and public so the arithmetic can be asserted directly: a test that
+  /// recomputed it would agree with itself no matter what this shipped.
+  static tz.TZDateTime fireInstantFor(CivilDate date) => tz.TZDateTime.from(
+    DateTime(date.year, date.month, date.day, fireHour),
+    tz.UTC,
+  );
+
   @override
   Future<void> schedule(
     PlannedNotification notification, {
     required NotificationCopy copy,
     required bool detailed,
   }) async {
-    final date = notification.fireDate;
-    final when = tz.TZDateTime.local(
-      date.year,
-      date.month,
-      date.day,
-      fireHour,
-    );
+    final when = fireInstantFor(notification.fireDate);
 
     await plugin.zonedSchedule(
       id: notification.kind.id,

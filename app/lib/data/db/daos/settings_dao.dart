@@ -40,6 +40,14 @@ enum SettingKey {
   /// Epoch day the logging nudge last fired, for its one-per-seven-days cap.
   lastNudgeEpochDay('last_nudge_epoch_day'),
 
+  /// Fire dates of the notifications currently scheduled, comma separated.
+  ///
+  /// Kept so the next launch can tell whether one of them came due while the
+  /// app was closed. Nothing else can answer that: the plan rebuilt on this
+  /// launch only ever contains future dates, so comparing against it would
+  /// always say no (risk R12).
+  scheduledFireDays('scheduled_fire_days'),
+
   /// Epoch day the app was last opened, for missed-reminder detection.
   lastOpenedEpochDay('last_opened_epoch_day'),
 

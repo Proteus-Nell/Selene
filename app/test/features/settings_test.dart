@@ -3,6 +3,7 @@
 // The screen where the promises in docs/PRIVACY.md are either kept or not.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
@@ -11,6 +12,7 @@ import 'package:period_tracker/features/settings/delete_everything_dialog.dart';
 import 'package:period_tracker/features/settings/log_viewer.dart';
 import 'package:period_tracker/features/settings/privacy_section.dart';
 import 'package:period_tracker/features/settings/settings_screen.dart';
+import 'package:period_tracker/notifications/scheduler.dart';
 
 import 'harness.dart';
 
@@ -264,6 +266,31 @@ void main() {
   });
 
   group('reminders', () {
+    testWidgets('changing one asks for the schedule to be rebuilt', (
+      tester,
+    ) async {
+      // Writing the setting is only half of turning a reminder off. Whatever is
+      // already queued on the platform stays queued until something
+      // reschedules, so without this the user switches reminders off and the
+      // next one still arrives.
+      await pumpSettings(tester);
+      final l10n = l10nOf(tester);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(SettingsScreen)),
+      );
+      final before = container.read(notificationPreferencesRevisionProvider);
+
+      await tester.tap(
+        find.widgetWithText(SwitchListTile, l10n.settingsReminderEnabled),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        container.read(notificationPreferencesRevisionProvider),
+        greaterThan(before),
+      );
+    });
+
     testWidgets('store the preference and describe what will arrive', (
       tester,
     ) async {

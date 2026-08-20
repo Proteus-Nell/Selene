@@ -179,6 +179,14 @@ class _NotificationSyncState extends ConsumerState<NotificationSync> {
       if (result != null) unawaited(_sync(result));
     });
 
+    // Preferences do not change the prediction, so they need their own trigger.
+    // Turning reminders off has to cancel what is already queued on the
+    // platform now, not whenever the next log edit happens to come along.
+    ref.listen<int>(notificationPreferencesRevisionProvider, (previous, next) {
+      final result = ref.read(predictionProvider).valueOrNull;
+      if (result != null) unawaited(_sync(result));
+    });
+
     if (!_missedReminder) return widget.child;
     final l10n = AppLocalizations.of(context);
     return Column(

@@ -35,6 +35,39 @@ void main() {
 
   String? nodeOf(XmlElement element) => element.getAttribute('tools:node');
 
+  group('receivers', () {
+    Set<String> declaredReceivers() => document
+        .findAllElements('receiver')
+        .map((r) => r.getAttribute('android:name'))
+        .whereType<String>()
+        .toSet();
+
+    test('every receiver the notification plugin needs is declared', () {
+      // The plugin's own manifest declares no receivers at all, so anything it
+      // is not given here simply does not exist at runtime. A missing
+      // ActionBroadcastReceiver is the quiet one: the action button still
+      // renders and still taps, and the broadcast goes nowhere.
+      const prefix = 'com.dexterous.flutterlocalnotifications.';
+      expect(declaredReceivers(), <String>{
+        '${prefix}ScheduledNotificationReceiver',
+        '${prefix}ScheduledNotificationBootReceiver',
+        '${prefix}ActionBroadcastReceiver',
+      });
+    });
+
+    test('none of them is exported', () {
+      // They are internal plumbing. An exported receiver is an entry point any
+      // other app on the device can send intents to.
+      for (final receiver in document.findAllElements('receiver')) {
+        expect(
+          receiver.getAttribute('android:exported'),
+          'false',
+          reason: '${receiver.getAttribute('android:name')} is exported',
+        );
+      }
+    });
+  });
+
   group('permissions', () {
     test('are only the two the app actually needs', () {
       final requested = permissions()
