@@ -36,6 +36,19 @@ The `app/` Flutter component of Period-Tracker, split into independently prompta
 | [AND-17](#and-17-notifications) | Notifications: channels, scheduling, privacy defaults | AND-09, AND-11 | 1.5 |
 | [AND-18](#and-18-accessibility-gate) | Accessibility gate in CI | AND-14, AND-15 | 1 |
 | [AND-19](#and-19-e2e-smoke-and-release-signing) | E2E smoke test and release signing | AND-16, AND-17 | 1 |
+| **Feature set v2 — release 1 (logging and display)** | | | |
+| [AND-22](#and-22-schema-v2-conditions-settings-and-the-enum-widening-guard) | Schema v2: conditions, settings, enum guard | AND-19 | 1 |
+| [AND-23](#and-23-symptom-sections-and-an-expanded-catalogue) | Symptom sections and an expanded catalogue | AND-22 | 1 |
+| [AND-24](#and-24-flow-simplified-to-bleeding-yesno) | Flow simplified to bleeding yes/no | AND-22 | 0.5 |
+| [AND-25](#and-25-calendar-next-period-and-where-you-are-in-the-cycle) | Calendar: next period and cycle phase | AND-19 | 1 |
+| [AND-26](#and-26-long-term-conditions-with-dates) | Long-term conditions, with dates | AND-22 | 1.5 |
+| [AND-27](#and-27-nutrition-reference-with-a-symptom-hint) | Nutrition reference with a symptom hint | AND-26 | 1 |
+| [AND-28](#and-28-export-v2) | Export v2 | AND-22, AND-26 | 1 |
+| **Feature set v2 — release 2 (private data)** | | | |
+| [AND-29](#and-29-app-lock) | App lock | AND-19 | 1.5 |
+| [AND-30](#and-30-schema-v3-and-intercourse-logging) | Schema v3 and intercourse logging | AND-28, AND-29 | 1 |
+| [AND-31](#and-31-medicines-artifact-generated-from-openfda-at-build-time) | Medicines artifact from openFDA, at build time | AND-19 | 1.5 |
+| [AND-32](#and-32-lookup-screen-hygiene-entries-and-the-browser-hand-off) | Lookup screen and browser hand-off | AND-31 | 1 |
 | **Tier B (optional, may never be built)** | | | |
 | [AND-20](#and-20-kotlin-executorch-channel) | Kotlin ExecuTorch platform channel | AND-19 | 2-3 |
 | [AND-21](#and-21-on-device-trainer-and-gate) | On-device trainer and the per-user gate | AND-20 | 2-3 |
@@ -984,6 +997,417 @@ recording: with the second dialog covering the sheet underneath, every
 subsequent tap landed on its barrier instead of the control it named — and a tap
 on a barrier still dismisses a sheet, so the flow went green while exercising
 nothing. `warnIfMissed` is what said so.
+
+---
+
+## Feature set v2
+
+Eleven tasks in two releases, decided in a planning session on 2026-08-20. Every
+choice below was made deliberately and several of them overturn or amend earlier
+decisions; where that happens the ADR is named, and the ADR is the thing to read
+before changing it back.
+
+**The load-bearing decisions.**
+
+| Decision | Consequence |
+| --- | --- |
+| Named cycle phases, shown by default | Amends assumption A5 and PLAN 6.2 (ADR-0007) |
+| An *estimated ovulation range* stays off by default | 6.2 is otherwise unchanged |
+| Conditions are **recorded and displayed, not modelled** | The filter is untouched. "Accounted in the cycle checks" was considered and rejected (ADR-0010) |
+| Pregnancy, and only pregnancy, suppresses predictions | Withholds a claim rather than making a different one |
+| App lock ships **before** intercourse logging | The lock is a deliverable, not a follow-up |
+| The lock gates the UI, it does **not** encrypt at rest | Must never be described as if it does (ADR-0008) |
+| Flow yes/no is display only | Recorded intensities survive, exports keep them, the toggle is reversible |
+| Medicines data is generated at build time from openFDA | No `INTERNET` permission. ADR-0004 stands unamended (ADR-0009) |
+| Export v2 refuses v1 files outright | Accepted data-loss risk, taken knowingly (ADR-0011) |
+
+**Two releases.** Release 1 adds no permissions and no new category of sensitive
+data, so it can ship on its own. Release 2 is the private half: the lock, then
+intercourse logging behind it, then the lookup.
+
+### AND-22 Schema v2: conditions, settings, and the enum-widening guard
+
+**Depends on:** AND-19 · **Est:** 1 session
+
+**Goal.** One migration everything else in release 1 builds on.
+
+**Scope.** `app/lib/data/db/tables.dart`, `database.dart`, a new
+`drift_schemas/drift_schema_v2.json`, the migration test, and the new
+`SettingKey` values.
+
+**Done when.**
+- [ ] A `conditions` table exists: surrogate id, `condition` as `textEnum`, start epoch day, nullable end epoch day
+- [ ] `latestSchemaVersion` is 2, with a v1 → v2 `SchemaVerifier` test that fails if the migration is wrong
+- [ ] A test pins the rule in the note below, with the reason written next to it
+- [ ] New settings keys default correctly: flow simplified **off**, cycle phases **on**, ovulation window **off**
+
+**The enum-widening trap.** `tables.dart` stores enums by name, not index, and
+says so — `intEnum` was rejected precisely because it writes the ordinal. That
+makes *adding* a `Symptom` value free at the storage layer. It also creates a
+hazard worth naming: an older build opening a database that contains a symptom
+name it does not know will **throw**, and `DatabaseDowngradeException` will not
+save it because the schema version never changed. So the rule is: **widening any
+persisted enum requires a schema-version bump**, whether or not a column moved.
+AND-23 relies on this.
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read docs/ANDROID_TASKS.md AND-08 for how the drift schema
+and its migration tests are set up, and tools/scripts/new_migration.sh.
+
+Task AND-22: schema v2. Add a conditions table (id, condition textEnum, start
+epoch day, nullable end epoch day) and the settings keys listed in the task
+entry. Bump latestSchemaVersion to 2, snapshot the schema, and add the v1 to v2
+migration test.
+
+Also add a test that pins this rule: widening any persisted enum requires a
+schema-version bump, because textEnum throws on an unknown name and the
+downgrade refusal cannot fire if the version did not change.
+```
+
+### AND-23 Symptom sections and an expanded catalogue
+
+**Depends on:** AND-22 · **Est:** 1 session
+
+**Goal.** Symptoms grouped the way people think about them, without blowing the
+friction budget.
+
+**Scope.** `Symptom` enum, `day_editor.dart`, the ARB file, `log_screen_test.dart`.
+
+**The catalogue.** Existing values keep their wire names exactly; the five are
+assigned to sections and the rest are new.
+
+| Section | Symptoms |
+| --- | --- |
+| Physical | `cramps`\*, `headache`\*, `bloating`, `nausea`, `breastTenderness`, `backPain`, `acne`, `digestiveUpset` |
+| Mental | `sleep`\*, `brainFog`, `poorConcentration` |
+| Emotional | `mood`\*, `energy`\*, `irritability`, `anxiety`, `lowMood` |
+
+\* already exists, unchanged.
+
+**Section is a property of the enum, not part of the stored value.** Only the
+name is written to the database and to exports, so re-sectioning later costs a
+one-line change and no migration. Worth knowing for `energy`, which is filed
+under emotional here and is arguably physical — that is a display decision, and
+a cheap one to revisit.
+
+**Done when.**
+- [ ] Each `Symptom` carries a section; the day editor groups by it with headings
+- [ ] Every existing symptom keeps its wire name, proven by a round-trip test against a v1 export
+- [ ] The tap budgets in `log_screen_test.dart` still pass at 100%, 150% and 200% text scale
+- [ ] `a11y_test.dart` passes on the regrouped editor in both themes
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read docs/PLAN.md 2.4.2 (the friction budget table) and
+app/test/features/log_screen_test.dart, which counts taps against it.
+
+Task AND-23: give Symptom a section (mental, physical, emotional), assign the
+existing five without renaming any of them, and add the new values in the
+AND-23 table. Group the day editor by section.
+
+The tap budgets must still pass. Sections that add a tap to reach a common
+symptom are a regression, not a feature.
+```
+
+### AND-24 Flow simplified to bleeding yes/no
+
+**Depends on:** AND-22 · **Est:** 0.5 session
+
+**Goal.** A user who does not want to grade their flow does not have to.
+
+**Scope.** Settings toggle, `day_editor.dart`, `day_cell.dart`, calendar legend.
+
+**Done when.**
+- [ ] A settings toggle collapses the flow picker to bleeding yes/no
+- [ ] Recorded intensities are never modified; switching the toggle back reveals them unchanged, proven by a test
+- [ ] Exports keep intensity regardless of the toggle
+- [ ] A day logged while simplified records `medium`, and a test says why
+
+**The one thing to get right.** `Segmentation` reads only `isBleedingDay`, and
+`spotting` is deliberately **not** bleeding — mid-cycle spotting must not open a
+cycle. So "yes" maps to a bleeding intensity and never to spotting. Getting this
+backwards would silently corrupt cycle detection for every user who turns the
+toggle on.
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read app/lib/domain/cycles/segmentation.dart, especially
+the note that spotting is not a bleeding day.
+
+Task AND-24: a settings toggle that collapses flow to bleeding yes/no. Display
+only: stored intensities are never touched, exports keep them, and switching the
+toggle back reveals them. A day logged while simplified records medium.
+
+Add a test that turning the toggle on and off leaves the database byte-identical.
+```
+
+### AND-25 Calendar: next period, and where you are in the cycle
+
+**Depends on:** AND-19 · **Est:** 1 session
+
+**Goal.** The calendar answers "when is it due" and "where am I" without
+answering "can I get pregnant".
+
+**Scope.** `calendar_screen.dart`, ARB, a new copy test, goldens.
+
+**Done when.**
+- [ ] A next-period panel on the calendar, stated as a range, reusing the insights formatting
+- [ ] A phase strip: **Period**, **Follicular**, **Luteal**, plus "Day N of your cycle", each with a one-line plain explanation on tap
+- [ ] An estimated ovulation range exists behind a settings toggle that is **off** by default
+- [ ] A copy test fails the build on "safe day", "safe window", unqualified "fertile", or "you are ovulating"
+- [ ] Goldens at 100%, 150% and 200%; the strip must not overflow at 200%
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read docs/PLAN.md assumption A5 and section 6.2 (the
+overclaiming table), and docs/DECISIONS.md ADR-0007.
+
+Task AND-25: add a next-period panel and a cycle-phase strip to the calendar.
+Clinical phase names (Period, Follicular, Luteal) plus "Day N of your cycle",
+shown by default. An estimated ovulation range goes behind a toggle that is off
+by default.
+
+Add a copy test that fails on "safe day", "safe window", unqualified "fertile",
+and "you are ovulating". 6.2 is a rule, not a style guide.
+```
+
+### AND-26 Long-term conditions, with dates
+
+**Depends on:** AND-22 · **Est:** 1.5 sessions
+
+**Goal.** The app knows what it cannot know, and says so.
+
+**Scope.** A conditions screen, the repository, `PredictionResult`, insights.
+
+**The catalogue.** `hormonalContraceptionCombined`,
+`hormonalContraceptionProgestogen`, `hormonalIud`, `contraceptiveImplant`,
+`copperIud`, `pregnancy`, `postpartum`, `breastfeeding`, `pcos`,
+`endometriosis`, `thyroidDisorder`, `perimenopause`, `uterineFibroids`, `other`.
+
+**Done when.**
+- [ ] Conditions can be added with a start date and ended with an end date; ending one keeps the history rather than deleting it
+- [ ] Insights can say "these six cycles were logged while you were on hormonal contraception"
+- [ ] A new `SuppressedByCondition` state on `PredictionResult` returns for an **active pregnancy**, with an explanation instead of a window
+- [ ] Every exhaustive switch over `PredictionResult` handles it — the compiler enforces this, which is the point of the sealed union
+- [ ] A test proves no condition value reaches the Bayesian filter
+
+**Scope correction.** An earlier draft of this plan said pregnancy *and hormonal
+contraception* suppress. Only **pregnancy** does. Hormonal contraception often
+removes true cycles entirely (PLAN 1081) and is a strong candidate for the same
+treatment, but suppressing it was not chosen and must not be added quietly.
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read docs/PLAN.md 1081 (what the model structurally cannot
+know) and docs/DECISIONS.md ADR-0010.
+
+Task AND-26: a conditions screen. Each condition has a start date and an
+optional end date. Recorded and displayed only — nothing here reaches the
+prediction model, and a test must prove it.
+
+The single exception: an active pregnancy returns a new SuppressedByCondition
+state instead of a prediction, because predicting a period for someone who is
+pregnant is wrong rather than merely uninformed. Hormonal contraception does NOT
+suppress; that was considered and not chosen.
+```
+
+### AND-27 Nutrition reference, with a symptom hint
+
+**Depends on:** AND-26 · **Est:** 1 session
+
+**Goal.** Useful information about iron and magnesium, without becoming a
+diagnosis.
+
+**Scope.** A reference section, sources committed to the repo, copy tests.
+
+**Done when.**
+- [ ] Reference text for iron + vitamin C and magnesium + zinc: what they are, why heavy bleeding contributes to iron loss, why vitamin C is co-listed
+- [ ] Every factual claim carries a citation, committed in the repo, `[VERIFY]`-marked until checked — the convention PLAN.md already uses for the priors figures
+- [ ] The symptom hint fires only on logged fatigue coinciding with heavy flow, and says only that it is worth raising with a clinician
+- [ ] Its exact wording is pinned by a copy test, like the disclaimer keys in `no_hardcoded_strings_test.dart`
+- [ ] A copy test forbids "you have", "you are deficient", "diagnos*" and "you should take"
+
+**The line this walks.** PLAN 6.2 forbids diagnostic framing. A hint that
+observes two things the user themselves logged, and recommends talking to a
+human, stays on the right side of it. A hint that names a deficiency does not.
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read docs/PLAN.md 6.2 (overclaiming) before writing a word
+of copy.
+
+Task AND-27: a nutrition reference for iron + vitamin C and magnesium + zinc,
+with citations committed to the repo. Plus one hint: when logged fatigue
+coincides with heavy flow, say it is worth raising with a clinician. Never name
+a deficiency, never say "you have" or "you should take".
+
+Pin the hint's wording in a copy test and add a test that forbids the
+diagnostic vocabulary listed in the task entry.
+```
+
+### AND-28 Export v2
+
+**Depends on:** AND-22, AND-23, AND-24, AND-26 · **Est:** 1 session
+
+**Goal.** Backups carry the new data, and the old format's rejection is honest.
+
+**Done when.**
+- [ ] Export v2 carries conditions; the fingerprint is updated and the round-trip fuzz test passes
+- [ ] A v1 file is **refused** with a specific message naming the reason, never a generic failure
+- [ ] After the migration to schema v2, the app prompts once to make a fresh backup
+- [ ] `docs/RELEASE.md` gains a release-note line telling users to re-export
+
+**Accepted risk, taken knowingly.** Refusing v1 files means every backup that
+exists today becomes unrestorable the moment a user updates. This app has no
+cloud and no Play Store restore — the export *is* the recovery path (risk R8).
+The alternative, a few lines of import branching, was offered and declined; the
+decision is recorded in ADR-0011 so a future session does not treat it as an
+oversight and "fix" it. The one-time re-export prompt exists so nobody discovers
+the loss after losing a phone.
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read app/lib/data/transfer/export_v1.dart and
+docs/DECISIONS.md ADR-0011 before changing anything.
+
+Task AND-28: export v2, carrying conditions. v1 files are refused, deliberately
+— see the ADR. The refusal message must name the reason specifically. Add a
+one-time prompt after the schema migration telling the user to make a fresh
+backup, and a release note saying the same.
+```
+
+### AND-29 App lock
+
+**Depends on:** AND-19 · **Est:** 1.5 sessions
+
+**Goal.** The first privacy feature ADR-0004 queued after the MVP.
+
+**Scope.** `local_auth`, an unlock gate around the app shell, a settings toggle.
+
+**Done when.**
+- [ ] `BiometricPrompt` with device-credential fallback, off by default and turned on in settings
+- [ ] Unlock on cold start, and again after 60 seconds in the background
+- [ ] A device with no enrolled credential is told plainly why the toggle cannot be turned on
+- [ ] `assert_no_network.sh` still passes with the new dependency, asserted in CI rather than assumed
+- [ ] `PRIVACY.md` says explicitly that this hides the screen and does **not** encrypt the database
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read docs/DECISIONS.md ADR-0004 (which queues an app lock
+as the first privacy feature after the MVP) and ADR-0008.
+
+Task AND-29: an app lock using local_auth — BiometricPrompt with device
+credential fallback. Off by default. Unlock on cold start and after 60 seconds
+backgrounded.
+
+It gates the UI. It does not encrypt anything, and PRIVACY.md must say so in
+those words. Check assert_no_network.sh still passes with the new dependency.
+```
+
+### AND-30 Schema v3 and intercourse logging
+
+**Depends on:** AND-28, AND-29 · **Est:** 1 session
+
+**Goal.** The most sensitive field in the app, added behind a lock and disclosed
+in the open.
+
+**Done when.**
+- [ ] `day_logs.intercourse` is a nullable `textEnum`: protected, unprotected
+- [ ] Schema v3, export v3, migration test
+- [ ] Onboarding and `PRIVACY.md` name it as the highest-risk field the app holds
+- [ ] **A test proves no prediction code path reads the column** — no fertility inference, ever, per A5
+- [ ] The calendar marker for it is distinguishable without colour, like every other marker
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read docs/PLAN.md 6.5 (treat this data as if it will be
+read by someone the user did not choose) and assumption A5.
+
+Task AND-30: add optional intercourse logging, protected or unprotected, as a
+nullable column on day_logs. Schema v3 and export v3.
+
+Two hard rules. Nothing in domain/predict may read this column, proven by a
+test. And onboarding plus PRIVACY.md must name it as the most sensitive thing
+the app stores, rather than letting a user discover that themselves.
+```
+
+### AND-31 Medicines artifact, generated from openFDA at build time
+
+**Depends on:** AND-19 · **Est:** 1.5 sessions
+
+**Goal.** Authoritative medicines data on the phone, with no network permission.
+
+**Scope.** `tools/scripts/gen_medicines.py`, `artifacts/medicines/medicines_v1.json`,
+`lib/data/reference/medicines_bundled.dart`, a CI `--check` step.
+
+**Done when.**
+- [ ] The generator pulls an allowlisted openFDA subset and commits the artifact; the phone never makes a request
+- [ ] `gen_medicines.py --check` runs in CI and fails if the generated Dart drifts from the artifact, exactly like `gen_priors_dart.py`
+- [ ] The snapshot date is embedded and displayed
+- [ ] openFDA's disclaimer is carried in-app and in the repo, `[VERIFY]` until the wording is checked
+- [ ] The APK grows by less than a megabyte, asserted in CI
+
+**Allowlist.** Ibuprofen, naproxen, mefenamic acid, paracetamol, tranexamic
+acid, combined and progestogen-only oral contraceptives, levonorgestrel
+emergency contraception, ferrous sulfate/fumarate/gluconate, magnesium salts,
+zinc.
+
+**Two things openFDA will not give you.** It is **US labelling** — strengths,
+brand names and warnings differ elsewhere, and the screen must say so. And
+tampons and cups are FDA *devices*, not drugs; they are not in `/drug/label` and
+their TSS guidance is hand-curated in AND-32.
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read tools/scripts/gen_priors_dart.py and the CI step that
+runs it with --check. This task copies that pattern exactly.
+
+Task AND-31: a generator that pulls an allowlisted openFDA subset into a
+committed artifact and a generated Dart file, with a --check CI gate. The fetch
+happens on a developer machine or in CI. The app never makes a request and never
+declares INTERNET — assert_no_network.sh must stay green.
+
+Embed and display the snapshot date. Carry openFDA's disclaimer. Say on screen
+that this is US labelling.
+```
+
+### AND-32 Lookup screen, hygiene entries, and the browser hand-off
+
+**Depends on:** AND-31 · **Est:** 1 session
+
+**Goal.** Look something up, and have somewhere to go when it is not there.
+
+**Done when.**
+- [ ] A search screen over the bundled set, reachable from settings
+- [ ] Curated hygiene entries including TSS guidance for tampons and cups, hand-written and cited
+- [ ] A browser hand-off that **warns before leaving** and explains that the browser, not the app, makes the request
+- [ ] The hand-off does not pre-fill a specific drug name without saying that it will appear in browser history
+- [ ] `url_launcher` adds no permission; `assert_no_network.sh` still passes
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read docs/DECISIONS.md ADR-0009.
+
+Task AND-32: a lookup screen over the bundled medicines artifact, plus curated
+hygiene product entries with TSS guidance. Add a browser hand-off for anything
+not in the set.
+
+The hand-off must warn before leaving and be honest that the browser makes the
+request and keeps the history. Do not pre-fill a drug name without saying so.
+Check assert_no_network.sh still passes with url_launcher in the tree.
+```
 
 ---
 
