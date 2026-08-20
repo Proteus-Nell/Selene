@@ -242,15 +242,29 @@ void main() {
   });
 
   group('missed reminders', () {
-    test('are reported once, and the visit is recorded', () async {
-      final planned = <PlannedNotification>[
-        PlannedNotification(
-          kind: NotificationKind.windowOpening,
-          fireDate: testClock.today().addDays(-1),
-        ),
-      ];
-      // First run: nothing to compare against.
-      expect(await scheduler.checkForMissedReminder(planned), isFalse);
+    // Written against dates the planner could actually produce. The first
+    // version of this test handed `checkForMissedReminder` a list containing a
+    // date in the past, which `plan` never returns, so it passed while the
+    // feature it covers could not fire in the app at all.
+    test('are reported once the stored schedule has a date that passed', () async {
+      NotificationScheduler at(int days) => NotificationScheduler(
+        gateway: gateway,
+        database: db,
+        cycles: CycleRepository(database: db, clock: testClock.advanced(days)),
+        clock: testClock.advanced(days),
+      );
+
+      // Day 0. A reminder is scheduled two days out; nothing has been missed,
+      // and there is no previous visit to compare against.
+      expect(
+        await scheduler.checkForMissedReminder(<PlannedNotification>[
+          PlannedNotification(
+            kind: NotificationKind.windowOpening,
+            fireDate: testClock.today().addDays(2),
+          ),
+        ]),
+        isFalse,
+      );
       expect(
         await db.settingsDao.readInt(
           SettingKey.lastOpenedEpochDay,
@@ -259,20 +273,31 @@ void main() {
         testClock.today().epochDay,
       );
 
-      final later = NotificationScheduler(
-        gateway: gateway,
-        database: db,
-        cycles: CycleRepository(database: db, clock: testClock.advanced(3)),
-        clock: testClock.advanced(3),
-      );
+      // Day 3. That date came and went while the app was closed. What answers
+      // the question is the schedule stored on day 0 — nothing about the plan
+      // being built now could, because every date in it is still in the future.
       expect(
-        await later.checkForMissedReminder(<PlannedNotification>[
-          PlannedNotification(
-            kind: NotificationKind.windowOpening,
-            fireDate: testClock.today().addDays(2),
-          ),
-        ]),
+        await at(3).checkForMissedReminder(const <PlannedNotification>[]),
         isTrue,
+      );
+
+      // And it is reported once. The visit is recorded and the stored schedule
+      // replaced, so the next check has nothing left to report.
+      expect(
+        await at(3).checkForMissedReminder(const <PlannedNotification>[]),
+        isFalse,
+      );
+    });
+
+    test('reschedule leaves a schedule behind for the next launch', () async {
+      // Without this the detection above has nothing to compare against on the
+      // next launch, and quietly answers no for ever.
+      final planned = await scheduler.reschedule(result, copy: copy);
+      await scheduler.checkForMissedReminder(planned);
+      expect(planned, isNotEmpty);
+      expect(
+        await db.settingsDao.raw(SettingKey.scheduledFireDays),
+        planned.map((n) => n.fireDate.epochDay).join(','),
       );
     });
   });

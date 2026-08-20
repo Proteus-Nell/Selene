@@ -6,7 +6,6 @@ import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
-import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 import 'package:period_tracker/notifications/notification_gateway.dart';
 import 'package:period_tracker/notifications/notification_plan.dart';
@@ -150,16 +149,42 @@ class NotificationScheduler {
       SettingKey.lastOpenedEpochDay,
       orElse: -1,
     );
+    // The schedule as it stood *before* this launch rebuilt it. Comparing
+    // against [planned] instead would always answer no: every date the planner
+    // produces is strictly after today, and a missed reminder is by definition
+    // one whose date has passed.
+    final previous = await _storedFireDates();
     final today = _clock.today();
+
     await settings.writeInt(SettingKey.lastOpenedEpochDay, today.epochDay);
+    await settings.writeRaw(
+      SettingKey.scheduledFireDays.wireName,
+      planned.map((n) => n.fireDate.epochDay).join(','),
+    );
 
     final missed = NotificationPlanner.missedWhileClosed(
-      planned: planned,
+      fireDates: previous,
       lastOpened: stored < 0 ? null : CivilDate.fromEpochDay(stored),
       today: today,
     );
     if (missed) _logger?.warn(LogEvent.notificationMissed);
     return missed;
+  }
+
+  /// The fire dates recorded by the previous reschedule.
+  ///
+  /// Tolerant of anything it cannot parse: a preference that cannot be read is
+  /// worth defaulting, and the cost of getting this wrong is one missing
+  /// banner, not a broken launch.
+  Future<List<CivilDate>> _storedFireDates() async {
+    final raw = await _database.settingsDao.raw(SettingKey.scheduledFireDays);
+    if (raw == null || raw.isEmpty) return const <CivilDate>[];
+    return raw
+        .split(',')
+        .map(int.tryParse)
+        .whereType<int>()
+        .map(CivilDate.fromEpochDay)
+        .toList();
   }
 
   /// Records that the nudge fired today, for its one-per-seven-days cap.
@@ -174,9 +199,7 @@ class NotificationScheduler {
   /// action worth having at all.
   Future<void> handleAction(String actionId) async {
     if (actionId != logPeriodActionId) return;
-    await _cycles.upsert(
-      DayLog(date: _clock.today(), flow: FlowIntensity.medium),
-    );
+    await _cycles.markPeriodStart(_clock.today());
     _logger?.info(LogEvent.logEntryCreated);
   }
 }
@@ -211,6 +234,16 @@ final class NoopNotificationGateway implements NotificationGateway {
   @override
   Future<List<int>> pendingIds() async => const <int>[];
 }
+
+/// Bumped whenever a notification preference changes.
+///
+/// `NotificationSync` reschedules when the *prediction* changes, which is the
+/// right trigger for almost everything — but turning reminders off, or moving
+/// the lead days, changes nothing about the prediction. Without this, the
+/// notification the user just switched off stays queued on the platform until
+/// something unrelated happens to trigger a reschedule, and then arrives.
+final StateProvider<int> notificationPreferencesRevisionProvider =
+    StateProvider<int>((ref) => 0);
 
 /// The notification gateway. Defaults to [NoopNotificationGateway].
 final Provider<NotificationGateway> notificationGatewayProvider =

@@ -210,18 +210,22 @@ abstract final class NotificationPlanner {
   ///
   /// OEM battery optimisers on several manufacturers silently kill scheduled
   /// alarms (risk R12), so the app cannot assume anything it scheduled actually
-  /// arrived. This is the detection half of the fallback: if a planned date
-  /// passed between [lastOpened] and [today], the UI can surface it in app
-  /// rather than the reminder simply never having happened.
+  /// arrived. This is the detection half of the fallback: if one of the dates
+  /// that was *previously scheduled* passed between [lastOpened] and [today],
+  /// the UI can surface it in app rather than the reminder simply never having
+  /// happened.
+  ///
+  /// [fireDates] must come from the stored schedule, not from a plan built on
+  /// this launch. Every date [plan] returns is strictly after today, so a
+  /// freshly built plan can never satisfy the `<= today` half of this and the
+  /// answer would always be no, whatever the user's phone had done to the
+  /// alarms.
   static bool missedWhileClosed({
-    required List<PlannedNotification> planned,
+    required List<CivilDate> fireDates,
     required CivilDate? lastOpened,
     required CivilDate today,
   }) {
     if (lastOpened == null) return false;
-    return planned.any(
-      (notification) =>
-          notification.fireDate > lastOpened && notification.fireDate <= today,
-    );
+    return fireDates.any((date) => date > lastOpened && date <= today);
   }
 }

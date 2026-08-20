@@ -12,7 +12,7 @@ import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
-import 'package:period_tracker/domain/models/day_log.dart';
+import 'package:period_tracker/notifications/background_action.dart';
 import 'package:period_tracker/notifications/notification_gateway.dart';
 import 'package:period_tracker/notifications/scheduler.dart';
 import 'package:period_tracker/routing/router.dart';
@@ -133,12 +133,17 @@ NotificationGateway buildNotificationGateway({
   return LocalNotificationGateway(
     plugin: FlutterLocalNotificationsPlugin(),
     clock: clock,
+    // The app is usually not running when a reminder arrives, so this is the
+    // path the log action actually takes; `onAction` below only covers a tap
+    // while the app happens to be open.
+    onBackgroundResponse: handleBackgroundNotificationResponse,
     onAction: (actionId) {
       if (actionId != logPeriodActionId) return;
       unawaited(
-        CycleRepository(database: database, clock: clock).upsert(
-          DayLog(date: clock.today(), flow: FlowIntensity.medium),
-        ),
+        CycleRepository(
+          database: database,
+          clock: clock,
+        ).markPeriodStart(clock.today()),
       );
     },
   );

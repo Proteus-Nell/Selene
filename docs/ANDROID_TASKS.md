@@ -794,13 +794,44 @@ Requirements:
 **On the parts a test can and cannot reach.** The scheduling rules, the copy
 rules and the one-per-seven-days cap are unit tested against a recording
 gateway, so they need no device. Two things are asserted structurally instead of
-behaviourally: the manifest is parsed to confirm the boot receiver and
-`POST_NOTIFICATIONS` are declared, and `notifications_test.dart` asserts that the
+behaviourally: the manifest is parsed to confirm every receiver the plugin needs
+and both permissions are declared, and `notifications_test.dart` asserts that the
 real bootstrap replaces the default no-op gateway — a silently no-op notification
 system is indistinguishable from a working one right up until someone needs a
 reminder. Whether an OEM battery optimiser actually lets a scheduled alarm fire
 (risk R12) cannot be tested at all, which is why the app detects a missed
 reminder on next open and says so in place.
+
+**Four defects the first version of this shipped with**, all found by review
+after AND-19 rather than by the suite, and all in the seam between our code and
+the platform — the one place a recording gateway proves nothing:
+
+- **Every reminder was scheduled for 09:00 UTC.** `TZDateTime.local` looks
+  right and is what the plugin's examples show, but `initializeTimeZones()`
+  leaves `tz.local` set to UTC, and only a platform plugin can supply the zone
+  name that would change it. 01:00 in Los Angeles, 20:00 in Sydney, a day early
+  in Honolulu. Now built as an instant from Dart's own zone rules, which need no
+  zone database and no extra dependency, and asserted in
+  `schedule_time_test.dart` against the shipping code rather than a restatement
+  of it.
+- **The one-tap log action could not work.** An action that does not open the
+  app is delivered by broadcast to `ActionBroadcastReceiver`, which the manifest
+  never declared, and it needs a Dart dispatcher handle that only
+  `onDidReceiveBackgroundNotificationResponse` stores. Both were missing, so the
+  button rendered, tapped, and did nothing. The highest-leverage item in 2.4.3
+  was inert.
+- **The missed-reminder banner (risk R12) was unreachable.** It compared the
+  plan built on *this* launch against the days since the last one, and every
+  date the planner returns is strictly after today. The scheduler now stores
+  what it scheduled and compares against that. The old unit tests passed because
+  they hand-built lists containing past dates the planner cannot produce.
+- **Preference changes did not reschedule.** Turning reminders off wrote the
+  setting and left the queued notification on the platform, so the next one
+  still arrived.
+
+The pattern is worth naming: each was in code no test could reach without a
+device, and each had a green test sitting next to it. Where a fake stands in for
+the platform, the fake is the thing being tested.
 
 
 **Prompt to paste.**

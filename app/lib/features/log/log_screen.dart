@@ -49,9 +49,7 @@ class _LogScreenState extends ConsumerState<LogScreen> {
   Future<void> _logStart(CivilDate date) async {
     final repository = ref.read(cycleRepositoryProvider);
     final previous = await repository.logFor(date);
-    final result = await repository.upsert(
-      DayLog(date: date, flow: FlowIntensity.medium),
-    );
+    final result = await repository.markPeriodStart(date);
     if (!mounted) return;
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context)..clearSnackBars();

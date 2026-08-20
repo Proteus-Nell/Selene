@@ -195,6 +195,29 @@ class CycleRepository {
     return const Ok<void, WriteRefused>(null);
   }
 
+  /// Records [date] as a bleeding day, keeping whatever else is on that day.
+  ///
+  /// The one-tap paths — the log screen's primary button and the notification
+  /// action — know the flow and nothing else. Handing [upsert] a bare [DayLog]
+  /// for that silently erases the day's symptoms, because a save replaces the
+  /// whole day: flow and symptoms are stored as one fact, so writing one
+  /// without the other deletes the other. Someone who logged cramps in the
+  /// morning and taps "period started" in the afternoon must not lose the
+  /// cramps, and would have no way of knowing they had.
+  Future<Result<void, WriteRefused>> markPeriodStart(
+    CivilDate date, {
+    FlowIntensity flow = FlowIntensity.medium,
+  }) async {
+    final existing = await logFor(date);
+    return upsert(
+      DayLog(
+        date: date,
+        flow: flow,
+        symptoms: existing?.symptoms ?? const <Symptom, SymptomSeverity>{},
+      ),
+    );
+  }
+
   /// Writes a whole batch, refusing if any day in it is already logged.
   ///
   /// All or nothing. A batch that half-applied would leave the user with a

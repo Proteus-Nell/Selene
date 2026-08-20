@@ -65,6 +65,14 @@
         <receiver
             android:exported="false"
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <!-- Receives a tap on a notification action button. Required: an
+             action that does not open the app is delivered as an explicit
+             broadcast to this class, and an explicit broadcast to a receiver
+             the manifest never declared simply goes nowhere. The button would
+             be visible, tappable, and inert. -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
         <receiver
             android:exported="false"
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">

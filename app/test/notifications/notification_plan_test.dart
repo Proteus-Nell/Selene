@@ -229,15 +229,10 @@ void main() {
 
   group('missed reminders', () {
     test('are detected when their day passed while the app was closed', () {
-      final planned = <PlannedNotification>[
-        PlannedNotification(
-          kind: NotificationKind.windowOpening,
-          fireDate: today.addDays(-2),
-        ),
-      ];
+      final scheduled = <CivilDate>[today.addDays(-2)];
       expect(
         NotificationPlanner.missedWhileClosed(
-          planned: planned,
+          fireDates: scheduled,
           lastOpened: today.addDays(-5),
           today: today,
         ),
@@ -245,7 +240,7 @@ void main() {
       );
       expect(
         NotificationPlanner.missedWhileClosed(
-          planned: planned,
+          fireDates: scheduled,
           lastOpened: today.addDays(-1),
           today: today,
         ),
@@ -256,13 +251,40 @@ void main() {
     test('are not reported on a first run', () {
       expect(
         NotificationPlanner.missedWhileClosed(
-          planned: <PlannedNotification>[
-            PlannedNotification(
-              kind: NotificationKind.windowOpening,
-              fireDate: today,
-            ),
-          ],
+          fireDates: <CivilDate>[today],
           lastOpened: null,
+          today: today,
+        ),
+        isFalse,
+      );
+    });
+
+    test('a freshly built plan can never contain a missed date', () {
+      // The invariant that made the first version of this feature dead code:
+      // every date `plan` produces is strictly after today, and a missed
+      // reminder is by definition one whose date has already passed. Feeding
+      // `missedWhileClosed` a plan built on this launch therefore always
+      // answers no, which is why the scheduler compares against the schedule it
+      // stored last time instead.
+      final planned = planFor(
+        predicted('2026-07-03', '2026-07-07'),
+        preferences: const NotificationPreferences(nudgeEnabled: true),
+        lastLoggedDay: today,
+      );
+      expect(planned, isNotEmpty, reason: 'nothing to check otherwise');
+      for (final notification in planned) {
+        expect(
+          notification.fireDate > today,
+          isTrue,
+          reason:
+              '${notification.kind} was planned for a date not in the '
+              'future, which the planner must never do',
+        );
+      }
+      expect(
+        NotificationPlanner.missedWhileClosed(
+          fireDates: planned.map((n) => n.fireDate).toList(),
+          lastOpened: today.addDays(-30),
           today: today,
         ),
         isFalse,

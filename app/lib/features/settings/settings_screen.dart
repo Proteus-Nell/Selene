@@ -14,6 +14,7 @@ import 'package:period_tracker/features/settings/delete_everything_dialog.dart';
 import 'package:period_tracker/features/settings/log_viewer.dart';
 import 'package:period_tracker/features/settings/privacy_section.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
+import 'package:period_tracker/notifications/scheduler.dart';
 
 /// Data controls, the privacy statement, and the activity log.
 ///
@@ -274,6 +275,16 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
     unawaited(_load());
   }
 
+  /// Asks for the platform schedule to be rebuilt from the new preferences.
+  ///
+  /// Writing the setting is only half of switching a reminder off: whatever was
+  /// already handed to the platform stays queued until something reschedules,
+  /// so a user who turns reminders off would still get the next one.
+  void _resync() {
+    if (!mounted) return;
+    ref.read(notificationPreferencesRevisionProvider.notifier).state++;
+  }
+
   /// Reads the stored preferences once, defaulting rather than failing.
   Future<void> _load() async {
     final settings = ref.read(appDatabaseProvider).settingsDao;
@@ -330,6 +341,7 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
               SettingKey.reminderEnabled,
               value: value,
             );
+            _resync();
           },
         ),
         SwitchListTile(
@@ -339,6 +351,7 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
           onChanged: (value) async {
             setState(() => _nudge = value);
             await settings.writeBool(SettingKey.nudgeEnabled, value: value);
+            _resync();
           },
         ),
         SwitchListTile(
@@ -351,6 +364,7 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
               SettingKey.detailedNotifications,
               value: value,
             );
+            _resync();
           },
         ),
         ListTile(
@@ -371,6 +385,7 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
                         SettingKey.reminderLeadDays,
                         days,
                       );
+                      _resync();
                     },
                   ),
                 ),

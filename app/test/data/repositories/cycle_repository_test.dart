@@ -106,6 +106,47 @@ void main() {
     });
   });
 
+  group('markPeriodStart', () {
+    test('keeps symptoms already recorded for that day', () async {
+      // The one-tap paths know the flow and nothing else. Writing a bare DayLog
+      // for them replaces the whole day, symptoms included — so someone who
+      // logged cramps in the morning and taps "period started" in the afternoon
+      // would lose the cramps, with nothing on screen to say so.
+      await repo.upsert(
+        DayLog(
+          date: at('2026-06-01'),
+          flow: FlowIntensity.spotting,
+          symptoms: const <Symptom, SymptomSeverity>{
+            Symptom.cramps: SymptomSeverity.severe,
+            Symptom.headache: SymptomSeverity.mild,
+          },
+        ),
+      );
+
+      expect((await repo.markPeriodStart(at('2026-06-01'))).isOk, isTrue);
+
+      final stored = (await repo.logs()).single;
+      expect(stored.flow, FlowIntensity.medium);
+      expect(stored.severityOf(Symptom.cramps), SymptomSeverity.severe);
+      expect(stored.severityOf(Symptom.headache), SymptomSeverity.mild);
+    });
+
+    test('creates the day when there is nothing there yet', () async {
+      expect((await repo.markPeriodStart(at('2026-06-02'))).isOk, isTrue);
+      final stored = (await repo.logs()).single;
+      expect(stored.date, at('2026-06-02'));
+      expect(stored.isBleedingDay, isTrue);
+      expect(stored.symptoms, isEmpty);
+    });
+
+    test('still refuses a future date', () async {
+      expect(
+        (await repo.markPeriodStart(at('2026-12-01'))).errorOrNull!.rejection,
+        WriteRejection.dateInFuture,
+      );
+    });
+  });
+
   group('addAll', () {
     test('writes a whole batch', () async {
       final result = await repo.addAll(<DayLog>[
