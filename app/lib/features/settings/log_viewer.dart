@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
+import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Shows every log line the app has recorded, and lets the user clear them.
@@ -40,11 +41,7 @@ class _LogViewerScreenState extends ConsumerState<LogViewerScreen> {
                 : () {
                     logger.clear();
                     setState(() {});
-                    ScaffoldMessenger.of(context)
-                      ..clearSnackBars()
-                      ..showSnackBar(
-                        SnackBar(content: Text(l10n.settingsLogViewerCleared)),
-                      );
+                    showAppSnackBar(context, l10n.settingsLogViewerCleared);
                   },
           ),
         ],

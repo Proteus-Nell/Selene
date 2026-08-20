@@ -26,6 +26,14 @@ void main() {
 
   File databaseFile() => File('${directory.path}/$databaseFileName');
 
+  /// Overwrites the file with bytes that are not a SQLite database.
+  void corrupt(File file) {
+    file.writeAsBytesSync(
+      Uint8List.fromList(List<int>.filled(4096, 0x41)),
+      flush: true,
+    );
+  }
+
   Future<DatabaseOpenOutcome> open() =>
       openAppDatabase(directory: directory, clock: clock, logger: logger);
 
@@ -63,15 +71,67 @@ void main() {
     });
   });
 
-  group('a corrupt database', () {
-    /// Overwrites the file with bytes that are not a SQLite database.
-    void corrupt(File file) {
-      file.writeAsBytesSync(
-        Uint8List.fromList(List<int>.filled(4096, 0x41)),
-        flush: true,
+  group('opening without recovery', () {
+    // The path the notification action's background isolate takes. Same open,
+    // same integrity check, same migration — and it never quarantines, because
+    // moving someone's history aside is a decision that needs a screen and a
+    // person looking at it.
+    Future<AppDatabase?> openQuietly() =>
+        openAppDatabaseWithoutRecovery(directory: directory);
+
+    Future<void> seed(FlowIntensity flow) async {
+      final first = await open() as DatabaseOpened;
+      await first.database.dayLogDao.save(
+        DayLog(date: const CivilDate.fromEpochDay(20000), flow: flow),
       );
+      await first.database.close();
     }
 
+    test('hands back a healthy database like any other caller', () async {
+      await seed(FlowIntensity.medium);
+      final db = await openQuietly();
+      expect(db, isNotNull);
+      addTearDown(db!.close);
+      expect(await db.dayLogDao.allLogs(), hasLength(1));
+    });
+
+    test('refuses a damaged file rather than moving it aside', () async {
+      await seed(FlowIntensity.heavy);
+      corrupt(databaseFile());
+      final sizeBefore = databaseFile().lengthSync();
+
+      expect(await openQuietly(), isNull);
+
+      // Untouched, and nothing quarantined. A background isolate that relocated
+      // the user's history would do it with nothing on screen, nobody to tell,
+      // and no way to connect it to the notification they tapped.
+      expect(databaseFile().existsSync(), isTrue);
+      expect(databaseFile().lengthSync(), sizeBefore);
+      expect(
+        directory
+            .listSync()
+            .where((e) => e.path.contains(quarantineSuffix))
+            .toList(),
+        isEmpty,
+      );
+    });
+
+    test('defers the recovery rather than dropping it', () async {
+      // Declining in the background must not mean the damage goes unhandled,
+      // only that it is handled in the open on the next foreground launch.
+      await seed(FlowIntensity.heavy);
+      corrupt(databaseFile());
+      expect(await openQuietly(), isNull);
+
+      final outcome = await open();
+      expect(outcome, isA<DatabaseRecoveredFromCorruption>());
+      final recovered = outcome as DatabaseRecoveredFromCorruption;
+      addTearDown(recovered.database.close);
+      expect(recovered.quarantinedFile.existsSync(), isTrue);
+    });
+  });
+
+  group('a corrupt database', () {
     test('is quarantined rather than opened, and never deleted', () async {
       final first = await open() as DatabaseOpened;
       await first.database.dayLogDao.save(

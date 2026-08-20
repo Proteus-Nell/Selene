@@ -6,6 +6,7 @@ import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/domain/cycles/cycle_rules.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/features/common/formatting.dart';
+import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/log/day_editor.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/main.dart';
@@ -52,28 +53,25 @@ class _LogScreenState extends ConsumerState<LogScreen> {
     final result = await repository.markPeriodStart(date);
     if (!mounted) return;
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context)..clearSnackBars();
     if (result.isErr) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(_messageFor(result.errorOrNull!.rejection, l10n)),
-        ),
+      showAppSnackBar(
+        context,
+        _messageFor(result.errorOrNull!.rejection, l10n),
       );
       return;
     }
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(l10n.logEntrySaved),
-        action: SnackBarAction(
-          label: l10n.commonUndo,
-          onPressed: () async {
-            if (previous == null) {
-              await repository.deleteDay(date);
-            } else {
-              await repository.upsert(previous);
-            }
-          },
-        ),
+    showAppSnackBar(
+      context,
+      l10n.logEntrySaved,
+      action: SnackBarAction(
+        label: l10n.commonUndo,
+        onPressed: () async {
+          if (previous == null) {
+            await repository.deleteDay(date);
+          } else {
+            await repository.upsert(previous);
+          }
+        },
       ),
     );
   }
