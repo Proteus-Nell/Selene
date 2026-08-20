@@ -43,7 +43,10 @@ if [[ ! -f "$DATABASE_DART" ]]; then
   exit 2
 fi
 
-current="$(grep -oP 'static const int latestSchemaVersion = \K[0-9]+' "$DATABASE_DART" || true)"
+# sed rather than `grep -oP`: PCRE mode is a GNU extension and the default grep
+# on macOS does not have it, which would make bumping the schema a thing that
+# only works on Linux.
+current="$(sed -n 's/.*static const int latestSchemaVersion = \([0-9][0-9]*\).*/\1/p' "$DATABASE_DART" | head -1)"
 if [[ -z "$current" ]]; then
   echo "ERROR: could not read latestSchemaVersion from $DATABASE_DART." >&2
   echo "       Has the constant been renamed?" >&2

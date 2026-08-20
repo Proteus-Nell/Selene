@@ -47,7 +47,15 @@ find_apksigner() {
   local sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
   if [[ -n "$sdk" && -d "$sdk/build-tools" ]]; then
     local found
-    found="$(find "$sdk/build-tools" -maxdepth 2 -name 'apksigner' -type f 2>/dev/null | sort -V | tail -1)"
+    # `sort -V` is a GNU extension that BSD sort (macOS) does not have. Sorting
+    # on a zero-padded key built from the version directory name gets the same
+    # answer with only POSIX tools, and without it "9.0.0" sorts above "34.0.0".
+    found="$(find "$sdk/build-tools" -maxdepth 2 -name 'apksigner' -type f 2>/dev/null |
+      awk -F/ '{
+        for (i = 1; i <= NF; i++) if ($i == "build-tools") v = $(i + 1)
+        split(v, part, ".")
+        printf "%09d%09d%09d\t%s\n", part[1], part[2], part[3], $0
+      }' | sort | tail -1 | cut -f2)"
     [[ -n "$found" ]] && { echo "$found"; return 0; }
   fi
   return 1

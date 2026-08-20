@@ -94,6 +94,12 @@ class DayCell extends StatelessWidget {
       label: label,
       button: true,
       excludeSemantics: true,
+      // Both actions, deliberately. `excludeSemantics` drops the InkWell's own
+      // semantics, so whatever is not re-declared here does not exist to a
+      // screen reader — and a node marked `button: true` with no tap action is
+      // one TalkBack's double-tap gesture cannot activate at all. The cell
+      // would be readable and unusable.
+      onTap: onLongPress,
       onLongPress: onLongPress,
       child: InkWell(
         onTap: onLongPress,

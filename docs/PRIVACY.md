@@ -56,6 +56,17 @@ the MVP.
 
 ## Permissions this app asks for
 
-`POST_NOTIFICATIONS`, and nothing else. `INTERNET` is actively **removed**
-from the release manifest, and a check on the built APK fails the build if it
-reappears. See `tools/scripts/assert_no_network.sh`.
+Two, and nothing else:
+
+- **`POST_NOTIFICATIONS`** — the runtime prompt, asked once, and only after you
+  have logged a cycle. Decline it and everything else still works.
+- **`RECEIVE_BOOT_COMPLETED`** — granted at install with no prompt, so it is
+  easy to miss when reviewing the app. It exists for one reason: Android drops
+  every scheduled alarm when the phone restarts, so without it your reminders
+  would silently stop after a reboot. It lets the app re-register those
+  reminders. It does not let the app start itself for any other purpose, and it
+  carries no access to your data.
+
+`INTERNET` is actively **removed** from the release manifest, and a check on
+the built APK fails the build if it reappears. See
+`tools/scripts/assert_no_network.sh`.

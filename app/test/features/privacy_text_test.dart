@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:xml/xml.dart';
 
 /// Finds a file by walking up from the working directory.
 File findFile(String relativePath) {
@@ -42,6 +43,39 @@ void main() {
         reason:
             '"$key" is shown in the app but is not in docs/PRIVACY.md. Edit '
             'both together.',
+      );
+    }
+  });
+
+  test('every permission the manifest declares is named in the doc', () {
+    // A privacy statement that lists fewer permissions than the app actually
+    // holds is worse than none: it invites the reader to stop checking. This
+    // caught RECEIVE_BOOT_COMPLETED, which is granted at install with no
+    // prompt and so is easy to add without noticing the doc still said
+    // "POST_NOTIFICATIONS, and nothing else".
+    final manifest = XmlDocument.parse(
+      findFile(
+        'app/android/app/src/main/AndroidManifest.xml',
+      ).readAsStringSync(),
+    );
+    final doc = findFile('docs/PRIVACY.md').readAsStringSync();
+
+    final declared = manifest
+        .findAllElements('uses-permission')
+        .where((p) => p.getAttribute('tools:node') != 'remove')
+        .map((p) => p.getAttribute('android:name'))
+        .whereType<String>()
+        .toList();
+
+    expect(declared, isNotEmpty);
+    for (final permission in declared) {
+      final short = permission.split('.').last;
+      expect(
+        doc,
+        contains(short),
+        reason:
+            'the manifest declares $permission but docs/PRIVACY.md does not '
+            'mention it. Say what it is for, or stop asking for it.',
       );
     }
   });

@@ -114,8 +114,13 @@ class _NotificationSyncState extends ConsumerState<NotificationSync> {
     final copy = buildNotificationCopy(context, result);
 
     if (!_prepared) {
-      _prepared = true;
+      // Set after the await, not before. Setting it first would mean a failed
+      // prepare() — a channel that could not be created — is never retried, and
+      // the app then schedules notifications into channels that do not exist
+      // for the rest of the process's life. Runs are serialised by _sync, so
+      // there is no re-entrancy to guard against here.
       await scheduler.prepare(copy);
+      _prepared = true;
     }
 
     final planned = await scheduler.reschedule(result, copy: copy);

@@ -13,6 +13,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/features/calendar/calendar_screen.dart';
@@ -113,6 +114,36 @@ void main() {
       // And the long-press that opens the editor is exposed as an action,
       // not left as a gesture only a sighted user can discover.
       expect(cell.properties.onLongPress, isNotNull);
+    });
+
+    testWidgets('can be activated the way a screen reader activates a button', (
+      tester,
+    ) async {
+      // Asserted on the rendered semantics tree rather than on the widget's
+      // properties, because the bug this catches lives in the gap between the
+      // two: the cell sets `excludeSemantics`, so an action the InkWell handles
+      // does not reach the node unless it is re-declared. A node marked
+      // `button: true` with no tap action reads as a button to TalkBack and
+      // then does nothing when double-tapped.
+      // Disposed here rather than in a tear-down: flutter_test checks for a
+      // leaked SemanticsHandle before tear-downs run, so addTearDown fails the
+      // test it is meant to clean up after.
+      final handle = tester.ensureSemantics();
+      await pumpCalendar(tester);
+
+      final data = tester
+          .getSemantics(find.byType(DayCell).first)
+          .getSemanticsData();
+      handle.dispose();
+
+      expect(
+        data.hasAction(SemanticsAction.tap),
+        isTrue,
+        reason:
+            'the day cell announces itself as a button but cannot be '
+            'activated by one',
+      );
+      expect(data.hasAction(SemanticsAction.longPress), isTrue);
     });
   });
 
