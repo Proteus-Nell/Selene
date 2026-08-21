@@ -145,6 +145,34 @@ Checklist, in the order the failures actually happen:
 - [ ] Keystore backups still exist and still open
 - [ ] **Release notes carry the re-export warning** — see below
 - [ ] No claim in `docs/NUTRITION_SOURCES.md` is still marked `[VERIFY]`
+- [ ] The medicines artifact has actually been fetched — see below
+
+### The medicines artifact (export format aside)
+
+`artifacts/medicines/medicines_v1.json` is committed **unpopulated** until
+someone runs the fetch. In that state the reference screen explains itself
+rather than showing an empty list, which is honest but is not the feature.
+
+```bash
+python3 tools/scripts/gen_medicines.py --fetch
+python3 tools/scripts/gen_medicines.py --check   # should now pass
+```
+
+That needs network, on purpose: it is the one part of this project that talks to
+anything, and it runs on a developer machine or in CI, never on the phone. Commit
+both the artifact and the regenerated
+`app/lib/data/reference/medicines_bundled.dart` together — a snapshot committed
+without its Dart is a screen showing the previous snapshot under the new
+snapshot's date.
+
+Two things to check by eye after fetching, because no test can:
+
+- The `[VERIFY]` marker on the disclaimer in `gen_medicines.py`. Clearing it
+  means opening <https://open.fda.gov/terms/> and confirming the wording is what
+  they ask to be carried.
+- That the label text that came back is actually about the medicine you meant.
+  openFDA is queried by generic name and returns the first match; a query that
+  matched a combination product would put the wrong warnings on the screen.
 
 ### The re-export warning (export format v2)
 
