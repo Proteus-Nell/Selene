@@ -14,7 +14,7 @@ import 'package:period_tracker/domain/models/day_log.dart';
 /// The importer refuses anything it does not recognise rather than guessing, so
 /// this number is the promise that a file's fields mean what they used to.
 ///
-/// **v2 adds conditions, and v1 files are refused** (ADR-0011). That decision
+/// **v3 adds the intercourse field; v2 and earlier are refused** (ADR-0011). That decision
 /// was taken knowing its cost: this app has no cloud and no Play Store restore,
 /// so the export *is* the recovery path (risk R8), and refusing v1 makes every
 /// backup taken before this release unrestorable. A few lines of import
@@ -24,7 +24,16 @@ import 'package:period_tracker/domain/models/day_log.dart';
 ///
 /// If you are reading this because you are about to "fix" the refusal: it is
 /// not an oversight. Read ADR-0011 first.
-const int exportSchemaVersion = 2;
+///
+/// **The cost of this policy compounds.** v2 stranded every backup taken before
+/// it; v3 strands every backup taken between the two. That is the second time
+/// in one release cycle, and it is worth saying out loud, because the argument
+/// for refusing is weakest here: v3 adds a *nullable* field, so a v2 file has
+/// nothing missing — absence genuinely means "not recorded". Reading one would
+/// have cost no guesswork at all. The policy was chosen deliberately and is
+/// being followed deliberately; if it is ever revisited, this is the case to
+/// revisit it on.
+const int exportSchemaVersion = 3;
 
 /// Fingerprint of the envelope's *shape*, not its contents.
 ///
@@ -37,10 +46,10 @@ const int exportSchemaVersion = 2;
 /// `export_v1_test.dart` rebuilds this from the actual serialised keys, so
 /// changing the shape without changing this constant fails the suite.
 const String exportSchemaFingerprint =
-    'v2;'
+    'v3;'
     'envelope[app_version,conditions,day_logs,db_schema_version,exported_utc,'
     'schema_fingerprint,schema_version,settings];'
-    'day_log[date,flow,symptoms];'
+    'day_log[date,flow,intercourse,symptoms];'
     'condition[condition,end,start]';
 
 /// The app version stamped into exports.

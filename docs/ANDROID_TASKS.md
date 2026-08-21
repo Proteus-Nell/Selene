@@ -46,7 +46,7 @@ The `app/` Flutter component of Period-Tracker, split into independently prompta
 | [AND-28](#and-28-export-v2) | Export v2 | AND-22, AND-26 | 1 |
 | **Feature set v2 — release 2 (private data)** | | | |
 | [AND-29](#and-29-app-lock) | App lock | AND-19 | 1.5 |
-| [AND-30](#and-30-schema-v3-and-intercourse-logging) | Schema v3 and intercourse logging | AND-28, AND-29 | 1 |
+| [AND-30](#and-30-schema-v4-and-intercourse-logging) | Schema v4 and intercourse logging | AND-28, AND-29 | 1 |
 | [AND-31](#and-31-medicines-artifact-generated-from-openfda-at-build-time) | Medicines artifact from openFDA, at build time | AND-19 | 1.5 |
 | [AND-32](#and-32-lookup-screen-hygiene-entries-and-the-browser-hand-off) | Lookup screen and browser hand-off | AND-31 | 1 |
 | **Tier B (optional, may never be built)** | | | |
@@ -1436,19 +1436,41 @@ It gates the UI. It does not encrypt anything, and PRIVACY.md must say so in
 those words. Check assert_no_network.sh still passes with the new dependency.
 ```
 
-### AND-30 Schema v3 and intercourse logging
+### AND-30 Schema v4 and intercourse logging
 
 **Depends on:** AND-28, AND-29 · **Est:** 1 session
 
 **Goal.** The most sensitive field in the app, added behind a lock and disclosed
 in the open.
 
+**Version numbering correction.** This entry was written saying "schema v3".
+AND-23 had already taken v3, for the `Symptom` widening — which is the rule
+AND-22 established and the guard caught. So this is **schema v4**. Export is
+separately numbered and this is genuinely **export v3**, its second bump.
+
 **Done when.**
-- [ ] `day_logs.intercourse` is a nullable `textEnum`: protected, unprotected
-- [ ] Schema v3, export v3, migration test
-- [ ] Onboarding and `PRIVACY.md` name it as the highest-risk field the app holds
-- [ ] **A test proves no prediction code path reads the column** — no fertility inference, ever, per A5
-- [ ] The calendar marker for it is distinguishable without colour, like every other marker
+- [x] `day_logs.intercourse` is a nullable `textEnum`: protected, unprotected
+- [x] Schema **v4**, export v3, migration test
+- [x] Onboarding and `PRIVACY.md` name it as the highest-risk field the app holds
+- [x] **A test proves no prediction code path reads the column** — no fertility inference, ever, per A5
+- [x] The calendar marker for it is distinguishable without colour, like every other marker
+
+**A gap this surfaced.** The column existed in the schema and was silently
+dropped on the way through: neither the DAO's hand-written row mapping nor the
+importer's hand-written parser knew about it, so a value written in the editor
+never reached the database and a value in a backup never came back. Both are
+hand-written for good reasons, and both are places a new column has to be added
+by hand — worth remembering at the next one. A round-trip test caught it.
+
+**The refusal policy is compounding.** Export v2 stranded every backup taken
+before it; v3 now strands every backup taken between the two — the second time
+in one release cycle. The argument is weakest here, because v3 adds a *nullable*
+field: a v2 file has nothing missing, absence genuinely means "not recorded",
+and reading one would have needed no guesswork at all. The policy was chosen
+deliberately and is being followed deliberately, and `frozen_export_fixture_test`
+now keeps a running tally of superseded formats with a test that fails if the
+list falls behind. **If ADR-0011 is ever revisited, this is the case to revisit
+it on.**
 
 **Prompt to paste.**
 

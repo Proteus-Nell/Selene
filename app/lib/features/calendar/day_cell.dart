@@ -42,6 +42,27 @@ class PredictedMarker extends StatelessWidget {
   );
 }
 
+/// A small open ring: intercourse was logged on this day (AND-30).
+///
+/// A different *shape* from the other two markers rather than a third colour,
+/// like everything else in this grid — the states have to be told apart in
+/// greyscale (`docs/PLAN.md` 2.4.4).
+///
+/// It says only that something was logged, never which answer. A calendar is
+/// the most over-the-shoulder-readable screen in the app, and the marker exists
+/// so the user can find the day again, not so the grid can broadcast it.
+class IntercourseMarker extends StatelessWidget {
+  /// Creates the marker.
+  const IntercourseMarker({super.key});
+
+  @override
+  Widget build(BuildContext context) => Icon(
+    Icons.favorite_border,
+    size: 9,
+    color: Theme.of(context).colorScheme.onSurfaceVariant,
+  );
+}
+
 /// One day in the month grid.
 ///
 /// The [Semantics] label is the load-bearing part. A screen reader reading this
@@ -57,6 +78,7 @@ class DayCell extends StatelessWidget {
     required this.periodDayNumber,
     required this.isPredicted,
     required this.hasSymptoms,
+    required this.hasIntercourse,
     required this.onLongPress,
     super.key,
   });
@@ -78,6 +100,9 @@ class DayCell extends StatelessWidget {
 
   /// Whether any symptom was recorded.
   final bool hasSymptoms;
+
+  /// Whether intercourse was recorded — not which answer.
+  final bool hasIntercourse;
 
   /// Opens the editor for this day.
   final VoidCallback onLongPress;
@@ -156,6 +181,11 @@ class DayCell extends StatelessWidget {
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ],
+                      if (hasIntercourse) ...<Widget>[
+                        if (isPeriod || isPredicted || hasSymptoms)
+                          const SizedBox(width: 3),
+                        const IntercourseMarker(),
+                      ],
                     ],
                   ),
                 ],
@@ -180,6 +210,10 @@ class DayCell extends StatelessWidget {
       (null, false) => l10n.calendarCellPlain(readable),
     };
     if (hasSymptoms) label = l10n.calendarCellSymptomsSuffix(label);
+    // "Intercourse logged", never which answer. A screen reader is audible to
+    // whoever is in the room, and the marker itself does not distinguish them
+    // either.
+    if (hasIntercourse) label = l10n.calendarCellIntercourseSuffix(label);
     if (isToday) label = l10n.calendarCellTodaySuffix(label);
     return label;
   }

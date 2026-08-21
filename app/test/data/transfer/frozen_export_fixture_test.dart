@@ -27,19 +27,19 @@ import 'package:period_tracker/data/transfer/import_v1.dart';
 import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 
-/// A v2 export carrying every symptom name that predates AND-23.
+/// A v3 export carrying every symptom name that predates AND-23.
 ///
 /// Each of the five is at a different severity, so a rename of any single one
 /// fails this rather than only the first. The fingerprint and version are
 /// spelled out rather than interpolated: interpolating them would make this
 /// file agree with whatever the build currently thinks, which is the exact
 /// failure the fixture exists to prevent.
-const String _v2Export = '''
+const String _v3Export = '''
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "app_version": "1.0.0+1",
-  "db_schema_version": 3,
-  "schema_fingerprint": "v2;envelope[app_version,conditions,day_logs,db_schema_version,exported_utc,schema_fingerprint,schema_version,settings];day_log[date,flow,symptoms];condition[condition,end,start]",
+  "db_schema_version": 4,
+  "schema_fingerprint": "v3;envelope[app_version,conditions,day_logs,db_schema_version,exported_utc,schema_fingerprint,schema_version,settings];day_log[date,flow,intercourse,symptoms];condition[condition,end,start]",
   "exported_utc": "2026-08-01T09:30:00.000Z",
   "conditions": [
     {"condition": "pcos", "end": null, "start": "2024-02-01"},
@@ -49,16 +49,19 @@ const String _v2Export = '''
     {
       "date": "2026-01-05",
       "flow": "heavy",
+      "intercourse": null,
       "symptoms": {"cramps": "severe", "headache": "moderate"}
     },
     {
       "date": "2026-01-06",
       "flow": "medium",
+      "intercourse": "protected",
       "symptoms": {"mood": "mild", "energy": "moderate", "sleep": "severe"}
     },
     {
       "date": "2026-01-07",
       "flow": "spotting",
+      "intercourse": "unprotected",
       "symptoms": {}
     }
   ],
@@ -70,12 +73,34 @@ const String _v2Export = '''
 }
 ''';
 
-/// A v1 export, of the kind every user had before this release.
+/// Exports in formats this build no longer reads, newest first.
 ///
-/// Kept so the refusal is tested against a real file rather than a mangled
-/// version number. ADR-0011 accepted that this file is unrestorable; what it
-/// did not accept is that the app should be vague about it.
-const String _v1Export = '''
+/// One entry per superseded version, and the list grows by one line each time
+/// `exportSchemaVersion` is bumped — which under ADR-0011 is every time the
+/// envelope changes at all. That is deliberate but not free: **each bump
+/// strands every backup taken before it**, and this list is the running tally
+/// of how many times that has happened.
+///
+/// They are kept as real files rather than mangled version numbers because
+/// what is being tested is the refusal a real user meets. ADR-0011 accepted
+/// that these are unrestorable; what it did not license is the app being vague
+/// about it.
+const Map<int, String> _supersededExports = <int, String>{
+  2: '''
+{
+  "schema_version": 2,
+  "app_version": "1.0.0+1",
+  "db_schema_version": 3,
+  "schema_fingerprint": "v2;envelope[app_version,conditions,day_logs,db_schema_version,exported_utc,schema_fingerprint,schema_version,settings];day_log[date,flow,symptoms];condition[condition,end,start]",
+  "exported_utc": "2026-08-01T09:30:00.000Z",
+  "conditions": [{"condition": "pcos", "end": null, "start": "2024-02-01"}],
+  "day_logs": [
+    {"date": "2026-01-05", "flow": "heavy", "symptoms": {"cramps": "severe"}}
+  ],
+  "settings": {"onboarding_complete": "true"}
+}
+''',
+  1: '''
 {
   "schema_version": 1,
   "app_version": "1.0.0+1",
@@ -87,7 +112,8 @@ const String _v1Export = '''
   ],
   "settings": {"onboarding_complete": "true"}
 }
-''';
+''',
+};
 
 void main() {
   late AppDatabase db;
@@ -95,14 +121,14 @@ void main() {
   setUp(() => db = AppDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
 
-  group('the frozen v2 export', () {
+  group('the frozen v3 export', () {
     test('still imports', () async {
-      final result = await ImportV1.restore(_v2Export, database: db);
+      final result = await ImportV1.restore(_v3Export, database: db);
       expect(
         result.isOk,
         isTrue,
         reason:
-            'a backup written by the shipped v2 build was refused: '
+            'a backup written by the shipped v3 build was refused: '
             '${result.errorOrNull?.message}',
       );
       expect(result.valueOrNull!.dayLogsRestored, 3);
@@ -112,7 +138,7 @@ void main() {
       // The assertion AND-23 needs, carried forward into v2. These five strings
       // are what is sitting in users' backup files; the members they map to are
       // what the app reads.
-      await ImportV1.restore(_v2Export, database: db);
+      await ImportV1.restore(_v3Export, database: db);
       final logs = await db.dayLogDao.allLogs();
 
       final first = logs.firstWhere(
@@ -134,7 +160,7 @@ void main() {
       // A widened enum must not invent history. A file that predates `bloating`
       // says nothing about bloating, and "nothing recorded" has to stay
       // distinguishable from "recorded as none".
-      await ImportV1.restore(_v2Export, database: db);
+      await ImportV1.restore(_v3Export, database: db);
       const original = <Symptom>{
         Symptom.cramps,
         Symptom.headache,
@@ -155,9 +181,32 @@ void main() {
       }
     });
 
+    test('intercourse round-trips, including the absence of it', () async {
+      // The most sensitive field the app stores, so a backup that loses it or
+      // — worse — invents one is the failure that matters. Null must come back
+      // null: "not recorded" is a different statement from either answer, and
+      // an export that flattened it would put words in the user's mouth.
+      await ImportV1.restore(_v3Export, database: db);
+      final logs = await db.dayLogDao.allLogs();
+
+      CivilDate on(String iso) => CivilDate.parseIso8601(iso);
+      expect(
+        logs.firstWhere((l) => l.date == on('2026-01-05')).intercourse,
+        isNull,
+      );
+      expect(
+        logs.firstWhere((l) => l.date == on('2026-01-06')).intercourse,
+        Intercourse.protected,
+      );
+      expect(
+        logs.firstWhere((l) => l.date == on('2026-01-07')).intercourse,
+        Intercourse.unprotected,
+      );
+    });
+
     test('condition names and spans survive', () async {
       // The same argument as the symptoms: a condition's name is a wire value.
-      await ImportV1.restore(_v2Export, database: db);
+      await ImportV1.restore(_v3Export, database: db);
       final records = await db.conditionDao.all();
       expect(records, hasLength(2));
 
@@ -177,7 +226,7 @@ void main() {
       // in existence is about to be refused — which is a decision, not a
       // detail. See ADR-0011 for what that costs.
       expect(
-        _v2Export,
+        _v3Export,
         contains(exportSchemaFingerprint),
         reason:
             'the envelope shape changed. Bump exportSchemaVersion, decide '
@@ -187,7 +236,7 @@ void main() {
     });
 
     test('the rest of the file survives too', () async {
-      await ImportV1.restore(_v2Export, database: db);
+      await ImportV1.restore(_v3Export, database: db);
       final logs = await db.dayLogDao.allLogs();
       expect(
         logs.map((log) => log.flow),
@@ -211,59 +260,83 @@ void main() {
     });
   });
 
-  group('the frozen v1 export', () {
-    test('is refused', () async {
-      // ADR-0011, taken knowingly: this app has no cloud and no Play Store
-      // restore, so refusing v1 makes every backup taken before this release
-      // unrestorable. The decision was made with that cost stated.
-      final result = await ImportV1.restore(_v1Export, database: db);
-      expect(result.isErr, isTrue);
-      expect(
-        result.errorOrNull!.rejection,
-        ImportRejection.unsupportedVersion,
-      );
-    });
+  group('every superseded export format', () {
+    for (final entry in _supersededExports.entries) {
+      final version = entry.key;
+      final text = entry.value;
 
-    test('with a message that says what happened, not that it failed', () {
-      // The part of ADR-0011 that is this build's responsibility. Refusing is
-      // the decision; being vague about it is not covered by it.
-      final message = ImportV1.inspect(_v1Export).errorOrNull!.message;
-      expect(
-        message,
-        contains('older export format'),
-        reason: 'the message does not say the format is the problem',
-      );
-      expect(message, contains('v1'), reason: 'it does not name the format');
-      expect(
-        message,
-        contains('Nothing has been changed'),
-        reason:
-            'a user reading a refusal needs to know their existing data is '
-            'still there, or they will assume the import half-ran',
-      );
-      expect(
-        message.toLowerCase(),
-        contains('text editor'),
-        reason:
-            'the file is plain JSON and their days are readable in it. Not '
-            'saying so leaves the user believing the data is gone when it is '
-            'sitting in front of them',
-      );
-    });
+      group('v$version', () {
+        test('is refused', () async {
+          // ADR-0011, taken knowingly: this app has no cloud and no Play Store
+          // restore, so refusing an older file makes every backup taken before
+          // that release unrestorable.
+          final result = await ImportV1.restore(text, database: db);
+          expect(result.isErr, isTrue);
+          expect(
+            result.errorOrNull!.rejection,
+            ImportRejection.unsupportedVersion,
+          );
+        });
 
-    test('and changes nothing in the database', () async {
-      // Refusals happen before any write. A half-restored health diary is
-      // worse than no restore.
-      await db.dayLogDao.save(
-        DayLog(
-          date: CivilDate.parseIso8601('2026-05-05'),
-          flow: FlowIntensity.light,
-        ),
+        test('with a message that says what happened, not that it failed', () {
+          // The part of ADR-0011 that is this build's responsibility. Refusing
+          // is the decision; being vague about it is not covered by it.
+          final message = ImportV1.inspect(text).errorOrNull!.message;
+          expect(
+            message,
+            contains('older export format'),
+            reason: 'the message does not say the format is the problem',
+          );
+          expect(
+            message,
+            contains('v$version'),
+            reason: 'it does not name the format the file is actually in',
+          );
+          expect(
+            message,
+            contains('Nothing has been changed'),
+            reason:
+                'a user reading a refusal needs to know their existing data is '
+                'still there, or they will assume the import half-ran',
+          );
+          expect(
+            message.toLowerCase(),
+            contains('text editor'),
+            reason:
+                'the file is plain JSON and their days are readable in it. Not '
+                'saying so leaves the user believing the data is gone when it '
+                'is sitting in front of them',
+          );
+        });
+
+        test('and changes nothing in the database', () async {
+          // Refusals happen before any write. A half-restored health diary is
+          // worse than no restore.
+          await db.dayLogDao.save(
+            DayLog(
+              date: CivilDate.parseIso8601('2026-05-05'),
+              flow: FlowIntensity.light,
+            ),
+          );
+          await ImportV1.restore(text, database: db);
+          final logs = await db.dayLogDao.allLogs();
+          expect(logs, hasLength(1));
+          expect(logs.single.date, CivilDate.parseIso8601('2026-05-05'));
+        });
+      });
+    }
+
+    test('the list covers every version below the current one', () {
+      // Otherwise a bump quietly leaves the previous format untested, which is
+      // exactly the format the largest number of users are holding.
+      expect(
+        _supersededExports.keys.toList()..sort(),
+        List<int>.generate(exportSchemaVersion - 1, (i) => i + 1),
+        reason:
+            'exportSchemaVersion is $exportSchemaVersion but the superseded '
+            'fixtures are ${_supersededExports.keys.toList()}. Add the format '
+            'that was just superseded, as a real file.',
       );
-      await ImportV1.restore(_v1Export, database: db);
-      final logs = await db.dayLogDao.allLogs();
-      expect(logs, hasLength(1));
-      expect(logs.single.date, CivilDate.parseIso8601('2026-05-05'));
     });
   });
 }

@@ -115,15 +115,16 @@ final class ImportSummary {
 abstract final class ImportV1 {
   /// Envelope versions this build can read.
   ///
-  /// **v1 is deliberately absent** (ADR-0011). Reading it would have cost a few
-  /// lines of branching in [_parseConditions]; that was offered and declined,
-  /// and the cost was stated before the choice was made. The refusal message
+  /// **Only the current version is here** (ADR-0011). Each bump strands every
+  /// backup taken before it, and this is now the second bump in one release
+  /// cycle. Reading an older file would cost a few lines of branching; that was
+  /// offered and declined, and the cost was stated before the choice was made. The refusal message
   /// below therefore has to be specific enough that a user meeting it
   /// understands what happened rather than concluding the app is broken.
   ///
   /// This is the line a future session is most likely to "fix" without reading
   /// why it is here. Read the ADR first.
-  static const Set<int> supportedVersions = <int>{2};
+  static const Set<int> supportedVersions = <int>{3};
 
   /// Parses and validates [text] without touching the database.
   ///
@@ -440,7 +441,28 @@ abstract final class ImportV1 {
       }
     }
 
-    return DayLog(date: date, flow: flow, symptoms: symptoms);
+    // Nullable, and an absent or explicitly-null key means not recorded. Both
+    // spellings are accepted because both are what a real file contains: the
+    // exporter writes an explicit null, and a hand-edited file may simply omit
+    // the key. Neither is an error, and neither may become a recorded answer —
+    // "not recorded" is a different statement from either one, and inventing
+    // one would put words in the user's mouth about their private life.
+    final rawIntercourse = json['intercourse'];
+    final intercourse = rawIntercourse == null
+        ? null
+        : _decodeEnum(
+            rawIntercourse,
+            Intercourse.values,
+            field: 'intercourse',
+            date: date,
+          );
+
+    return DayLog(
+      date: date,
+      flow: flow,
+      symptoms: symptoms,
+      intercourse: intercourse,
+    );
   }
 
   static T _decodeEnum<T extends Enum>(

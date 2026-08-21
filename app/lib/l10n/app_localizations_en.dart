@@ -159,6 +159,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logSymptomsTitle => 'Anything else today?';
 
   @override
+  String get logIntercourseTitle => 'Intercourse';
+
+  @override
+  String get logIntercourseHint =>
+      'Optional, and never used for predictions. Tap again to clear.';
+
+  @override
+  String get logIntercourseProtected => 'Protected';
+
+  @override
+  String get logIntercourseUnprotected => 'Unprotected';
+
+  @override
+  String get calendarLegendIntercourse => 'Intercourse logged';
+
+  @override
+  String calendarCellIntercourseSuffix(String label) {
+    return '$label, intercourse logged';
+  }
+
+  @override
+  String get onboardingSensitiveTitle =>
+      'One thing worth knowing before you start';
+
+  @override
+  String get onboardingSensitiveBody =>
+      'You can optionally record intercourse, and whether it was protected. It is the most sensitive thing this app stores. It never leaves your device, it is never used to predict anything, and you never have to record it. If you want the app to ask for your fingerprint or PIN before showing anything, turn on the app lock in settings.';
+
+  @override
   String get logSectionPhysical => 'Physical';
 
   @override

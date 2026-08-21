@@ -151,6 +151,33 @@ enum SymptomSeverity {
   severe,
 }
 
+/// Whether intercourse was recorded for a day, and whether it was protected.
+///
+/// **The most sensitive thing this app stores.** `docs/PLAN.md` 6.5 says to
+/// treat everything here as if it will be read by someone the user did not
+/// choose; that instruction applies to every field, and this is the one where
+/// the consequences of being wrong are worst. `PRIVACY.md` and the onboarding
+/// name it explicitly rather than letting a user discover it themselves.
+///
+/// **Nothing in `lib/domain/predict/` may read it.** Assumption A5 forbids this
+/// app from presenting a fertile window or a safe day, and the shortest path to
+/// breaking that rule is a well-meaning correlation between this column and a
+/// cycle phase. `intercourse_isolation_test.dart` fails the build on any
+/// reference to the type from the prediction layer, the same way ADR-0010's
+/// guard does for conditions.
+///
+/// There is deliberately **no "none" value**. The column is nullable, and null
+/// means not recorded — which has to stay distinguishable from a recorded
+/// answer. A user who logs nothing has said nothing, and an app that recorded
+/// "no" on their behalf would be inventing a statement about their private life.
+enum Intercourse {
+  /// Recorded as protected.
+  protected,
+
+  /// Recorded as unprotected.
+  unprotected,
+}
+
 /// Everything recorded for a single calendar day.
 ///
 /// This is the only user-entered data in the app. Cycles, statistics and
@@ -164,6 +191,11 @@ abstract class DayLog with _$DayLog {
     @Default(FlowIntensity.none) FlowIntensity flow,
     @Default(<Symptom, SymptomSeverity>{})
     Map<Symptom, SymptomSeverity> symptoms,
+    // Nullable with no default, unlike every other field here. Null means not
+    // recorded, and that must stay distinguishable from a recorded answer:
+    // defaulting it would have the app assert something about the user's
+    // private life that they never said.
+    Intercourse? intercourse,
   }) = _DayLog;
 
   const DayLog._();
@@ -181,7 +213,11 @@ abstract class DayLog with _$DayLog {
   /// rather than "logged as nothing".
   bool get isEmpty =>
       flow == FlowIntensity.none &&
-      symptoms.values.every((s) => s == SymptomSeverity.none);
+      symptoms.values.every((s) => s == SymptomSeverity.none) &&
+      // Counted, so that a day whose only content is an intercourse entry is
+      // stored rather than deleted as empty. Without this the editor would
+      // accept the tap and then silently discard it on write.
+      intercourse == null;
 
   /// Severity recorded for [symptom], or [SymptomSeverity.none].
   SymptomSeverity severityOf(Symptom symptom) =>

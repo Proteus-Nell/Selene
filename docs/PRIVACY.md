@@ -52,6 +52,35 @@ An exported backup is a plain readable file wherever you chose to put it, with n
 
 The last row is the honest limit of this design, recorded rather than hidden.
 
+## The most sensitive thing this app stores
+
+You can optionally record **intercourse, and whether it was protected**. It is
+the single most sensitive field in the database, and this section exists so you
+know that before you decide whether to use it rather than after.
+
+Three things are true about it:
+
+- **It never leaves your device.** Like everything else here — no account, no
+  sync, no analytics — and the app has no internet permission at all. It is
+  written into your export file if you make one, because that file is your own
+  backup and dropping a field would lose you data you deliberately recorded.
+- **It is never used to predict anything.** Not the next period, not a fertile
+  window, not a safe day. The prediction model has no way to read the column at
+  all, and an automated check fails the build if that ever changes. This is
+  assumption A5 in the plan and it is not negotiable.
+- **You never have to record it.** Not recording is a different thing from
+  recording "no" — the app stores nothing for a day you leave alone, and there
+  is no "none" option that would have it say something on your behalf. Tapping
+  a recorded answer again clears it.
+
+The calendar shows a small marker on a day where something was recorded, and
+never which answer. Screen readers say "intercourse logged" for the same reason:
+a calendar is the easiest screen in the app to read over someone's shoulder, and
+a screen reader is audible to whoever is in the room.
+
+If you want the app to ask for your fingerprint or PIN before showing anything,
+turn on the app lock described below. It is off by default.
+
 ## The app lock
 
 You can require your fingerprint, face, PIN or pattern before the app will show

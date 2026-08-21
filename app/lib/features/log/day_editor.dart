@@ -73,6 +73,19 @@ class DayEditor extends ConsumerWidget {
         Text(l10n.logSymptomsTitle, style: theme.textTheme.titleSmall),
         const SizedBox(height: 4),
         Text(l10n.logSeverityHint, style: theme.textTheme.bodySmall),
+        const SizedBox(height: 20),
+        Text(l10n.logIntercourseTitle, style: theme.textTheme.titleSmall),
+        const SizedBox(height: 4),
+        // Both facts a user needs before touching this, stated before they do:
+        // it is optional, and it is not used for predictions — which they would
+        // otherwise reasonably assume, since everything else here is.
+        Text(l10n.logIntercourseHint, style: theme.textTheme.bodySmall),
+        const SizedBox(height: 8),
+        _IntercourseChips(
+          value: current.intercourse,
+          onChanged: (value) =>
+              _write(ref, current.copyWith(intercourse: value)),
+        ),
         // Grouped rather than one long Wrap, because sixteen undifferentiated
         // chips are a list to be read rather than a set to be scanned. The
         // headings are what let someone looking for "bloating" skip two thirds
@@ -132,6 +145,47 @@ class DayEditor extends ConsumerWidget {
         FlowIntensity.light => l10n.logFlowLight,
         FlowIntensity.medium => l10n.logFlowMedium,
         FlowIntensity.heavy => l10n.logFlowHeavy,
+      };
+}
+
+/// The intercourse control (AND-30).
+///
+/// Two chips and no third "none" option, because [Intercourse] has no such
+/// value: null means *not recorded*, and that has to stay a different statement
+/// from either answer. Tapping the selected chip clears it, which is how a user
+/// takes something back — the alternative would be an app that, once told,
+/// cannot be untold.
+class _IntercourseChips extends StatelessWidget {
+  const _IntercourseChips({required this.value, required this.onChanged});
+
+  /// What is recorded, or null for nothing.
+  final Intercourse? value;
+
+  final ValueChanged<Intercourse?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: <Widget>[
+        for (final option in Intercourse.values)
+          ChoiceChip(
+            selected: value == option,
+            // Re-selecting clears rather than re-writing the same value, so
+            // there is always a way back to having said nothing.
+            onSelected: (_) => onChanged(value == option ? null : option),
+            label: Text(_label(l10n, option)),
+          ),
+      ],
+    );
+  }
+
+  static String _label(AppLocalizations l10n, Intercourse value) =>
+      switch (value) {
+        Intercourse.protected => l10n.logIntercourseProtected,
+        Intercourse.unprotected => l10n.logIntercourseUnprotected,
       };
 }
 
