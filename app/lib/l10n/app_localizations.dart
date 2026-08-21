@@ -1245,6 +1245,120 @@ abstract class AppLocalizations {
   /// **'An estimate from your cycle dates alone. This app cannot observe ovulation, and this must not be used to plan or avoid pregnancy.'**
   String get calendarOvulationCaveat;
 
+  /// No description provided for @nutritionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Iron and magnesium'**
+  String get nutritionTitle;
+
+  /// The framing sentence for the whole screen. It has to establish that the page is reference text and not addressed to the reader personally, before any nutrient is named.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference notes on two nutrients that come up around menstrual cycles. This is background reading, not advice about your body, and nothing here is based on what you have logged.'**
+  String get nutritionIntro;
+
+  /// No description provided for @nutritionIronTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Iron'**
+  String get nutritionIronTitle;
+
+  /// No description provided for @nutritionIronBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Iron is part of haemoglobin, the protein that carries oxygen around the blood. Menstrual bleeding is one of the ways the body loses iron, and heavier bleeding means more of it. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia, whose commonly listed symptoms include tiredness and lack of energy.'**
+  String get nutritionIronBody;
+
+  /// Sits directly under the iron text. The claim that stops the section reading as a checklist the reader can apply to themselves.
+  ///
+  /// In en, this message translates to:
+  /// **'Iron deficiency is confirmed by a blood test. Symptoms alone cannot establish it, and neither can anything in this app.'**
+  String get nutritionIronDiagnosisNote;
+
+  /// No description provided for @nutritionIronSourcesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Dietary iron comes in two forms: haem iron from meat and fish, and non-haem iron from plants and fortified foods. They are absorbed differently.'**
+  String get nutritionIronSourcesBody;
+
+  /// No description provided for @nutritionVitaminCTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Why vitamin C is listed here'**
+  String get nutritionVitaminCTitle;
+
+  /// No description provided for @nutritionVitaminCBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Vitamin C eaten in the same meal increases how much non-haem iron the body absorbs. That is the only reason it appears in a menstrual cycle app.'**
+  String get nutritionVitaminCBody;
+
+  /// No description provided for @nutritionIronCautionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Iron supplements taken without a confirmed deficiency can do harm, because excess iron accumulates rather than being cleared.'**
+  String get nutritionIronCautionBody;
+
+  /// No description provided for @nutritionMagnesiumTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Magnesium'**
+  String get nutritionMagnesiumTitle;
+
+  /// No description provided for @nutritionMagnesiumBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Magnesium is involved in muscle and nerve function, among many other processes. It is found in green leafy vegetables, legumes, nuts, seeds and wholegrains.'**
+  String get nutritionMagnesiumBody;
+
+  /// Must not be dropped for brevity. It is the claim that stops the magnesium section reading as a recommendation.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence that magnesium supplements improve menstrual symptoms is limited and not conclusive.'**
+  String get nutritionMagnesiumEvidenceBody;
+
+  /// No description provided for @nutritionZincTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Why zinc is listed here'**
+  String get nutritionZincTitle;
+
+  /// No description provided for @nutritionZincBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Zinc is an essential mineral involved in immune function and wound healing. It is often sold together with magnesium, which is worth knowing alongside the next line: taken at high doses over time, zinc can interfere with how the body absorbs copper.'**
+  String get nutritionZincBody;
+
+  /// No description provided for @nutritionHintTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Something worth mentioning'**
+  String get nutritionHintTitle;
+
+  /// PINNED WORDING — nutrition_copy_test.dart asserts this string exactly. It observes two things the user logged and points at a human. It must not name a nutrient, a deficiency, or a supplement, and must not say what the pattern means.
+  ///
+  /// In en, this message translates to:
+  /// **'On several days recently you logged heavy flow and fatigue together. That pattern is worth raising with a doctor or nurse, who can look into it properly.'**
+  String get nutritionHintBody;
+
+  /// No description provided for @nutritionSourcesNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Every claim on this page is listed with its source in NUTRITION_SOURCES.md in the app\'s source repository.'**
+  String get nutritionSourcesNote;
+
+  /// No description provided for @settingsNutrition.
+  ///
+  /// In en, this message translates to:
+  /// **'Iron and magnesium'**
+  String get settingsNutrition;
+
+  /// No description provided for @settingsNutritionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference notes on two nutrients that come up around menstrual cycles.'**
+  String get settingsNutritionSubtitle;
+
   /// No description provided for @conditionsTitle.
   ///
   /// In en, this message translates to:

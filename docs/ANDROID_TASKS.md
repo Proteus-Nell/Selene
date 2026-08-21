@@ -1288,11 +1288,31 @@ diagnosis.
 **Scope.** A reference section, sources committed to the repo, copy tests.
 
 **Done when.**
-- [ ] Reference text for iron + vitamin C and magnesium + zinc: what they are, why heavy bleeding contributes to iron loss, why vitamin C is co-listed
-- [ ] Every factual claim carries a citation, committed in the repo, `[VERIFY]`-marked until checked — the convention PLAN.md already uses for the priors figures
-- [ ] The symptom hint fires only on logged fatigue coinciding with heavy flow, and says only that it is worth raising with a clinician
-- [ ] Its exact wording is pinned by a copy test, like the disclaimer keys in `no_hardcoded_strings_test.dart`
-- [ ] A copy test forbids "you have", "you are deficient", "diagnos*" and "you should take"
+- [x] Reference text for iron + vitamin C and magnesium + zinc: what they are, why heavy bleeding contributes to iron loss, why vitamin C is co-listed
+- [x] Every factual claim carries a citation, committed in the repo, `[VERIFY]`-marked until checked — the convention PLAN.md already uses for the priors figures
+- [x] The symptom hint fires only on logged fatigue coinciding with heavy flow, and says only that it is worth raising with a clinician
+- [x] Its exact wording is pinned by a copy test, like the disclaimer keys in `no_hardcoded_strings_test.dart`
+- [x] A copy test forbids "you have", "you are deficient", "diagnos*" and "you should take"
+
+**One deviation from the checklist, and it is a correction.** The task asks the
+copy test to forbid `"you have"`. Taken literally that is the wrong rule, and
+the test failed on the app's own copy the first time it ran: *"once you have
+logged three cycles"*, *"you have a pregnancy recorded"*, and — the one that
+makes the point — *"this app is not a diagnostic tool"*. A ban that fails the
+build on its own disclaimer enforces a spelling, not a rule.
+
+What AND-27 is protecting against is the app telling the reader something about
+their body, so the implemented rule is: second-person framing is forbidden in
+any string that also names a nutrient or a deficiency, and `diagnos-` is
+forbidden unless the same string negates it. *"You have logged three cycles"*
+passes; *"you have low iron"* does not. Four deliberately offending strings were
+used to check each guard fires.
+
+**The sources file is a release blocker.** All seventeen claims in
+`docs/NUTRITION_SOURCES.md` are marked `[VERIFY]`, which means the wording was
+written from general knowledge and not read off the cited page. The test suite
+prints the outstanding count on every run and `RELEASE.md` must not pass while
+any remain.
 
 **The line this walks.** PLAN 6.2 forbids diagnostic framing. A hint that
 observes two things the user themselves logged, and recommends talking to a
