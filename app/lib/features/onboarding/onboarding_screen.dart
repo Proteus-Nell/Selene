@@ -107,6 +107,31 @@ class _Disclaimer extends StatelessWidget {
               _NonClaim(text: l10n.onboardingNotMedical),
               _NonClaim(text: l10n.onboardingNotDiagnostic),
               _NonClaim(text: l10n.onboardingAlwaysARange),
+              const SizedBox(height: 24),
+              // Named here, before the user has recorded anything, rather than
+              // left to be discovered. docs/PLAN.md 6.5 says to treat this data
+              // as if it will be read by someone the user did not choose; the
+              // corollary is that they get to know which field carries the most
+              // risk before they decide whether to use it. It points at the app
+              // lock in the same breath, so the disclosure comes with the
+              // remedy rather than only the warning.
+              Card(
+                color: theme.colorScheme.surfaceContainerHighest,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        l10n.onboardingSensitiveTitle,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(l10n.onboardingSensitiveBody),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),

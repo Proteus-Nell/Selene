@@ -283,6 +283,7 @@ class _MonthGrid extends StatelessWidget {
             periodDayNumber: _periodDayNumber(date),
             isPredicted: predicted?.contains(date) ?? false,
             hasSymptoms: entry != null && entry.symptoms.isNotEmpty,
+            hasIntercourse: entry?.intercourse != null,
             onLongPress: () => onEdit(date, entry),
           ),
         ),
@@ -370,6 +371,10 @@ class CalendarLegend extends StatelessWidget {
         _LegendEntry(
           marker: const PredictedMarker(),
           label: l10n.calendarLegendPredicted,
+        ),
+        _LegendEntry(
+          marker: const IntercourseMarker(),
+          label: l10n.calendarLegendIntercourse,
         ),
         _LegendEntry(
           marker: Container(

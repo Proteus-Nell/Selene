@@ -99,6 +99,15 @@ void main() {
     );
     // And the new table exists and is empty, rather than absent.
     expect(await db.select(db.conditions).get(), isEmpty);
+    // The v4 column arrives as null on every existing row, which is the true
+    // answer: those days were written before the app could record it, so
+    // "not recorded" is what they mean. A default would have the app assert
+    // something about the user's private life that they never said.
+    expect(
+      logs.single.intercourse,
+      isNull,
+      reason: 'the v4 migration invented a value for a day written before it',
+    );
   });
 
   test('a freshly created database matches its own snapshot', () async {

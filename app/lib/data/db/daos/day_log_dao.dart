@@ -77,7 +77,11 @@ class DayLogDao extends DatabaseAccessor<AppDatabase> with _$DayLogDaoMixin {
   /// longer has.
   Future<void> save(DayLog log) => transaction(() async {
     await into(dayLogs).insertOnConflictUpdate(
-      DayLogRow(epochDay: log.date.epochDay, flow: log.flow),
+      DayLogRow(
+        epochDay: log.date.epochDay,
+        flow: log.flow,
+        intercourse: log.intercourse,
+      ),
     );
     await (delete(
       symptoms,
@@ -92,7 +96,11 @@ class DayLogDao extends DatabaseAccessor<AppDatabase> with _$DayLogDaoMixin {
   Future<void> saveAll(Iterable<DayLog> logs) => transaction(() async {
     for (final log in logs) {
       await into(dayLogs).insertOnConflictUpdate(
-        DayLogRow(epochDay: log.date.epochDay, flow: log.flow),
+        DayLogRow(
+          epochDay: log.date.epochDay,
+          flow: log.flow,
+          intercourse: log.intercourse,
+        ),
       );
       await (delete(
         symptoms,
@@ -182,6 +190,7 @@ class DayLogDao extends DatabaseAccessor<AppDatabase> with _$DayLogDaoMixin {
         DayLog(
           date: CivilDate.fromEpochDay(row.epochDay),
           flow: row.flow,
+          intercourse: row.intercourse,
           symptoms: byDay[row.epochDay] ?? const <Symptom, SymptomSeverity>{},
         ),
     ];

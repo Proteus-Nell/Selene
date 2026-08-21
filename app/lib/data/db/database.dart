@@ -78,8 +78,8 @@ class AppDatabase extends _$AppDatabase {
   /// version is what makes an old build refuse the file instead of crashing on
   /// it. `enum_widening_test.dart` pins this, and v3 is exactly that case: it
   /// widened [Symptom], changed no table, and its snapshot is identical to
-  /// v2's.
-  static const int latestSchemaVersion = 3;
+  /// v2's. v4 is the ordinary kind again — a new nullable column.
+  static const int latestSchemaVersion = 4;
 
   @override
   int get schemaVersion => latestSchemaVersion;
@@ -121,6 +121,14 @@ class AppDatabase extends _$AppDatabase {
         // can have, and the reason the new data went into its own table rather
         // than into columns on day_logs.
         await m.createTable(conditions);
+      }
+      if (from <= 3) {
+        // v4 adds day_logs.intercourse. An ADD COLUMN on a nullable column
+        // with no default is the cheapest migration SQLite has: existing rows
+        // get NULL, which is exactly right — they were written before the app
+        // could record this, so "not recorded" is the true answer for every
+        // one of them. No row is rewritten and no existing value is touched.
+        await m.addColumn(dayLogs, dayLogs.intercourse);
       }
       // v2 -> v3 has no step, and that is the point rather than an omission.
       // v3 widened the Symptom enum and changed no table: enums are stored by

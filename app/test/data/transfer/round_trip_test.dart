@@ -51,11 +51,19 @@ GeneratedState generateState(Random random) {
       symptoms[symptom] = severity;
     }
 
+    // Null roughly half the time, which is the case that matters: "not
+    // recorded" has to survive a round trip as null rather than becoming an
+    // answer. A generator that always set it would never test that.
+    final intercourse = random.nextBool()
+        ? null
+        : Intercourse.values[random.nextInt(Intercourse.values.length)];
+
     logs.add(
       DayLog(
         date: CivilDate.fromEpochDay(epochDay),
         flow: FlowIntensity.values[random.nextInt(FlowIntensity.values.length)],
         symptoms: symptoms,
+        intercourse: intercourse,
       ),
     );
   }

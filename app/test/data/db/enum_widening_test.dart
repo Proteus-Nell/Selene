@@ -113,6 +113,51 @@ _pinned = <int, Map<String, List<String>>>{
       'other',
     ],
   },
+  // v4 added day_logs.intercourse, which brought a new persisted enum with it.
+  // A new enum is the same hazard as a widened one and for the same reason: a
+  // v3 build reading a row that says 'protected' throws on a name it has never
+  // heard of. The column is nullable, so every row a v3 build wrote reads back
+  // fine — it is rows written *after* the upgrade that an older build cannot
+  // read, which is what the version bump exists to refuse.
+  4: <String, List<String>>{
+    'FlowIntensity': <String>['none', 'spotting', 'light', 'medium', 'heavy'],
+    'Symptom': <String>[
+      'cramps',
+      'headache',
+      'bloating',
+      'nausea',
+      'breastTenderness',
+      'backPain',
+      'acne',
+      'digestiveUpset',
+      'sleep',
+      'brainFog',
+      'poorConcentration',
+      'mood',
+      'energy',
+      'irritability',
+      'anxiety',
+      'lowMood',
+    ],
+    'SymptomSeverity': <String>['none', 'mild', 'moderate', 'severe'],
+    'Condition': <String>[
+      'hormonalContraceptionCombined',
+      'hormonalContraceptionProgestogen',
+      'hormonalIud',
+      'contraceptiveImplant',
+      'copperIud',
+      'pregnancy',
+      'postpartum',
+      'breastfeeding',
+      'pcos',
+      'endometriosis',
+      'thyroidDisorder',
+      'perimenopause',
+      'uterineFibroids',
+      'other',
+    ],
+    'Intercourse': <String>['protected', 'unprotected'],
+  },
 };
 
 /// What the code actually declares, right now.
@@ -121,6 +166,7 @@ Map<String, List<String>> _live() => <String, List<String>>{
   'Symptom': Symptom.values.map((v) => v.name).toList(),
   'SymptomSeverity': SymptomSeverity.values.map((v) => v.name).toList(),
   'Condition': Condition.values.map((v) => v.name).toList(),
+  'Intercourse': Intercourse.values.map((v) => v.name).toList(),
 };
 
 /// The enums `tables.dart` actually persists, read out of the source.
@@ -212,7 +258,9 @@ void main() {
           isNotNull,
           reason:
               '${entry.key} was persisted at v$v and is absent at v${v + 1}. '
-              'Rows written by v$v still contain those names.',
+              'Rows written by v$v still contain those names. (An enum that is '
+              'new at v${v + 1} is fine and is not what this checks — this is '
+              'about one disappearing.)',
         );
         expect(
           entry.value.toSet().difference(newer[entry.key]!.toSet()),

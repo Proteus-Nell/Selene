@@ -32,6 +32,17 @@ class DayLogs extends Table {
   /// How heavy bleeding was, by [FlowIntensity] name.
   TextColumn get flow => textEnum<FlowIntensity>()();
 
+  /// Whether intercourse was recorded, and whether it was protected (AND-30).
+  ///
+  /// Nullable, and null means *not recorded* — which is not the same as a
+  /// recorded "no". [Intercourse] has no "none" member for exactly this
+  /// reason: a user who logs nothing has said nothing.
+  ///
+  /// The most sensitive column in this database. Nothing in
+  /// `lib/domain/predict/` may read it (assumption A5), and
+  /// `intercourse_isolation_test.dart` fails the build if anything does.
+  TextColumn get intercourse => textEnum<Intercourse>().nullable()();
+
   @override
   Set<Column<Object>> get primaryKey => <Column<Object>>{epochDay};
 }

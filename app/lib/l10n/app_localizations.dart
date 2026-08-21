@@ -364,6 +364,54 @@ abstract class AppLocalizations {
   /// **'Anything else today?'**
   String get logSymptomsTitle;
 
+  /// No description provided for @logIntercourseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Intercourse'**
+  String get logIntercourseTitle;
+
+  /// Under the intercourse control. Says both things a user needs before touching it: that it is optional, and that recording it does not feed the model — which they would otherwise reasonably assume it does.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional, and never used for predictions. Tap again to clear.'**
+  String get logIntercourseHint;
+
+  /// No description provided for @logIntercourseProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'Protected'**
+  String get logIntercourseProtected;
+
+  /// No description provided for @logIntercourseUnprotected.
+  ///
+  /// In en, this message translates to:
+  /// **'Unprotected'**
+  String get logIntercourseUnprotected;
+
+  /// No description provided for @calendarLegendIntercourse.
+  ///
+  /// In en, this message translates to:
+  /// **'Intercourse logged'**
+  String get calendarLegendIntercourse;
+
+  /// Appended to a day cell's screen-reader label. Says only that something was logged, never whether it was protected — a screen reader is audible to the room.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, intercourse logged'**
+  String calendarCellIntercourseSuffix(String label);
+
+  /// No description provided for @onboardingSensitiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'One thing worth knowing before you start'**
+  String get onboardingSensitiveTitle;
+
+  /// Shown during onboarding, before the user has recorded anything. It names the most sensitive field the app holds rather than letting them find it themselves, and points at the app lock in the same breath.
+  ///
+  /// In en, this message translates to:
+  /// **'You can optionally record intercourse, and whether it was protected. It is the most sensitive thing this app stores. It never leaves your device, it is never used to predict anything, and you never have to record it. If you want the app to ask for your fingerprint or PIN before showing anything, turn on the app lock in settings.'**
+  String get onboardingSensitiveBody;
+
   /// Heading over the symptoms felt in the body.
   ///
   /// In en, this message translates to:
