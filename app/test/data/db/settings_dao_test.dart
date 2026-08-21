@@ -49,6 +49,42 @@ void main() {
     });
   });
 
+  group('the schema v2 display preferences', () {
+    // Stated once each, in the DAO, rather than at every call site. AND-24 and
+    // AND-25 each read their preference from two places — the settings screen
+    // and the feature it controls — and two call sites passing different
+    // orElse values is a bug whose only symptom is the app disagreeing with
+    // its own switch.
+    test('flow stays as it was until the user simplifies it', () async {
+      expect(await db.settingsDao.readFlowSimplified(), isFalse);
+    });
+
+    test('cycle phases are named without being asked for', () async {
+      // Not an opt-in, because a phase name restates a date the user logged.
+      expect(await db.settingsDao.readShowCyclePhases(), isTrue);
+    });
+
+    test('the ovulation window is off, and this one is not a preference', () {
+      // docs/PLAN.md 6.2. A fertile window shown by default is a contraceptive
+      // claim the model cannot support, so the default is the safety property
+      // and the switch is the exception to it. If this test is ever changed to
+      // expect true, the change needs an ADR, not a commit message.
+      expect(db.settingsDao.readShowOvulationWindow(), completion(isFalse));
+    });
+
+    test('each one still reads whatever the user actually set', () async {
+      await db.settingsDao.writeBool(SettingKey.flowSimplified, value: true);
+      await db.settingsDao.writeBool(SettingKey.showCyclePhases, value: false);
+      await db.settingsDao.writeBool(
+        SettingKey.showOvulationWindow,
+        value: true,
+      );
+      expect(await db.settingsDao.readFlowSimplified(), isTrue);
+      expect(await db.settingsDao.readShowCyclePhases(), isFalse);
+      expect(await db.settingsDao.readShowOvulationWindow(), isTrue);
+    });
+  });
+
   group('round trip', () {
     test('booleans and integers survive a write and read', () async {
       await db.settingsDao.writeBool(

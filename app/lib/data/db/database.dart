@@ -5,6 +5,7 @@ import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/tables.dart';
 // Used by the generated part file: drift writes the enum types of textEnum
 // columns into database.g.dart, which inherits this library's imports.
+import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 
 part 'database.g.dart';
@@ -48,7 +49,7 @@ final class DatabaseDowngradeException implements Exception {
 /// which is the single construction site ADR-0004 requires so that swapping in
 /// SQLCipher later is one file's worth of change.
 @DriftDatabase(
-  tables: <Type>[DayLogs, Symptoms, ModelStates, Settings],
+  tables: <Type>[DayLogs, Symptoms, ModelStates, Settings, Conditions],
   daos: <Type>[DayLogDao, ModelStateDao, SettingsDao],
 )
 class AppDatabase extends _$AppDatabase {
@@ -66,7 +67,15 @@ class AppDatabase extends _$AppDatabase {
   /// Bump this with `tools/scripts/new_migration.sh`, which also dumps the
   /// schema snapshot the migration tests replay against. Never bump it by hand:
   /// a version without a committed snapshot is a version nothing tests.
-  static const int latestSchemaVersion = 1;
+  ///
+  /// **Bump it for a widened enum too, not only for a changed column.** Enums
+  /// are stored by name (see `tables.dart`), so adding a value is free at the
+  /// storage layer — but an older build that opens a database containing a name
+  /// it does not know will throw when it reads that row, and the downgrade
+  /// refusal below cannot save it, because the version never changed. The
+  /// version is what makes an old build refuse the file instead of crashing on
+  /// it. `enum_widening_test.dart` pins this.
+  static const int latestSchemaVersion = 2;
 
   @override
   int get schemaVersion => latestSchemaVersion;
@@ -85,18 +94,31 @@ class AppDatabase extends _$AppDatabase {
           supportedVersion: to,
         );
       }
-      // v1 is the only schema that has ever existed, so there is no upgrade
-      // path to run yet and this line is unreachable today. When v2 lands,
-      // tools/scripts/new_migration.sh dumps the v1 snapshot and the step goes
-      // here, guarded by `if (from <= 1) { ... }` so that every older version
-      // walks the full chain. The migration test replays every committed
-      // snapshot through this method, which is what stops that chain rotting.
-      throw UnsupportedError(
-        'no migration path from schema v$from to v$to. Add the step to '
-        'AppDatabase.migration.onUpgrade, then run '
-        '`flutter test test/data/db/migration_test.dart`, which replays every '
-        'committed snapshot and is what just caught this.',
-      );
+      // Each step is guarded by `from <= n` rather than `from == n`, so a
+      // database written by any older version walks the whole chain rather than
+      // only the last hop. The migration test replays every committed snapshot
+      // through this method, which is what stops that chain rotting.
+      if (from <= 1) {
+        // v2 adds the conditions table. Nothing existing is touched: no column
+        // is dropped, no row is rewritten, and a v1 database that upgrades and
+        // then never records a condition is byte-equivalent to where it
+        // started plus one empty table. That is the safest shape a migration
+        // can have, and the reason the new data went into its own table rather
+        // than into columns on day_logs.
+        await m.createTable(conditions);
+      }
+      // Every version below the current one needs a step above, so the
+      // highest `from` any of them handles is always latestSchemaVersion - 1.
+      // Written that way rather than as a literal so that adding v3's step
+      // without widening this guard is impossible.
+      if (from > latestSchemaVersion - 1) {
+        throw UnsupportedError(
+          'no migration path from schema v$from to v$to. Add the step to '
+          'AppDatabase.migration.onUpgrade, then run '
+          '`flutter test test/data/db/migration_test.dart`, which replays '
+          'every committed snapshot and is what just caught this.',
+        );
+      }
     },
     beforeOpen: (details) async {
       // SQLite defaults foreign keys OFF, per connection, for backwards

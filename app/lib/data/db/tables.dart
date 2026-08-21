@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 
 /// Every calendar day the user has recorded something for.
@@ -60,6 +61,35 @@ class Symptoms extends Table {
 
   @override
   Set<Column<Object>> get primaryKey => <Column<Object>>{epochDay, symptom};
+}
+
+/// Long-term conditions and medications, over the spans they applied to.
+///
+/// A surrogate id rather than a natural key, because the same condition can
+/// legitimately appear more than once over a life: someone can start the pill,
+/// stop, and start again years later, and both spans are true. Keying on the
+/// condition alone would force the second one to overwrite the first and take
+/// the interpretation of those older cycles with it.
+///
+/// [endEpochDay] is null while the condition is still running. Ending one sets
+/// the date rather than deleting the row, so the history of what was true when
+/// survives — which is the entire reason this table stores spans instead of a
+/// set of flags.
+///
+/// Nothing here reaches the prediction model. See [Condition] and ADR-0010.
+@DataClassName('ConditionRow')
+class Conditions extends Table {
+  /// Row identity, assigned by SQLite.
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Which condition, by [Condition] name.
+  TextColumn get condition => textEnum<Condition>()();
+
+  /// Days since 1970-01-01. The first day this applied.
+  IntColumn get startEpochDay => integer()();
+
+  /// Days since 1970-01-01, or null while it is still running.
+  IntColumn get endEpochDay => integer().nullable()();
 }
 
 /// The cached posterior and prediction.

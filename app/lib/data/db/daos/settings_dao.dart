@@ -40,6 +40,24 @@ enum SettingKey {
   /// Epoch day the logging nudge last fired, for its one-per-seven-days cap.
   lastNudgeEpochDay('last_nudge_epoch_day'),
 
+  /// Whether the flow control is collapsed to bleeding yes/no (AND-24).
+  ///
+  /// Display only. Recorded intensities are never modified by it, so switching
+  /// it back reveals them unchanged.
+  flowSimplified('flow_simplified'),
+
+  /// Whether the calendar names the cycle phase (AND-25).
+  ///
+  /// On by default. Phase names restate dates the user logged; they are not
+  /// ovulation estimation, which is the thing PLAN 6.2 gates (ADR-0007).
+  showCyclePhases('show_cycle_phases'),
+
+  /// Whether an estimated ovulation range is shown (AND-25).
+  ///
+  /// **Off by default, and it stays that way.** This is the opt-in that
+  /// PLAN 6.2 requires, and the line ADR-0007 was careful not to move.
+  showOvulationWindow('show_ovulation_window'),
+
   /// Fire dates of the notifications currently scheduled, comma separated.
   ///
   /// Kept so the next launch can tell whether one of them came due while the
@@ -73,6 +91,15 @@ enum SettingKey {
 /// encoding. A malformed or missing value falls back to the supplied default
 /// rather than throwing: a preference that cannot be read is a preference worth
 /// defaulting, not a reason to fail to start.
+///
+/// Most preferences are read with [readBool] and an explicit `orElse`, which
+/// puts the default at the call site. The three display preferences added in
+/// schema v2 have named accessors instead, because each of them is read from
+/// more than one place — the settings screen and the feature it controls — and
+/// two call sites passing different `orElse` values is a bug with no symptom
+/// until someone notices the app disagreeing with its own switch. For
+/// [readShowOvulationWindow] that disagreement would ship the behaviour
+/// `docs/PLAN.md` 6.2 exists to prevent, so its default is stated once.
 @DriftAccessor(tables: <Type>[Settings])
 class SettingsDao extends DatabaseAccessor<AppDatabase>
     with _$SettingsDaoMixin {
@@ -122,6 +149,30 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   /// Writes an integer setting.
   Future<void> writeInt(SettingKey key, int value) =>
       writeRaw(key.wireName, '$value');
+
+  /// Whether the flow control is collapsed to bleeding yes/no (AND-24).
+  ///
+  /// Defaults to **off**: the fuller control is what the app already shipped,
+  /// and a preference nobody has expressed is not a reason to change what an
+  /// existing user sees.
+  Future<bool> readFlowSimplified() =>
+      readBool(SettingKey.flowSimplified, orElse: false);
+
+  /// Whether the calendar names the cycle phase (AND-25).
+  ///
+  /// Defaults to **on**. Phase names restate dates the user logged rather than
+  /// estimating anything, so there is nothing here to opt into.
+  Future<bool> readShowCyclePhases() =>
+      readBool(SettingKey.showCyclePhases, orElse: true);
+
+  /// Whether an estimated ovulation range is shown (AND-25).
+  ///
+  /// Defaults to **off**, and this is the one default in the app that is a
+  /// safety property rather than a taste: `docs/PLAN.md` 6.2 requires ovulation
+  /// estimation to be opt-in, because a fertile window shown by default is a
+  /// contraceptive claim the model cannot support.
+  Future<bool> readShowOvulationWindow() =>
+      readBool(SettingKey.showOvulationWindow, orElse: false);
 
   /// Writes a raw key-value pair.
   ///
