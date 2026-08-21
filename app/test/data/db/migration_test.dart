@@ -12,9 +12,12 @@
 import 'package:drift/native.dart';
 import 'package:drift_dev/api/migrations_native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/domain/models/day_log.dart';
 
 import 'generated_migrations/schema.dart';
+import 'generated_migrations/schema_v1.dart';
 
 void main() {
   late SchemaVerifier verifier;
@@ -49,6 +52,54 @@ void main() {
       await verifier.migrateAndValidate(db, AppDatabase.latestSchemaVersion);
     });
   }
+
+  test('a v1 database keeps its data across the upgrade', () async {
+    // migrateAndValidate compares schema shape, not contents — a migration that
+    // dropped and recreated day_logs would pass every test above it and lose
+    // every day the user had logged. On a phone that is unrecoverable: there is
+    // no server copy. So the upgrade is run against a database with rows in it.
+    //
+    // schemaAt rather than startAt, because each newConnection() is a fresh
+    // open over the same underlying database. Writing through one connection
+    // and then migrating on a second is what makes the migration actually run;
+    // reusing a single connection leaves it already opened, and the upgrade
+    // silently never fires.
+    final schema = await verifier.schemaAt(1);
+
+    final v1 = DatabaseAtV1(schema.newConnection());
+    await v1.customStatement(
+      "INSERT INTO day_logs (epoch_day, flow) VALUES (20000, 'heavy')",
+    );
+    await v1.customStatement(
+      'INSERT INTO symptoms (epoch_day, symptom, severity) '
+      "VALUES (20000, 'cramps', 'severe')",
+    );
+    await v1.customStatement(
+      'INSERT INTO settings (setting_key, setting_value) '
+      "VALUES ('onboarding_complete', 'true')",
+    );
+    await v1.close();
+
+    // Read back through the real DAOs, not the generated schema classes: what
+    // matters is that the shipping code can still read what the user wrote.
+    final db = AppDatabase(schema.newConnection());
+    addTearDown(db.close);
+    await verifier.migrateAndValidate(db, AppDatabase.latestSchemaVersion);
+
+    final logs = await db.dayLogDao.allLogs();
+    expect(logs, hasLength(1));
+    expect(logs.single.flow, FlowIntensity.heavy);
+    expect(logs.single.severityOf(Symptom.cramps), SymptomSeverity.severe);
+    expect(
+      await db.settingsDao.readBool(
+        SettingKey.onboardingComplete,
+        orElse: false,
+      ),
+      isTrue,
+    );
+    // And the new table exists and is empty, rather than absent.
+    expect(await db.select(db.conditions).get(), isEmpty);
+  });
 
   test('a freshly created database matches its own snapshot', () async {
     // onCreate takes a different path through drift than onUpgrade does, so a

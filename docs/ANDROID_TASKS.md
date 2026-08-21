@@ -1057,10 +1057,10 @@ intercourse logging behind it, then the lookup.
 `SettingKey` values.
 
 **Done when.**
-- [ ] A `conditions` table exists: surrogate id, `condition` as `textEnum`, start epoch day, nullable end epoch day
-- [ ] `latestSchemaVersion` is 2, with a v1 → v2 `SchemaVerifier` test that fails if the migration is wrong
-- [ ] A test pins the rule in the note below, with the reason written next to it
-- [ ] New settings keys default correctly: flow simplified **off**, cycle phases **on**, ovulation window **off**
+- [x] A `conditions` table exists: surrogate id, `condition` as `textEnum`, start epoch day, nullable end epoch day
+- [x] `latestSchemaVersion` is 2, with a v1 → v2 `SchemaVerifier` test that fails if the migration is wrong
+- [x] A test pins the rule in the note below, with the reason written next to it
+- [x] New settings keys default correctly: flow simplified **off**, cycle phases **on**, ovulation window **off**
 
 **The enum-widening trap.** `tables.dart` stores enums by name, not index, and
 says so — `intEnum` was rejected precisely because it writes the ordinal. That
