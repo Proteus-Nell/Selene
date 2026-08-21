@@ -11,6 +11,7 @@ import 'package:period_tracker/data/transfer/export_v1.dart';
 import 'package:period_tracker/data/transfer/import_v1.dart';
 import 'package:period_tracker/domain/predict/priors_bundled.dart';
 import 'package:period_tracker/features/common/snack.dart';
+import 'package:period_tracker/features/conditions/conditions_screen.dart';
 import 'package:period_tracker/features/settings/delete_everything_dialog.dart';
 import 'package:period_tracker/features/settings/log_viewer.dart';
 import 'package:period_tracker/features/settings/privacy_section.dart';
@@ -196,6 +197,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.medical_information_outlined),
+              title: Text(l10n.settingsConditions),
+              subtitle: Text(l10n.settingsConditionsSubtitle),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const ConditionsScreen(),
+                ),
               ),
             ),
             const Divider(),

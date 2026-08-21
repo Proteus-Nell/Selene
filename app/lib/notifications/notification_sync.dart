@@ -23,7 +23,11 @@ NotificationCopy buildNotificationCopy(
   final window = switch (result) {
     Predicted(:final prediction) => prediction.window80,
     InsufficientData(:final populationPrior) => populationPrior.window80,
-    TooIrregular() || LostTrack() || NoData() || DataInconsistent() => null,
+    TooIrregular() ||
+    LostTrack() ||
+    NoData() ||
+    DataInconsistent() ||
+    SuppressedByCondition() => null,
   };
   return NotificationCopy(
     channelPredictionsName: l10n.notificationChannelPredictions,

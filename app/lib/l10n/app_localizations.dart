@@ -1167,6 +1167,18 @@ abstract class AppLocalizations {
   /// **'A notification in the morning, the chosen number of days ahead.'**
   String get settingsReminderSubtitle;
 
+  /// No description provided for @insightsSuppressedPregnancyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No prediction while you have a pregnancy recorded'**
+  String get insightsSuppressedPregnancyTitle;
+
+  /// Shown instead of a predicted window. Says what to do to get predictions back, and says the history is still there, so the state does not read as data loss.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cycles are below, and nothing has been deleted. Add an end date to the pregnancy on the conditions screen and predictions will start again.'**
+  String get insightsSuppressedPregnancyBody;
+
   /// No description provided for @calendarPhaseDay.
   ///
   /// In en, this message translates to:
@@ -1232,6 +1244,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'An estimate from your cycle dates alone. This app cannot observe ovulation, and this must not be used to plan or avoid pregnancy.'**
   String get calendarOvulationCaveat;
+
+  /// No description provided for @conditionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Conditions and medication'**
+  String get conditionsTitle;
+
+  /// Under the screen title. States plainly that these do not reach the model, so nobody expects predictions to improve after entering them.
+  ///
+  /// In en, this message translates to:
+  /// **'Things that can change your cycle. Recorded so you can read your own history with them in mind — they are not used to work out your predictions.'**
+  String get conditionsSubtitle;
+
+  /// No description provided for @conditionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing recorded.'**
+  String get conditionsEmpty;
+
+  /// No description provided for @conditionsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get conditionsAdd;
+
+  /// No description provided for @conditionsAddTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a condition'**
+  String get conditionsAddTitle;
+
+  /// No description provided for @conditionsStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Started {date}'**
+  String conditionsStarted(String date);
+
+  /// No description provided for @conditionsSpan.
+  ///
+  /// In en, this message translates to:
+  /// **'{start} to {end}'**
+  String conditionsSpan(String start, String end);
+
+  /// No description provided for @conditionsOngoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Ongoing'**
+  String get conditionsOngoing;
+
+  /// No description provided for @conditionsEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as ended'**
+  String get conditionsEnd;
+
+  /// No description provided for @conditionsReopen.
+  ///
+  /// In en, this message translates to:
+  /// **'Still ongoing'**
+  String get conditionsReopen;
+
+  /// No description provided for @conditionsRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get conditionsRemove;
+
+  /// No description provided for @conditionsStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get conditionsStartDate;
+
+  /// No description provided for @conditionsEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get conditionsEndDate;
+
+  /// The whole reason spans are stored rather than flags. A flag cannot say this.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 cycle logged while this was recorded} other{{count} cycles logged while this was recorded}}'**
+  String conditionsOverlap(int count);
+
+  /// No description provided for @conditionHormonalContraceptionCombined.
+  ///
+  /// In en, this message translates to:
+  /// **'Combined pill'**
+  String get conditionHormonalContraceptionCombined;
+
+  /// No description provided for @conditionHormonalContraceptionProgestogen.
+  ///
+  /// In en, this message translates to:
+  /// **'Progestogen-only pill'**
+  String get conditionHormonalContraceptionProgestogen;
+
+  /// No description provided for @conditionHormonalIud.
+  ///
+  /// In en, this message translates to:
+  /// **'Hormonal IUD'**
+  String get conditionHormonalIud;
+
+  /// No description provided for @conditionContraceptiveImplant.
+  ///
+  /// In en, this message translates to:
+  /// **'Implant'**
+  String get conditionContraceptiveImplant;
+
+  /// No description provided for @conditionCopperIud.
+  ///
+  /// In en, this message translates to:
+  /// **'Copper IUD'**
+  String get conditionCopperIud;
+
+  /// No description provided for @conditionPregnancy.
+  ///
+  /// In en, this message translates to:
+  /// **'Pregnancy'**
+  String get conditionPregnancy;
+
+  /// No description provided for @conditionPostpartum.
+  ///
+  /// In en, this message translates to:
+  /// **'Postpartum'**
+  String get conditionPostpartum;
+
+  /// No description provided for @conditionBreastfeeding.
+  ///
+  /// In en, this message translates to:
+  /// **'Breastfeeding'**
+  String get conditionBreastfeeding;
+
+  /// No description provided for @conditionPcos.
+  ///
+  /// In en, this message translates to:
+  /// **'PCOS'**
+  String get conditionPcos;
+
+  /// No description provided for @conditionEndometriosis.
+  ///
+  /// In en, this message translates to:
+  /// **'Endometriosis'**
+  String get conditionEndometriosis;
+
+  /// No description provided for @conditionThyroidDisorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Thyroid disorder'**
+  String get conditionThyroidDisorder;
+
+  /// No description provided for @conditionPerimenopause.
+  ///
+  /// In en, this message translates to:
+  /// **'Perimenopause'**
+  String get conditionPerimenopause;
+
+  /// No description provided for @conditionUterineFibroids.
+  ///
+  /// In en, this message translates to:
+  /// **'Uterine fibroids'**
+  String get conditionUterineFibroids;
+
+  /// No description provided for @conditionOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get conditionOther;
+
+  /// No description provided for @settingsConditions.
+  ///
+  /// In en, this message translates to:
+  /// **'Conditions and medication'**
+  String get settingsConditions;
+
+  /// No description provided for @settingsConditionsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record long-term things that can change your cycle.'**
+  String get settingsConditionsSubtitle;
 
   /// No description provided for @settingsDisplaySection.
   ///

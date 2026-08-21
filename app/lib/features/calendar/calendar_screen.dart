@@ -212,6 +212,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         LostTrack() ||
         NoData() ||
         DataInconsistent() ||
+        SuppressedByCondition() ||
         null => null,
       };
 
@@ -227,6 +228,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         TooIrregular() ||
         LostTrack() ||
         NoData() ||
+        // A recorded pregnancy is the one case here where the model has an
+        // answer and it must not be drawn. Shading a predicted week onto the
+        // calendar would restate, in a picture, exactly the claim the
+        // SuppressedByCondition state exists to withhold.
+        SuppressedByCondition() ||
         DataInconsistent() ||
         null => null,
       };

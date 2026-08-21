@@ -651,6 +651,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'A notification in the morning, the chosen number of days ahead.';
 
   @override
+  String get insightsSuppressedPregnancyTitle =>
+      'No prediction while you have a pregnancy recorded';
+
+  @override
+  String get insightsSuppressedPregnancyBody =>
+      'Your cycles are below, and nothing has been deleted. Add an end date to the pregnancy on the conditions screen and predictions will start again.';
+
+  @override
   String calendarPhaseDay(int day) {
     return 'Day $day of your cycle';
   }
@@ -690,6 +698,111 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get calendarOvulationCaveat =>
       'An estimate from your cycle dates alone. This app cannot observe ovulation, and this must not be used to plan or avoid pregnancy.';
+
+  @override
+  String get conditionsTitle => 'Conditions and medication';
+
+  @override
+  String get conditionsSubtitle =>
+      'Things that can change your cycle. Recorded so you can read your own history with them in mind — they are not used to work out your predictions.';
+
+  @override
+  String get conditionsEmpty => 'Nothing recorded.';
+
+  @override
+  String get conditionsAdd => 'Add';
+
+  @override
+  String get conditionsAddTitle => 'Add a condition';
+
+  @override
+  String conditionsStarted(String date) {
+    return 'Started $date';
+  }
+
+  @override
+  String conditionsSpan(String start, String end) {
+    return '$start to $end';
+  }
+
+  @override
+  String get conditionsOngoing => 'Ongoing';
+
+  @override
+  String get conditionsEnd => 'Mark as ended';
+
+  @override
+  String get conditionsReopen => 'Still ongoing';
+
+  @override
+  String get conditionsRemove => 'Delete';
+
+  @override
+  String get conditionsStartDate => 'Start date';
+
+  @override
+  String get conditionsEndDate => 'End date';
+
+  @override
+  String conditionsOverlap(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cycles logged while this was recorded',
+      one: '1 cycle logged while this was recorded',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get conditionHormonalContraceptionCombined => 'Combined pill';
+
+  @override
+  String get conditionHormonalContraceptionProgestogen =>
+      'Progestogen-only pill';
+
+  @override
+  String get conditionHormonalIud => 'Hormonal IUD';
+
+  @override
+  String get conditionContraceptiveImplant => 'Implant';
+
+  @override
+  String get conditionCopperIud => 'Copper IUD';
+
+  @override
+  String get conditionPregnancy => 'Pregnancy';
+
+  @override
+  String get conditionPostpartum => 'Postpartum';
+
+  @override
+  String get conditionBreastfeeding => 'Breastfeeding';
+
+  @override
+  String get conditionPcos => 'PCOS';
+
+  @override
+  String get conditionEndometriosis => 'Endometriosis';
+
+  @override
+  String get conditionThyroidDisorder => 'Thyroid disorder';
+
+  @override
+  String get conditionPerimenopause => 'Perimenopause';
+
+  @override
+  String get conditionUterineFibroids => 'Uterine fibroids';
+
+  @override
+  String get conditionOther => 'Other';
+
+  @override
+  String get settingsConditions => 'Conditions and medication';
+
+  @override
+  String get settingsConditionsSubtitle =>
+      'Record long-term things that can change your cycle.';
 
   @override
   String get settingsDisplaySection => 'Display';

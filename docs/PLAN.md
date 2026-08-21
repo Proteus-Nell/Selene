@@ -1175,7 +1175,7 @@ Working in logs keeps lengths positive and makes variability multiplicative, whi
 
 Tasks AND-01 through AND-19 are complete (see [ANDROID_TASKS.md](ANDROID_TASKS.md)), along with both Python prerequisites. **The MVP is code-complete.** A new user can read the disclaimer, log a first date, see a predicted window, browse the calendar, read the insights, be reminded before the next one, export a backup, wipe everything, and restore from that backup — and the whole of that sequence runs as one test on every push.
 
-741 Dart tests pass. `lib/domain/` is at 99.8% line coverage and `lib/` overall is at 92.4% excluding generated code, against the 90% and 70% floors in 5.4. The one uncovered domain line is a `const` constructor, which is evaluated at compile time and so can never be executed. The accessibility matchers in 2.4.4 run over every screen in both themes, at `textScaler` 1.0, 1.5 and 2.0, as a named CI step.
+774 Dart tests pass. `lib/domain/` is at 99.8% line coverage and `lib/` overall is at 92.4% excluding generated code, against the 90% and 70% floors in 5.4. The one uncovered domain line is a `const` constructor, which is evaluated at compile time and so can never be executed. The accessibility matchers in 2.4.4 run over every screen in both themes, at `textScaler` 1.0, 1.5 and 2.0, as a named CI step.
 
 What remains is not code:
 

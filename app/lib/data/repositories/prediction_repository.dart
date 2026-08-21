@@ -77,6 +77,31 @@ class PredictionRepository {
 
     final statistics = CycleFeatures.summarise(records);
 
+    // Checked before the cache and before the filter, and the order matters.
+    //
+    // This is not a state the model failed to reach — the model would reach a
+    // perfectly good answer, and showing it would be wrong. Predicting a period
+    // for someone who has told the app they are pregnant is a confident,
+    // specific claim contradicting something they entered themselves. So the
+    // question is asked first, and the filter is simply not run.
+    //
+    // Only pregnancy. Hormonal contraception often removes true cycles entirely
+    // and is the obvious next candidate; it was considered and not chosen
+    // (ADR-0010). The rule lives in Condition.suppressesPrediction and nowhere
+    // else, so adding a second suppressing condition is one edit in one place
+    // rather than a search through the repository.
+    final suppressing = (await _cycles.activeConditionsOn(_cycles.today()))
+        .where((record) => record.condition.suppressesPrediction)
+        .firstOrNull;
+    if (suppressing != null) {
+      return PredictionResult.suppressedByCondition(
+        condition: suppressing.condition,
+        // The user's own history travels with the refusal. A pregnancy ends,
+        // and the cycles logged before it are still theirs to see.
+        statistics: statistics,
+      );
+    }
+
     final sinceLastLog = await _cycles.daysSinceLastLog();
     if (sinceLastLog != null && sinceLastLog > CycleRules.lostTrackAfterDays) {
       // Extrapolating past this point produces a confident wrong answer, which

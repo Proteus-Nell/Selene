@@ -123,8 +123,10 @@ void main() {
       // This compiles only because PredictionResult is sealed. Adding a case
       // turns every switch like this into a compile error, which is what stops
       // a new state from being silently unhandled in the UI. That has already
-      // paid for itself once: NoData and LostTrack were added at AND-09 and
-      // this switch refused to compile until both were handled.
+      // paid for itself twice: NoData and LostTrack were added at AND-09, and
+      // SuppressedByCondition at AND-26, and each time this switch and five
+      // others across the UI and the notification layer refused to compile
+      // until every one of them was handled.
       String describe(PredictionResult r) => switch (r) {
         Predicted(:final prediction) =>
           'predicted ${prediction.confidence.name}',
@@ -134,6 +136,8 @@ void main() {
         DataInconsistent(:final reason) => 'inconsistent ${reason.name}',
         NoData() => 'nothing logged',
         LostTrack(:final daysSinceLastLog) => 'lost track $daysSinceLastLog',
+        SuppressedByCondition(:final condition) =>
+          'suppressed by ${condition.name}',
       };
 
       expect(

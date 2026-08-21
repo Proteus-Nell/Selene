@@ -135,7 +135,15 @@ abstract final class NotificationPlanner {
     final window = switch (result) {
       Predicted(:final prediction) => prediction.window80,
       InsufficientData(:final populationPrior) => populationPrior.window80,
-      TooIrregular() || LostTrack() || NoData() || DataInconsistent() => null,
+      // SuppressedByCondition included deliberately: a notification is the
+      // most intrusive surface in the app, and a lock-screen banner predicting
+      // a period for someone who has recorded a pregnancy would be the worst
+      // possible place for the app to be confidently wrong.
+      TooIrregular() ||
+      LostTrack() ||
+      NoData() ||
+      DataInconsistent() ||
+      SuppressedByCondition() => null,
     };
 
     if (preferences.predictionsEnabled && window != null) {

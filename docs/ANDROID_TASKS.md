@@ -1243,11 +1243,19 @@ and "you are ovulating". 6.2 is a rule, not a style guide.
 `endometriosis`, `thyroidDisorder`, `perimenopause`, `uterineFibroids`, `other`.
 
 **Done when.**
-- [ ] Conditions can be added with a start date and ended with an end date; ending one keeps the history rather than deleting it
-- [ ] Insights can say "these six cycles were logged while you were on hormonal contraception"
-- [ ] A new `SuppressedByCondition` state on `PredictionResult` returns for an **active pregnancy**, with an explanation instead of a window
-- [ ] Every exhaustive switch over `PredictionResult` handles it — the compiler enforces this, which is the point of the sealed union
-- [ ] A test proves no condition value reaches the Bayesian filter
+- [x] Conditions can be added with a start date and ended with an end date; ending one keeps the history rather than deleting it
+- [x] Insights can say "these six cycles were logged while you were on hormonal contraception"
+- [x] A new `SuppressedByCondition` state on `PredictionResult` returns for an **active pregnancy**, with an explanation instead of a window
+- [x] Every exhaustive switch over `PredictionResult` handles it — the compiler enforces this, which is the point of the sealed union
+- [x] A test proves no condition value reaches the Bayesian filter
+
+**How "no condition reaches the filter" is enforced.** Two tests, and the
+stronger one is structural: `lib/domain/predict/` is scanned for any reference
+to the `Condition` type or an import of it, so the guarantee holds by the model
+having no way to name the thing rather than by it choosing not to. The
+behavioural half records every non-suppressing condition at once and asserts the
+prediction is unchanged, not merely similar. Both were checked against a
+deliberate violation before being committed.
 
 **Scope correction.** An earlier draft of this plan said pregnancy *and hormonal
 contraception* suppress. Only **pregnancy** does. Hormonal contraception often
