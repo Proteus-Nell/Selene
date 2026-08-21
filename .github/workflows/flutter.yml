@@ -38,6 +38,15 @@ jobs:
         # from, which is the drift ADR-0002 exists to prevent.
         run: python3 tools/scripts/gen_priors_dart.py --check
 
+      - name: Verify the generated medicines match the committed artifact
+        # Same drift guard as the priors above, for the same reason: the app
+        # compiles the artifact in rather than parsing it, so a re-fetched
+        # snapshot that nobody regenerated the Dart from would ship a
+        # reference screen showing the previous snapshot with the new
+        # snapshot's date on it. This step needs no network — the fetch
+        # happens in `--fetch`, on a developer machine.
+        run: python3 tools/scripts/gen_medicines.py --check
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -131,6 +140,33 @@ jobs:
             exit 1
           fi
           echo "Negative control OK: debug APK correctly rejected."
+
+      # AND-31 budgets the medicines data at under a megabyte of added APK.
+      #
+      # The megabyte is enforced on the artifact and its generated Dart, in
+      # `medicines_test.dart`, because that is the input we control and can
+      # measure. A true "growth" assertion would need both APKs — one built
+      # without the artifact and one with — and comparing against a hardcoded
+      # baseline instead would be comparing against a number that goes stale
+      # on the next unrelated dependency bump.
+      #
+      # This step is the backstop for that: it records the real per-ABI sizes
+      # on every run, so a jump is visible in the log and in the diff of any
+      # future baseline, and it fails on a size that could only mean something
+      # went badly wrong. A phone installs one ABI, so the budget is per-APK.
+      - name: Record release APK sizes, and fail on an implausible one
+        run: |
+          shopt -s nullglob
+          limit=$((60 * 1024 * 1024))
+          for apk in app/build/app/outputs/flutter-apk/app-*-release.apk; do
+            size=$(stat -c%s "$apk")
+            printf '%s: %s bytes (%s MiB)\n' \
+              "$(basename "$apk")" "$size" "$((size / 1024 / 1024))"
+            if (( size > limit )); then
+              echo "::error::$(basename "$apk") is $size bytes, far over what this app should ever be. Something is being bundled that should not be."
+              exit 1
+            fi
+          done
 
       - name: Upload release APKs
         uses: actions/upload-artifact@v4

@@ -18,6 +18,9 @@
 # Python  (scoped to research/ so it can never touch app/lib)
 # ---------------------------------------------------------------------------
 research/**/__pycache__/
+# The medicines generator is a script, not a package, and importing it in a
+# test leaves a cache directory beside it.
+tools/scripts/__pycache__/
 research/**/*.py[cod]
 research/**/*$py.class
 research/**/*.so

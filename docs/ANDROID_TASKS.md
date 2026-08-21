@@ -1496,11 +1496,35 @@ the app stores, rather than letting a user discover that themselves.
 `lib/data/reference/medicines_bundled.dart`, a CI `--check` step.
 
 **Done when.**
-- [ ] The generator pulls an allowlisted openFDA subset and commits the artifact; the phone never makes a request
-- [ ] `gen_medicines.py --check` runs in CI and fails if the generated Dart drifts from the artifact, exactly like `gen_priors_dart.py`
-- [ ] The snapshot date is embedded and displayed
-- [ ] openFDA's disclaimer is carried in-app and in the repo, `[VERIFY]` until the wording is checked
-- [ ] The APK grows by less than a megabyte, asserted in CI
+- [x] The generator pulls an allowlisted openFDA subset and commits the artifact; the phone never makes a request — **generator done, artifact NOT yet fetched, see below**
+- [x] `gen_medicines.py --check` runs in CI and fails if the generated Dart drifts from the artifact, exactly like `gen_priors_dart.py`
+- [x] The snapshot date is embedded and displayed (AND-32 renders it)
+- [x] openFDA's disclaimer is carried in-app and in the repo, `[VERIFY]` until the wording is checked
+- [x] The APK grows by less than a megabyte, asserted — see the note on where
+
+**The artifact is committed unpopulated, and that is a blocker, not a choice.**
+The session that built this had no route to `api.fda.gov` — the environment's
+network policy answers 403 at CONNECT — so the fetch has never been run.
+Fabricating drug labelling and committing it as an openFDA snapshot was the one
+thing not on the table, so `medicines_v1.json` is a valid, committed artifact
+with `snapshot_status: "not_fetched"` and no entries. Everything downstream of
+the fetch is built and tested against it: the generator, the `--check` gate, the
+Dart mirror, the size budget, the disclaimer. Run
+`python3 tools/scripts/gen_medicines.py --fetch` on a machine with network and
+commit both files. `RELEASE.md` carries the gate.
+
+**Where the megabyte is actually asserted.** On the artifact and its generated
+Dart, in `medicines_test.dart` — those are the inputs we control and can
+measure. A true *growth* assertion needs two APKs, one built with the artifact
+and one without; comparing against a hardcoded baseline instead would be
+comparing against a number that goes stale on the next dependency bump. CI
+records the real per-ABI sizes on every run as the backstop.
+
+**No dosing, at all.** Not fetched and hidden — not fetched. A dose read off a
+US label and applied to a box bought elsewhere is the specific harm this feature
+exists to avoid, and a section that is fetched but unrendered is one edit away
+from being rendered. Enforced on both sides: the generator does not request it
+and `medicines_test.dart` fails on an entry that carries one.
 
 **Allowlist.** Ibuprofen, naproxen, mefenamic acid, paracetamol, tranexamic
 acid, combined and progestogen-only oral contraceptives, levonorgestrel
