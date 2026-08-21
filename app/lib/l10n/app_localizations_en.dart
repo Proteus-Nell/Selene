@@ -700,6 +700,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'An estimate from your cycle dates alone. This app cannot observe ovulation, and this must not be used to plan or avoid pregnancy.';
 
   @override
+  String get reExportTitle => 'Make a fresh backup';
+
+  @override
+  String get reExportBody =>
+      'This update changed the backup format. Any backup file you saved before now can no longer be restored by the app, so it is worth exporting again. Your data in the app is untouched.';
+
+  @override
+  String get reExportAction => 'Export now';
+
+  @override
+  String get reExportDismiss => 'Dismiss';
+
+  @override
   String get nutritionTitle => 'Iron and magnesium';
 
   @override

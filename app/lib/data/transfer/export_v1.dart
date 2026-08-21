@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'package:period_tracker/core/clock.dart';
 import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 
 /// Version of the export envelope this build writes.
@@ -12,7 +13,18 @@ import 'package:period_tracker/domain/models/day_log.dart';
 /// Bumped only for a change the previous importer could not read correctly.
 /// The importer refuses anything it does not recognise rather than guessing, so
 /// this number is the promise that a file's fields mean what they used to.
-const int exportSchemaVersion = 1;
+///
+/// **v2 adds conditions, and v1 files are refused** (ADR-0011). That decision
+/// was taken knowing its cost: this app has no cloud and no Play Store restore,
+/// so the export *is* the recovery path (risk R8), and refusing v1 makes every
+/// backup taken before this release unrestorable. A few lines of import
+/// branching would have avoided it and were declined. The mitigation is the
+/// one-time re-export prompt — see `SettingKey.exportFormatAcknowledged` — so
+/// that nobody discovers the loss after losing a phone.
+///
+/// If you are reading this because you are about to "fix" the refusal: it is
+/// not an oversight. Read ADR-0011 first.
+const int exportSchemaVersion = 2;
 
 /// Fingerprint of the envelope's *shape*, not its contents.
 ///
@@ -25,10 +37,11 @@ const int exportSchemaVersion = 1;
 /// `export_v1_test.dart` rebuilds this from the actual serialised keys, so
 /// changing the shape without changing this constant fails the suite.
 const String exportSchemaFingerprint =
-    'v1;'
-    'envelope[app_version,day_logs,db_schema_version,exported_utc,'
+    'v2;'
+    'envelope[app_version,conditions,day_logs,db_schema_version,exported_utc,'
     'schema_fingerprint,schema_version,settings];'
-    'day_log[date,flow,symptoms]';
+    'day_log[date,flow,symptoms];'
+    'condition[condition,end,start]';
 
 /// The app version stamped into exports.
 ///
@@ -55,6 +68,7 @@ final class ExportEnvelope {
     required this.exportedUtc,
     required this.dayLogs,
     required this.settings,
+    this.conditions = const <ConditionRecord>[],
   });
 
   /// Envelope format version.
@@ -81,6 +95,13 @@ final class ExportEnvelope {
   /// heard of survives a round trip through it instead of being dropped.
   final Map<String, String> settings;
 
+  /// Recorded conditions, without their row ids.
+  ///
+  /// New in v2. The ids are left out deliberately: a row number means nothing
+  /// in another database, and restoring one would either collide or be ignored.
+  /// The identity of a condition record is its condition and its dates.
+  final List<ConditionRecord> conditions;
+
   /// The JSON form written to disk.
   ///
   /// Key order is fixed and the encoder is pretty-printed, because this file is
@@ -88,6 +109,9 @@ final class ExportEnvelope {
   /// should be readable, and diffable, by a person with a text editor.
   Map<String, Object?> toJson() => <String, Object?>{
     'app_version': appVersion,
+    'conditions': <Map<String, Object?>>[
+      for (final record in conditions) record.toJson(),
+    ],
     'day_logs': <Map<String, Object?>>[
       for (final log in dayLogs) log.toJson(),
     ],
@@ -107,7 +131,8 @@ final class ExportEnvelope {
       other.schemaFingerprint == schemaFingerprint &&
       other.exportedUtc == exportedUtc &&
       _sameLogs(other.dayLogs, dayLogs) &&
-      _sameSettings(other.settings, settings);
+      _sameSettings(other.settings, settings) &&
+      _sameConditions(other.conditions, conditions);
 
   @override
   int get hashCode => Object.hash(
@@ -129,6 +154,24 @@ final class ExportEnvelope {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {
       if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  static bool _sameConditions(
+    List<ConditionRecord> a,
+    List<ConditionRecord> b,
+  ) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      // Compared without the id, because the id is not exported and a restored
+      // record always has a fresh one. Comparing it would make a correct round
+      // trip look like a failure.
+      if (a[i].condition != b[i].condition ||
+          a[i].start != b[i].start ||
+          a[i].end != b[i].end) {
+        return false;
+      }
     }
     return true;
   }
@@ -169,6 +212,7 @@ abstract final class ExportV1 {
     exportedUtc: clock.nowUtc(),
     dayLogs: await database.dayLogDao.allLogs(),
     settings: await database.settingsDao.allRaw(),
+    conditions: await database.conditionDao.all(),
   );
 
   /// Encodes [envelope] as the text written to a file.

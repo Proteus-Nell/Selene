@@ -1,7 +1,9 @@
 import 'package:drift/drift.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/db/tables.dart';
+import 'package:period_tracker/data/transfer/export_v1.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 
 part 'day_log_dao.g.dart';
@@ -122,7 +124,25 @@ class DayLogDao extends DatabaseAccessor<AppDatabase> with _$DayLogDaoMixin {
       await delete(symptoms).go();
       await delete(dayLogs).go();
       await attachedDatabase.customStatement('DELETE FROM model_states');
+      // Conditions are user data of the most sensitive kind in this app — a
+      // recorded pregnancy or PCOS diagnosis — and leaving them behind would
+      // make "delete everything" a lie. They were added at AND-22 and are
+      // named here explicitly rather than trusted to a cascade, because
+      // nothing references them and a cascade would never have fired.
+      await attachedDatabase.customStatement('DELETE FROM conditions');
       await attachedDatabase.customStatement('DELETE FROM settings');
+      // Re-seeded rather than left absent. A wiped database is in the same
+      // state as a fresh one, and a fresh one is not warned that its backups
+      // will not restore: there are none. Without this, deleting everything
+      // brings back a banner urging the user to back up the data they have
+      // just deliberately destroyed. See SettingKey.exportFormatAcknowledged.
+      await attachedDatabase.customStatement(
+        'INSERT INTO settings (setting_key, setting_value) VALUES (?, ?)',
+        <Object?>[
+          SettingKey.exportFormatAcknowledged.wireName,
+          '$exportSchemaVersion',
+        ],
+      );
     });
     await attachedDatabase.customStatement('VACUUM');
   }

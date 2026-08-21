@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/db/tables.dart';
+import 'package:period_tracker/data/transfer/export_v1.dart';
 
 part 'settings_dao.g.dart';
 
@@ -65,6 +66,16 @@ enum SettingKey {
   /// launch only ever contains future dates, so comparing against it would
   /// always say no (risk R12).
   scheduledFireDays('scheduled_fire_days'),
+
+  /// The export format version the user has been told about (AND-28).
+  ///
+  /// Exists because of ADR-0011: this build refuses v1 backups, so every file a
+  /// user took before updating is now unrestorable. Written on a brand-new
+  /// database at onCreate, so a fresh install never sees the prompt; **absent**
+  /// on a database that predates this release, which is exactly the population
+  /// that needs telling. Comparing it against `exportSchemaVersion` is what
+  /// makes the warning fire once, for the right people.
+  exportFormatAcknowledged('export_format_acknowledged'),
 
   /// Epoch day the app was last opened, for missed-reminder detection.
   lastOpenedEpochDay('last_opened_epoch_day'),
@@ -201,6 +212,42 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   /// [readShowOvulationWindow], as a stream for the calendar.
   Stream<bool> watchShowOvulationWindow() =>
       watchBool(SettingKey.showOvulationWindow, orElse: false);
+
+  /// Whether the user still needs telling that their old backups will not
+  /// restore (AND-28, ADR-0011).
+  ///
+  /// True only when the acknowledged format is older than the one this build
+  /// writes. A database created by this build acknowledges the current format
+  /// at onCreate, so a fresh install is never warned about backups it has
+  /// never taken.
+  Future<bool> needsReExportPrompt() async =>
+      await readInt(SettingKey.exportFormatAcknowledged, orElse: 0) <
+      exportSchemaVersion;
+
+  /// [needsReExportPrompt], as a stream for the screen that shows it.
+  Stream<bool> watchNeedsReExportPrompt() {
+    final query = select(settings)
+      ..where(
+        (t) =>
+            t.settingKey.equals(SettingKey.exportFormatAcknowledged.wireName),
+      );
+    return query
+        .watchSingleOrNull()
+        .map(
+          (row) =>
+              (int.tryParse(row?.settingValue ?? '') ?? 0) <
+              exportSchemaVersion,
+        )
+        .distinct();
+  }
+
+  /// Records that the user has been told, so the prompt does not return.
+  ///
+  /// Called both when they export and when they dismiss. Dismissing counts:
+  /// the release notes carry the same message, and a warning that reappears
+  /// every launch is one people learn to tap past without reading.
+  Future<void> acknowledgeExportFormat() =>
+      writeInt(SettingKey.exportFormatAcknowledged, exportSchemaVersion);
 
   /// Writes a raw key-value pair.
   ///

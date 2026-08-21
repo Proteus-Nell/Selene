@@ -1340,10 +1340,24 @@ diagnostic vocabulary listed in the task entry.
 **Goal.** Backups carry the new data, and the old format's rejection is honest.
 
 **Done when.**
-- [ ] Export v2 carries conditions; the fingerprint is updated and the round-trip fuzz test passes
-- [ ] A v1 file is **refused** with a specific message naming the reason, never a generic failure
-- [ ] After the migration to schema v2, the app prompts once to make a fresh backup
-- [ ] `docs/RELEASE.md` gains a release-note line telling users to re-export
+- [x] Export v2 carries conditions; the fingerprint is updated and the round-trip fuzz test passes
+- [x] A v1 file is **refused** with a specific message naming the reason, never a generic failure
+- [x] After the migration to schema v2, the app prompts once to make a fresh backup
+- [x] `docs/RELEASE.md` gains a release-note line telling users to re-export
+
+**Two bugs this surfaced, both in `deleteEverything`.** It did not delete the
+`conditions` table — nothing references it, so no cascade would ever have fired,
+and "delete everything" was leaving behind the most sensitive rows in the
+database: a recorded pregnancy, a PCOS diagnosis. And wiping the settings table
+removed the acknowledgement row, so deleting all your data brought back a banner
+urging you to back it up. Both fixed, both tested.
+
+**Where the v1 fixture went.** `v1_export_fixture_test.dart` was AND-23's only
+guard against a symptom being renamed, and AND-28 voided its premise. It is now
+`frozen_export_fixture_test.dart` and carries two frozen files: a v2 one that
+still pins the five original wire names, and the v1 one, which asserts the
+refusal is specific. The guarantee is unchanged; only the envelope version it
+travels in moved.
 
 **Accepted risk, taken knowingly.** Refusing v1 files means every backup that
 exists today becomes unrestorable the moment a user updates. This app has no

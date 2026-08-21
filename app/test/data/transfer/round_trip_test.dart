@@ -20,10 +20,15 @@ import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/transfer/export_v1.dart';
 import 'package:period_tracker/data/transfer/import_v1.dart';
+import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 
 /// A randomly generated but valid database state.
-typedef GeneratedState = ({List<DayLog> logs, Map<String, String> settings});
+typedef GeneratedState = ({
+  List<DayLog> logs,
+  Map<String, String> settings,
+  List<ConditionRecord> conditions,
+});
 
 GeneratedState generateState(Random random) {
   final dayCount = random.nextInt(40);
@@ -66,7 +71,32 @@ GeneratedState generateState(Random random) {
       _ => 'quoted "value" with \\ and newline\n',
     };
   }
-  return (logs: logs, settings: settings);
+  // Conditions, including the awkward shapes: an ongoing span with no end, a
+  // closed one, and the same condition recorded twice over a life. Generated
+  // rather than hand-written for the same reason as the logs — the cases that
+  // bite are the ones nobody thinks to write down.
+  final conditions = <ConditionRecord>[];
+  final conditionCount = random.nextInt(6);
+  for (var i = 0; i < conditionCount; i++) {
+    final start = 20454 + random.nextInt(730);
+    final ongoing = random.nextBool();
+    conditions.add(
+      ConditionRecord(
+        id: 0,
+        condition: Condition.values[random.nextInt(Condition.values.length)],
+        start: CivilDate.fromEpochDay(start),
+        end: ongoing
+            ? null
+            : CivilDate.fromEpochDay(start + random.nextInt(400)),
+      ),
+    );
+  }
+  conditions.sort((a, b) {
+    final byStart = b.start.compareTo(a.start);
+    return byStart != 0 ? byStart : 0;
+  });
+
+  return (logs: logs, settings: settings, conditions: conditions);
 }
 
 void main() {
@@ -76,8 +106,23 @@ void main() {
     final db = AppDatabase(NativeDatabase.memory());
     await db.dayLogDao.saveAll(state.logs);
     await db.settingsDao.replaceAll(state.settings);
+    for (final record in state.conditions) {
+      await db.conditionDao.add(
+        condition: record.condition,
+        start: record.start,
+        end: record.end,
+      );
+    }
     return db;
   }
+
+  /// Conditions without their ids, which are not exported and never restored.
+  List<({Condition condition, CivilDate start, CivilDate? end})> comparable(
+    List<ConditionRecord> records,
+  ) => <({Condition condition, CivilDate start, CivilDate? end})>[
+    for (final r in records)
+      (condition: r.condition, start: r.start, end: r.end),
+  ];
 
   test('a random database exports and re-imports identically', () async {
     final random = Random(20260630);
@@ -108,6 +153,11 @@ void main() {
         await target.settingsDao.allRaw(),
         state.settings,
         reason: 'iteration $iteration settings',
+      );
+      expect(
+        comparable(await target.conditionDao.all()),
+        comparable(state.conditions),
+        reason: 'iteration $iteration conditions',
       );
       await target.close();
     }
@@ -156,6 +206,13 @@ void main() {
         ),
       ],
       settings: const <String, String>{'reminder_enabled': 'true'},
+      conditions: <ConditionRecord>[
+        ConditionRecord(
+          id: 0,
+          condition: Condition.pcos,
+          start: CivilDate.parseIso8601('2024-02-01'),
+        ),
+      ],
     ));
     addTearDown(db.close);
 
@@ -165,6 +222,12 @@ void main() {
     expect(text, contains('"date": "2026-03-14"'));
     expect(text, contains('"flow": "heavy"'));
     expect(text, contains('"cramps": "severe"'));
+    // Conditions are readable in the same way, and an ongoing one is an
+    // explicit null rather than a missing key: "still going" and "we forgot to
+    // write it" must not look the same in the file a person is reading.
+    expect(text, contains('"condition": "pcos"'));
+    expect(text, contains('"start": "2024-02-01"'));
+    expect(text, contains('"end": null'));
     // Enum names, never ordinals: a file full of integers is unreadable and
     // silently reinterprets itself if the enums are ever reordered.
     expect(text, isNot(contains('"flow": 4')));

@@ -59,6 +59,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         clock: clock,
         logger: ref.read(loggerProvider),
       );
+      // A completed export is what clears the re-export banner. Navigating to
+      // this screen does not, and neither does a failed write.
+      await ref.read(appDatabaseProvider).settingsDao.acknowledgeExportFormat();
       _report(l10n.settingsExportDone(envelope.dayLogs.length));
     } on FileSystemException {
       _report(l10n.settingsExportFailed);

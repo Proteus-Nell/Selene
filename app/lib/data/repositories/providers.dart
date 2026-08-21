@@ -111,6 +111,17 @@ final StreamProvider<bool> flowSimplifiedProvider = StreamProvider<bool>(
   (ref) => ref.watch(appDatabaseProvider).settingsDao.watchFlowSimplified(),
 );
 
+/// Whether the user still needs telling that their old backups will not
+/// restore (AND-28, ADR-0011).
+///
+/// A stream, so that exporting or dismissing takes the banner away on the next
+/// frame rather than the next launch — a warning that survives the action it
+/// asked for reads as the app not having noticed.
+final StreamProvider<bool> needsReExportPromptProvider = StreamProvider<bool>(
+  (ref) =>
+      ref.watch(appDatabaseProvider).settingsDao.watchNeedsReExportPrompt(),
+);
+
 /// Whether the calendar names the cycle phase (AND-25).
 ///
 /// On by default: a phase name restates dates the user logged, which ADR-0007

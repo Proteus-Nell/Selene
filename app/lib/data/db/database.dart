@@ -4,6 +4,7 @@ import 'package:period_tracker/data/db/daos/day_log_dao.dart';
 import 'package:period_tracker/data/db/daos/model_state_dao.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/tables.dart';
+import 'package:period_tracker/data/transfer/export_v1.dart';
 // Used by the generated part file: drift writes the enum types of textEnum
 // columns into database.g.dart, which inherits this library's imports.
 import 'package:period_tracker/domain/models/condition.dart';
@@ -87,6 +88,17 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
+      // A brand-new database has no backups to warn about, so it starts out
+      // already knowing the current export format. Only a database that
+      // predates AND-28 lacks this row, and that is exactly the population
+      // whose existing backups this build refuses (ADR-0011).
+      await customStatement(
+        'INSERT INTO settings (setting_key, setting_value) VALUES (?, ?)',
+        <Object?>[
+          SettingKey.exportFormatAcknowledged.wireName,
+          '$exportSchemaVersion',
+        ],
+      );
     },
     onUpgrade: (m, from, to) async {
       // drift calls onUpgrade whenever the stored version differs from this

@@ -108,11 +108,58 @@ void main() {
     test('writing the same key twice replaces it', () async {
       await db.settingsDao.writeInt(SettingKey.reminderLeadDays, 3);
       await db.settingsDao.writeInt(SettingKey.reminderLeadDays, 5);
-      expect(await db.settingsDao.allRaw(), hasLength(1));
+      // Counted per key rather than over the whole table. A total was a
+      // shorthand for "there is one row" that stopped being true when AND-28
+      // started seeding export_format_acknowledged at onCreate — and it would
+      // have broken again for any future seeded row, while never actually
+      // asserting the thing the test is named for.
+      final stored = await db.settingsDao.allRaw();
+      expect(
+        stored.keys.where(
+          (key) => key == SettingKey.reminderLeadDays.wireName,
+        ),
+        hasLength(1),
+      );
       expect(
         await db.settingsDao.readInt(SettingKey.reminderLeadDays, orElse: 0),
         5,
       );
+    });
+  });
+
+  group('the re-export prompt', () {
+    test('a fresh database never asks', () async {
+      // ADR-0011 refuses v1 backups. A brand-new install has no backups to
+      // refuse, so warning it about them would be alarming and false. onCreate
+      // seeds the acknowledgement for exactly this reason.
+      expect(await db.settingsDao.needsReExportPrompt(), isFalse);
+    });
+
+    test('a database that predates the setting does ask', () async {
+      // Simulates an upgrade: the row is what a fresh install gets and an old
+      // one lacks, and lacking it is the signal.
+      await db.customStatement(
+        'DELETE FROM settings WHERE setting_key = ?',
+        <Object?>[SettingKey.exportFormatAcknowledged.wireName],
+      );
+      expect(await db.settingsDao.needsReExportPrompt(), isTrue);
+    });
+
+    test('acknowledging stops it asking again', () async {
+      await db.customStatement(
+        'DELETE FROM settings WHERE setting_key = ?',
+        <Object?>[SettingKey.exportFormatAcknowledged.wireName],
+      );
+      await db.settingsDao.acknowledgeExportFormat();
+      expect(await db.settingsDao.needsReExportPrompt(), isFalse);
+    });
+
+    test('a future format version would ask again', () async {
+      // The comparison is against the format this build writes, not a boolean.
+      // When export v3 lands with the same problem, this mechanism works
+      // unchanged rather than needing a second flag.
+      await db.settingsDao.writeInt(SettingKey.exportFormatAcknowledged, 1);
+      expect(await db.settingsDao.needsReExportPrompt(), isTrue);
     });
   });
 

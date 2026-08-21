@@ -93,6 +93,41 @@ final class ConditionRecord {
     this.end,
   });
 
+  /// Rebuilds a record from its exported form.
+  ///
+  /// The id is **not** carried in an export and is not read back here: it is a
+  /// SQLite row number, meaningless in another database, and restoring one
+  /// would either collide with an existing row or be silently ignored. Imports
+  /// get fresh ids, which is correct — the identity of a condition record is
+  /// its condition and its dates, not its position in a table.
+  ///
+  /// Throws [FormatException] on anything it cannot read, so the importer's
+  /// refusal path handles it rather than a half-parsed record reaching storage.
+  factory ConditionRecord.fromJson(Map<String, Object?> json) {
+    final name = json['condition'];
+    if (name is! String) {
+      throw const FormatException('condition is missing or not text');
+    }
+    final condition = Condition.values.asNameMap()[name];
+    if (condition == null) {
+      throw FormatException('unknown condition: $name');
+    }
+    final start = json['start'];
+    if (start is! String) {
+      throw const FormatException('start is missing or not text');
+    }
+    final end = json['end'];
+    if (end != null && end is! String) {
+      throw const FormatException('end is not text');
+    }
+    return ConditionRecord(
+      id: 0,
+      condition: condition,
+      start: CivilDate.parseIso8601(start),
+      end: end == null ? null : CivilDate.parseIso8601(end as String),
+    );
+  }
+
   /// Row identity. Zero for a record that has not been stored yet.
   final int id;
 
@@ -114,6 +149,13 @@ final class ConditionRecord {
 
   /// Whether this record is still running as of [today].
   bool isActiveOn(CivilDate today) => covers(today);
+
+  /// The exported form. See [ConditionRecord.fromJson] for why [id] is absent.
+  Map<String, Object?> toJson() => <String, Object?>{
+    'condition': condition.name,
+    'end': end?.toIso8601(),
+    'start': start.toIso8601(),
+  };
 
   @override
   bool operator ==(Object other) =>
