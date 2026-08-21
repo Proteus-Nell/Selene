@@ -129,6 +129,55 @@ QueryExecutor createQueryExecutor(File file) => NativeDatabase(file);
 Future<Directory> defaultDatabaseDirectory() =>
     getApplicationSupportDirectory();
 
+/// Opens the database file and proves it is readable before handing it over.
+///
+/// The one place the file is opened. Both [openAppDatabase] and
+/// [openAppDatabaseWithoutRecovery] go through here, so the integrity check and
+/// the migration cannot drift apart between them; all that differs is what each
+/// does when this throws.
+Future<AppDatabase> _attemptOpen(File file) async {
+  final database = AppDatabase(createQueryExecutor(file));
+  try {
+    await verifyIntegrity(database);
+  } on Object {
+    // Close before rethrowing, or the failed attempt leaves its background
+    // isolate and its handle on the file behind. On Windows that handle would
+    // then block the rename that quarantines the very file we are recovering.
+    try {
+      await database.close();
+    } on Object {
+      // The database is already known to be unusable; a failure to close it
+      // cleanly adds nothing the caller can act on.
+    }
+    rethrow;
+  }
+  return database;
+}
+
+/// Opens the app database in [directory], or returns null rather than
+/// recovering.
+///
+/// The same open, the same integrity check and the same migration as
+/// [openAppDatabase], with one deliberate difference: this never quarantines.
+/// [openAppDatabase] recovers a damaged file by moving it aside, which is the
+/// right call when a person is looking at a screen that can tell them so. This
+/// exists for the background isolate behind the notification action, where the
+/// same move would relocate someone's entire history with nothing on screen and
+/// nobody to tell. Returning null there costs one untaken log; recovering there
+/// would cost the history, invisibly.
+///
+/// The next foreground launch calls [openAppDatabase] and handles the damage in
+/// the open, which is where that decision belongs.
+Future<AppDatabase?> openAppDatabaseWithoutRecovery({
+  required Directory directory,
+}) async {
+  try {
+    return await _attemptOpen(File(p.join(directory.path, databaseFileName)));
+  } on Object {
+    return null;
+  }
+}
+
 /// Opens the app database in [directory], recovering from a damaged file.
 ///
 /// The sequence is deliberate: verify first, hand the database out second. A
@@ -142,25 +191,7 @@ Future<DatabaseOpenOutcome> openAppDatabase({
   RingLogger? logger,
 }) async {
   final file = File(p.join(directory.path, databaseFileName));
-
-  Future<AppDatabase> attempt() async {
-    final database = AppDatabase(createQueryExecutor(file));
-    try {
-      await verifyIntegrity(database);
-    } on Object {
-      // Close before rethrowing, or the failed attempt leaves its background
-      // isolate and its handle on the file behind. On Windows that handle would
-      // then block the rename that quarantines the very file we are recovering.
-      try {
-        await database.close();
-      } on Object {
-        // The database is already known to be unusable; a failure to close it
-        // cleanly adds nothing the caller can act on.
-      }
-      rethrow;
-    }
-    return database;
-  }
+  Future<AppDatabase> attempt() => _attemptOpen(file);
 
   try {
     final database = await attempt();
