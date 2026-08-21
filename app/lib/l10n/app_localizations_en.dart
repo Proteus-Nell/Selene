@@ -700,6 +700,75 @@ class AppLocalizationsEn extends AppLocalizations {
       'An estimate from your cycle dates alone. This app cannot observe ovulation, and this must not be used to plan or avoid pregnancy.';
 
   @override
+  String get nutritionTitle => 'Iron and magnesium';
+
+  @override
+  String get nutritionIntro =>
+      'Reference notes on two nutrients that come up around menstrual cycles. This is background reading, not advice about your body, and nothing here is based on what you have logged.';
+
+  @override
+  String get nutritionIronTitle => 'Iron';
+
+  @override
+  String get nutritionIronBody =>
+      'Iron is part of haemoglobin, the protein that carries oxygen around the blood. Menstrual bleeding is one of the ways the body loses iron, and heavier bleeding means more of it. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia, whose commonly listed symptoms include tiredness and lack of energy.';
+
+  @override
+  String get nutritionIronDiagnosisNote =>
+      'Iron deficiency is confirmed by a blood test. Symptoms alone cannot establish it, and neither can anything in this app.';
+
+  @override
+  String get nutritionIronSourcesBody =>
+      'Dietary iron comes in two forms: haem iron from meat and fish, and non-haem iron from plants and fortified foods. They are absorbed differently.';
+
+  @override
+  String get nutritionVitaminCTitle => 'Why vitamin C is listed here';
+
+  @override
+  String get nutritionVitaminCBody =>
+      'Vitamin C eaten in the same meal increases how much non-haem iron the body absorbs. That is the only reason it appears in a menstrual cycle app.';
+
+  @override
+  String get nutritionIronCautionBody =>
+      'Iron supplements taken without a confirmed deficiency can do harm, because excess iron accumulates rather than being cleared.';
+
+  @override
+  String get nutritionMagnesiumTitle => 'Magnesium';
+
+  @override
+  String get nutritionMagnesiumBody =>
+      'Magnesium is involved in muscle and nerve function, among many other processes. It is found in green leafy vegetables, legumes, nuts, seeds and wholegrains.';
+
+  @override
+  String get nutritionMagnesiumEvidenceBody =>
+      'Evidence that magnesium supplements improve menstrual symptoms is limited and not conclusive.';
+
+  @override
+  String get nutritionZincTitle => 'Why zinc is listed here';
+
+  @override
+  String get nutritionZincBody =>
+      'Zinc is an essential mineral involved in immune function and wound healing. It is often sold together with magnesium, which is worth knowing alongside the next line: taken at high doses over time, zinc can interfere with how the body absorbs copper.';
+
+  @override
+  String get nutritionHintTitle => 'Something worth mentioning';
+
+  @override
+  String get nutritionHintBody =>
+      'On several days recently you logged heavy flow and fatigue together. That pattern is worth raising with a doctor or nurse, who can look into it properly.';
+
+  @override
+  String get nutritionSourcesNote =>
+      'Every claim on this page is listed with its source in NUTRITION_SOURCES.md in the app\'s source repository.';
+
+  @override
+  String get settingsNutrition => 'Iron and magnesium';
+
+  @override
+  String get settingsNutritionSubtitle =>
+      'Reference notes on two nutrients that come up around menstrual cycles.';
+
+  @override
   String get conditionsTitle => 'Conditions and medication';
 
   @override
