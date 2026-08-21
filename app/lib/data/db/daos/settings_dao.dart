@@ -67,6 +67,13 @@ enum SettingKey {
   /// always say no (risk R12).
   scheduledFireDays('scheduled_fire_days'),
 
+  /// Whether the app requires an unlock before showing anything (AND-29).
+  ///
+  /// Defaults to **off**. A lock the user did not ask for is a lock they meet
+  /// as a failure the first time their fingerprint does not read, and this app
+  /// cannot know whether they share the device.
+  appLockEnabled('app_lock_enabled'),
+
   /// The export format version the user has been told about (AND-28).
   ///
   /// Exists because of ADR-0011: this build refuses v1 backups, so every file a
@@ -212,6 +219,18 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   /// [readShowOvulationWindow], as a stream for the calendar.
   Stream<bool> watchShowOvulationWindow() =>
       watchBool(SettingKey.showOvulationWindow, orElse: false);
+
+  /// Whether the app requires an unlock (AND-29). Defaults to **off**.
+  ///
+  /// Off because a lock nobody asked for is friction they meet as a failure,
+  /// and because this app cannot know whether the device is shared. The users
+  /// who need it know they need it.
+  Future<bool> readAppLockEnabled() =>
+      readBool(SettingKey.appLockEnabled, orElse: false);
+
+  /// [readAppLockEnabled], as a stream for the settings screen.
+  Stream<bool> watchAppLockEnabled() =>
+      watchBool(SettingKey.appLockEnabled, orElse: false);
 
   /// Whether the user still needs telling that their old backups will not
   /// restore (AND-28, ADR-0011).

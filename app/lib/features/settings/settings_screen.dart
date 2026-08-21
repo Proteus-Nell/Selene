@@ -18,6 +18,7 @@ import 'package:period_tracker/features/settings/log_viewer.dart';
 import 'package:period_tracker/features/settings/privacy_section.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/notifications/scheduler.dart';
+import 'package:period_tracker/security/app_lock.dart';
 
 /// Data controls, the privacy statement, and the activity log.
 ///
@@ -224,6 +225,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const Divider(),
+            _SectionHeading(l10n.settingsSecuritySection),
+            const _AppLockSetting(),
+            const Divider(),
             _SectionHeading(l10n.settingsDisplaySection),
             const _DisplaySettings(),
             const Divider(),
@@ -259,6 +263,103 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The app lock toggle (AND-29).
+///
+/// Off by default. Two things about it are stated on the screen rather than
+/// left to be inferred:
+///
+/// **It hides the interface and encrypts nothing.** That line sits under the
+/// switch whether it is on or off, not behind a link, because a user who
+/// believes this encrypts their diary has been given a false sense of safety
+/// for the price of a few taps — which is worse than no lock. ADR-0004 keeps
+/// the database unencrypted in app-private storage, and ADR-0008 records that
+/// this feature does not change that.
+///
+/// **A device with no credential is told why, not shown a dead switch.** The
+/// lock delegates entirely to the device's own PIN, pattern or biometric, so
+/// with none enrolled there is nothing to ask for. The fix is in the system
+/// settings, and a greyed-out toggle would leave the user concluding the app
+/// is broken instead of going there.
+class _AppLockSetting extends ConsumerStatefulWidget {
+  const _AppLockSetting();
+
+  @override
+  ConsumerState<_AppLockSetting> createState() => _AppLockSettingState();
+}
+
+class _AppLockSettingState extends ConsumerState<_AppLockSetting> {
+  LockUnavailableReason? _reason;
+  bool _checked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_check());
+  }
+
+  Future<void> _check() async {
+    final reason = await ref.read(appLockServiceProvider).unavailableReason();
+    if (!mounted) return;
+    setState(() {
+      _reason = reason;
+      _checked = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final enabled = ref.watch(appLockEnabledProvider).valueOrNull ?? false;
+
+    // Nothing at all until the device has been asked. Rendering an enabled
+    // switch and then disabling it a frame later invites a tap that fails.
+    if (!_checked) return const SizedBox(height: 48);
+
+    final reason = _reason;
+    if (reason != null) {
+      return ListTile(
+        leading: const Icon(Icons.lock_outline),
+        title: Text(l10n.settingsAppLock),
+        subtitle: Text(
+          switch (reason) {
+            LockUnavailableReason.noCredentialEnrolled =>
+              l10n.settingsAppLockUnavailable,
+            LockUnavailableReason.notSupported =>
+              l10n.settingsAppLockNotSupported,
+          },
+        ),
+        enabled: false,
+      );
+    }
+
+    return Column(
+      children: <Widget>[
+        SwitchListTile(
+          value: enabled,
+          onChanged: (value) async {
+            final settings = ref.read(appDatabaseProvider).settingsDao;
+            await settings.writeBool(SettingKey.appLockEnabled, value: value);
+            // Turning it on locks immediately rather than at the next launch,
+            // so the user sees what they just switched on and can check it
+            // works while they are still holding the phone.
+            if (value) ref.read(lockControllerProvider).lock();
+          },
+          title: Text(l10n.settingsAppLock),
+          subtitle: Text(l10n.settingsAppLockSubtitle),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Text(
+            l10n.settingsAppLockNotEncrypted,
+            style: theme.textTheme.bodySmall,
+          ),
+        ),
+      ],
     );
   }
 }

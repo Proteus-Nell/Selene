@@ -1245,6 +1245,66 @@ abstract class AppLocalizations {
   /// **'An estimate from your cycle dates alone. This app cannot observe ovulation, and this must not be used to plan or avoid pregnancy.'**
   String get calendarOvulationCaveat;
 
+  /// No description provided for @lockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get lockTitle;
+
+  /// No description provided for @lockBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock to see your diary.'**
+  String get lockBody;
+
+  /// No description provided for @lockAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get lockAction;
+
+  /// Shown by the system biometric prompt. Must not name the app or say what it tracks: this string can appear on a lock screen that other people can see.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock to see your diary'**
+  String get lockPromptReason;
+
+  /// No description provided for @settingsSecuritySection.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get settingsSecuritySection;
+
+  /// No description provided for @settingsAppLock.
+  ///
+  /// In en, this message translates to:
+  /// **'Require unlock'**
+  String get settingsAppLock;
+
+  /// No description provided for @settingsAppLockSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for your fingerprint, face, PIN or pattern before showing the app. It locks again after a minute in the background.'**
+  String get settingsAppLockSubtitle;
+
+  /// Sits under the app-lock toggle, always visible, on or off. A lock a user mistakes for encryption is worse than no lock, so this is not behind a link.
+  ///
+  /// In en, this message translates to:
+  /// **'This hides the screen. It does not encrypt your data, which is stored unencrypted in the app\'s private storage either way.'**
+  String get settingsAppLockNotEncrypted;
+
+  /// Replaces the toggle when no credential is enrolled. Names the fix, which is in the device settings and not in this app.
+  ///
+  /// In en, this message translates to:
+  /// **'Your device has no PIN, pattern, password or fingerprint set up, so there is nothing for the app to ask for. Set a screen lock in your device settings, then come back.'**
+  String get settingsAppLockUnavailable;
+
+  /// No description provided for @settingsAppLockNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This device cannot lock the app.'**
+  String get settingsAppLockNotSupported;
+
   /// No description provided for @reExportTitle.
   ///
   /// In en, this message translates to:

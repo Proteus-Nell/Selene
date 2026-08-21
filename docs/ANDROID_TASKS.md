@@ -1388,11 +1388,39 @@ backup, and a release note saying the same.
 **Scope.** `local_auth`, an unlock gate around the app shell, a settings toggle.
 
 **Done when.**
-- [ ] `BiometricPrompt` with device-credential fallback, off by default and turned on in settings
-- [ ] Unlock on cold start, and again after 60 seconds in the background
-- [ ] A device with no enrolled credential is told plainly why the toggle cannot be turned on
-- [ ] `assert_no_network.sh` still passes with the new dependency, asserted in CI rather than assumed
-- [ ] `PRIVACY.md` says explicitly that this hides the screen and does **not** encrypt the database
+- [x] `BiometricPrompt` with device-credential fallback, off by default and turned on in settings
+- [x] Unlock on cold start, and again after 60 seconds in the background
+- [x] A device with no enrolled credential is told plainly why the toggle cannot be turned on
+- [x] `assert_no_network.sh` still passes with the new dependency, asserted in CI rather than assumed
+- [x] `PRIVACY.md` says explicitly that this hides the screen and does **not** encrypt the database
+
+**Where the sixty seconds actually goes.** Most of `lock_controller_test.dart`
+is about *not* locking. Android sends `paused` and `inactive` for a notification
+shade pull, an incoming-call banner, an app-switcher glance and the system file
+picker — and that last one would lock the app in the middle of taking a backup.
+A lock people turn off protects nobody, so the cases that must not lock are the
+ones that decide whether this survives contact with a real phone. `inactive` is
+ignored entirely, and the grace timer starts at the *first* pause of a
+backgrounding rather than the last, or it would restart every time the platform
+said something and the app would never lock.
+
+**The boundary is decided, not left ambiguous.** "After 60 seconds" leaves
+exactly sixty undefined; it resolves towards locking, and both sides are pinned.
+
+**Two deliberate open-the-door cases.** A removed device credential lets the
+user in rather than sealing them out — the alternative is a diary nobody can
+open with the data still unencrypted on disk, so the lock would have cost them
+everything and protected nothing. Missing or unenrolled *biometrics* do not,
+because a PIN is still a way in and letting someone straight past because a
+fingerprint sensor broke would be a hole rather than graceful degradation.
+
+**The no-network check has a cheaper half now.** `manifest_test.dart` reads
+`package_config.json`, finds every Android plugin's own manifest, and fails on a
+network permission in any of them — `local_auth` is the first dependency since
+the MVP to declare a permission at all. `assert_no_network.sh` on the built APK
+is still the real gate; this catches it on the commit rather than twelve minutes
+into CI. Both the scan and its own "did the scan find anything" guard were
+checked against a deliberately edited plugin manifest.
 
 **Prompt to paste.**
 

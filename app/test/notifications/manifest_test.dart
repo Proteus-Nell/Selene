@@ -6,6 +6,7 @@
 // catches a hand-edit to the app's own manifest long before CI gets as far as
 // building an APK.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -34,6 +35,77 @@ void main() {
   String? nameOf(XmlElement element) => element.getAttribute('android:name');
 
   String? nodeOf(XmlElement element) => element.getAttribute('tools:node');
+
+  group('the plugins this app depends on', () {
+    // assert_no_network.sh is the real gate and runs on the built APK, after
+    // manifest merging. This is the cheaper half of the same question, and it
+    // is the half that runs without an Android SDK: every Android plugin the
+    // app resolves has its own AndroidManifest.xml, and manifest merging pulls
+    // whatever they declare into the APK.
+    //
+    // Added at AND-29, which introduced local_auth — the first dependency
+    // since the MVP to declare a permission of its own. CI catches a network
+    // permission eventually; this catches it on the commit that adds it,
+    // before anyone waits twelve minutes for a build.
+    List<File> pluginManifests() {
+      final config = jsonDecode(
+        findFile('app/.dart_tool/package_config.json').readAsStringSync(),
+      );
+      final packages =
+          (config as Map<String, Object?>)['packages']! as List<Object?>;
+      final manifests = <File>[];
+      for (final entry in packages.cast<Map<String, Object?>>()) {
+        final root = entry['rootUri']! as String;
+        if (!root.startsWith('file://')) continue;
+        final manifest = File(
+          '${Uri.parse(root).toFilePath()}/android/src/main/AndroidManifest.xml',
+        );
+        if (manifest.existsSync()) manifests.add(manifest);
+      }
+      return manifests;
+    }
+
+    test('none of them asks for a network permission', () {
+      const forbidden = <String>[
+        'android.permission.INTERNET',
+        'android.permission.ACCESS_NETWORK_STATE',
+        'android.permission.ACCESS_WIFI_STATE',
+        'android.permission.ACCESS_FINE_LOCATION',
+        'android.permission.ACCESS_COARSE_LOCATION',
+      ];
+      final offenders = <String>[];
+      for (final manifest in pluginManifests()) {
+        final text = manifest.readAsStringSync();
+        for (final permission in forbidden) {
+          if (text.contains(permission)) {
+            offenders.add('${manifest.path}: $permission');
+          }
+        }
+      }
+      expect(
+        offenders,
+        isEmpty,
+        reason:
+            'A dependency declares a network permission. The app manifest '
+            'removes INTERNET with tools:node="remove", so the merged APK may '
+            'still be clean — but a dependency that wants the network is a '
+            'dependency worth looking at before trusting the removal to hold. '
+            'ADR-0004 is the whole privacy story.\n${offenders.join("\n")}',
+      );
+    });
+
+    test('the scan actually found some manifests', () {
+      // A guard that finds nothing passes for the wrong reason. If the package
+      // layout changes, this fails rather than quietly covering nothing.
+      expect(
+        pluginManifests(),
+        isNotEmpty,
+        reason:
+            'no plugin manifests found — the scan is looking in the wrong '
+            'place and has been proving nothing',
+      );
+    });
+  });
 
   group('receivers', () {
     Set<String> declaredReceivers() => document

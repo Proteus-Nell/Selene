@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/theme.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/routing/router.dart';
+import 'package:period_tracker/security/lock_gate.dart';
 
 /// The application widget.
 ///
@@ -24,6 +25,11 @@ class PeriodTrackerApp extends ConsumerWidget {
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(routerProvider),
       debugShowCheckedModeBanner: false,
+      // Wrapped around the router's output rather than around MaterialApp, so
+      // the lock screen gets the app's theme and localisations, and so it
+      // covers every route including ones added later. Gating screen by screen
+      // would leave the answer to whoever adds the next one.
+      builder: (context, child) => LockGate(child: child ?? const SizedBox()),
     );
   }
 }
