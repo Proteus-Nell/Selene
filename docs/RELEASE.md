@@ -146,6 +146,7 @@ Checklist, in the order the failures actually happen:
 - [ ] **Release notes carry the re-export warning** — see below
 - [ ] No claim in `docs/NUTRITION_SOURCES.md` is still marked `[VERIFY]`
 - [ ] The medicines artifact has actually been fetched — see below
+- [ ] No claim in `docs/HYGIENE_SOURCES.md` is still marked `[VERIFY]`
 
 ### The medicines artifact (export format aside)
 

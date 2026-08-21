@@ -1558,11 +1558,34 @@ that this is US labelling.
 **Goal.** Look something up, and have somewhere to go when it is not there.
 
 **Done when.**
-- [ ] A search screen over the bundled set, reachable from settings
-- [ ] Curated hygiene entries including TSS guidance for tampons and cups, hand-written and cited
-- [ ] A browser hand-off that **warns before leaving** and explains that the browser, not the app, makes the request
-- [ ] The hand-off does not pre-fill a specific drug name without saying that it will appear in browser history
-- [ ] `url_launcher` adds no permission; `assert_no_network.sh` still passes
+- [x] A search screen over the bundled set, reachable from settings
+- [x] Curated hygiene entries including TSS guidance for tampons and cups, hand-written and cited
+- [x] A browser hand-off that **warns before leaving** and explains that the browser, not the app, makes the request
+- [x] The hand-off does not pre-fill a specific drug name without saying that it will appear in browser history
+- [x] `url_launcher` adds no permission; `assert_no_network.sh` still passes
+
+**The one-enum-value hazard.** `url_launcher_android` declares no permissions,
+but it ships a `WebViewActivity` — and `LaunchMode.inAppWebView` renders the page
+*inside this app*, which would make this app the thing fetching it, which needs
+`INTERNET`, which reverses ADR-0004 entirely. `browser_handoff_test.dart` scans
+all of `lib/` and fails on `inAppWebView`, `inAppBrowserView` and
+`platformDefault`, and separately asserts that `externalApplication` is actually
+used — otherwise the scan passes trivially on an app that launches nothing.
+
+**The hygiene entries are curated, and the screen says so.** Tampons and cups are
+FDA devices, not drugs, so they are hand-written rather than a regulator's own
+text — and presenting our wording as though it came from a regulator would be
+borrowing an authority we do not have. `docs/HYGIENE_SOURCES.md` records every
+claim with its source, `[VERIFY]` until checked, and `RELEASE.md` gates on it.
+
+**TSS is the hardest copy in the app.** It has to be urgent without being a
+diagnosis: *"if you have these symptoms, remove it and get urgent medical help"*
+is a description and an instruction; *"you have toxic shock syndrome"* is a
+diagnosis nothing here can support. The wording is pinned verbatim, and the copy
+test fails on hedges as well as on diagnoses — "you might want to consider
+speaking to someone" is how an urgent instruction dies. It is rendered first, in
+the error style, and exactly one entry is allowed to be urgent, because the
+styling only works by being rare.
 
 **Prompt to paste.**
 
