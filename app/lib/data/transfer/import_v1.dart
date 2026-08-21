@@ -7,6 +7,7 @@ import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/core/result.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/transfer/export_v1.dart';
+import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 
 /// Why an import was refused.
@@ -113,7 +114,16 @@ final class ImportSummary {
 /// dropped.
 abstract final class ImportV1 {
   /// Envelope versions this build can read.
-  static const Set<int> supportedVersions = <int>{1};
+  ///
+  /// **v1 is deliberately absent** (ADR-0011). Reading it would have cost a few
+  /// lines of branching in [_parseConditions]; that was offered and declined,
+  /// and the cost was stated before the choice was made. The refusal message
+  /// below therefore has to be specific enough that a user meeting it
+  /// understands what happened rather than concluding the app is broken.
+  ///
+  /// This is the line a future session is most likely to "fix" without reading
+  /// why it is here. Read the ADR first.
+  static const Set<int> supportedVersions = <int>{2};
 
   /// Parses and validates [text] without touching the database.
   ///
@@ -152,9 +162,19 @@ abstract final class ImportV1 {
         );
       }
       if (!supportedVersions.contains(schemaVersion)) {
+        // Named specifically rather than generically, because whoever meets
+        // this message has just been told their only backup is unusable and
+        // deserves to know exactly why, and what still works. "Something went
+        // wrong" here would be the app losing their history without explaining
+        // itself. See ADR-0011 for why this refusal exists at all.
         throw _Refusal(
           ImportRejection.unsupportedVersion,
-          'This build no longer reads export format v$schemaVersion.',
+          'This backup is in the older export format (v$schemaVersion). This '
+          'version of the app reads format v$exportSchemaVersion only and '
+          'cannot restore the older one. Nothing has been changed. If you '
+          'still have the device or app version that wrote this file, export '
+          'again from there. The file is plain text either way: your logged '
+          'days are readable in it with any text editor.',
         );
       }
 
@@ -180,6 +200,7 @@ abstract final class ImportV1 {
 
       final logs = _parseDayLogs(decoded);
       final settings = _parseSettings(decoded);
+      final conditions = _parseConditions(decoded);
 
       return Ok<ExportEnvelope, ImportRefused>(
         ExportEnvelope(
@@ -190,6 +211,7 @@ abstract final class ImportV1 {
           exportedUtc: exportedUtc,
           dayLogs: logs,
           settings: settings,
+          conditions: conditions,
         ),
       );
     } on _Refusal catch (e) {
@@ -245,8 +267,19 @@ abstract final class ImportV1 {
       await database.customStatement('DELETE FROM model_states');
       await database.delete(database.symptoms).go();
       await database.delete(database.dayLogs).go();
+      await database.delete(database.conditions).go();
       await database.dayLogDao.saveAll(envelope.dayLogs);
       await database.settingsDao.replaceAll(envelope.settings);
+      for (final record in envelope.conditions) {
+        // Written through the DAO so the row gets a fresh id. The exported file
+        // carries no id, and inventing one here would be the only place in the
+        // app where a surrogate key crossed a database boundary.
+        await database.conditionDao.add(
+          condition: record.condition,
+          start: record.start,
+          end: record.end,
+        );
+      }
     });
     // Outside the transaction, because VACUUM cannot run inside one. The
     // replaced rows are health data, so their pages are reclaimed rather than
@@ -268,6 +301,47 @@ abstract final class ImportV1 {
         writtenByAppVersion: envelope.appVersion,
       ),
     );
+  }
+
+  static List<ConditionRecord> _parseConditions(Map<String, Object?> json) {
+    final raw = json['conditions'];
+    if (raw is! List<Object?>) {
+      throw const _Refusal(
+        ImportRejection.malformedField,
+        'This backup has no readable list of conditions.',
+      );
+    }
+    final records = <ConditionRecord>[];
+    for (var i = 0; i < raw.length; i++) {
+      final entry = raw[i];
+      if (entry is! Map<String, Object?>) {
+        throw _Refusal(
+          ImportRejection.malformedField,
+          'Condition ${i + 1} in this backup is not readable.',
+        );
+      }
+      try {
+        records.add(ConditionRecord.fromJson(entry));
+      } on FormatException catch (e) {
+        // An unknown condition name is the forward-compatibility case: a backup
+        // written after a release that added one. Reported as such rather than
+        // as a malformed file, because the fix is to update the app and the
+        // user should be told that rather than left thinking the file is
+        // damaged.
+        throw _Refusal(
+          e.message.startsWith('unknown condition')
+              ? ImportRejection.unknownValue
+              : ImportRejection.malformedField,
+          e.message.startsWith('unknown condition')
+              ? 'Condition ${i + 1} in this backup (${e.message.substring(20)}) '
+                    'was recorded by a newer version of the app. Update the '
+                    'app, then import it again. Nothing has been changed.'
+              : 'Condition ${i + 1} in this backup is not readable '
+                    '(${e.message}).',
+        );
+      }
+    }
+    return records;
   }
 
   static List<DayLog> _parseDayLogs(Map<String, Object?> json) {

@@ -8,6 +8,7 @@ import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/log/day_editor.dart';
+import 'package:period_tracker/features/settings/settings_screen.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/main.dart';
 
@@ -100,6 +101,7 @@ class _LogScreenState extends ConsumerState<LogScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: <Widget>[
             const _RecoveryBanner(),
+            const _ReExportBanner(),
             Text(
               l10n.logTodayIs(today.weekdayDayAndMonth(context)),
               style: theme.textTheme.titleMedium,
@@ -254,6 +256,77 @@ class _DaySelector extends StatelessWidget {
 }
 
 /// Tells the user their data was quarantined, rather than looking empty.
+/// Tells the user, once, that backups taken before this release will not
+/// restore (AND-28).
+///
+/// This banner is the whole mitigation for ADR-0011. The decision to refuse v1
+/// files was taken knowing that this app has no cloud and no Play Store
+/// restore, so the export *is* the recovery path (risk R8) — which means every
+/// file a user saved before updating is now unrestorable. That is defensible
+/// only if they are told while they still have a working phone to export from.
+/// Discovering it after losing the phone is not a trade-off anyone agreed to.
+///
+/// Shown on the log screen rather than in settings, because it has to reach
+/// someone who never opens settings; that is most people, and settings is
+/// exactly where a user who already backs up regularly would find it anyway.
+///
+/// It goes away when the user exports **or** dismisses. Dismissing counts: the
+/// release notes carry the same message, and a warning that returns every
+/// launch is one people learn to tap past without reading, which would cost it
+/// the one audience it has.
+class _ReExportBanner extends ConsumerWidget {
+  const _ReExportBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Defaults to hidden while the preference loads. Erring the other way
+    // would flash a data-loss warning at every user on every cold start.
+    final needed = ref.watch(needsReExportPromptProvider).valueOrNull ?? false;
+    if (!needed) return const SizedBox.shrink();
+
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Card(
+      color: theme.colorScheme.secondaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(l10n.reExportTitle, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(l10n.reExportBody),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: <Widget>[
+                // Navigating does not acknowledge: only a completed export
+                // does. Otherwise a user who taps through and then changes
+                // their mind loses the warning without ever having a new file.
+                FilledButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  ),
+                  child: Text(l10n.reExportAction),
+                ),
+                TextButton(
+                  onPressed: () => ref
+                      .read(appDatabaseProvider)
+                      .settingsDao
+                      .acknowledgeExportFormat(),
+                  child: Text(l10n.reExportDismiss),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _RecoveryBanner extends ConsumerWidget {
   const _RecoveryBanner();
 

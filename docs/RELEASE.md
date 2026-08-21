@@ -143,6 +143,34 @@ Checklist, in the order the failures actually happen:
       wiped install restores the same days
 - [ ] Notification permission is asked for once, and only after a cycle exists
 - [ ] Keystore backups still exist and still open
+- [ ] **Release notes carry the re-export warning** — see below
+- [ ] No claim in `docs/NUTRITION_SOURCES.md` is still marked `[VERIFY]`
+
+### The re-export warning (export format v2)
+
+**This release cannot restore backups taken before it.** Export format v2 adds
+conditions, and v1 files are refused rather than partially read — ADR-0011,
+decided knowingly. This app has no cloud sync and no Play Store restore, so the
+export file *is* the recovery path (risk R8): every backup a user is currently
+holding stops working the moment they update.
+
+The app shows a one-time banner on the log screen telling them so, and the
+release notes have to say the same thing, because a user who dismisses the
+banner without reading it has no second chance:
+
+> This update changes the backup file format. Backups you saved with an earlier
+> version can no longer be restored — please export again after updating. Your
+> data in the app is not affected.
+
+Do not ship without that line. The banner alone is not enough: it appears once,
+it can be dismissed with a tap, and someone restoring onto a new phone after
+losing the old one will never have seen it.
+
+The one-time banner is driven by `SettingKey.exportFormatAcknowledged`, seeded
+at `onCreate` so that fresh installs are never warned about backups they have
+never taken. If a future release changes the export format again, bumping
+`exportSchemaVersion` makes the same mechanism fire without any new flag — and
+this section needs rewriting for the new version.
 
 ---
 

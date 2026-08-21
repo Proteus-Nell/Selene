@@ -1245,6 +1245,30 @@ abstract class AppLocalizations {
   /// **'An estimate from your cycle dates alone. This app cannot observe ovulation, and this must not be used to plan or avoid pregnancy.'**
   String get calendarOvulationCaveat;
 
+  /// No description provided for @reExportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a fresh backup'**
+  String get reExportTitle;
+
+  /// Shown once, after updating from a build that wrote the old export format. It must say plainly that old files will not restore and that nothing in the app has been lost — a user who reads only the first sentence must not conclude their history is gone.
+  ///
+  /// In en, this message translates to:
+  /// **'This update changed the backup format. Any backup file you saved before now can no longer be restored by the app, so it is worth exporting again. Your data in the app is untouched.'**
+  String get reExportBody;
+
+  /// No description provided for @reExportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Export now'**
+  String get reExportAction;
+
+  /// No description provided for @reExportDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get reExportDismiss;
+
   /// No description provided for @nutritionTitle.
   ///
   /// In en, this message translates to:

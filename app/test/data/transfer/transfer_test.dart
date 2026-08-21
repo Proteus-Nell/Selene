@@ -6,9 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/core/clock.dart';
 import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/core/logging.dart';
+import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/transfer/export_v1.dart';
 import 'package:period_tracker/data/transfer/import_v1.dart';
+import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 
 void main() {
@@ -63,16 +65,22 @@ void main() {
 
   group('the shape fingerprint', () {
     test('describes the fields actually written', () async {
-      // Rebuilt from the real serialised keys, so changing the envelope or the
-      // day-log shape without updating the constant fails here rather than at
-      // a user's next restore.
+      // Rebuilt from the real serialised keys, so changing the envelope, the
+      // day-log shape or the condition shape without updating the constant
+      // fails here rather than at a user's next restore.
       final envelope = await ExportV1.build(database: db, clock: clock);
       final envelopeKeys = envelope.toJson().keys.toList()..sort();
       final dayLogKeys = sampleLog.toJson().keys.toList()..sort();
+      final conditionKeys = ConditionRecord(
+        id: 0,
+        condition: Condition.pcos,
+        start: CivilDate.parseIso8601('2026-01-01'),
+      ).toJson().keys.toList()..sort();
       expect(
         exportSchemaFingerprint,
-        'v1;envelope[${envelopeKeys.join(",")}];'
-        'day_log[${dayLogKeys.join(",")}]',
+        'v$exportSchemaVersion;envelope[${envelopeKeys.join(",")}];'
+        'day_log[${dayLogKeys.join(",")}];'
+        'condition[${conditionKeys.join(",")}]',
       );
     });
 
@@ -421,7 +429,13 @@ void main() {
       );
       expect(logger.dump(), isNot(contains('2026-03-14')));
       expect(summary.dayLogsRestored, 1);
-      expect(summary.settingsRestored, 1);
+      // Counted against what was actually exported rather than a literal. The
+      // source database carries the export-format acknowledgement seeded at
+      // onCreate as well as the setting written above, and a hard-coded 1 was
+      // a shorthand for "the one I wrote" that stopped being true the moment
+      // anything else was seeded.
+      expect(summary.settingsRestored, (await db.settingsDao.allRaw()).length);
+      expect(await target.settingsDao.raw(SettingKey.reminderEnabled), 'true');
       expect(summary.exportedUtc.toIso8601String(), startsWith('2026-06-30'));
       expect(summary.toString(), contains('1 logs'));
     });

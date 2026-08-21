@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 
 CivilDate day(int epochDay) => CivilDate.fromEpochDay(epochDay);
@@ -140,11 +141,45 @@ void main() {
         SettingKey.onboardingComplete,
         value: true,
       );
+      await db.conditionDao.add(
+        condition: Condition.pregnancy,
+        start: day(20000),
+      );
+
       await db.dayLogDao.deleteEverything();
+
       expect(await db.dayLogDao.allLogs(), isEmpty);
       expect(await db.select(db.symptoms).get(), isEmpty);
-      expect(await db.select(db.settings).get(), isEmpty);
       expect(await db.select(db.modelStates).get(), isEmpty);
+      // Conditions are the most sensitive rows in this database — a recorded
+      // pregnancy, a PCOS diagnosis. Nothing references them, so no cascade
+      // would ever have removed them, and leaving them would make "delete
+      // everything" a lie about exactly the data a user is most likely to be
+      // deleting for.
+      expect(await db.select(db.conditions).get(), isEmpty);
+      expect(
+        await db.settingsDao.readBool(
+          SettingKey.onboardingComplete,
+          orElse: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('deleteEverything leaves a database that looks freshly created', () {
+      // Not literally empty: the export-format acknowledgement is re-seeded,
+      // because a wiped database is in the same position as a new one. Without
+      // it, deleting everything brings back a banner urging the user to back up
+      // the data they have just deliberately destroyed.
+      return expectLater(
+        db.dayLogDao.deleteEverything().then(
+          (_) => db.settingsDao.needsReExportPrompt(),
+        ),
+        completion(isFalse),
+        reason:
+            'wiping the database resurrected the re-export prompt, which now '
+            'asks the user to back up nothing',
+      );
     });
   });
 
