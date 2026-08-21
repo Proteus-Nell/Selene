@@ -49,7 +49,7 @@ The task template asked for MediaPipe, webcam capture, glossing limitations, and
 | A2 | Android only. No iOS build, no web build, no desktop build (except Flutter desktop as a **test target** for fast unit tests). | iOS adds signing, App Store review, and a second notification stack |
 | A3 | Distribution is sideload / personal use. Play Store is optional and out of MVP scope. | Play Store adds a Data Safety declaration, health-app policy review, and a signing key you must never lose |
 | A4 | English only for MVP, but the code is localization-ready from day one (`flutter_localizations`, no hardcoded UI strings). | Retrofitting l10n after the UI is built is a multi-day refactor |
-| A5 | The app is **not** a contraceptive aid and will not present a "safe day" or a contraceptive fertile window. It may optionally show an estimated ovulation range clearly labelled as an estimate. | Contraceptive claims move this into medical-device regulation |
+| A5 | The app is **not** a contraceptive aid and will not present a "safe day" or a contraceptive fertile window. It may optionally show an estimated ovulation range clearly labelled as an estimate. **Amended by [ADR-0007](DECISIONS.md#adr-0007-named-cycle-phases-shown-by-default-ovulation-estimation-still-opt-in):** clinical phase names (Period, Follicular, Luteal) and the cycle day are permitted by default, because they restate logged dates rather than inferring ovulation. Ovulation estimation stays opt-in. | Contraceptive claims move this into medical-device regulation |
 | A6 | Minimum viable history for personalization is 1 completed cycle; before that the app shows the population prior and says so. | A higher threshold means a longer cold-start dead zone |
 | A7 | Your daily driver is Windows 11. WSL2 is optional and is needed only for JAX GPU acceleration. | PyTorch supports native Windows CUDA, so no part of the Tier B path requires WSL2 (see 3.8) |
 | A8 | No PHI is ever transmitted, including in crash reports. Crash reporting is local-file only. | Any cloud crash reporter breaks the offline guarantee |
@@ -97,7 +97,7 @@ Two of these are deliberately queued rather than dismissed: a **home-screen widg
 | M5 | Tier B on-device training | ExecuTorch `TrainingModule` runs a train step on device through the Kotlin channel; gate correctly rejects it on synthetic users where it should | 5-10 sessions, optional |
 | M6 | Hardening | Export/import round-trip fuzz test, DST/timezone suite, release signing, APK network-permission assertion | 2-3 sessions |
 
-The Android half of this roadmap is decomposed into 21 independently promptable tasks in [ANDROID_TASKS.md](ANDROID_TASKS.md), each with its own scope, out-of-scope list, acceptance criteria, and a ready-to-paste prompt. AND-01 through AND-19 is the MVP; AND-20 and AND-21 are the optional Tier B work.
+The Android half of this roadmap is decomposed into 21 independently promptable tasks in [ANDROID_TASKS.md](ANDROID_TASKS.md), each with its own scope, out-of-scope list, acceptance criteria, and a ready-to-paste prompt. AND-01 through AND-19 is the MVP; AND-20 and AND-21 are the optional Tier B work; AND-22 through AND-32 are the v2 feature set, planned in two releases.
 
 ---
 
@@ -1063,7 +1063,7 @@ A period predictor is one API call away from claiming to be a contraceptive. It 
 - Every prediction ships with an interval and a confidence class. There is no code path that renders a point estimate alone.
 - A first-run disclaimer screen, and a permanent one-line disclaimer on the insights screen. Not a buried EULA.
 - The word "fertile" appears only with the qualifier "estimated" and only alongside a statement that it must not be used to prevent pregnancy.
-- If ovulation estimation is added at all, it is off by default.
+- If ovulation estimation is added at all, it is off by default. ([ADR-0007](DECISIONS.md#adr-0007-named-cycle-phases-shown-by-default-ovulation-estimation-still-opt-in) narrows this to the *estimate*: phase names are not ovulation estimation, and a copy test enforces the difference.)
 
 ### 6.3 Community involvement and inclusive design
 
@@ -1184,6 +1184,8 @@ What remains is not code:
 2. **Run the whole thing on a real device.** Nothing in this repo has ever run on Android, so the entire UI is proven by widget tests only. `integration_test/e2e_smoke_test.dart` is the same flow as the headless one and is what to run first. Two things specifically need a device rather than a test: the Storage Access Framework write path behind Export, and whether scheduled notifications survive an OEM battery optimiser (risk R12, which the app already hedges by detecting a missed reminder in-app).
 
 3. **Close the two CI gaps below**, or decide out loud that they are not worth closing.
+
+**The v2 feature set is planned but not started.** AND-22 through AND-32 in [ANDROID_TASKS.md](ANDROID_TASKS.md) cover sectioned symptoms, a simplified flow control, cycle phases on the calendar, long-term conditions, a nutrition reference, an app lock, intercourse logging, and an offline medicines lookup. Five decisions there were contested enough to need their own ADRs — 0007 through 0011 — and three of them amend or knowingly accept a cost against something recorded here: A5 (phase naming), ADR-0004's deferred app lock, and risk R8 (export v1 files stop being readable).
 
 **Two CI gaps worth closing when convenient.**
 

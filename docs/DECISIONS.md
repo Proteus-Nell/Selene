@@ -254,6 +254,200 @@ Rejected by explicit direction: remove the TensorFlow lineage entirely and commi
 
 ---
 
+## ADR-0007: Named cycle phases shown by default, ovulation estimation still opt-in
+
+**Status:** Accepted, 2026-08-20
+**Deciders:** Project owner
+
+### Context
+
+Assumption A5 says the app "will not present a safe day or a contraceptive
+fertile window", and 6.2 adds that "if ovulation estimation is added at all, it
+is off by default". Read together, those were taken to mean that *any* phase
+naming was gated. The calendar therefore showed logged days and a predicted
+window and nothing about where in the cycle a user was.
+
+That conflates two different claims. "You are on day 14, which is the follicular
+phase" is a restatement of dates the user themselves logged. "Your fertile
+window is the 12th to the 16th" is an inference about ovulation, and it is the
+one that carries regulatory and safety weight.
+
+### Decision
+
+Show clinical phase names — Period, Follicular, Luteal — and the cycle day, by
+default. Keep any *estimated ovulation range* behind a setting that is off until
+switched on, exactly as 6.2 requires.
+
+A copy test fails the build on "safe day", "safe window", unqualified "fertile",
+and "you are ovulating". The rule becomes machine-enforced rather than a
+convention that erodes.
+
+### Consequences
+
+A5 is amended: phase naming is permitted, contraceptive framing is not. 6.2 is
+narrowed to what it was actually protecting — ovulation estimation — rather than
+the vocabulary around it. The risk this accepts is that a user reads "luteal
+phase" as fertility information; the mitigation is that the phase strip never
+names ovulation and the estimate stays opt-in.
+
+---
+
+## ADR-0008: App lock gates the interface and does not encrypt the database
+
+**Status:** Accepted, 2026-08-20
+**Deciders:** Project owner
+
+### Context
+
+ADR-0004 accepted an unencrypted database on the condition that the user is
+told, and listed an app lock as the first privacy feature queued after the MVP.
+Adding intercourse logging — the most sensitive field the app would hold — made
+that queue position untenable: the data and its protection should arrive
+together.
+
+Three options were weighed: delegate to the device credential with a biometric
+prompt; hold an app-specific PIN; or derive a SQLCipher key from a PIN and
+encrypt at rest.
+
+### Decision
+
+Delegate to Android's `BiometricPrompt` with device-credential fallback, via
+`local_auth`. Off by default, unlock on cold start and after sixty seconds in
+the background.
+
+**This hides the screen. It does not encrypt anything.** `PRIVACY.md` must say
+so in those words, because an app lock that a user believes is encryption is
+worse than no lock at all — it buys false confidence against exactly the threat
+model in PLAN 6.5.
+
+### Consequences
+
+No secret for this project to store, verify or get wrong, and it unlocks with
+whatever the user already uses. It does not defend against someone who can
+unlock the phone, which is the realistic threat for this data; an app-specific
+PIN would, and remains available later. Encryption at rest stays deferred, and
+the honest reason is that losing a forgotten key destroys data that has no cloud
+copy.
+
+---
+
+## ADR-0009: Medicines reference data is generated at build time from openFDA
+
+**Status:** Accepted, 2026-08-20
+**Deciders:** Project owner
+
+### Context
+
+An in-app medication and hygiene product lookup was wanted. The obvious
+implementation queries a drug database at runtime, which requires the `INTERNET`
+permission and therefore reverses ADR-0004.
+
+The cost of that reversal was assessed and is not mainly about payload
+confidentiality. A lookup leaks *intent*: DNS, TLS SNI, destination and timing
+show that a particular phone asked a drug-information service about something,
+and when. PLAN 6.5 and the legal-process history in ADR-0004 make that the
+harm to design against. The permission is also inherited by every dependency,
+so declaring it removes the guarantee that a compromised package has no socket
+to open.
+
+### Decision
+
+Generate the data offline and ship it. `tools/scripts/gen_medicines.py` pulls an
+allowlisted openFDA subset into `artifacts/medicines/medicines_v1.json` and a
+generated Dart file, with a `--check` CI gate — the same generate-and-verify
+pattern already used for the model priors. The phone never makes a request and
+`INTERNET` is never declared.
+
+Anything outside the bundled set is handed to the system browser through an
+intent, which needs no permission: the browser makes the request, visibly, on
+the user's explicit action.
+
+### Consequences
+
+ADR-0004 stands unamended and `assert_no_network.sh` stays green. Coverage is
+limited to the allowlist, and the data is a dated snapshot — which is shown on
+screen, because a stale date the user can see beats fresh data they cannot
+verify. openFDA is **US labelling**, so strengths, brand names and warnings may
+not match a user's local product; the screen says so. Tampons and cups are FDA
+devices rather than drugs and are curated by hand.
+
+---
+
+## ADR-0010: Long-term conditions are recorded, not modelled
+
+**Status:** Accepted, 2026-08-20
+**Deciders:** Project owner
+
+### Context
+
+PLAN 1081 lists what the filter structurally cannot know: hormonal
+contraception, pregnancy, PCOS, thyroid disease, and more. Each breaks the
+"noisy stationary-ish process" assumption the model rests on. Letting a user
+record these conditions raises the obvious question of what the app should then
+*do* with them.
+
+Making the model account for them was considered. It was rejected because there
+is nothing to account with: the priors artifact was fitted on synthetic and
+population data with no condition strata, so condition-specific behaviour would
+be invented calibration wearing the costume of a measurement.
+
+### Decision
+
+Conditions are stored with a start date and an optional end date, displayed on
+the day and in insights, and **never reach the prediction code**. A test proves
+it.
+
+One exception. An active pregnancy returns a `SuppressedByCondition` state
+instead of a window, because confidently predicting a period for someone who is
+pregnant is wrong rather than merely uninformed. That withholds a claim; it does
+not make a different one, and it needs no new maths.
+
+### Consequences
+
+Hormonal contraception often removes true cycles entirely and is the strongest
+candidate for the same treatment. It was considered and **not** chosen, and must
+not be added quietly. Condition-specific priors remain open as research work; if
+they are ever fitted, this ADR is what to supersede.
+
+---
+
+## ADR-0011: Export v2 refuses v1 files
+
+**Status:** Accepted, 2026-08-20
+**Deciders:** Project owner
+
+### Context
+
+Release 1 adds conditions to the export format. Three compatibility postures
+were offered: accept both versions on import; keep every new field optional so
+old builds can read new files; or write and read v2 only.
+
+The export is this app's **only** recovery path. There is no cloud, no Play
+Store restore, and risk R8 names losing it as a real failure. Refusing v1 files
+therefore means every backup a user already holds stops working the moment they
+update, and a phone lost after that point is total data loss.
+
+### Decision
+
+v2 only. v1 files are refused on import.
+
+The consequence above was stated before the choice was made and the choice was
+reaffirmed. It is recorded here so that a future session does not read it as an
+oversight and quietly add a compatibility path.
+
+Two mitigations, neither of which reintroduces v1 parsing: the refusal names its
+reason specifically rather than failing generically, and the app prompts once
+after the schema migration to make a fresh backup.
+
+### Consequences
+
+Import stays a single code path. Anyone who updates without re-exporting is one
+device failure away from losing everything, and the re-export prompt is the only
+thing standing between them and that. If this is ever revisited, accepting v1 on
+import is a small change and the right one.
+
+---
+
 ## Backlog of deferred decisions
 
 Recorded so they are not silently re-litigated. Promote to a numbered ADR when the decision is actually made.
