@@ -74,8 +74,10 @@ class AppDatabase extends _$AppDatabase {
   /// it does not know will throw when it reads that row, and the downgrade
   /// refusal below cannot save it, because the version never changed. The
   /// version is what makes an old build refuse the file instead of crashing on
-  /// it. `enum_widening_test.dart` pins this.
-  static const int latestSchemaVersion = 2;
+  /// it. `enum_widening_test.dart` pins this, and v3 is exactly that case: it
+  /// widened [Symptom], changed no table, and its snapshot is identical to
+  /// v2's.
+  static const int latestSchemaVersion = 3;
 
   @override
   int get schemaVersion => latestSchemaVersion;
@@ -107,10 +109,17 @@ class AppDatabase extends _$AppDatabase {
         // than into columns on day_logs.
         await m.createTable(conditions);
       }
-      // Every version below the current one needs a step above, so the
-      // highest `from` any of them handles is always latestSchemaVersion - 1.
-      // Written that way rather than as a literal so that adding v3's step
-      // without widening this guard is impossible.
+      // v2 -> v3 has no step, and that is the point rather than an omission.
+      // v3 widened the Symptom enum and changed no table: enums are stored by
+      // name, so the column, the snapshot and the DDL are all identical to v2.
+      // The version exists solely so that a v2 build refuses a file containing
+      // `bloating` instead of throwing when it reads that row. This is the case
+      // the note on latestSchemaVersion describes, and an empty migration is
+      // what it correctly looks like.
+      //
+      // So the guard below is "a `from` this build has no path out of", not
+      // "a `from` with no DDL". Anything at or above the current version has
+      // arrived here impossibly and is refused rather than silently accepted.
       if (from > latestSchemaVersion - 1) {
         throw UnsupportedError(
           'no migration path from schema v$from to v$to. Add the step to '

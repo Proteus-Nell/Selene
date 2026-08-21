@@ -1107,6 +1107,20 @@ assigned to sections and the rest are new.
 
 \* already exists, unchanged.
 
+**One deviation, deliberate.** `mood` keeps its wire name and is now labelled
+*"Mood swings"* rather than *"Mood"*. Adding `lowMood` to the same section put
+two chips called "Mood" and "Low mood" side by side, which asks the user to
+guess the difference. The label is in the ARB file and free to change; the enum
+member is not, so the wire name is untouched and the v1-export fixture still
+imports.
+
+**Two things the widening broke, both worth knowing about.** `transfer_test.dart`
+used `nausea` as its stand-in for "a symptom this build does not know", so
+adding nausea made it assert that a valid export was refused — it now uses a
+name no release will claim. And the calendar's day sheet put Close at the end of
+one long scrolling column, which laid out below the fold once the editor was
+sixteen chips tall; Close is now pinned in the sheet header, above the scroll.
+
 **Section is a property of the enum, not part of the stored value.** Only the
 name is written to the database and to exports, so re-sectioning later costs a
 one-line change and no migration. Worth knowing for `energy`, which is filed
@@ -1114,10 +1128,10 @@ under emotional here and is arguably physical — that is a display decision, an
 a cheap one to revisit.
 
 **Done when.**
-- [ ] Each `Symptom` carries a section; the day editor groups by it with headings
-- [ ] Every existing symptom keeps its wire name, proven by a round-trip test against a v1 export
-- [ ] The tap budgets in `log_screen_test.dart` still pass at 100%, 150% and 200% text scale
-- [ ] `a11y_test.dart` passes on the regrouped editor in both themes
+- [x] Each `Symptom` carries a section; the day editor groups by it with headings
+- [x] Every existing symptom keeps its wire name, proven by a round-trip test against a v1 export
+- [x] The tap budgets in `log_screen_test.dart` still pass at 100%, 150% and 200% text scale
+- [x] `a11y_test.dart` passes on the regrouped editor in both themes
 
 **Prompt to paste.**
 

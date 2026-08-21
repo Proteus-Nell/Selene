@@ -34,91 +34,146 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  group('the tap budgets', () {
-    testWidgets('"period started today" costs one tap from the home screen', (
-      tester,
-    ) async {
-      // Budget: 2 taps from cold start. The app opens straight onto today's
-      // state, so the primary action is the only one needed.
-      await pumpLog(tester);
-      var taps = 0;
+  /// Brings [finder] into view and taps it, the way a person would.
+  ///
+  /// Scrolling is not a tap. The budgets in 2.4.2 count taps, and a screen that
+  /// needs a scroll at 200% text scale has not spent one — a user at that scale
+  /// scrolls on every screen they own. What would blow the budget is a scroll
+  /// that cannot reach the control at all, and that fails here as a failed tap
+  /// rather than passing quietly.
+  Future<void> tapReachable(WidgetTester tester, Finder finder) async {
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
+    await tester.tap(finder);
+    await tester.pumpAndSettle();
+  }
 
-      await tester.tap(find.text(l10nOf(tester).logPeriodStartedToday));
-      taps++;
-      await tester.pumpAndSettle();
+  // The three scales docs/PLAN.md 2.4.4 names. AND-23 tripled the number of
+  // symptom chips, and chips reflow at scale, so a budget that holds at 100%
+  // says nothing about 200% — which is the scale at which the layout was most
+  // likely to have pushed something out of reach.
+  const scales = <String, TextScaler>{
+    '100%': TextScaler.noScaling,
+    '150%': TextScaler.linear(1.5),
+    '200%': TextScaler.linear(2),
+  };
 
-      expect(taps, lessThanOrEqualTo(2));
-      final logs = await db.dayLogDao.allLogs();
-      expect(logs, hasLength(1));
-      expect(logs.single.date, testClock.today());
-      expect(logs.single.isBleedingDay, isTrue);
-    });
+  for (final scale in scales.entries) {
+    group('the tap budgets at ${scale.key} text scale', () {
+      testWidgets('"period started today" costs one tap from the home screen', (
+        tester,
+      ) async {
+        // Budget: 2 taps from cold start. The app opens straight onto today's
+        // state, so the primary action is the only one needed.
+        await pumpLog(tester, textScaler: scale.value);
+        var taps = 0;
 
-    testWidgets('backdating one to three days costs two taps', (tester) async {
-      // Budget: 3 taps. A stepper would cost one tap per day and blow it at
-      // three, which is why the selector offers the days directly.
-      for (final daysBack in <int>[1, 2, 3]) {
-        await db.dayLogDao.deleteEverything();
-        await pumpLog(tester);
+        await tapReachable(
+          tester,
+          find.text(l10nOf(tester).logPeriodStartedToday),
+        );
+        taps++;
+
+        expect(taps, lessThanOrEqualTo(2));
+        final logs = await db.dayLogDao.allLogs();
+        expect(logs, hasLength(1));
+        expect(logs.single.date, testClock.today());
+        expect(logs.single.isBleedingDay, isTrue);
+      });
+
+      testWidgets('backdating one to three days costs two taps', (
+        tester,
+      ) async {
+        // Budget: 3 taps. A stepper would cost one tap per day and blow it at
+        // three, which is why the selector offers the days directly.
+        for (final daysBack in <int>[1, 2, 3]) {
+          await db.dayLogDao.deleteEverything();
+          await pumpLog(tester, textScaler: scale.value);
+          final l10n = l10nOf(tester);
+          var taps = 0;
+
+          final label = switch (daysBack) {
+            1 => l10n.logDayYesterday,
+            _ => l10n.logDaysAgo(daysBack),
+          };
+          await tapReachable(tester, find.text(label));
+          taps++;
+          await tapReachable(tester, find.textContaining(label).last);
+          taps++;
+
+          expect(taps, lessThanOrEqualTo(3), reason: '$daysBack days back');
+          final logs = await db.dayLogDao.allLogs();
+          expect(logs, hasLength(1), reason: '$daysBack days back');
+          expect(
+            logs.single.date,
+            testClock.today().addDays(-daysBack),
+            reason: '$daysBack days back',
+          );
+        }
+      });
+
+      testWidgets('logging a symptom for today costs one tap', (tester) async {
+        // Budget: 4 taps. One tap records it at a moderate severity; the exact
+        // level is a long-press away rather than on the critical path.
+        //
+        // Cramps is the first chip of the first section, so the sectioning
+        // added in AND-23 cannot have put the most common symptom behind a
+        // heading tap. That is the regression the task warned about: a section
+        // that costs a tap to open is a section that costs a log.
+        await pumpLog(tester, textScaler: scale.value);
         final l10n = l10nOf(tester);
         var taps = 0;
 
-        final label = switch (daysBack) {
-          1 => l10n.logDayYesterday,
-          _ => l10n.logDaysAgo(daysBack),
-        };
-        await tester.tap(find.text(label));
+        await tapReachable(tester, find.text(l10n.logSymptomCramps));
         taps++;
-        await tester.pumpAndSettle();
-        await tester.tap(find.textContaining(label).last);
-        taps++;
-        await tester.pumpAndSettle();
 
-        expect(taps, lessThanOrEqualTo(3), reason: '$daysBack days back');
+        expect(taps, lessThanOrEqualTo(4));
         final logs = await db.dayLogDao.allLogs();
-        expect(logs, hasLength(1), reason: '$daysBack days back');
         expect(
-          logs.single.date,
-          testClock.today().addDays(-daysBack),
-          reason: '$daysBack days back',
+          logs.single.severityOf(Symptom.cramps),
+          SymptomSeverity.moderate,
         );
-      }
+      });
+
+      testWidgets('a symptom in the last section costs one tap too', (
+        tester,
+      ) async {
+        // The worst case the sectioning creates: the final chip of the final
+        // group, furthest from the top of the screen. Still one tap, because
+        // the sections are headings rather than expanders.
+        await pumpLog(tester, textScaler: scale.value);
+        final l10n = l10nOf(tester);
+        var taps = 0;
+
+        await tapReachable(tester, find.text(l10n.logSymptomLowMood));
+        taps++;
+
+        expect(taps, lessThanOrEqualTo(4));
+        final logs = await db.dayLogDao.allLogs();
+        expect(
+          logs.single.severityOf(Symptom.lowMood),
+          SymptomSeverity.moderate,
+        );
+      });
+
+      testWidgets('correcting a wrong entry costs two taps', (tester) async {
+        // Budget: 3 taps. Here the entry is already open on today's screen, so
+        // the correction is the flow chip plus nothing else.
+        await db.dayLogDao.save(
+          DayLog(date: testClock.today(), flow: FlowIntensity.heavy),
+        );
+        await pumpLog(tester, textScaler: scale.value);
+        final l10n = l10nOf(tester);
+        var taps = 0;
+
+        await tapReachable(tester, find.text(l10n.logFlowLight));
+        taps++;
+
+        expect(taps, lessThanOrEqualTo(3));
+        expect((await db.dayLogDao.allLogs()).single.flow, FlowIntensity.light);
+      });
     });
-
-    testWidgets('logging a symptom for today costs one tap', (tester) async {
-      // Budget: 4 taps. One tap records it at a moderate severity; the exact
-      // level is a long-press away rather than on the critical path.
-      await pumpLog(tester);
-      final l10n = l10nOf(tester);
-      var taps = 0;
-
-      await tester.tap(find.text(l10n.logSymptomCramps));
-      taps++;
-      await tester.pumpAndSettle();
-
-      expect(taps, lessThanOrEqualTo(4));
-      final logs = await db.dayLogDao.allLogs();
-      expect(logs.single.severityOf(Symptom.cramps), SymptomSeverity.moderate);
-    });
-
-    testWidgets('correcting a wrong entry costs two taps', (tester) async {
-      // Budget: 3 taps. Here the entry is already open on today's screen, so
-      // the correction is the flow chip plus nothing else.
-      await db.dayLogDao.save(
-        DayLog(date: testClock.today(), flow: FlowIntensity.heavy),
-      );
-      await pumpLog(tester);
-      final l10n = l10nOf(tester);
-      var taps = 0;
-
-      await tester.tap(find.text(l10n.logFlowLight));
-      taps++;
-      await tester.pumpAndSettle();
-
-      expect(taps, lessThanOrEqualTo(3));
-      expect((await db.dayLogDao.allLogs()).single.flow, FlowIntensity.light);
-    });
-  });
+  }
 
   group('the primary action', () {
     testWidgets('offers an undo rather than a confirmation', (tester) async {

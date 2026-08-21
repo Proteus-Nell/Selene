@@ -47,37 +47,52 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             top: 16,
             bottom: MediaQuery.viewInsetsOf(sheetContext).bottom + 16,
           ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  date.full(sheetContext),
-                  style: Theme.of(sheetContext).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                Consumer(
-                  builder: (context, ref, child) {
-                    final logs =
-                        ref.watch(dayLogsProvider).valueOrNull ??
-                        const <DayLog>[];
-                    return DayEditor(
-                      date: date,
-                      existing: _entryFor(logs, date),
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
+          // The date and Close sit outside the scroll view, and the editor
+          // scrolls under them. Close used to be the last thing in one long
+          // scrolling column, which worked while the editor was five chips
+          // tall and stopped working the moment AND-23 made it sixteen: the
+          // button laid out below the fold, so the only way to dismiss the
+          // sheet deliberately was to scroll to the end of the symptom list
+          // first. Swiping and tapping the barrier still worked, but those are
+          // the gestures a screen-reader user does not have.
+          //
+          // Flexible rather than Expanded, so a sheet with little in it still
+          // shrink-wraps instead of always filling the screen.
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      date.full(sheetContext),
+                      style: Theme.of(sheetContext).textTheme.titleLarge,
+                    ),
+                  ),
+                  TextButton(
                     onPressed: () => Navigator.of(sheetContext).pop(),
                     child: Text(AppLocalizations.of(sheetContext).commonClose),
                   ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      final logs =
+                          ref.watch(dayLogsProvider).valueOrNull ??
+                          const <DayLog>[];
+                      return DayEditor(
+                        date: date,
+                        existing: _entryFor(logs, date),
+                      );
+                    },
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

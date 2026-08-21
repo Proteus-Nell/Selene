@@ -34,26 +34,103 @@ enum FlowIntensity {
       this == FlowIntensity.heavy;
 }
 
+/// How a [Symptom] is grouped in the day editor.
+///
+/// A display property and nothing more. The section is **not** part of what is
+/// stored: only the symptom's name reaches the database and the export file, so
+/// moving one between sections later is a one-line change with no migration.
+/// That is worth knowing for [Symptom.energy], which is filed as emotional here
+/// and is arguably physical — a decision that can be revisited cheaply, unlike
+/// the wire names.
+enum SymptomSection {
+  /// Felt in the body.
+  physical,
+
+  /// Felt in thinking, attention, or rest.
+  mental,
+
+  /// Felt in mood.
+  emotional,
+}
+
 /// The fixed symptom set the app records.
 ///
-/// Deliberately small and closed. A free-text symptom field would be the single
-/// most sensitive thing in the database and cannot be meaningfully analysed, so
-/// it is out of scope (`docs/PLAN.md` 2.2).
+/// Deliberately closed. A free-text symptom field would be the single most
+/// sensitive thing in the database and cannot be meaningfully analysed, so it
+/// is out of scope (`docs/PLAN.md` 2.2). Closed is not the same as short: the
+/// list is long enough that a user can find what they felt, and a symptom
+/// nobody can express is a symptom that goes unlogged.
+///
+/// **The names are wire values.** They are written to the database and to
+/// exports by name, so renaming a member orphans every stored row that used it,
+/// and no migration recovers a name the code has forgotten. The label shown to
+/// the user is in the ARB file and can be changed freely; the member cannot.
+///
+/// Adding a value is a schema change even though no column moves — an older
+/// build throws on a name it does not know, and the version is the only thing
+/// that makes it refuse the file first. `enum_widening_test.dart` has the
+/// argument in full.
+///
+/// Declared in section order so that reading the enum and reading the screen
+/// give the same picture. Nothing depends on the order: storage is by name, and
+/// the editor groups by [section] rather than by position.
 enum Symptom {
   /// Abdominal or pelvic cramping.
-  cramps,
+  cramps(SymptomSection.physical),
 
   /// Headache or migraine.
-  headache,
+  headache(SymptomSection.physical),
 
-  /// Mood disturbance.
-  mood,
+  /// Abdominal bloating or a feeling of fullness.
+  bloating(SymptomSection.physical),
 
-  /// Fatigue or low energy.
-  energy,
+  /// Nausea, with or without vomiting.
+  nausea(SymptomSection.physical),
+
+  /// Sore or tender breasts.
+  breastTenderness(SymptomSection.physical),
+
+  /// Lower back pain.
+  backPain(SymptomSection.physical),
+
+  /// Breakouts or skin flare-ups.
+  acne(SymptomSection.physical),
+
+  /// Constipation, diarrhoea, or other gut upset.
+  digestiveUpset(SymptomSection.physical),
 
   /// Disturbed sleep.
-  sleep,
+  sleep(SymptomSection.mental),
+
+  /// Cloudy or slowed thinking.
+  brainFog(SymptomSection.mental),
+
+  /// Difficulty holding attention.
+  poorConcentration(SymptomSection.mental),
+
+  /// Mood disturbance.
+  mood(SymptomSection.emotional),
+
+  /// Fatigue or low energy.
+  energy(SymptomSection.emotional),
+
+  /// Irritability or a short fuse.
+  irritability(SymptomSection.emotional),
+
+  /// Anxiety or a sense of dread.
+  anxiety(SymptomSection.emotional),
+
+  /// Low mood, distinct from the general [mood] disturbance above.
+  lowMood(SymptomSection.emotional);
+
+  const Symptom(this.section);
+
+  /// Which group this symptom is shown under. Display only; never stored.
+  final SymptomSection section;
+
+  /// The symptoms in [section], in declaration order.
+  static List<Symptom> inSection(SymptomSection section) =>
+      values.where((s) => s.section == section).toList();
 }
 
 /// How strongly a [Symptom] was felt.
