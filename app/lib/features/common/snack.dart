@@ -10,7 +10,8 @@ const Duration _plainSnackDuration = Duration(seconds: 4);
 /// read a sentence and not enough to change your mind about it.
 const Duration _actionableSnackDuration = Duration(seconds: 7);
 
-/// Shows [message] as a pop-up that goes away by itself.
+/// Shows [message] as a pop-up that goes away by itself, unless a screen
+/// reader is running and there is an [action] to reach for.
 ///
 /// Every pop-up in the app goes through here rather than calling
 /// `showSnackBar` directly, because of one line in Flutter's `SnackBar`

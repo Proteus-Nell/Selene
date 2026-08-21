@@ -130,9 +130,12 @@ void main() {
     // The defect was a default inherited at a call site, so the guard is that
     // there are no call sites to inherit it. Enforced rather than reviewed:
     // this is exactly the kind of rule that decays one hurried fix at a time.
+    // All of lib/, not just lib/features: the rule is about the whole app, and
+    // a guard whose scope is narrower than its name is a guard that reports
+    // success for code it never looked at.
     final offenders = <String>[];
     for (final file
-        in Directory('lib/features')
+        in Directory('lib')
             .listSync(recursive: true)
             .whereType<File>()
             .where((f) => f.path.endsWith('.dart'))) {
