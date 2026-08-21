@@ -306,6 +306,22 @@ class CycleRepository {
   /// Deletes every log, setting and cached prediction, and vacuums the file.
   Future<void> deleteEverything() async {
     await _db.dayLogDao.deleteEverything();
+    // The ring is cleared before the deletion is recorded, so exactly one line
+    // survives: that everything was deleted.
+    //
+    // Without this, "delete everything" left the whole trail behind — when
+    // days were logged, when they were edited, when an export was taken — on a
+    // screen reachable from settings. The records carry counts rather than
+    // content, but the timestamps alone say when someone was using a period
+    // tracker, which is the kind of thing this app spends the rest of its
+    // design being careful about. A user who has just wiped their diary has
+    // said as clearly as they can that they want it gone.
+    //
+    // The ring is memory-only and does not survive a restart, so this closes a
+    // within-session gap rather than an on-disk one. That is still the gap
+    // that matters: the session someone deletes in is the session someone
+    // might be looking over their shoulder.
+    _logger?.clear();
     _logger?.warn(LogEvent.allDataDeleted);
   }
 

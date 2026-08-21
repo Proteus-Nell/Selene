@@ -49,6 +49,7 @@ The `app/` Flutter component of Period-Tracker, split into independently prompta
 | [AND-30](#and-30-schema-v4-and-intercourse-logging) | Schema v4 and intercourse logging | AND-28, AND-29 | 1 |
 | [AND-31](#and-31-medicines-artifact-generated-from-openfda-at-build-time) | Medicines artifact from openFDA, at build time | AND-19 | 1.5 |
 | [AND-32](#and-32-lookup-screen-hygiene-entries-and-the-browser-hand-off) | Lookup screen and browser hand-off | AND-31 | 1 |
+| [AND-33](#and-33-reported-bugs-app-lock-cutouts-and-the-activity-log) | Reported bugs: app lock, cutouts, activity log | AND-32 | 0.5 |
 | **Tier B (optional, may never be built)** | | | |
 | [AND-20](#and-20-kotlin-executorch-channel) | Kotlin ExecuTorch platform channel | AND-19 | 2-3 |
 | [AND-21](#and-21-on-device-trainer-and-gate) | On-device trainer and the per-user gate | AND-20 | 2-3 |
@@ -1600,6 +1601,71 @@ The hand-off must warn before leaving and be honest that the browser makes the
 request and keeps the history. Do not pre-fill a drug name without saying so.
 Check assert_no_network.sh still passes with url_launcher in the tree.
 ```
+
+### AND-33 Reported bugs: app lock, cutouts, and the activity log
+
+**Depends on:** AND-32 · **Est:** 0.5 session
+
+**Goal.** Four things reported from a real phone, and none of them visible from
+a headless test suite until a test was written to make them visible.
+
+**Done when.**
+- [x] Turning the app lock on and pressing Unlock actually shows the system prompt
+- [x] The add-a-condition sheet has a visible back control and a heading below the cutout
+- [x] The delete-everything confirmation stays inside the cutout with the keyboard up
+- [x] "Delete everything" clears the activity log too
+
+**The app lock never prompted, and nothing in Dart could have told you.**
+`local_auth` shows Android's `BiometricPrompt`, which is a fragment and needs a
+`FragmentActivity` to attach to. `MainActivity` extended `FlutterActivity`, so
+the plugin returned `NOT_FRAGMENT_ACTIVITY` — which arrives in Dart as
+`uiUnavailable`, so `authenticate()` returned having shown nothing and the
+Unlock button looked dead. It builds, it installs, and the settings toggle
+enables happily, because `isDeviceSupported()` only asks whether the device has
+a credential and never looks at the activity type. `main_activity_test.dart`
+asserts on the Kotlin source, because that is the only place the fact exists.
+
+**And the mapping made it unrecoverable rather than merely broken.**
+`uiUnavailable` mapped to `refused`, which leaves the user tapping Unlock
+forever with no way into their own diary. It maps to `unavailable` now, so the
+gate lets them in: the database is not encrypted either way (ADR-0008), so a
+lock that cannot function has protected nothing and would have cost everything.
+The switch is still exhaustive with no `_` wildcard — a new plugin code should
+break the build rather than silently pick a side.
+
+**A `SafeArea` inside a bottom sheet is a no-op.** Without `useSafeArea: true`,
+`showModalBottomSheet` wraps its content in
+`MediaQuery.removePadding(removeTop: true)`, so the `SafeArea` the sheet already
+had was removing padding that had already been zeroed. The route has to be kept
+inside the cutout; nothing inside the sheet can do it afterwards.
+
+**The dialog was the opposite: it was never mis-positioned.** `showDialog`
+already defaults to `useSafeArea: true`, so an inset computed from
+`MediaQuery.viewPaddingOf` inside the builder reads zero and reproduces
+Material's default exactly — dead code that looks like a fix. What actually put
+the title under the camera was *overflow*: the dialog carries a text field, so
+the keyboard takes a third of the screen, and an unscrollable dialog does not
+shrink to fit — it overflows its box and paints its children out past the top.
+`scrollable: true` is the whole fix, and at Android's "large" font setting (1.3)
+with the keyboard up it is the difference between fitting and overflowing.
+
+**The test harness was hiding both.** Its `MediaQuery` sat below the `Navigator`
+and was built from a fresh `MediaQueryData`, so every dialog and bottom sheet in
+the suite was laid out at text scale 1.0 with a reported size of zero, whatever
+the test asked for. It goes through `MaterialApp.builder` and `copyWith` now.
+The same trap applies to a cutout: `notch_safety_test.dart` sets one on
+`tester.view`, because view padding is what propagates into a route.
+
+**"Delete everything" left the trail behind.** The activity log is reachable from
+settings and survived the wipe, holding a readable history of when days were
+logged, edited and exported. The records carry counts rather than content, but
+the timestamps alone say when someone was using a period tracker. The ring is
+cleared and then the deletion is recorded, so exactly one line survives — an
+empty log would itself be a tell.
+
+**Every fix is pinned by a test that fails when it is reverted**, which is how
+the dead `insetPadding` was found: it was the one line whose removal changed
+nothing.
 
 ---
 

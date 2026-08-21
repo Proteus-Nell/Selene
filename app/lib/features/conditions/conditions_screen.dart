@@ -74,15 +74,39 @@ class ConditionsScreen extends ConsumerWidget {
     final chosen = await showModalBottomSheet<Condition>(
       context: context,
       isScrollControlled: true,
+      // Both of these, and neither is optional here. `isScrollControlled` lets
+      // the sheet grow to fit fourteen conditions, which means it reaches the
+      // top of the screen — and there the title lands under the status bar and
+      // the camera cutout, unreadable. `useSafeArea` is what keeps the route
+      // itself inside the display cutout; a SafeArea *inside* the sheet does
+      // not, because the route has already claimed the full height by then.
+      useSafeArea: true,
+      showDragHandle: true,
       builder: (sheetContext) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                l10n.conditionsAddTitle,
-                style: Theme.of(sheetContext).textTheme.titleMedium,
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              child: Row(
+                children: <Widget>[
+                  // A visible way back. The sheet is dismissible by swipe and
+                  // by tapping outside, but neither is discoverable, and
+                  // neither is available to someone navigating with a screen
+                  // reader or a switch device.
+                  IconButton(
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    icon: const Icon(Icons.arrow_back),
+                    tooltip: l10n.commonBack,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      l10n.conditionsAddTitle,
+                      style: Theme.of(sheetContext).textTheme.titleMedium,
+                    ),
+                  ),
+                ],
               ),
             ),
             Flexible(

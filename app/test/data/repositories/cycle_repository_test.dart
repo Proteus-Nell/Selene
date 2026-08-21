@@ -300,6 +300,39 @@ void main() {
       await repo.deleteEverything();
       expect(await repo.logs(), isEmpty);
     });
+
+    test('deleteEverything takes the activity log with it', () async {
+      // The activity log is reachable from settings and survived a delete,
+      // which left a readable trail of when days were logged and edited. The
+      // records carry counts rather than dates, but the timestamps alone say
+      // when someone was using a period tracker — and someone who has just
+      // wiped their diary has said as clearly as they can that they want it
+      // gone.
+      final logger = RingLogger(clock: FixedClock(today));
+      final logged = CycleRepository(
+        database: db,
+        clock: FixedClock(today),
+        logger: logger,
+      );
+      await logged.logPeriod(
+        CivilDateRange(at('2026-06-01'), at('2026-06-04')),
+      );
+      expect(
+        logger.records,
+        isNotEmpty,
+        reason: 'nothing was logged, so this test proves nothing',
+      );
+
+      await logged.deleteEverything();
+
+      // One line survives, deliberately: that everything was deleted. An empty
+      // log after a wipe would itself be a tell, and this record names an
+      // action the user took rather than anything about their cycle.
+      expect(
+        logger.records.map((record) => record.event),
+        <LogEvent>[LogEvent.allDataDeleted],
+      );
+    });
   });
 
   group('WriteRefused', () {

@@ -31,6 +31,59 @@ enum UnlockOutcome {
   unavailable,
 }
 
+/// Maps a `local_auth` failure code to what the gate should do about it.
+///
+/// Lifted out of [LocalAuthService.unlock] so it can be asserted directly:
+/// every branch here is a decision about whether someone gets into their own
+/// diary, and the alternative is a test that has to fake a platform channel to
+/// reach a `switch`. `app_lock_test.dart` walks the whole enum.
+@visibleForTesting
+UnlockOutcome unlockOutcomeFor(LocalAuthExceptionCode code) =>
+    // Listed exhaustively rather than with a `_` wildcard, deliberately. A new
+    // code added by the plugin would fall into the wildcard silently, and
+    // "silently" here means either sealing the user out of their own diary or
+    // letting anyone in — the two failure modes this feature has. Breaking the
+    // build is the correct response to an unlock outcome nobody has classified
+    // yet.
+    switch (code) {
+      // The credential was removed while the lock was on. Reported as
+      // unavailable so the gate can let the user in rather than sealing them
+      // out of their own diary with no way to prove anything.
+      LocalAuthExceptionCode.noCredentialsSet ||
+      // The platform cannot show a prompt at all. On Android this is either a
+      // transient no-Activity state, or — the case that actually bit — a
+      // MainActivity that is not a FragmentActivity, which BiometricPrompt
+      // needs. That second one is permanent for the whole build.
+      //
+      // Treated as unavailable rather than refused, because refusing here
+      // strands the user: they tap Unlock, nothing appears, and there is no way
+      // into their own diary ever again. The data is unencrypted on disk either
+      // way (ADR-0008), so a lock that cannot function has protected nothing
+      // and would have cost them everything.
+      //
+      // This is a fallback for a state that should not exist, not a tolerated
+      // one: MainActivity.kt is the fix, and main_activity_test.dart fails the
+      // build if it reverts.
+      LocalAuthExceptionCode.uiUnavailable => UnlockOutcome.unavailable,
+      // Not treated as unavailable: with a device credential as fallback,
+      // missing or unenrolled biometrics still leave a PIN to fall back on, and
+      // letting the user straight in because their fingerprint sensor broke
+      // would be a way around the lock rather than a graceful degradation of
+      // it.
+      LocalAuthExceptionCode.noBiometricHardware ||
+      LocalAuthExceptionCode.noBiometricsEnrolled ||
+      LocalAuthExceptionCode.biometricHardwareTemporarilyUnavailable ||
+      LocalAuthExceptionCode.temporaryLockout ||
+      LocalAuthExceptionCode.biometricLockout ||
+      LocalAuthExceptionCode.userCanceled ||
+      LocalAuthExceptionCode.timeout ||
+      LocalAuthExceptionCode.systemCanceled ||
+      LocalAuthExceptionCode.authInProgress ||
+      LocalAuthExceptionCode.userRequestedFallback ||
+      LocalAuthExceptionCode.deviceError ||
+      LocalAuthExceptionCode.unknownError => UnlockOutcome.refused,
+    };
+
 /// Asks the device to prove who is holding it.
 ///
 /// An interface rather than a direct `LocalAuthentication` call so the gate can
@@ -102,36 +155,7 @@ final class LocalAuthService implements AppLockService {
       );
       return ok ? UnlockOutcome.granted : UnlockOutcome.refused;
     } on LocalAuthException catch (e) {
-      // Listed exhaustively rather than with a `_` wildcard, deliberately. A
-      // new code added by the plugin would fall into the wildcard silently, and
-      // "silently" here means either sealing the user out of their own diary or
-      // letting anyone in — the two failure modes this feature has. Breaking
-      // the build is the correct response to an unlock outcome nobody has
-      // classified yet.
-      return switch (e.code) {
-        // The credential was removed while the lock was on. Reported as
-        // unavailable so the gate can let the user in rather than sealing them
-        // out of their own diary with no way to prove anything.
-        LocalAuthExceptionCode.noCredentialsSet => UnlockOutcome.unavailable,
-        // Not treated as unavailable: with a device credential as fallback,
-        // missing or unenrolled biometrics still leave a PIN to fall back on,
-        // and letting the user straight in because their fingerprint sensor
-        // broke would be a way around the lock rather than a graceful
-        // degradation of it.
-        LocalAuthExceptionCode.noBiometricHardware ||
-        LocalAuthExceptionCode.noBiometricsEnrolled ||
-        LocalAuthExceptionCode.biometricHardwareTemporarilyUnavailable ||
-        LocalAuthExceptionCode.temporaryLockout ||
-        LocalAuthExceptionCode.biometricLockout ||
-        LocalAuthExceptionCode.userCanceled ||
-        LocalAuthExceptionCode.timeout ||
-        LocalAuthExceptionCode.systemCanceled ||
-        LocalAuthExceptionCode.authInProgress ||
-        LocalAuthExceptionCode.userRequestedFallback ||
-        LocalAuthExceptionCode.uiUnavailable ||
-        LocalAuthExceptionCode.deviceError ||
-        LocalAuthExceptionCode.unknownError => UnlockOutcome.refused,
-      };
+      return unlockOutcomeFor(e.code);
     } on Object {
       // Anything else is a refusal rather than a crash. Failing open here would
       // defeat the feature; failing hard would leave the user staring at a

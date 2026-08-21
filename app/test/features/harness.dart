@@ -59,13 +59,26 @@ Widget harness(
       theme: brightness == Brightness.dark ? AppTheme.dark() : AppTheme.light(),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: MediaQuery(
-        data: MediaQueryData(
+      // `builder`, not a MediaQuery around `home`, and copyWith rather than a
+      // fresh MediaQueryData. Both matter and both were wrong here.
+      //
+      // `builder` inserts above the Navigator, so routes pushed on top of the
+      // home screen see this too. Wrapped around `home` it sat *below* the
+      // Navigator, which meant every dialog and bottom sheet in the suite was
+      // laid out at 1.0 regardless of what a test asked for — a text-scale test
+      // that opened a dialog was asserting about unscaled text.
+      //
+      // copyWith keeps the view's own size, padding and devicePixelRatio. The
+      // fresh MediaQueryData that used to be here reported a size of zero to
+      // everything below it.
+      builder: (context, navigator) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
           textScaler: textScaler,
           accessibleNavigation: accessibleNavigation,
         ),
-        child: child,
+        child: navigator!,
       ),
+      home: child,
     ),
   );
 }
