@@ -352,6 +352,24 @@ abstract class AppLocalizations {
   /// **'Anything else today?'**
   String get logSymptomsTitle;
 
+  /// Heading over the symptoms felt in the body.
+  ///
+  /// In en, this message translates to:
+  /// **'Physical'**
+  String get logSectionPhysical;
+
+  /// No description provided for @logSectionMental.
+  ///
+  /// In en, this message translates to:
+  /// **'Mental'**
+  String get logSectionMental;
+
+  /// No description provided for @logSectionEmotional.
+  ///
+  /// In en, this message translates to:
+  /// **'Emotional'**
+  String get logSectionEmotional;
+
   /// No description provided for @logSymptomCramps.
   ///
   /// In en, this message translates to:
@@ -364,10 +382,64 @@ abstract class AppLocalizations {
   /// **'Headache'**
   String get logSymptomHeadache;
 
-  /// No description provided for @logSymptomMood.
+  /// No description provided for @logSymptomBloating.
   ///
   /// In en, this message translates to:
-  /// **'Mood'**
+  /// **'Bloating'**
+  String get logSymptomBloating;
+
+  /// No description provided for @logSymptomNausea.
+  ///
+  /// In en, this message translates to:
+  /// **'Nausea'**
+  String get logSymptomNausea;
+
+  /// No description provided for @logSymptomBreastTenderness.
+  ///
+  /// In en, this message translates to:
+  /// **'Sore breasts'**
+  String get logSymptomBreastTenderness;
+
+  /// No description provided for @logSymptomBackPain.
+  ///
+  /// In en, this message translates to:
+  /// **'Back pain'**
+  String get logSymptomBackPain;
+
+  /// A symptom chip for skin flare-ups. Everyday wording rather than the clinical 'acne', which reads as a diagnosis.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakouts'**
+  String get logSymptomAcne;
+
+  /// No description provided for @logSymptomDigestiveUpset.
+  ///
+  /// In en, this message translates to:
+  /// **'Digestive upset'**
+  String get logSymptomDigestiveUpset;
+
+  /// No description provided for @logSymptomSleep.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep'**
+  String get logSymptomSleep;
+
+  /// No description provided for @logSymptomBrainFog.
+  ///
+  /// In en, this message translates to:
+  /// **'Brain fog'**
+  String get logSymptomBrainFog;
+
+  /// No description provided for @logSymptomPoorConcentration.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor concentration'**
+  String get logSymptomPoorConcentration;
+
+  /// A symptom chip. Distinct from 'Low mood': this is mood that moves, not mood that is low. The two are separate entries in the same section, so the translation has to keep them apart.
+  ///
+  /// In en, this message translates to:
+  /// **'Mood swings'**
   String get logSymptomMood;
 
   /// No description provided for @logSymptomEnergy.
@@ -376,11 +448,23 @@ abstract class AppLocalizations {
   /// **'Energy'**
   String get logSymptomEnergy;
 
-  /// No description provided for @logSymptomSleep.
+  /// No description provided for @logSymptomIrritability.
   ///
   /// In en, this message translates to:
-  /// **'Sleep'**
-  String get logSymptomSleep;
+  /// **'Irritability'**
+  String get logSymptomIrritability;
+
+  /// No description provided for @logSymptomAnxiety.
+  ///
+  /// In en, this message translates to:
+  /// **'Anxiety'**
+  String get logSymptomAnxiety;
+
+  /// No description provided for @logSymptomLowMood.
+  ///
+  /// In en, this message translates to:
+  /// **'Low mood'**
+  String get logSymptomLowMood;
 
   /// No description provided for @logSeverityMild.
   ///

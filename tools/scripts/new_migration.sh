@@ -61,13 +61,47 @@ if [[ -f "$APP_DIR/$SCHEMA_DIR/drift_schema_v$next.json" ]]; then
   exit 2
 fi
 
+# The version has to be bumped before the codegen runs, because drift reads the
+# constant to decide what version it is dumping. That makes every step after
+# this one a step that can leave the repo half-bumped: a constant at v$next with
+# no snapshot behind it. The next run would then read $next as its baseline and
+# start v$((next + 1)), quietly skipping a version — which is precisely the
+# half-finished bookkeeping this script exists to prevent, so it undoes its own
+# edit on the way out unless it reached the end.
+restore_version() {
+  local status=$?
+  if (( status != 0 )); then
+    echo >&2
+    echo "FAILED partway through. Putting latestSchemaVersion back to $current" >&2
+    echo "so the next run starts v$next rather than skipping to v$((next + 1))." >&2
+    sed -i.bak \
+      "s/static const int latestSchemaVersion = $next;/static const int latestSchemaVersion = $current;/" \
+      "$DATABASE_DART"
+    rm -f "$DATABASE_DART.bak"
+    rm -f "$APP_DIR/$SCHEMA_DIR/drift_schema_v$next.json"
+  fi
+}
+
 echo "Bumping schema version $current -> $next"
 sed -i.bak \
   "s/static const int latestSchemaVersion = $current;/static const int latestSchemaVersion = $next;/" \
   "$DATABASE_DART"
 rm -f "$DATABASE_DART.bak"
+trap restore_version EXIT
 
 cd "$APP_DIR"
+
+# `dart` comes from the Flutter SDK here. Saying so is worth four lines: the
+# failure without it is "dart: command not found" *after* the version has
+# already been bumped, which reads as a broken script rather than a missing
+# PATH entry.
+if ! command -v "${DART[0]}" >/dev/null 2>&1; then
+  echo "ERROR: ${DART[0]} is not on PATH." >&2
+  echo "       The Dart SDK ships inside Flutter, so this usually means" >&2
+  echo "       Flutter's bin/ is not exported. Try:" >&2
+  echo "         export PATH=\"/path/to/flutter/bin:\$PATH\"" >&2
+  exit 2
+fi
 
 echo "Regenerating drift code"
 "${DART[@]}" run build_runner build
@@ -75,10 +109,19 @@ echo "Regenerating drift code"
 echo "Dumping the v$next schema snapshot"
 "${DART[@]}" run drift_dev schema dump lib/data/db/database.dart "$SCHEMA_DIR/"
 
+if [[ ! -f "$SCHEMA_DIR/drift_schema_v$next.json" ]]; then
+  echo "ERROR: the dump did not produce $SCHEMA_DIR/drift_schema_v$next.json." >&2
+  echo "       A version with no snapshot is a version nothing tests, so this" >&2
+  echo "       stops rather than carrying on." >&2
+  exit 2
+fi
+
 echo "Regenerating migration-test helpers"
 "${DART[@]}" run drift_dev schema generate "$SCHEMA_DIR/" "$HELPER_DIR/"
 
 "${DART[@]}" format "$HELPER_DIR" >/dev/null
+
+trap - EXIT
 
 cat <<EOF
 

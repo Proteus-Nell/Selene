@@ -63,30 +63,57 @@ class DayEditor extends ConsumerWidget {
         Text(l10n.logSymptomsTitle, style: theme.textTheme.titleSmall),
         const SizedBox(height: 4),
         Text(l10n.logSeverityHint, style: theme.textTheme.bodySmall),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: <Widget>[
-            for (final symptom in Symptom.values)
-              _SymptomChip(
-                symptom: symptom,
-                severity: current.severityOf(symptom),
-                onChanged: (severity) => _write(
-                  ref,
-                  current.copyWith(
-                    symptoms: <Symptom, SymptomSeverity>{
-                      ...current.symptoms,
-                      symptom: severity,
-                    }..removeWhere((_, value) => value == SymptomSeverity.none),
+        // Grouped rather than one long Wrap, because sixteen undifferentiated
+        // chips are a list to be read rather than a set to be scanned. The
+        // headings are what let someone looking for "bloating" skip two thirds
+        // of them, which is the whole reason the catalogue could grow at all.
+        //
+        // The order is section order, and the first chip of the first section
+        // is the most commonly logged symptom, so the four-tap budget in
+        // docs/PLAN.md 2.4.2 is unchanged: a heading costs reading, not taps.
+        for (final section in SymptomSection.values) ...<Widget>[
+          const SizedBox(height: 16),
+          Text(
+            _sectionLabel(l10n, section),
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <Widget>[
+              for (final symptom in Symptom.inSection(section))
+                _SymptomChip(
+                  symptom: symptom,
+                  severity: current.severityOf(symptom),
+                  onChanged: (severity) => _write(
+                    ref,
+                    current.copyWith(
+                      symptoms:
+                          <Symptom, SymptomSeverity>{
+                            ...current.symptoms,
+                            symptom: severity,
+                          }..removeWhere(
+                            (_, value) => value == SymptomSeverity.none,
+                          ),
+                    ),
                   ),
                 ),
-              ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ],
     );
   }
+
+  static String _sectionLabel(AppLocalizations l10n, SymptomSection section) =>
+      switch (section) {
+        SymptomSection.physical => l10n.logSectionPhysical,
+        SymptomSection.mental => l10n.logSectionMental,
+        SymptomSection.emotional => l10n.logSectionEmotional,
+      };
 
   static String _flowLabel(AppLocalizations l10n, FlowIntensity flow) =>
       switch (flow) {
@@ -177,9 +204,20 @@ class _SymptomChip extends StatelessWidget {
       switch (symptom) {
         Symptom.cramps => l10n.logSymptomCramps,
         Symptom.headache => l10n.logSymptomHeadache,
+        Symptom.bloating => l10n.logSymptomBloating,
+        Symptom.nausea => l10n.logSymptomNausea,
+        Symptom.breastTenderness => l10n.logSymptomBreastTenderness,
+        Symptom.backPain => l10n.logSymptomBackPain,
+        Symptom.acne => l10n.logSymptomAcne,
+        Symptom.digestiveUpset => l10n.logSymptomDigestiveUpset,
+        Symptom.sleep => l10n.logSymptomSleep,
+        Symptom.brainFog => l10n.logSymptomBrainFog,
+        Symptom.poorConcentration => l10n.logSymptomPoorConcentration,
         Symptom.mood => l10n.logSymptomMood,
         Symptom.energy => l10n.logSymptomEnergy,
-        Symptom.sleep => l10n.logSymptomSleep,
+        Symptom.irritability => l10n.logSymptomIrritability,
+        Symptom.anxiety => l10n.logSymptomAnxiety,
+        Symptom.lowMood => l10n.logSymptomLowMood,
       };
 
   static String _severityLabel(

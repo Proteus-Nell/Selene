@@ -197,15 +197,21 @@ void main() {
     test('a symptom this build does not know', () async {
       // The realistic forward-compatibility case: a backup written after a
       // release that added a symptom.
+      //
+      // The placeholder is deliberately not a plausible symptom. This test used
+      // 'nausea' until AND-23 added nausea to the catalogue, at which point it
+      // started asserting that a perfectly valid export was refused — a test
+      // that fails for the opposite of its reason. A name no release will ever
+      // claim cannot be overtaken the same way.
       final document = await validDocument();
       final logs = document['day_logs']! as List<Object?>;
       (logs.first! as Map<String, Object?>)['symptoms'] = <String, Object?>{
-        'nausea': 'severe',
+        'symptomFromAFutureRelease': 'severe',
       };
       final refusal = await refusalFor(document);
       expect(refusal.rejection, ImportRejection.unknownValue);
       // Naming the value is the difference between retrying and giving up.
-      expect(refusal.message, contains('nausea'));
+      expect(refusal.message, contains('symptomFromAFutureRelease'));
       expect(refusal.message, contains('newer version'));
     });
 

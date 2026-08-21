@@ -153,19 +153,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logSymptomsTitle => 'Anything else today?';
 
   @override
+  String get logSectionPhysical => 'Physical';
+
+  @override
+  String get logSectionMental => 'Mental';
+
+  @override
+  String get logSectionEmotional => 'Emotional';
+
+  @override
   String get logSymptomCramps => 'Cramps';
 
   @override
   String get logSymptomHeadache => 'Headache';
 
   @override
-  String get logSymptomMood => 'Mood';
+  String get logSymptomBloating => 'Bloating';
+
+  @override
+  String get logSymptomNausea => 'Nausea';
+
+  @override
+  String get logSymptomBreastTenderness => 'Sore breasts';
+
+  @override
+  String get logSymptomBackPain => 'Back pain';
+
+  @override
+  String get logSymptomAcne => 'Breakouts';
+
+  @override
+  String get logSymptomDigestiveUpset => 'Digestive upset';
+
+  @override
+  String get logSymptomSleep => 'Sleep';
+
+  @override
+  String get logSymptomBrainFog => 'Brain fog';
+
+  @override
+  String get logSymptomPoorConcentration => 'Poor concentration';
+
+  @override
+  String get logSymptomMood => 'Mood swings';
 
   @override
   String get logSymptomEnergy => 'Energy';
 
   @override
-  String get logSymptomSleep => 'Sleep';
+  String get logSymptomIrritability => 'Irritability';
+
+  @override
+  String get logSymptomAnxiety => 'Anxiety';
+
+  @override
+  String get logSymptomLowMood => 'Low mood';
 
   @override
   String get logSeverityMild => 'Mild';

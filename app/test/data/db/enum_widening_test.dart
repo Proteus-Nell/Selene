@@ -70,6 +70,49 @@ _pinned = <int, Map<String, List<String>>>{
       'other',
     ],
   },
+  // v3 widened Symptom and changed no table. It is here because the widening
+  // is the schema change: without the bump, a v2 build reading a day logged
+  // with `bloating` throws instead of refusing the file. The five original
+  // names are unchanged and in their original spelling, which is what lets a
+  // v1 export still import.
+  3: <String, List<String>>{
+    'FlowIntensity': <String>['none', 'spotting', 'light', 'medium', 'heavy'],
+    'Symptom': <String>[
+      'cramps',
+      'headache',
+      'bloating',
+      'nausea',
+      'breastTenderness',
+      'backPain',
+      'acne',
+      'digestiveUpset',
+      'sleep',
+      'brainFog',
+      'poorConcentration',
+      'mood',
+      'energy',
+      'irritability',
+      'anxiety',
+      'lowMood',
+    ],
+    'SymptomSeverity': <String>['none', 'mild', 'moderate', 'severe'],
+    'Condition': <String>[
+      'hormonalContraceptionCombined',
+      'hormonalContraceptionProgestogen',
+      'hormonalIud',
+      'contraceptiveImplant',
+      'copperIud',
+      'pregnancy',
+      'postpartum',
+      'breastfeeding',
+      'pcos',
+      'endometriosis',
+      'thyroidDisorder',
+      'perimenopause',
+      'uterineFibroids',
+      'other',
+    ],
+  },
 };
 
 /// What the code actually declares, right now.
