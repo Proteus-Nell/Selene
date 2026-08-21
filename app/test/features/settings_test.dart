@@ -357,9 +357,15 @@ void main() {
       tester,
     ) async {
       await pumpSettings(tester);
-      await tester.drag(find.byType(ListView), const Offset(0, -1200));
+      // Scrolled to rather than dragged by a fixed offset. A magic -1200 is a
+      // measurement of how long the settings list happened to be on the day it
+      // was written, and it stopped reaching About the moment AND-24 added a
+      // section above it — reported as a missing version string rather than as
+      // a short scroll.
+      final version = find.textContaining('1.0.0');
+      await tester.scrollUntilVisible(version, 200);
       await tester.pumpAndSettle();
-      expect(find.textContaining('1.0.0'), findsOneWidget);
+      expect(version, findsOneWidget);
     });
   });
 }

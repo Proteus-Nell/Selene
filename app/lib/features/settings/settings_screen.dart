@@ -199,6 +199,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const Divider(),
+            _SectionHeading(l10n.settingsDisplaySection),
+            const _DisplaySettings(),
+            const Divider(),
             _SectionHeading(l10n.settingsPrivacySection),
             const PrivacySection(),
             ListTile(
@@ -231,6 +234,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Preferences that change what is shown, never what is stored.
+///
+/// Kept apart from the reminder settings for a reason worth stating: everything
+/// here is reversible by definition. Turning one on and off again leaves the
+/// database exactly as it was, which is what lets the subtitles promise that
+/// nothing is lost — a promise `flow_simplified_test.dart` checks rather than
+/// takes on trust.
+class _DisplaySettings extends ConsumerWidget {
+  const _DisplaySettings();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final settings = ref.watch(appDatabaseProvider).settingsDao;
+    // Watched rather than loaded into state: the switch and the day editor read
+    // the same stream, so they cannot disagree about what is set.
+    final simplified = ref.watch(flowSimplifiedProvider).valueOrNull ?? false;
+    return SwitchListTile(
+      value: simplified,
+      onChanged: (value) =>
+          settings.writeBool(SettingKey.flowSimplified, value: value),
+      title: Text(l10n.settingsFlowSimplified),
+      subtitle: Text(l10n.settingsFlowSimplifiedSubtitle),
     );
   }
 }

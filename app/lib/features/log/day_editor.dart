@@ -41,24 +41,34 @@ class DayEditor extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final current = existing ?? DayLog(date: date);
+    // Falls back to the fuller control while the preference loads. A screen
+    // that started simplified and then grew three more chips would read as the
+    // app having changed its mind about what it recorded.
+    final simplified = ref.watch(flowSimplifiedProvider).valueOrNull ?? false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(l10n.logFlowTitle, style: theme.textTheme.titleSmall),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: <Widget>[
-            for (final flow in FlowIntensity.values)
-              ChoiceChip(
-                selected: current.flow == flow,
-                onSelected: (_) => _write(ref, current.copyWith(flow: flow)),
-                label: Text(_flowLabel(l10n, flow)),
-              ),
-          ],
-        ),
+        if (simplified)
+          _BleedingToggle(
+            flow: current.flow,
+            onChanged: (flow) => _write(ref, current.copyWith(flow: flow)),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <Widget>[
+              for (final flow in FlowIntensity.values)
+                ChoiceChip(
+                  selected: current.flow == flow,
+                  onSelected: (_) => _write(ref, current.copyWith(flow: flow)),
+                  label: Text(_flowLabel(l10n, flow)),
+                ),
+            ],
+          ),
         const SizedBox(height: 20),
         Text(l10n.logSymptomsTitle, style: theme.textTheme.titleSmall),
         const SizedBox(height: 4),
@@ -123,6 +133,64 @@ class DayEditor extends ConsumerWidget {
         FlowIntensity.medium => l10n.logFlowMedium,
         FlowIntensity.heavy => l10n.logFlowHeavy,
       };
+}
+
+/// Flow as a yes/no question, for users who do not want to grade it (AND-24).
+///
+/// **The mapping is the whole risk in this feature.** `Segmentation` reads
+/// nothing but [DayLog.isBleedingDay], and [FlowIntensity.spotting] is
+/// deliberately *not* a bleeding day: mid-cycle spotting must not open a cycle,
+/// because a spurious short cycle is an outlier the filter then has to widen
+/// its intervals to absorb. So "yes" writes [FlowIntensity.medium] — a real
+/// bleeding intensity, in the middle of the range, which is the least wrong
+/// thing to record when the user has declined to say. Writing spotting here
+/// would silently stop cycles being detected at all for every user who turned
+/// this on, and nothing on screen would say so.
+///
+/// [FlowIntensity.medium] is also what `CycleRepository.markPeriodStart`
+/// records when the user taps the primary action without saying an intensity,
+/// so the two ways of answering "yes, today" agree rather than producing days
+/// that differ by which button was pressed.
+///
+/// Reads back through the same predicate rather than through equality: a day
+/// recorded as heavy before the toggle was turned on answers "yes", and stays
+/// heavy.
+class _BleedingToggle extends StatelessWidget {
+  const _BleedingToggle({required this.flow, required this.onChanged});
+
+  /// What is currently recorded, at whatever intensity.
+  final FlowIntensity flow;
+
+  final ValueChanged<FlowIntensity> onChanged;
+
+  /// What "yes" records. See the class comment: never [FlowIntensity.spotting].
+  static const FlowIntensity yesIntensity = FlowIntensity.medium;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final bleeding = flow.isBleeding;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: <Widget>[
+        ChoiceChip(
+          selected: bleeding,
+          // Re-selecting the current answer writes nothing. That is what keeps
+          // a heavy day heavy: the user confirming "yes" must not quietly
+          // downgrade it to medium, and switching the preference on and off
+          // must leave the database untouched.
+          onSelected: (_) => bleeding ? null : onChanged(yesIntensity),
+          label: Text(l10n.logBleedingYes),
+        ),
+        ChoiceChip(
+          selected: !bleeding,
+          onSelected: (_) => bleeding ? onChanged(FlowIntensity.none) : null,
+          label: Text(l10n.logBleedingNo),
+        ),
+      ],
+    );
+  }
 }
 
 /// A symptom chip: tap to record, long-press to say how strong it was.

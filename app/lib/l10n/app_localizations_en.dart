@@ -150,6 +150,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logFlowHeavy => 'Heavy';
 
   @override
+  String get logBleedingYes => 'Bleeding';
+
+  @override
+  String get logBleedingNo => 'None';
+
+  @override
   String get logSymptomsTitle => 'Anything else today?';
 
   @override
@@ -643,6 +649,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsReminderSubtitle =>
       'A notification in the morning, the chosen number of days ahead.';
+
+  @override
+  String get settingsDisplaySection => 'Display';
+
+  @override
+  String get settingsFlowSimplified => 'Simple flow';
+
+  @override
+  String get settingsFlowSimplifiedSubtitle =>
+      'Record bleeding as yes or no, instead of choosing an intensity. Anything already recorded is kept, and comes back if you turn this off.';
 
   @override
   String get settingsPrivacySection => 'Privacy';

@@ -126,14 +126,30 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   }
 
   /// Reads a boolean setting, defaulting to [orElse].
-  Future<bool> readBool(SettingKey key, {required bool orElse}) async {
-    final value = await raw(key);
-    return switch (value) {
-      'true' => true,
-      'false' => false,
-      _ => orElse,
-    };
+  Future<bool> readBool(SettingKey key, {required bool orElse}) async =>
+      _asBool(await raw(key), orElse: orElse);
+
+  /// Watches a boolean setting, re-emitting whenever it is written.
+  ///
+  /// A stream rather than a read plus an invalidation, so that a preference
+  /// changed in settings reaches the screen it controls without either of them
+  /// knowing the other exists. The alternative — bumping a counter at each
+  /// write site — works until someone adds a write site and forgets, and the
+  /// symptom is a setting that appears not to take effect until restart.
+  Stream<bool> watchBool(SettingKey key, {required bool orElse}) {
+    final query = select(settings)
+      ..where((t) => t.settingKey.equals(key.wireName));
+    return query
+        .watchSingleOrNull()
+        .map((row) => _asBool(row?.settingValue, orElse: orElse))
+        .distinct();
   }
+
+  static bool _asBool(String? value, {required bool orElse}) => switch (value) {
+    'true' => true,
+    'false' => false,
+    _ => orElse,
+  };
 
   /// Reads an integer setting, defaulting to [orElse].
   Future<int> readInt(SettingKey key, {required int orElse}) async {
@@ -157,6 +173,10 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   /// existing user sees.
   Future<bool> readFlowSimplified() =>
       readBool(SettingKey.flowSimplified, orElse: false);
+
+  /// [readFlowSimplified], as a stream for the screens that follow it.
+  Stream<bool> watchFlowSimplified() =>
+      watchBool(SettingKey.flowSimplified, orElse: false);
 
   /// Whether the calendar names the cycle phase (AND-25).
   ///
