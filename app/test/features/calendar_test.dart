@@ -157,8 +157,16 @@ void main() {
       // Filled marker for logged bleeding, hollow marker for the predicted
       // window. The two read apart with no colour at all.
       expect(inGrid(find.byType(PeriodMarker)), findsWidgets);
-      // The legend shows one of each too, which is the point of a legend.
-      expect(find.byType(PredictedMarker), findsWidgets);
+
+      // The legend shows one of each too, which is the point of a legend. It
+      // sits below the next-period panel added in AND-25, so with history
+      // seeded it is off-screen until scrolled to — and a ListView does not
+      // build what it is not showing. Finding nothing here would otherwise read
+      // as a missing marker rather than a longer page.
+      final legendMarker = find.byType(PredictedMarker);
+      await tester.scrollUntilVisible(legendMarker, 200);
+      await tester.pumpAndSettle();
+      expect(legendMarker, findsWidgets);
     });
 
     testWidgets('the legend names every state in words', (tester) async {

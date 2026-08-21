@@ -76,6 +76,25 @@ final StreamProvider<bool> flowSimplifiedProvider = StreamProvider<bool>(
   (ref) => ref.watch(appDatabaseProvider).settingsDao.watchFlowSimplified(),
 );
 
+/// Whether the calendar names the cycle phase (AND-25).
+///
+/// On by default: a phase name restates dates the user logged, which ADR-0007
+/// separated from ovulation estimation precisely so that this one need not be
+/// opted into.
+final StreamProvider<bool> showCyclePhasesProvider = StreamProvider<bool>(
+  (ref) => ref.watch(appDatabaseProvider).settingsDao.watchShowCyclePhases(),
+);
+
+/// Whether an estimated ovulation range is shown (AND-25).
+///
+/// **Off by default, and the default is a safety property rather than a taste.**
+/// `docs/PLAN.md` 6.2 requires ovulation estimation to be opt-in, and ADR-0007
+/// was careful not to move that line. Changing this needs an ADR.
+final StreamProvider<bool> showOvulationWindowProvider = StreamProvider<bool>(
+  (ref) =>
+      ref.watch(appDatabaseProvider).settingsDao.watchShowOvulationWindow(),
+);
+
 /// The current prediction, recomputed whenever the logs change.
 ///
 /// Depends on [dayLogsProvider] rather than being invalidated by hand at every

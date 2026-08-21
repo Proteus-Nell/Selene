@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
+import 'package:period_tracker/domain/cycles/cycle_phase.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 import 'package:period_tracker/features/calendar/day_cell.dart';
+import 'package:period_tracker/features/calendar/phase_strip.dart';
 import 'package:period_tracker/features/common/formatting.dart';
+import 'package:period_tracker/features/common/next_period_panel.dart';
 import 'package:period_tracker/features/log/day_editor.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
@@ -106,7 +109,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final today = ref.watch(clockProvider).today();
     final month = _monthStart(today).addMonths(_monthOffset);
     final logs = ref.watch(dayLogsProvider).valueOrNull ?? const <DayLog>[];
-    final window = _predictedWindow(ref.watch(predictionProvider).valueOrNull);
+    final prediction = ref.watch(predictionProvider).valueOrNull;
+    final window = _predictedWindow(prediction);
+    // Both default to their stored defaults while loading: phases on, the
+    // ovulation estimate off. Erring the other way for even one frame would
+    // show an estimate the user has not opted into, which is the one thing
+    // docs/PLAN.md 6.2 does not tolerate.
+    final showPhases = ref.watch(showCyclePhasesProvider).valueOrNull ?? true;
+    final showOvulation =
+        ref.watch(showOvulationWindowProvider).valueOrNull ?? false;
+    final position = CyclePhases.on(
+      date: today,
+      logs: logs,
+      predictedStart: _predictedStart(prediction),
+      withOvulationEstimate: showOvulation,
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.calendarTitle)),
@@ -144,6 +161,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               onEdit: _edit,
             ),
             const SizedBox(height: 16),
+            // Above the legend, because it answers the question the user came
+            // with. The legend explains the drawing; this says where they are.
+            if (showPhases) ...<Widget>[
+              PhaseStrip(position: position),
+              const SizedBox(height: 16),
+            ],
+            NextPeriodPanel(
+              result: prediction ?? const NoData(),
+              dense: true,
+            ),
+            const SizedBox(height: 16),
             const CalendarLegend(),
             const SizedBox(height: 8),
             Text(l10n.calendarLongPressHint, style: theme.textTheme.bodySmall),
@@ -169,6 +197,23 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
     return null;
   }
+
+  /// The single most likely start date, or null when none may be claimed.
+  ///
+  /// Only used to anchor the follicular-luteal boundary, and it returns null in
+  /// exactly the states [_predictedWindow] does. A phase named from a
+  /// prediction the app has just declined to draw would be that same claim
+  /// wearing a different word.
+  static CivilDate? _predictedStart(PredictionResult? result) =>
+      switch (result) {
+        Predicted(:final prediction) => prediction.medianStart,
+        InsufficientData(:final populationPrior) => populationPrior.medianStart,
+        TooIrregular() ||
+        LostTrack() ||
+        NoData() ||
+        DataInconsistent() ||
+        null => null,
+      };
 
   /// The 80% window, or null when no window may be shown.
   ///

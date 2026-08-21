@@ -255,12 +255,37 @@ class _DisplaySettings extends ConsumerWidget {
     // Watched rather than loaded into state: the switch and the day editor read
     // the same stream, so they cannot disagree about what is set.
     final simplified = ref.watch(flowSimplifiedProvider).valueOrNull ?? false;
-    return SwitchListTile(
-      value: simplified,
-      onChanged: (value) =>
-          settings.writeBool(SettingKey.flowSimplified, value: value),
-      title: Text(l10n.settingsFlowSimplified),
-      subtitle: Text(l10n.settingsFlowSimplifiedSubtitle),
+    final phases = ref.watch(showCyclePhasesProvider).valueOrNull ?? true;
+    final ovulation =
+        ref.watch(showOvulationWindowProvider).valueOrNull ?? false;
+    return Column(
+      children: <Widget>[
+        SwitchListTile(
+          value: simplified,
+          onChanged: (value) =>
+              settings.writeBool(SettingKey.flowSimplified, value: value),
+          title: Text(l10n.settingsFlowSimplified),
+          subtitle: Text(l10n.settingsFlowSimplifiedSubtitle),
+        ),
+        SwitchListTile(
+          value: phases,
+          onChanged: (value) =>
+              settings.writeBool(SettingKey.showCyclePhases, value: value),
+          title: Text(l10n.settingsCyclePhases),
+          subtitle: Text(l10n.settingsCyclePhasesSubtitle),
+        ),
+        // Off until switched on, and the subtitle says what the estimate is
+        // worth before the switch is touched rather than after. See ADR-0007
+        // and docs/PLAN.md 6.2: this is the one preference on the screen whose
+        // default is a safety property.
+        SwitchListTile(
+          value: ovulation,
+          onChanged: (value) =>
+              settings.writeBool(SettingKey.showOvulationWindow, value: value),
+          title: Text(l10n.settingsOvulationWindow),
+          subtitle: Text(l10n.settingsOvulationWindowSubtitle),
+        ),
+      ],
     );
   }
 }

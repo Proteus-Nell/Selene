@@ -1167,6 +1167,72 @@ abstract class AppLocalizations {
   /// **'A notification in the morning, the chosen number of days ahead.'**
   String get settingsReminderSubtitle;
 
+  /// No description provided for @calendarPhaseDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} of your cycle'**
+  String calendarPhaseDay(int day);
+
+  /// No description provided for @calendarPhasePeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Period'**
+  String get calendarPhasePeriod;
+
+  /// No description provided for @calendarPhaseFollicular.
+  ///
+  /// In en, this message translates to:
+  /// **'Follicular'**
+  String get calendarPhaseFollicular;
+
+  /// No description provided for @calendarPhaseLuteal.
+  ///
+  /// In en, this message translates to:
+  /// **'Luteal'**
+  String get calendarPhaseLuteal;
+
+  /// Shown when the user taps the Period chip. Plain language, one line, no clinical claim.
+  ///
+  /// In en, this message translates to:
+  /// **'The days you have logged bleeding for. This one is read from what you recorded, not estimated.'**
+  String get calendarPhasePeriodExplained;
+
+  /// No description provided for @calendarPhaseFollicularExplained.
+  ///
+  /// In en, this message translates to:
+  /// **'The stretch after your period ends. Its length is where most of the variation between cycles sits, so it is the part this app is least certain about.'**
+  String get calendarPhaseFollicularExplained;
+
+  /// No description provided for @calendarPhaseLutealExplained.
+  ///
+  /// In en, this message translates to:
+  /// **'The run of days before your next period is due. It tends to be the steadiest part of the cycle, which is why it is counted back from the date expected rather than forward from the last one.'**
+  String get calendarPhaseLutealExplained;
+
+  /// No description provided for @calendarPhaseUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough logged to say where you are.'**
+  String get calendarPhaseUnknown;
+
+  /// No description provided for @calendarOvulationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated ovulation'**
+  String get calendarOvulationTitle;
+
+  /// No description provided for @calendarOvulationRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Around {start} to {end}'**
+  String calendarOvulationRange(String start, String end);
+
+  /// Sits directly under the estimated range, never behind a link. The estimate is opt-in and this is the sentence that has to travel with it.
+  ///
+  /// In en, this message translates to:
+  /// **'An estimate from your cycle dates alone. This app cannot observe ovulation, and this must not be used to plan or avoid pregnancy.'**
+  String get calendarOvulationCaveat;
+
   /// No description provided for @settingsDisplaySection.
   ///
   /// In en, this message translates to:
@@ -1184,6 +1250,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Record bleeding as yes or no, instead of choosing an intensity. Anything already recorded is kept, and comes back if you turn this off.'**
   String get settingsFlowSimplifiedSubtitle;
+
+  /// No description provided for @settingsCyclePhases.
+  ///
+  /// In en, this message translates to:
+  /// **'Name the cycle phase'**
+  String get settingsCyclePhases;
+
+  /// No description provided for @settingsCyclePhasesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Period, Follicular or Luteal on the calendar, alongside the day of your cycle.'**
+  String get settingsCyclePhasesSubtitle;
+
+  /// No description provided for @settingsOvulationWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated ovulation'**
+  String get settingsOvulationWindow;
+
+  /// No description provided for @settingsOvulationWindowSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show an estimated ovulation range. Worked out from your cycle dates alone, and not accurate enough to plan or avoid pregnancy with.'**
+  String get settingsOvulationWindowSubtitle;
 
   /// No description provided for @settingsPrivacySection.
   ///
