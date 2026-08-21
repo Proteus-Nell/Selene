@@ -2,8 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/clock.dart';
 import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/data/repositories/condition_repository.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
 import 'package:period_tracker/data/repositories/prediction_repository.dart';
+import 'package:period_tracker/domain/cycles/condition_overlap.dart';
+import 'package:period_tracker/domain/models/condition.dart';
+import 'package:period_tracker/domain/models/cycle_record.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 import 'package:period_tracker/domain/predict/priors.dart';
@@ -65,6 +69,37 @@ final StreamProvider<List<DayLog>> dayLogsProvider =
     StreamProvider<List<DayLog>>(
       (ref) => ref.watch(cycleRepositoryProvider).watchLogs(),
     );
+
+/// Reads and writes recorded conditions.
+final Provider<ConditionRepository> conditionRepositoryProvider =
+    Provider<ConditionRepository>(
+      (ref) => ConditionRepository(
+        database: ref.watch(appDatabaseProvider),
+        clock: ref.watch(clockProvider),
+      ),
+    );
+
+/// Every recorded condition, kept current as the database changes.
+final StreamProvider<List<ConditionRecord>> conditionsProvider =
+    StreamProvider<List<ConditionRecord>>(
+      (ref) => ref.watch(conditionRepositoryProvider).watchAll(),
+    );
+
+/// How many cycles were logged while each condition was recorded.
+///
+/// Presented and nothing more. This is the sentence a flag could not produce —
+/// "these six cycles were logged while you were on hormonal contraception" —
+/// and it is context for reading the user's own numbers, never an input to
+/// them. See ADR-0010.
+final FutureProvider<List<ConditionOverlap>> conditionOverlapsProvider =
+    FutureProvider<List<ConditionOverlap>>((ref) async {
+      final records = await ref.watch(conditionsProvider.future);
+      final segmented = await ref.watch(cycleRepositoryProvider).cycles();
+      return ConditionOverlaps.summarise(
+        cycles: segmented.valueOrNull ?? const <CycleRecord>[],
+        records: records,
+      );
+    });
 
 /// Whether the flow control is collapsed to bleeding yes/no (AND-24).
 ///

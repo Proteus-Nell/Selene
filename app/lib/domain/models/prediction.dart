@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/domain/models/converters.dart';
 
 part 'prediction.freezed.dart';
@@ -217,6 +218,30 @@ sealed class PredictionResult with _$PredictionResult {
   const factory PredictionResult.dataInconsistent({
     required DataInconsistency reason,
   }) = DataInconsistent;
+
+  /// A recorded condition makes a prediction the wrong thing to give.
+  ///
+  /// Distinct from every other state here, and the distinction is the reason it
+  /// exists. The rest describe what the model *could not* work out — too little
+  /// data, too much variance, too long a silence. This one describes a case
+  /// where the model would work perfectly well and its answer would still be
+  /// wrong to show: forecasting a period for someone who has recorded an active
+  /// pregnancy is not an uninformed guess, it is a confidently incorrect claim
+  /// about something the user has already told the app.
+  ///
+  /// **Only [Condition.pregnancy] produces this.** Hormonal contraception often
+  /// removes true cycles entirely and is the obvious next candidate; it was
+  /// considered and deliberately not chosen (ADR-0010), so it must not be added
+  /// here without revisiting that decision. See [Condition.suppressesPrediction],
+  /// which is the single place the rule lives.
+  ///
+  /// [statistics] is carried for the same reason [TooIrregular] carries it:
+  /// withholding a prediction must never also withhold the user's own history.
+  /// A pregnancy ends, and the cycles logged before it are still theirs.
+  const factory PredictionResult.suppressedByCondition({
+    required Condition condition,
+    required CycleStatistics statistics,
+  }) = SuppressedByCondition;
 }
 
 // Note: PredictionResult deliberately has no toJson/fromJson.

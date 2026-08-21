@@ -6,6 +6,7 @@ import 'package:period_tracker/core/result.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/domain/cycles/segmentation.dart';
 import 'package:period_tracker/domain/cycles/validation.dart';
+import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/domain/models/cycle_record.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
@@ -102,6 +103,24 @@ class CycleRepository {
 
   /// Every logged day, re-emitted on any change.
   Stream<List<DayLog>> watchLogs() => _db.dayLogDao.watchAllLogs();
+
+  /// Today, according to the app's one clock.
+  ///
+  /// Exposed so that callers which need "now" do not acquire a second clock.
+  /// `docs/PLAN.md` risk R7 is about dates disagreeing across layers, and two
+  /// clocks in the data layer is the shape that produces it.
+  CivilDate today() => _clock.today();
+
+  /// Conditions the user has recorded as active on [date].
+  ///
+  /// Reads only. Nothing here is passed to the prediction model — see
+  /// ADR-0010, and the test that enforces it. The one thing this is used for is
+  /// deciding whether to *withhold* a prediction, which changes what is shown
+  /// and never what is computed.
+  Future<List<ConditionRecord>> activeConditionsOn(CivilDate date) async {
+    final records = await _db.conditionDao.all();
+    return records.where((record) => record.isActiveOn(date)).toList();
+  }
 
   /// The log for [date], or null.
   Future<DayLog?> logFor(CivilDate date) => _db.dayLogDao.logFor(date);

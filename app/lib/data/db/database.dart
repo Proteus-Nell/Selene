@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:period_tracker/data/db/daos/condition_dao.dart';
 import 'package:period_tracker/data/db/daos/day_log_dao.dart';
 import 'package:period_tracker/data/db/daos/model_state_dao.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
@@ -50,7 +51,7 @@ final class DatabaseDowngradeException implements Exception {
 /// SQLCipher later is one file's worth of change.
 @DriftDatabase(
   tables: <Type>[DayLogs, Symptoms, ModelStates, Settings, Conditions],
-  daos: <Type>[DayLogDao, ModelStateDao, SettingsDao],
+  daos: <Type>[DayLogDao, ModelStateDao, SettingsDao, ConditionDao],
 )
 class AppDatabase extends _$AppDatabase {
   /// Opens the database over the given [QueryExecutor].

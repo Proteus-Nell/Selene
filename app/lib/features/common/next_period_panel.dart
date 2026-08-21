@@ -63,6 +63,16 @@ class NextPeriodPanel extends StatelessWidget {
         body: l10n.insightsNoDataBody,
         icon: Icons.edit_calendar_outlined,
       ),
+      // A prediction is withheld rather than unavailable, and the difference
+      // is worth the user's attention: nothing is missing and nothing has been
+      // lost. The message says how to get predictions back, because a state
+      // with no way out of it reads as a broken app.
+      SuppressedByCondition() => _Message(
+        dense: dense,
+        title: l10n.insightsSuppressedPregnancyTitle,
+        body: l10n.insightsSuppressedPregnancyBody,
+        icon: Icons.pause_circle_outline,
+      ),
       DataInconsistent(:final reason) => _Message(
         dense: dense,
         title: l10n.insightsInconsistentTitle,
