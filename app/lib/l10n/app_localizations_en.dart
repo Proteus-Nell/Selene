@@ -651,6 +651,47 @@ class AppLocalizationsEn extends AppLocalizations {
       'A notification in the morning, the chosen number of days ahead.';
 
   @override
+  String calendarPhaseDay(int day) {
+    return 'Day $day of your cycle';
+  }
+
+  @override
+  String get calendarPhasePeriod => 'Period';
+
+  @override
+  String get calendarPhaseFollicular => 'Follicular';
+
+  @override
+  String get calendarPhaseLuteal => 'Luteal';
+
+  @override
+  String get calendarPhasePeriodExplained =>
+      'The days you have logged bleeding for. This one is read from what you recorded, not estimated.';
+
+  @override
+  String get calendarPhaseFollicularExplained =>
+      'The stretch after your period ends. Its length is where most of the variation between cycles sits, so it is the part this app is least certain about.';
+
+  @override
+  String get calendarPhaseLutealExplained =>
+      'The run of days before your next period is due. It tends to be the steadiest part of the cycle, which is why it is counted back from the date expected rather than forward from the last one.';
+
+  @override
+  String get calendarPhaseUnknown => 'Not enough logged to say where you are.';
+
+  @override
+  String get calendarOvulationTitle => 'Estimated ovulation';
+
+  @override
+  String calendarOvulationRange(String start, String end) {
+    return 'Around $start to $end';
+  }
+
+  @override
+  String get calendarOvulationCaveat =>
+      'An estimate from your cycle dates alone. This app cannot observe ovulation, and this must not be used to plan or avoid pregnancy.';
+
+  @override
   String get settingsDisplaySection => 'Display';
 
   @override
@@ -659,6 +700,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsFlowSimplifiedSubtitle =>
       'Record bleeding as yes or no, instead of choosing an intensity. Anything already recorded is kept, and comes back if you turn this off.';
+
+  @override
+  String get settingsCyclePhases => 'Name the cycle phase';
+
+  @override
+  String get settingsCyclePhasesSubtitle =>
+      'Show Period, Follicular or Luteal on the calendar, alongside the day of your cycle.';
+
+  @override
+  String get settingsOvulationWindow => 'Estimated ovulation';
+
+  @override
+  String get settingsOvulationWindowSubtitle =>
+      'Show an estimated ovulation range. Worked out from your cycle dates alone, and not accurate enough to plan or avoid pregnancy with.';
 
   @override
   String get settingsPrivacySection => 'Privacy';

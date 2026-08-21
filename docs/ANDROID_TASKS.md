@@ -1195,11 +1195,24 @@ answering "can I get pregnant".
 **Scope.** `calendar_screen.dart`, ARB, a new copy test, goldens.
 
 **Done when.**
-- [ ] A next-period panel on the calendar, stated as a range, reusing the insights formatting
-- [ ] A phase strip: **Period**, **Follicular**, **Luteal**, plus "Day N of your cycle", each with a one-line plain explanation on tap
-- [ ] An estimated ovulation range exists behind a settings toggle that is **off** by default
-- [ ] A copy test fails the build on "safe day", "safe window", unqualified "fertile", or "you are ovulating"
-- [ ] Goldens at 100%, 150% and 200%; the strip must not overflow at 200%
+- [x] A next-period panel on the calendar, stated as a range, reusing the insights formatting
+- [x] A phase strip: **Period**, **Follicular**, **Luteal**, plus "Day N of your cycle", each with a one-line plain explanation on tap
+- [x] An estimated ovulation range exists behind a settings toggle that is **off** by default
+- [x] A copy test fails the build on "safe day", "safe window", unqualified "fertile", or "you are ovulating"
+- [x] Goldens at 100%, 150% and 200%; the strip must not overflow at 200%
+
+**Two notes from building it.** The follicular-luteal boundary is counted
+*backwards* from the predicted start, at `CyclePhases.lutealPhaseDays`, because
+the luteal phase is the steadiest part of the cycle and almost all the variation
+in length sits in the follicular one. No phase is named at all without a
+prediction to anchor that boundary to — but the **day of the cycle still is**,
+because it is subtraction on a date the user logged and does not depend on the
+model. The two are withheld independently for that reason.
+
+And the insights prediction card is now a shared `NextPeriodPanel` rather than
+copied. 6.2 is specific about the shape — range as the headline, most likely day
+beneath it — and the everyday way that erodes is a second screen rendering the
+same thing a little more confidently.
 
 **Prompt to paste.**
 

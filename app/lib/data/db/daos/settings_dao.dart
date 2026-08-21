@@ -185,6 +185,10 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   Future<bool> readShowCyclePhases() =>
       readBool(SettingKey.showCyclePhases, orElse: true);
 
+  /// [readShowCyclePhases], as a stream for the calendar.
+  Stream<bool> watchShowCyclePhases() =>
+      watchBool(SettingKey.showCyclePhases, orElse: true);
+
   /// Whether an estimated ovulation range is shown (AND-25).
   ///
   /// Defaults to **off**, and this is the one default in the app that is a
@@ -193,6 +197,10 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   /// contraceptive claim the model cannot support.
   Future<bool> readShowOvulationWindow() =>
       readBool(SettingKey.showOvulationWindow, orElse: false);
+
+  /// [readShowOvulationWindow], as a stream for the calendar.
+  Stream<bool> watchShowOvulationWindow() =>
+      watchBool(SettingKey.showOvulationWindow, orElse: false);
 
   /// Writes a raw key-value pair.
   ///
