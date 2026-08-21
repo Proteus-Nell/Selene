@@ -775,6 +775,127 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reExportDismiss => 'Dismiss';
 
   @override
+  String get lookupTitle => 'Look something up';
+
+  @override
+  String get lookupSubtitle =>
+      'Reference notes stored on this device. Nothing you type here is sent anywhere.';
+
+  @override
+  String get lookupSearchHint => 'Search';
+
+  @override
+  String get lookupNoResults => 'Nothing here matches that.';
+
+  @override
+  String get lookupMedicinesHeading => 'Medicines';
+
+  @override
+  String get lookupHygieneHeading => 'Tampons, cups and pads';
+
+  @override
+  String get lookupCuratedNote =>
+      'Written for this app and checked against the sources listed in HYGIENE_SOURCES.md. Not a regulator\'s own wording, unlike the medicines below.';
+
+  @override
+  String lookupMedicinesSource(String date) {
+    return 'From US drug labelling published by openFDA, as it stood on $date.';
+  }
+
+  @override
+  String get lookupMedicinesUsOnly =>
+      'This is United States labelling. Strengths, brand names and warnings can differ where you are — check the packet you actually have.';
+
+  @override
+  String get lookupMedicinesUnavailable =>
+      'The medicines reference has not been built into this version of the app. The other sections still work.';
+
+  @override
+  String get lookupSectionPurpose => 'What it is for';
+
+  @override
+  String get lookupSectionWarnings => 'Warnings';
+
+  @override
+  String get lookupSectionDoNotUse => 'Do not use';
+
+  @override
+  String get lookupSectionAskDoctor => 'Ask a doctor';
+
+  @override
+  String get lookupSectionStopUse => 'Stop use and ask a doctor';
+
+  @override
+  String get lookupSectionPregnancy => 'If pregnant or breastfeeding';
+
+  @override
+  String get lookupSearchOnlineTitle => 'Not here?';
+
+  @override
+  String get lookupSearchOnlineBody =>
+      'This app has no internet access at all, so it cannot look anything up for you. It can open your browser instead.';
+
+  @override
+  String get lookupSearchOnlineAction => 'Open a browser';
+
+  @override
+  String get lookupLeavingTitle => 'Leaving the app';
+
+  @override
+  String get lookupLeavingBody =>
+      'Your browser will make the request, not this app. That means the search leaves your device, and your browser will normally keep it in its history and may sync it to other devices you are signed in on.';
+
+  @override
+  String lookupLeavingWithTermBody(String term) {
+    return 'The words \"$term\" will be put into the search box, and will appear in your browser history.';
+  }
+
+  @override
+  String get lookupLeavingContinue => 'Open browser';
+
+  @override
+  String get lookupLeavingFailed => 'No browser could be opened.';
+
+  @override
+  String get settingsLookup => 'Look something up';
+
+  @override
+  String get settingsLookupSubtitle =>
+      'Medicines and hygiene product notes, stored on this device.';
+
+  @override
+  String get hygieneTssTitle => 'Toxic shock syndrome';
+
+  @override
+  String get hygieneTssUrgent =>
+      'If you have a sudden high fever, a sunburn-like rash, vomiting, diarrhoea, muscle aches, dizziness or confusion while using a tampon or a menstrual cup: remove it and get urgent medical help.';
+
+  @override
+  String get hygieneTssBody =>
+      'Toxic shock syndrome is rare and life-threatening. It is caused by bacterial toxins, and it is associated with tampon and menstrual cup use — though it also happens to people who are not menstruating at all.';
+
+  @override
+  String get hygieneTamponsTitle => 'Tampons';
+
+  @override
+  String get hygieneTamponsBody =>
+      'Regulated as medical devices rather than as drugs, which is why they are not in the medicines section. Absorbency ratings are standardised, so the same rating means the same thing across brands. General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says rather than leaving it longer.';
+
+  @override
+  String get hygieneCupsTitle => 'Menstrual cups';
+
+  @override
+  String get hygieneCupsBody =>
+      'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products — follow the instructions that came with yours rather than a number from an app.';
+
+  @override
+  String get hygieneExternalTitle => 'Pads and period underwear';
+
+  @override
+  String get hygieneExternalBody =>
+      'Worn outside the body, and not associated with toxic shock syndrome in the way internally worn products are.';
+
+  @override
   String get nutritionTitle => 'Iron and magnesium';
 
   @override

@@ -1377,6 +1377,216 @@ abstract class AppLocalizations {
   /// **'Dismiss'**
   String get reExportDismiss;
 
+  /// No description provided for @lookupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Look something up'**
+  String get lookupTitle;
+
+  /// Under the search field. The second sentence is the point: a user typing a drug name into a search box has every reason to assume it leaves the phone, and here it does not.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference notes stored on this device. Nothing you type here is sent anywhere.'**
+  String get lookupSubtitle;
+
+  /// No description provided for @lookupSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get lookupSearchHint;
+
+  /// No description provided for @lookupNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here matches that.'**
+  String get lookupNoResults;
+
+  /// No description provided for @lookupMedicinesHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines'**
+  String get lookupMedicinesHeading;
+
+  /// No description provided for @lookupHygieneHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Tampons, cups and pads'**
+  String get lookupHygieneHeading;
+
+  /// No description provided for @lookupCuratedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Written for this app and checked against the sources listed in HYGIENE_SOURCES.md. Not a regulator\'s own wording, unlike the medicines below.'**
+  String get lookupCuratedNote;
+
+  /// No description provided for @lookupMedicinesSource.
+  ///
+  /// In en, this message translates to:
+  /// **'From US drug labelling published by openFDA, as it stood on {date}.'**
+  String lookupMedicinesSource(String date);
+
+  /// Always shown with the medicines section. A reader applying US warnings to a box bought elsewhere is being quietly misinformed, and nothing else on the screen would tell them.
+  ///
+  /// In en, this message translates to:
+  /// **'This is United States labelling. Strengths, brand names and warnings can differ where you are — check the packet you actually have.'**
+  String get lookupMedicinesUsOnly;
+
+  /// Shown when the openFDA artifact has not been fetched. Says so plainly rather than rendering an empty list, which reads as a broken screen.
+  ///
+  /// In en, this message translates to:
+  /// **'The medicines reference has not been built into this version of the app. The other sections still work.'**
+  String get lookupMedicinesUnavailable;
+
+  /// No description provided for @lookupSectionPurpose.
+  ///
+  /// In en, this message translates to:
+  /// **'What it is for'**
+  String get lookupSectionPurpose;
+
+  /// No description provided for @lookupSectionWarnings.
+  ///
+  /// In en, this message translates to:
+  /// **'Warnings'**
+  String get lookupSectionWarnings;
+
+  /// No description provided for @lookupSectionDoNotUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not use'**
+  String get lookupSectionDoNotUse;
+
+  /// No description provided for @lookupSectionAskDoctor.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask a doctor'**
+  String get lookupSectionAskDoctor;
+
+  /// No description provided for @lookupSectionStopUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop use and ask a doctor'**
+  String get lookupSectionStopUse;
+
+  /// No description provided for @lookupSectionPregnancy.
+  ///
+  /// In en, this message translates to:
+  /// **'If pregnant or breastfeeding'**
+  String get lookupSectionPregnancy;
+
+  /// No description provided for @lookupSearchOnlineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not here?'**
+  String get lookupSearchOnlineTitle;
+
+  /// No description provided for @lookupSearchOnlineBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This app has no internet access at all, so it cannot look anything up for you. It can open your browser instead.'**
+  String get lookupSearchOnlineBody;
+
+  /// No description provided for @lookupSearchOnlineAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a browser'**
+  String get lookupSearchOnlineAction;
+
+  /// No description provided for @lookupLeavingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving the app'**
+  String get lookupLeavingTitle;
+
+  /// The confirmation before a browser hand-off. It has to be specific about what changes: this app makes no requests, the browser does, and the browser remembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Your browser will make the request, not this app. That means the search leaves your device, and your browser will normally keep it in its history and may sync it to other devices you are signed in on.'**
+  String get lookupLeavingBody;
+
+  /// Shown only when a term is pre-filled. Naming the term back to the user is the point — a hand-off that silently carries a drug name into browser history is the thing this warning exists to prevent.
+  ///
+  /// In en, this message translates to:
+  /// **'The words \"{term}\" will be put into the search box, and will appear in your browser history.'**
+  String lookupLeavingWithTermBody(String term);
+
+  /// No description provided for @lookupLeavingContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Open browser'**
+  String get lookupLeavingContinue;
+
+  /// No description provided for @lookupLeavingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'No browser could be opened.'**
+  String get lookupLeavingFailed;
+
+  /// No description provided for @settingsLookup.
+  ///
+  /// In en, this message translates to:
+  /// **'Look something up'**
+  String get settingsLookup;
+
+  /// No description provided for @settingsLookupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines and hygiene product notes, stored on this device.'**
+  String get settingsLookupSubtitle;
+
+  /// No description provided for @hygieneTssTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Toxic shock syndrome'**
+  String get hygieneTssTitle;
+
+  /// PINNED — hygiene_copy_test.dart asserts this exactly. It describes symptoms and says what to do. It must never name a diagnosis, and must never be softened into a suggestion.
+  ///
+  /// In en, this message translates to:
+  /// **'If you have a sudden high fever, a sunburn-like rash, vomiting, diarrhoea, muscle aches, dizziness or confusion while using a tampon or a menstrual cup: remove it and get urgent medical help.'**
+  String get hygieneTssUrgent;
+
+  /// No description provided for @hygieneTssBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Toxic shock syndrome is rare and life-threatening. It is caused by bacterial toxins, and it is associated with tampon and menstrual cup use — though it also happens to people who are not menstruating at all.'**
+  String get hygieneTssBody;
+
+  /// No description provided for @hygieneTamponsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tampons'**
+  String get hygieneTamponsTitle;
+
+  /// No description provided for @hygieneTamponsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Regulated as medical devices rather than as drugs, which is why they are not in the medicines section. Absorbency ratings are standardised, so the same rating means the same thing across brands. General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says rather than leaving it longer.'**
+  String get hygieneTamponsBody;
+
+  /// No description provided for @hygieneCupsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Menstrual cups'**
+  String get hygieneCupsTitle;
+
+  /// No description provided for @hygieneCupsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products — follow the instructions that came with yours rather than a number from an app.'**
+  String get hygieneCupsBody;
+
+  /// No description provided for @hygieneExternalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pads and period underwear'**
+  String get hygieneExternalTitle;
+
+  /// No description provided for @hygieneExternalBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Worn outside the body, and not associated with toxic shock syndrome in the way internally worn products are.'**
+  String get hygieneExternalBody;
+
   /// No description provided for @nutritionTitle.
   ///
   /// In en, this message translates to:

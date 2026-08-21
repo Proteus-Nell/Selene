@@ -12,6 +12,7 @@ import 'package:period_tracker/data/transfer/import_v1.dart';
 import 'package:period_tracker/domain/predict/priors_bundled.dart';
 import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/conditions/conditions_screen.dart';
+import 'package:period_tracker/features/lookup/lookup_screen.dart';
 import 'package:period_tracker/features/nutrition/nutrition_screen.dart';
 import 'package:period_tracker/features/settings/delete_everything_dialog.dart';
 import 'package:period_tracker/features/settings/log_viewer.dart';
@@ -202,6 +203,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.search),
+              title: Text(l10n.settingsLookup),
+              subtitle: Text(l10n.settingsLookupSubtitle),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const LookupScreen(),
+                ),
               ),
             ),
             ListTile(
