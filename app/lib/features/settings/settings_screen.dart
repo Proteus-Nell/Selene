@@ -10,6 +10,7 @@ import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/data/transfer/export_v1.dart';
 import 'package:period_tracker/data/transfer/import_v1.dart';
 import 'package:period_tracker/domain/predict/priors_bundled.dart';
+import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/settings/delete_everything_dialog.dart';
 import 'package:period_tracker/features/settings/log_viewer.dart';
 import 'package:period_tracker/features/settings/privacy_section.dart';
@@ -36,9 +37,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _report(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showAppSnackBar(context, message);
   }
 
   Future<void> _export() async {

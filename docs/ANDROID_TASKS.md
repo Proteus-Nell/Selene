@@ -846,6 +846,27 @@ The pattern is worth naming: each was in code no test could reach without a
 device, and each had a green test sitting next to it. Where a fake stands in for
 the platform, the fake is the thing being tested.
 
+**Two more, from using the build on a phone.**
+
+- **In-app pop-ups never went away.** Flutter's `SnackBar` constructor reads
+  `persist = persist ?? action != null`, so any snack bar carrying an action
+  defaults to never timing out: the timer fires, sees `persist`, and returns
+  without hiding anything. "Period logged" — the one with Undo — therefore sat
+  on screen until it was swiped off, every single time. Every pop-up now goes
+  through `showAppSnackBar`, which is also where the exception lives: with a
+  screen reader running, an actioned pop-up still waits, because Undo is
+  reachable only after the message has been announced and navigated to. A test
+  asserts there are no other call sites left to inherit the default from.
+- **The background write and the app opened the database by different routes.**
+  The background isolate had its own opener so it would never quarantine a
+  damaged file — the right policy in the wrong shape, because the integrity
+  check and the migration could drift apart from the app's. Both now go through
+  one `_attemptOpen`, and the policy is a named function,
+  `openAppDatabaseWithoutRecovery`, whose whole difference is declining to
+  recover. The tests pin what that buys: a damaged file is left byte-for-byte
+  where it was with nothing quarantined, and the next foreground launch still
+  recovers it, so the decision is deferred rather than dropped.
+
 
 **Prompt to paste.**
 

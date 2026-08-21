@@ -27,6 +27,7 @@ Widget harness(
   RingLogger? logger,
   Brightness brightness = Brightness.light,
   TextScaler textScaler = TextScaler.noScaling,
+  bool accessibleNavigation = false,
 }) {
   final resolvedClock = clock ?? testClock;
   // The container is owned by the test rather than by a ProviderScope widget,
@@ -55,7 +56,10 @@ Widget harness(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: MediaQuery(
-        data: MediaQueryData(textScaler: textScaler),
+        data: MediaQueryData(
+          textScaler: textScaler,
+          accessibleNavigation: accessibleNavigation,
+        ),
         child: child,
       ),
     ),

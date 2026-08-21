@@ -1,12 +1,9 @@
-import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:path/path.dart' as p;
 import 'package:period_tracker/core/clock.dart';
 import 'package:period_tracker/data/db/connection.dart';
-import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
 import 'package:period_tracker/notifications/notification_gateway.dart';
 
@@ -34,19 +31,17 @@ Future<void> handleBackgroundNotificationResponse(
   ui.DartPluginRegistrant.ensureInitialized();
 
   const clock = SystemClock();
-  final file = File(
-    p.join((await defaultDatabaseDirectory()).path, databaseFileName),
+  // The same open, the same integrity check and the same migration the app
+  // performs, with recovery declined — see openAppDatabaseWithoutRecovery for
+  // why this isolate must not quarantine a damaged file. Null means the day
+  // goes unlogged, and the next foreground launch deals with the damage in the
+  // open, where there is a screen to say so on.
+  final database = await openAppDatabaseWithoutRecovery(
+    directory: await defaultDatabaseDirectory(),
   );
-  // Deliberately not `openAppDatabase`: that recovers from a damaged file by
-  // moving it aside, which is the right call when a person is watching and can
-  // be told, and the wrong one to make invisibly from a background isolate. If
-  // the file is missing or unreadable, this does nothing and the next launch
-  // handles it in the open, where the UI can say what happened.
-  if (!file.existsSync()) return;
+  if (database == null) return;
 
-  AppDatabase? database;
   try {
-    database = AppDatabase(createQueryExecutor(file));
     await CycleRepository(
       database: database,
       clock: clock,
@@ -54,9 +49,9 @@ Future<void> handleBackgroundNotificationResponse(
   } on Object {
     // A background write is a convenience, never the only way in. Anything that
     // goes wrong here is recoverable by opening the app and tapping the same
-    // thing, so it must not crash the isolate.
+    // thing, so it must not take the isolate down.
     return;
   } finally {
-    await database?.close();
+    await database.close();
   }
 }
