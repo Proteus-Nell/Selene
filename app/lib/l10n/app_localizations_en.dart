@@ -700,6 +700,39 @@ class AppLocalizationsEn extends AppLocalizations {
       'An estimate from your cycle dates alone. This app cannot observe ovulation, and this must not be used to plan or avoid pregnancy.';
 
   @override
+  String get lockTitle => 'Locked';
+
+  @override
+  String get lockBody => 'Unlock to see your diary.';
+
+  @override
+  String get lockAction => 'Unlock';
+
+  @override
+  String get lockPromptReason => 'Unlock to see your diary';
+
+  @override
+  String get settingsSecuritySection => 'Security';
+
+  @override
+  String get settingsAppLock => 'Require unlock';
+
+  @override
+  String get settingsAppLockSubtitle =>
+      'Ask for your fingerprint, face, PIN or pattern before showing the app. It locks again after a minute in the background.';
+
+  @override
+  String get settingsAppLockNotEncrypted =>
+      'This hides the screen. It does not encrypt your data, which is stored unencrypted in the app\'s private storage either way.';
+
+  @override
+  String get settingsAppLockUnavailable =>
+      'Your device has no PIN, pattern, password or fingerprint set up, so there is nothing for the app to ask for. Set a screen lock in your device settings, then come back.';
+
+  @override
+  String get settingsAppLockNotSupported => 'This device cannot lock the app.';
+
+  @override
   String get reExportTitle => 'Make a fresh backup';
 
   @override

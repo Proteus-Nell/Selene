@@ -12,6 +12,8 @@ import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 import 'package:period_tracker/domain/predict/priors.dart';
 import 'package:period_tracker/domain/predict/priors_bundled.dart';
+import 'package:period_tracker/security/app_lock.dart';
+import 'package:period_tracker/security/lock_controller.dart';
 
 /// The open database.
 ///
@@ -109,6 +111,38 @@ final FutureProvider<List<ConditionOverlap>> conditionOverlapsProvider =
 /// simplified to graded on startup would look like it had discarded something.
 final StreamProvider<bool> flowSimplifiedProvider = StreamProvider<bool>(
   (ref) => ref.watch(appDatabaseProvider).settingsDao.watchFlowSimplified(),
+);
+
+/// Asks the device to prove who is holding it (AND-29).
+///
+/// Overridden in tests with a fake, so the gate's behaviour — the sixty-second
+/// grace period, the refusal path, the credential-removed path — is exercised
+/// headless rather than only on a device.
+final Provider<AppLockService> appLockServiceProvider =
+    Provider<AppLockService>(
+      (ref) => const LocalAuthService(),
+    );
+
+/// Holds the locked/unlocked state for the whole app.
+final Provider<LockController> lockControllerProvider =
+    Provider<LockController>(
+      (ref) {
+        final controller = LockController(
+          service: ref.watch(appLockServiceProvider),
+          clock: ref.watch(clockProvider),
+          isEnabled: ref
+              .watch(appDatabaseProvider)
+              .settingsDao
+              .readAppLockEnabled,
+        );
+        ref.onDispose(controller.dispose);
+        return controller;
+      },
+    );
+
+/// Whether the app requires an unlock before showing anything (AND-29).
+final StreamProvider<bool> appLockEnabledProvider = StreamProvider<bool>(
+  (ref) => ref.watch(appDatabaseProvider).settingsDao.watchAppLockEnabled(),
 );
 
 /// Whether the user still needs telling that their old backups will not

@@ -28,6 +28,7 @@ Widget harness(
   Brightness brightness = Brightness.light,
   TextScaler textScaler = TextScaler.noScaling,
   bool accessibleNavigation = false,
+  List<Override> overrides = const <Override>[],
 }) {
   final resolvedClock = clock ?? testClock;
   // The container is owned by the test rather than by a ProviderScope widget,
@@ -46,6 +47,9 @@ Widget harness(
         logger ?? RingLogger(clock: resolvedClock),
       ),
       quarantinedDatabaseProvider.overrideWithValue(null),
+      // Last, so a caller can replace any of the above. Added for the app lock,
+      // whose service is a platform channel and has to be faked per test.
+      ...overrides,
     ],
   );
   addTearDown(container.dispose);
