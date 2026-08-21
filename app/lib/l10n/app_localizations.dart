@@ -346,6 +346,18 @@ abstract class AppLocalizations {
   /// **'Heavy'**
   String get logFlowHeavy;
 
+  /// The 'yes' answer when the flow control is collapsed to a yes/no question. Answers 'is there bleeding today', so it reads as a state rather than as a bare Yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Bleeding'**
+  String get logBleedingYes;
+
+  /// No description provided for @logBleedingNo.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get logBleedingNo;
+
   /// No description provided for @logSymptomsTitle.
   ///
   /// In en, this message translates to:
@@ -1154,6 +1166,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A notification in the morning, the chosen number of days ahead.'**
   String get settingsReminderSubtitle;
+
+  /// No description provided for @settingsDisplaySection.
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get settingsDisplaySection;
+
+  /// No description provided for @settingsFlowSimplified.
+  ///
+  /// In en, this message translates to:
+  /// **'Simple flow'**
+  String get settingsFlowSimplified;
+
+  /// No description provided for @settingsFlowSimplifiedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record bleeding as yes or no, instead of choosing an intensity. Anything already recorded is kept, and comes back if you turn this off.'**
+  String get settingsFlowSimplifiedSubtitle;
 
   /// No description provided for @settingsPrivacySection.
   ///

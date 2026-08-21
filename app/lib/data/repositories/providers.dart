@@ -66,6 +66,16 @@ final StreamProvider<List<DayLog>> dayLogsProvider =
       (ref) => ref.watch(cycleRepositoryProvider).watchLogs(),
     );
 
+/// Whether the flow control is collapsed to bleeding yes/no (AND-24).
+///
+/// A stream, so that turning the toggle on in settings changes the day editor
+/// on the next frame rather than the next launch. The default while it loads is
+/// the stored default, which is the fuller control: a screen that flickers from
+/// simplified to graded on startup would look like it had discarded something.
+final StreamProvider<bool> flowSimplifiedProvider = StreamProvider<bool>(
+  (ref) => ref.watch(appDatabaseProvider).settingsDao.watchFlowSimplified(),
+);
+
 /// The current prediction, recomputed whenever the logs change.
 ///
 /// Depends on [dayLogsProvider] rather than being invalidated by hand at every

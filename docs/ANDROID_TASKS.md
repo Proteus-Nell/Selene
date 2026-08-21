@@ -1156,10 +1156,15 @@ symptom are a regression, not a feature.
 **Scope.** Settings toggle, `day_editor.dart`, `day_cell.dart`, calendar legend.
 
 **Done when.**
-- [ ] A settings toggle collapses the flow picker to bleeding yes/no
-- [ ] Recorded intensities are never modified; switching the toggle back reveals them unchanged, proven by a test
-- [ ] Exports keep intensity regardless of the toggle
-- [ ] A day logged while simplified records `medium`, and a test says why
+- [x] A settings toggle collapses the flow picker to bleeding yes/no
+- [x] Recorded intensities are never modified; switching the toggle back reveals them unchanged, proven by a test
+- [x] Exports keep intensity regardless of the toggle
+- [x] A day logged while simplified records `medium`, and a test says why
+
+**The calendar needed no change.** `DayCell` already renders bleeding as a
+binary — it reads `periodDayNumber`, which comes from the segmenter, and never
+shows an intensity — so the legend has nothing to collapse. Recorded here rather
+than left as a silently skipped line of scope.
 
 **The one thing to get right.** `Segmentation` reads only `isBleedingDay`, and
 `spotting` is deliberately **not** bleeding — mid-cycle spotting must not open a
