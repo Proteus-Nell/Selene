@@ -301,6 +301,11 @@ class _SymptomChip extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final chosen = await showModalBottomSheet<SymptomSeverity>(
       context: context,
+      // Short enough today that it never reaches the cutout, but set for the
+      // same reason as the other two: a sheet that grows later should not have
+      // to rediscover this.
+      useSafeArea: true,
+      showDragHandle: true,
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,

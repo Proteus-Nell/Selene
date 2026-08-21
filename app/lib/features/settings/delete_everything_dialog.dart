@@ -42,7 +42,26 @@ class _DeleteEverythingDialogState extends State<_DeleteEverythingDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final word = l10n.settingsDeleteConfirmWord;
+    // No `insetPadding` override here, deliberately. The obvious fix for a
+    // dialog under a cutout is to inset it by MediaQuery's view padding, and it
+    // is dead code: `showDialog` defaults to `useSafeArea: true`, so by the
+    // time this builder runs the cutout has already been consumed and both
+    // `paddingOf` and `viewPaddingOf` read zero. An override computed from them
+    // reproduces Material's default of 40 horizontal, 24 vertical exactly.
+    //
+    // What actually put this dialog under the cutout is below: it carries a
+    // text field, so the keyboard opens under it and the space left over is
+    // shorter than the dialog. An unscrollable dialog does not shrink to fit —
+    // it overflows its box in both directions and paints straight through the
+    // safe area, which is why the title appeared behind the camera.
     return AlertDialog(
+      // AlertDialog's own `scrollable`, not a SingleChildScrollView inside the
+      // content. The difference matters at a large text scale: a scroll view
+      // in the content still leaves the title and the actions to be laid out
+      // around it, and their combined height is what pushed the dialog past
+      // the top of the screen. `scrollable` puts the title in the scroll view
+      // too, so the whole dialog can shrink to fit.
+      scrollable: true,
       title: Text(l10n.settingsDeleteConfirmTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,

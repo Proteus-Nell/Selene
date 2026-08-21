@@ -42,6 +42,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      // The editor is tall enough to reach the top of the screen, and there the
+      // date heading lands under the status bar and the camera cutout. The
+      // route has to be kept inside the cutout; a SafeArea inside the sheet is
+      // too late, because the route has already claimed the full height.
+      useSafeArea: true,
+      showDragHandle: true,
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: EdgeInsets.only(
