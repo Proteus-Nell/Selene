@@ -10,7 +10,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Period Tracker';
+  String get appTitle => 'Selene';
 
   @override
   String get commonContinue => 'Continue';
@@ -521,7 +521,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'An occasional prompt if nothing has been logged for a while. Off unless you turn it on.';
 
   @override
-  String get notificationGenericTitle => 'Period Tracker';
+  String get notificationGenericTitle => 'Selene';
 
   @override
   String get notificationGenericBody =>
@@ -1147,7 +1147,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyNotEncryptedBody =>
-      'This is the honest limit of what \"private\" means here. Your data sits in this app\'s own storage, which other apps cannot read on a phone that has not been tampered with, and which Android\'s full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. There is no app lock in this version.';
+      'This is the honest limit of what \"private\" means here. Your data sits in this app\'s own storage, which other apps cannot read on a phone that has not been tampered with, and which Android\'s full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock does not encrypt anything: it covers the screen, not the file.';
 
   @override
   String get privacyBackupTitle => 'It is never backed up to the cloud';

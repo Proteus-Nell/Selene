@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
 
-  "appTitle": "Period Tracker",
+  "appTitle": "Selene",
   "@appTitle": {"description": "The app name, shown in the task switcher."},
 
   "commonContinue": "Continue",
@@ -189,7 +189,7 @@
   "notificationChannelPredictionsDescription": "When a period is expected, and when one looks late.",
   "notificationChannelReminders": "Logging reminders",
   "notificationChannelRemindersDescription": "An occasional prompt if nothing has been logged for a while. Off unless you turn it on.",
-  "notificationGenericTitle": "Period Tracker",
+  "notificationGenericTitle": "Selene",
   "notificationGenericBody": "Open the app to see what this is about.",
   "notificationWindowOpeningTitle": "A period is expected soon",
   "notificationWindowOpeningBody": "The predicted window runs from {start} to {end}.",
@@ -405,7 +405,7 @@
   "privacyOnDeviceTitle": "Everything stays on this phone",
   "privacyOnDeviceBody": "This app has no internet permission — a check on every release refuses to build one that asks for it. No account, no sync, no analytics, no crash reporting. Nothing leaves this device unless you export it.",
   "privacyNotEncryptedTitle": "The database is not encrypted",
-  "privacyNotEncryptedBody": "This is the honest limit of what \"private\" means here. Your data sits in this app's own storage, which other apps cannot read on a phone that has not been tampered with, and which Android's full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. There is no app lock in this version.",
+  "privacyNotEncryptedBody": "This is the honest limit of what \"private\" means here. Your data sits in this app's own storage, which other apps cannot read on a phone that has not been tampered with, and which Android's full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock does not encrypt anything: it covers the screen, not the file.",
   "privacyBackupTitle": "It is never backed up to the cloud",
   "privacyBackupBody": "Android's automatic backup is switched off for this app, so your cycle history is never copied to a Google account. If you lose the phone, the data is gone unless you exported it.",
   "privacyDeletionTitle": "Deleting really deletes",

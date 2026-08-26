@@ -97,7 +97,7 @@ abstract class AppLocalizations {
   /// The app name, shown in the task switcher.
   ///
   /// In en, this message translates to:
-  /// **'Period Tracker'**
+  /// **'Selene'**
   String get appTitle;
 
   /// No description provided for @commonContinue.
@@ -954,7 +954,7 @@ abstract class AppLocalizations {
   /// No description provided for @notificationGenericTitle.
   ///
   /// In en, this message translates to:
-  /// **'Period Tracker'**
+  /// **'Selene'**
   String get notificationGenericTitle;
 
   /// No description provided for @notificationGenericBody.
@@ -2016,7 +2016,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyNotEncryptedBody.
   ///
   /// In en, this message translates to:
-  /// **'This is the honest limit of what \"private\" means here. Your data sits in this app\'s own storage, which other apps cannot read on a phone that has not been tampered with, and which Android\'s full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. There is no app lock in this version.'**
+  /// **'This is the honest limit of what \"private\" means here. Your data sits in this app\'s own storage, which other apps cannot read on a phone that has not been tampered with, and which Android\'s full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock does not encrypt anything: it covers the screen, not the file.'**
   String get privacyNotEncryptedBody;
 
   /// No description provided for @privacyBackupTitle.

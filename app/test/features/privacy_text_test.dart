@@ -85,7 +85,9 @@ void main() {
     // ADR-0004 accepts an unencrypted database on the condition that the user
     // is told. This is that condition, checked.
     expect(doc, contains('plain text'));
-    expect(doc, contains('no app lock'));
+    // See settings_test.dart: AND-29 made "no app lock" false, and the honest
+    // limit it was standing for is now that the lock does not encrypt.
+    expect(doc, contains('does not encrypt'));
     expect(doc, contains('forensic'));
     // And the guarantee that is real is stated as such.
     expect(doc, contains('no internet permission'));

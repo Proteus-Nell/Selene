@@ -188,7 +188,12 @@ void main() {
       final text = l10n.privacyNotEncryptedBody.toLowerCase();
       expect(text, contains('plain text'));
       expect(text, contains('unlocked phone'));
-      expect(text, contains('no app lock'));
+      // Not "no app lock" any more. AND-29 built one, so that sentence had
+      // become false while this test went on passing — the assertion was
+      // pinning the words rather than the claim. The claim is that the app
+      // does not oversell what "private" buys, and the honest limit now is
+      // that the lock covers the screen and not the file.
+      expect(text, contains('does not encrypt'));
       // And it does not let the word "private" do work it has not earned.
       expect(l10n.privacyNotEncryptedTitle.toLowerCase(), contains('not '));
     });
