@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The dark halves of values/colors.xml (AND-34).
+
+     A launcher that follows the system theme picks the icon colours up from
+     here; one that does not keeps the light set, which is a complete and
+     correct icon either way. Nothing depends on the launcher honouring it. -->
+<resources>
+    <!-- AppColors.darkSurfaceContainer. -->
+    <color name="ic_launcher_background">#20221C</color>
+    <!-- AppColors.darkSecondary. -->
+    <color name="ic_launcher_logged">#F0B48D</color>
+    <!-- AppColors.darkPrimary. -->
+    <color name="ic_launcher_day">#AFCCB2</color>
+
+    <!-- AppColors.darkSurface. -->
+    <color name="splash_background">#161713</color>
+</resources>

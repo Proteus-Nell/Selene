@@ -16,7 +16,7 @@ is only defensible if the user is told about it.
 
 ### Everything stays on this phone
 
-This app has no internet permission. It is removed from the app's manifest, and an automated check on every release refuses to build an app that asks for it. There is no account, no sync, no analytics and no crash reporting. Nothing you record can leave this device unless you export it yourself.
+This app has no internet permission — a check on every release refuses to build one that asks for it. No account, no sync, no analytics, no crash reporting. Nothing leaves this device unless you export it.
 
 ### The database is not encrypted
 
@@ -24,7 +24,7 @@ This is the honest limit of what "private" means here. Your data sits in this ap
 
 ### It is never backed up to the cloud
 
-Android's automatic backup is switched off for this app, so your cycle history is never copied to a Google account. The consequence is that if you lose the phone, the data is gone unless you exported it.
+Android's automatic backup is switched off for this app, so your cycle history is never copied to a Google account. If you lose the phone, the data is gone unless you exported it.
 
 ### Deleting really deletes
 

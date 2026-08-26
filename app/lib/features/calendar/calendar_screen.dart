@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/core/motion.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/domain/cycles/cycle_phase.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
@@ -37,6 +38,18 @@ class CalendarScreen extends ConsumerStatefulWidget {
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   int _monthOffset = 0;
+
+  /// Which way the last month change went: 1 forward, -1 back.
+  ///
+  /// Kept so the grid can leave in the direction it was pushed. A transition
+  /// that always came from the same side would say nothing about which way the
+  /// user is travelling, which is the only thing it is there to say.
+  int _direction = 1;
+
+  void _stepMonth(int by) => setState(() {
+    _direction = by;
+    _monthOffset += by;
+  });
 
   Future<void> _edit(CivilDate date, DayLog? existing) async {
     await showModalBottomSheet<void>(
@@ -140,7 +153,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             Row(
               children: <Widget>[
                 IconButton(
-                  onPressed: () => setState(() => _monthOffset -= 1),
+                  onPressed: () => _stepMonth(-1),
                   icon: const Icon(Icons.chevron_left),
                   tooltip: l10n.calendarPreviousMonth,
                 ),
@@ -152,19 +165,44 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => setState(() => _monthOffset += 1),
+                  onPressed: () => _stepMonth(1),
                   icon: const Icon(Icons.chevron_right),
                   tooltip: l10n.calendarNextMonth,
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            _MonthGrid(
-              month: month,
-              today: today,
-              logs: logs,
-              predicted: window,
-              onEdit: _edit,
+            // The grid travels; the row above it does not. A header that slid
+            // with the grid would take the two chevrons out from under the
+            // finger that is stepping through months, which is the one gesture
+            // this screen is built around (AND-34).
+            AnimatedSwitcher(
+              duration: Motion.monthSlide(context),
+              switchInCurve: Motion.curve,
+              switchOutCurve: Motion.curve,
+              transitionBuilder: (child, animation) {
+                final entering =
+                    (child.key as ValueKey<int>?)?.value == _monthOffset;
+                // The month arriving comes from the side it was pushed from;
+                // the one leaving goes the other way, so the pair reads as one
+                // movement rather than two.
+                final from = entering ? _direction : -_direction;
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: Offset(from.toDouble(), 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: FadeTransition(opacity: animation, child: child),
+                );
+              },
+              child: _MonthGrid(
+                key: ValueKey<int>(_monthOffset),
+                month: month,
+                today: today,
+                logs: logs,
+                predicted: window,
+                onEdit: _edit,
+              ),
             ),
             const SizedBox(height: 16),
             // Above the legend, because it answers the question the user came
@@ -251,6 +289,7 @@ class _MonthGrid extends StatelessWidget {
     required this.logs,
     required this.predicted,
     required this.onEdit,
+    super.key,
   });
 
   final CivilDate month;

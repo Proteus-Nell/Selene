@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/core/clock.dart';
@@ -122,3 +125,35 @@ Future<CivilDate> seedHistory(
 
 /// A fresh in-memory database.
 AppDatabase memoryDatabase() => AppDatabase(NativeDatabase.memory());
+
+/// Registers the bundled Figtree faces with the engine, for this test file.
+///
+/// `flutter test` does not load the fonts declared in pubspec.yaml. Anything
+/// asking for a family it does not know gets Ahem, whose glyphs are solid
+/// rectangles — so without this the goldens are pages of black bars, and a
+/// change that halved the line height would not move a pixel of them.
+///
+/// **Called only from the golden tests, deliberately.** It is tempting to put
+/// this in a `flutter_test_config.dart` and have the whole suite render the
+/// real typeface, and that breaks `a11y_test.dart` — not because the app is
+/// wrong but because of how `textContrastGuideline` measures. It takes the
+/// pixels under a semantics node, splits them into a light group and a dark
+/// group, and compares the *most frequent* colour in each. Ahem's fat solid
+/// glyphs make the text the mode of the dark group, so the ratio it reports is
+/// the one between the two theme tokens, which is the thing worth asserting.
+/// Real text at 14px is thin and anti-aliased: its edge pixels outnumber its
+/// cores, and on a selected chip the mode of the light group came back as the
+/// 1px *border* and the mode of the dark group as the *fill*. It reported
+/// 3.75:1 for a pair that is 9.66:1, having never sampled a glyph.
+///
+/// So the two are measuring different things and both are worth having. The
+/// goldens show what the app looks like; `a11y_test.dart` and `theme_test.dart`
+/// hold the colour pairs, on a font whose pixels are unambiguous.
+Future<void> loadBundledFonts() async {
+  final figtree = FontLoader('Figtree');
+  for (final weight in const <int>[400, 500, 600, 700]) {
+    final bytes = File('assets/fonts/Figtree-$weight.ttf').readAsBytesSync();
+    figtree.addFont(Future<ByteData>.value(ByteData.sublistView(bytes)));
+  }
+  await figtree.load();
+}

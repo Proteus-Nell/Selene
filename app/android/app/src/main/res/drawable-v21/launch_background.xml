@@ -1,12 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- The API 21+ copy of drawable/launch_background.xml, and the one that
+     actually applies on every device this app supports. It used to read
+     ?android:colorBackground, which is the OEM's idea of a background rather
+     than this app's: on a device whose system theme is white, launching flashed
+     white and then settled onto AppColors.lightSurface. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="?android:colorBackground" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+    <item android:drawable="@color/splash_background" />
 </layer-list>

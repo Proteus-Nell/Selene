@@ -8,67 +8,69 @@ import 'package:flutter/material.dart';
 /// painful. `theme_test.dart` recomputes every ratio from these constants, so a
 /// colour cannot be nudged without the suite noticing.
 ///
-/// It is deliberately quiet: muted, low-saturation, no pink-for-girls
-/// shorthand. This is a health record, and it is read by people whose
-/// relationship with the subject is not always a cheerful one
-/// (`docs/PLAN.md` 6.3).
+/// It is deliberately quiet: sage green and a muted apricot, low-saturation,
+/// nothing pink and nothing that reads as a mood. There is no pink-for-girls
+/// shorthand here, and since AND-34 there is no pink at all — the hue was the
+/// last thing in the app still deciding what its reader is. This is a health
+/// record, and it is read by people whose relationship with the subject is not
+/// always a cheerful one (`docs/PLAN.md` 6.3).
 abstract final class AppColors {
   /// Background behind everything, light theme.
-  static const Color lightSurface = Color(0xFFFFF8F8);
+  static const Color lightSurface = Color(0xFFF7F7F1);
 
   /// Body text and icons on [lightSurface].
-  static const Color lightOnSurface = Color(0xFF1B1B1F);
+  static const Color lightOnSurface = Color(0xFF22261F);
 
   /// Raised surfaces such as cards, light theme.
-  static const Color lightSurfaceContainer = Color(0xFFF4E7E8);
+  static const Color lightSurfaceContainer = Color(0xFFE4EBDF);
 
   /// Secondary text, light theme.
-  static const Color lightOnSurfaceVariant = Color(0xFF4A4448);
+  static const Color lightOnSurfaceVariant = Color(0xFF474E44);
 
   /// Primary action colour, light theme.
-  static const Color lightPrimary = Color(0xFF8E2C4A);
+  static const Color lightPrimary = Color(0xFF3F6146);
 
   /// Text on [lightPrimary].
   static const Color lightOnPrimary = Color(0xFFFFFFFF);
 
   /// Secondary accent, used for the predicted window.
-  static const Color lightSecondary = Color(0xFF3D5464);
+  static const Color lightSecondary = Color(0xFF985331);
 
   /// Text on [lightSecondary].
   static const Color lightOnSecondary = Color(0xFFFFFFFF);
 
   /// Error colour, light theme.
-  static const Color lightError = Color(0xFFA3170F);
+  static const Color lightError = Color(0xFF9A2F2A);
 
   /// Text on [lightError].
   static const Color lightOnError = Color(0xFFFFFFFF);
 
   /// Borders and dividers, light theme.
-  static const Color lightOutline = Color(0xFF6F6569);
+  static const Color lightOutline = Color(0xFF666D62);
 
   /// Background behind everything, dark theme.
-  static const Color darkSurface = Color(0xFF131316);
+  static const Color darkSurface = Color(0xFF161713);
 
   /// Body text and icons on [darkSurface].
-  static const Color darkOnSurface = Color(0xFFE7E1E4);
+  static const Color darkOnSurface = Color(0xFFE5E7E0);
 
   /// Raised surfaces such as cards, dark theme.
-  static const Color darkSurfaceContainer = Color(0xFF1F1D20);
+  static const Color darkSurfaceContainer = Color(0xFF20221C);
 
   /// Secondary text, dark theme.
-  static const Color darkOnSurfaceVariant = Color(0xFFCFC7CB);
+  static const Color darkOnSurfaceVariant = Color(0xFFC2C6BC);
 
   /// Primary action colour, dark theme.
-  static const Color darkPrimary = Color(0xFFFFB1C2);
+  static const Color darkPrimary = Color(0xFFAFCCB2);
 
   /// Text on [darkPrimary].
-  static const Color darkOnPrimary = Color(0xFF5B1130);
+  static const Color darkOnPrimary = Color(0xFF17321D);
 
   /// Secondary accent, dark theme.
-  static const Color darkSecondary = Color(0xFFA9CBE3);
+  static const Color darkSecondary = Color(0xFFF0B48D);
 
   /// Text on [darkSecondary].
-  static const Color darkOnSecondary = Color(0xFF0F2C3D);
+  static const Color darkOnSecondary = Color(0xFF4C2609);
 
   /// Error colour, dark theme.
   static const Color darkError = Color(0xFFFFB4AB);
@@ -77,7 +79,7 @@ abstract final class AppColors {
   static const Color darkOnError = Color(0xFF690005);
 
   /// Borders and dividers, dark theme.
-  static const Color darkOutline = Color(0xFF9A9095);
+  static const Color darkOutline = Color(0xFF8D9189);
 }
 
 /// Builds the app's [ThemeData].
@@ -127,7 +129,19 @@ abstract final class AppTheme {
   );
 
   static ThemeData _build(ColorScheme scheme) {
-    final base = ThemeData(colorScheme: scheme, useMaterial3: true);
+    final base = ThemeData(
+      colorScheme: scheme,
+      useMaterial3: true,
+      // Bundled rather than fetched (`assets/fonts/`, AND-34). Roboto is not
+      // the same shape on every Android skin, and a health record that reflows
+      // differently on someone else's phone is a layout nobody has tested.
+      //
+      // Google Fonts' **latin subset**, 222 codepoints, which covers every
+      // character in `app_en.arb` — `fonts_test.dart` re-checks that rather
+      // than trusting it. A non-English locale would need a wider subset, and
+      // that is the moment to notice, not after the strings are translated.
+      fontFamily: 'Figtree',
+    );
     return base.copyWith(
       scaffoldBackgroundColor: scheme.surface,
       // Every interactive default is pushed to the 48dp floor here rather than
@@ -170,11 +184,20 @@ abstract final class AppTheme {
         // argument for having the test at all, because nothing about the
         // rendered chip looked wrong. Keeping one label colour for both states
         // means there is only one ratio to get right.
-        showCheckmark: true,
+        //
+        // The checkmark is still there and is still what carries the state
+        // without colour — it is drawn by `ChipMotion` rather than by Material
+        // (AND-34). Material's own opens a drawer the width of the chip's
+        // height when a chip is selected, so the row reflows under the finger,
+        // and it rides a fixed 195ms animation that "remove animations" never
+        // reaches. `ChipMotion` reserves the slot up front and fades the mark
+        // over `Motion.quick`. `motion_test.dart` fails if a selectable chip
+        // is built outside it, because with this false an unwrapped one would
+        // have no checkmark at all.
+        showCheckmark: false,
         side: BorderSide(color: scheme.outline),
         selectedColor: scheme.primary.withValues(alpha: 0.18),
         secondarySelectedColor: scheme.primary.withValues(alpha: 0.18),
-        checkmarkColor: scheme.onSurface,
         labelStyle: base.textTheme.labelLarge?.copyWith(
           color: scheme.onSurface,
         ),

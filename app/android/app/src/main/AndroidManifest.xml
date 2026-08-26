@@ -29,8 +29,17 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" tools:node="remove" />
 
+    <!-- "Project Selene" rather than "Period Tracker" (AND-34). What the
+         launcher shows is readable by anyone who picks up the phone or looks
+         over a shoulder at a home screen, and this app's whole premise is that
+         what it stores is nobody else's business (ADR-0004, PLAN 6.1). The
+         name is neutral without being a lie about what the app is: it is
+         plainly this app's name once it is open.
+
+         NOTE: the task switcher still reads "Period Tracker", from appTitle in
+         app_en.arb, which is a separate string. -->
     <application
-        android:label="period_tracker"
+        android:label="Project Selene"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"

@@ -44,6 +44,9 @@ Finder inGrid(Finder matching) =>
 void main() {
   late AppDatabase db;
 
+  // The real typeface, so these capture what the app looks like
+  // rather than a page of Ahem blocks. See loadBundledFonts.
+  setUpAll(loadBundledFonts);
   setUp(() => db = memoryDatabase());
   tearDown(() => db.close());
 

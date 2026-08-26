@@ -181,7 +181,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingIntro.
   ///
   /// In en, this message translates to:
-  /// **'This app records your cycle on this device and predicts when your next period is likely to start. Everything stays on the phone: it has no internet permission at all, so nothing can be sent anywhere.'**
+  /// **'This app records your cycle on this device and predicts when your next period is likely to start. It has no internet permission, so nothing can be sent anywhere.'**
   String get onboardingIntro;
 
   /// No description provided for @onboardingWhatItIsNotTitle.
@@ -205,13 +205,13 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingNotDiagnostic.
   ///
   /// In en, this message translates to:
-  /// **'It cannot diagnose anything. It sees only the dates you record, so it knows nothing about contraception you take, pregnancy, medication, illness or stress.'**
+  /// **'It cannot diagnose anything. It sees only the dates you record — nothing about contraception you take, pregnancy, medication, illness or stress.'**
   String get onboardingNotDiagnostic;
 
   /// No description provided for @onboardingAlwaysARange.
   ///
   /// In en, this message translates to:
-  /// **'Predictions are always a range of days, never a single date. Cycles vary, and a single date would claim a precision this app does not have.'**
+  /// **'Predictions are always a range of days, never a single date. Cycles vary, and one date would claim a precision this app does not have.'**
   String get onboardingAlwaysARange;
 
   /// No description provided for @onboardingAcknowledge.
@@ -409,7 +409,7 @@ abstract class AppLocalizations {
   /// Shown during onboarding, before the user has recorded anything. It names the most sensitive field the app holds rather than letting them find it themselves, and points at the app lock in the same breath.
   ///
   /// In en, this message translates to:
-  /// **'You can optionally record intercourse, and whether it was protected. It is the most sensitive thing this app stores. It never leaves your device, it is never used to predict anything, and you never have to record it. If you want the app to ask for your fingerprint or PIN before showing anything, turn on the app lock in settings.'**
+  /// **'You can record intercourse, and whether it was protected. It is the most sensitive thing stored here: it never leaves your device, is never used to predict anything, and is never required. The app lock in settings can ask for your fingerprint or PIN before anything shows.'**
   String get onboardingSensitiveBody;
 
   /// Heading over the symptoms felt in the body.
@@ -673,7 +673,7 @@ abstract class AppLocalizations {
   /// No description provided for @calendarLongPressHint.
   ///
   /// In en, this message translates to:
-  /// **'Press and hold any day to change it.'**
+  /// **'Hold any day to change it.'**
   String get calendarLongPressHint;
 
   /// No description provided for @insightsTitle.
@@ -745,7 +745,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsNotPersonalisedYet.
   ///
   /// In en, this message translates to:
-  /// **'Based on typical cycles rather than yours. It will use your own figures once you have logged {count} cycles.'**
+  /// **'Based on typical cycles rather than yours. Your own figures take over after {count} cycles.'**
   String insightsNotPersonalisedYet(int count);
 
   /// No description provided for @insightsNoDataTitle.
@@ -757,7 +757,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsNoDataBody.
   ///
   /// In en, this message translates to:
-  /// **'Log the day your last period started and this screen will start filling in. Typical cycles run about 29 days, but yours are what matter here.'**
+  /// **'Log the day your last period started and this screen fills in. Typical cycles run about 29 days, but yours are what matter here.'**
   String get insightsNoDataBody;
 
   /// No description provided for @insightsTooIrregularTitle.
@@ -769,7 +769,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsTooIrregularBody.
   ///
   /// In en, this message translates to:
-  /// **'That is information, not a failure, and it is worth showing a clinician. Your own figures are below, and logging more will keep them sharp.'**
+  /// **'That is information, not a failure — and worth showing a clinician. Your figures are below; logging more keeps them sharp.'**
   String get insightsTooIrregularBody;
 
   /// No description provided for @insightsLostTrackTitle.
@@ -781,7 +781,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsLostTrackBody.
   ///
   /// In en, this message translates to:
-  /// **'Nothing has been logged for {days} days, so this app has lost the thread rather than guess. Log a day and it will pick up again.'**
+  /// **'Nothing logged for {days} days, so this app has lost the thread rather than guess. Log a day and it picks up again.'**
   String insightsLostTrackBody(int days);
 
   /// No description provided for @insightsInconsistentTitle.
@@ -912,7 +912,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsTrackRecordNotYet.
   ///
   /// In en, this message translates to:
-  /// **'Once you have logged a few more cycles, this app will show you how accurate its own predictions have been.'**
+  /// **'After a few more cycles, this app will show how accurate its own predictions have been.'**
   String get insightsTrackRecordNotYet;
 
   /// No description provided for @insightsTrackRecordExplain.
@@ -1056,7 +1056,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsBatteryNoteBody.
   ///
   /// In en, this message translates to:
-  /// **'Some phones stop scheduled reminders to save battery. If reminders stop arriving, allow this app to run in the background in the system battery settings.'**
+  /// **'Some phones stop scheduled reminders to save battery. If yours stop arriving, allow this app to run in the background in your battery settings.'**
   String get settingsBatteryNoteBody;
 
   /// No description provided for @settingsNotificationPermissionTitle.
@@ -1068,7 +1068,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsNotificationPermissionBody.
   ///
   /// In en, this message translates to:
-  /// **'Now that you have logged a cycle, this app can remind you before the next one is expected. You can change this at any time.'**
+  /// **'Now that you have logged a cycle, this app can remind you before the next one is expected. Change it any time.'**
   String get settingsNotificationPermissionBody;
 
   /// No description provided for @settingsNotificationPermissionAllow.
@@ -1224,7 +1224,7 @@ abstract class AppLocalizations {
   /// Shown instead of a predicted window. Says what to do to get predictions back, and says the history is still there, so the state does not read as data loss.
   ///
   /// In en, this message translates to:
-  /// **'Your cycles are below, and nothing has been deleted. Add an end date to the pregnancy on the conditions screen and predictions will start again.'**
+  /// **'Your cycles are below, and nothing has been deleted. Add an end date to the pregnancy on the conditions screen and predictions start again.'**
   String get insightsSuppressedPregnancyBody;
 
   /// No description provided for @calendarPhaseDay.
@@ -1260,7 +1260,7 @@ abstract class AppLocalizations {
   /// No description provided for @calendarPhaseFollicularExplained.
   ///
   /// In en, this message translates to:
-  /// **'The stretch after your period ends. Its length is where most of the variation between cycles sits, so it is the part this app is least certain about.'**
+  /// **'The stretch after your period ends. Most of the variation between cycles sits here, which makes it the part this app is least certain about.'**
   String get calendarPhaseFollicularExplained;
 
   /// No description provided for @calendarPhaseLutealExplained.
@@ -1344,7 +1344,7 @@ abstract class AppLocalizations {
   /// Replaces the toggle when no credential is enrolled. Names the fix, which is in the device settings and not in this app.
   ///
   /// In en, this message translates to:
-  /// **'Your device has no PIN, pattern, password or fingerprint set up, so there is nothing for the app to ask for. Set a screen lock in your device settings, then come back.'**
+  /// **'Your device has no PIN, pattern, password or fingerprint set up, so there is nothing to ask for. Set a screen lock in your device settings, then come back.'**
   String get settingsAppLockUnavailable;
 
   /// No description provided for @settingsAppLockNotSupported.
@@ -1362,7 +1362,7 @@ abstract class AppLocalizations {
   /// Shown once, after updating from a build that wrote the old export format. It must say plainly that old files will not restore and that nothing in the app has been lost — a user who reads only the first sentence must not conclude their history is gone.
   ///
   /// In en, this message translates to:
-  /// **'This update changed the backup format. Any backup file you saved before now can no longer be restored by the app, so it is worth exporting again. Your data in the app is untouched.'**
+  /// **'This update changed the backup format. Files you saved before now can no longer be restored, so it is worth exporting again. Your data in the app is untouched.'**
   String get reExportBody;
 
   /// No description provided for @reExportAction.
@@ -1434,7 +1434,7 @@ abstract class AppLocalizations {
   /// Shown when the openFDA artifact has not been fetched. Says so plainly rather than rendering an empty list, which reads as a broken screen.
   ///
   /// In en, this message translates to:
-  /// **'The medicines reference has not been built into this version of the app. The other sections still work.'**
+  /// **'The medicines reference is not built into this version. The other sections still work.'**
   String get lookupMedicinesUnavailable;
 
   /// No description provided for @lookupSectionPurpose.
@@ -1482,7 +1482,7 @@ abstract class AppLocalizations {
   /// No description provided for @lookupSearchOnlineBody.
   ///
   /// In en, this message translates to:
-  /// **'This app has no internet access at all, so it cannot look anything up for you. It can open your browser instead.'**
+  /// **'This app has no internet access, so it cannot look anything up for you. It can open your browser instead.'**
   String get lookupSearchOnlineBody;
 
   /// No description provided for @lookupSearchOnlineAction.
@@ -1500,7 +1500,7 @@ abstract class AppLocalizations {
   /// The confirmation before a browser hand-off. It has to be specific about what changes: this app makes no requests, the browser does, and the browser remembers.
   ///
   /// In en, this message translates to:
-  /// **'Your browser will make the request, not this app. That means the search leaves your device, and your browser will normally keep it in its history and may sync it to other devices you are signed in on.'**
+  /// **'Your browser will make the request, not this app. The search leaves your device, and your browser normally keeps it in its history and may sync it to other devices you are signed in on.'**
   String get lookupLeavingBody;
 
   /// Shown only when a term is pre-filled. Naming the term back to the user is the point — a hand-off that silently carries a drug name into browser history is the thing this warning exists to prevent.
@@ -1896,7 +1896,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsFlowSimplifiedSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Record bleeding as yes or no, instead of choosing an intensity. Anything already recorded is kept, and comes back if you turn this off.'**
+  /// **'Record bleeding as yes or no rather than an intensity. Anything already recorded is kept, and comes back if you turn this off.'**
   String get settingsFlowSimplifiedSubtitle;
 
   /// No description provided for @settingsCyclePhases.
@@ -1944,7 +1944,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsLogViewerSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Everything this app records about its own behaviour. Read it: there are no dates or symptoms in here.'**
+  /// **'Everything this app records about itself. Read it: there are no dates or symptoms in here.'**
   String get settingsLogViewerSubtitle;
 
   /// No description provided for @settingsLogViewerEmpty.
@@ -2004,7 +2004,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyOnDeviceBody.
   ///
   /// In en, this message translates to:
-  /// **'This app has no internet permission. It is removed from the app\'s manifest, and an automated check on every release refuses to build an app that asks for it. There is no account, no sync, no analytics and no crash reporting. Nothing you record can leave this device unless you export it yourself.'**
+  /// **'This app has no internet permission — a check on every release refuses to build one that asks for it. No account, no sync, no analytics, no crash reporting. Nothing leaves this device unless you export it.'**
   String get privacyOnDeviceBody;
 
   /// No description provided for @privacyNotEncryptedTitle.
@@ -2028,7 +2028,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyBackupBody.
   ///
   /// In en, this message translates to:
-  /// **'Android\'s automatic backup is switched off for this app, so your cycle history is never copied to a Google account. The consequence is that if you lose the phone, the data is gone unless you exported it.'**
+  /// **'Android\'s automatic backup is switched off for this app, so your cycle history is never copied to a Google account. If you lose the phone, the data is gone unless you exported it.'**
   String get privacyBackupBody;
 
   /// No description provided for @privacyDeletionTitle.
@@ -2076,7 +2076,7 @@ abstract class AppLocalizations {
   /// No description provided for @bootstrapRecoveredBody.
   ///
   /// In en, this message translates to:
-  /// **'The stored file was damaged, so this app started with an empty one. The damaged file has been kept next to it and has not been deleted. If you have a backup, restoring it now is the best way forward.'**
+  /// **'The stored file was damaged, so this app started with an empty one. The damaged file has been kept, not deleted. If you have a backup, restoring it now is the best way forward.'**
   String get bootstrapRecoveredBody;
 
   /// No description provided for @bootstrapRecoveredAction.

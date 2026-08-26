@@ -5,6 +5,7 @@ import 'package:period_tracker/data/repositories/cycle_repository.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/domain/cycles/cycle_rules.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
+import 'package:period_tracker/features/common/chip_motion.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/log/day_editor.dart';
@@ -235,20 +236,24 @@ class _DaySelector extends StatelessWidget {
       runSpacing: 8,
       children: <Widget>[
         for (final offset in offsets)
-          ChoiceChip(
+          ChipMotion(
             selected: selected == offset,
-            onSelected: (_) => onSelected(offset),
-            // The date is in the label, not only the relative wording, so the
-            // announcement is unambiguous when the phone has been sitting
-            // unopened over midnight.
-            label: Text(
-              switch (offset) {
-                0 => l10n.logDayToday,
-                1 => l10n.logDayYesterday,
-                _ => l10n.logDaysAgo(offset),
-              },
+            builder: (context, checkSlot) => ChoiceChip(
+              avatar: checkSlot,
+              selected: selected == offset,
+              onSelected: (_) => onSelected(offset),
+              // The date is in the label, not only the relative wording, so the
+              // announcement is unambiguous when the phone has been sitting
+              // unopened over midnight.
+              label: Text(
+                switch (offset) {
+                  0 => l10n.logDayToday,
+                  1 => l10n.logDayYesterday,
+                  _ => l10n.logDaysAgo(offset),
+                },
+              ),
+              tooltip: today.addDays(-offset).full(context),
             ),
-            tooltip: today.addDays(-offset).full(context),
           ),
       ],
     );
