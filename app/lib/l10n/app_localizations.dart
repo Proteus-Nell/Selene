@@ -1827,6 +1827,144 @@ abstract class AppLocalizations {
   /// **'How body fat, energy availability, insulin and thyroid function interact with the cycle.'**
   String get weightEntrySubtitle;
 
+  /// No description provided for @movementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pain and movement across the cycle'**
+  String get movementTitle;
+
+  /// The framing sentence for the whole screen. It has to establish that the page is reference text about a subject, not addressed to the reader and not a plan, before anything else is named.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference notes on period pain, on what movement does and does not do about it, and on how much of the popular advice on the subject the evidence actually supports. This is background reading, not advice, and it describes what is known rather than any particular body. Nothing on this page is drawn from anything logged in this app.'**
+  String get movementIntro;
+
+  /// Sits directly under the intro. The reader most likely to be harmed by this subject is the one who arrives expecting to be told what to do, and the first thing the section says is that it is not going to.
+  ///
+  /// In en, this message translates to:
+  /// **'This app records no exercise and asks for none. There is nothing to enter here and no plan on this page to follow, so there is nothing on it to keep up with or to fall behind.'**
+  String get movementNothingToFollowBody;
+
+  /// No description provided for @movementPainTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What period pain is'**
+  String get movementPainTitle;
+
+  /// No description provided for @movementPainBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Painful menstruation with no underlying disorder behind it is called primary dysmenorrhoea. The pain is typically cramping, felt low in the abdomen, strongest around the start of bleeding and easing over the following days. Prostaglandins released from the lining of the uterus drive the contractions that produce it. Where there is an underlying cause — endometriosis, adenomyosis and uterine fibroids are among the recognised ones — the term is secondary dysmenorrhoea.'**
+  String get movementPainBody;
+
+  /// No description provided for @movementNotAvoidedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A period is not a reason to stop moving'**
+  String get movementNotAvoidedTitle;
+
+  /// The correction this section exists for. The popular version of this subject says the opposite, and a cycle app repeating it would be telling people to stop doing something that helps them.
+  ///
+  /// In en, this message translates to:
+  /// **'Menstruation is not named anywhere in the sources behind this page as a reason to stop, and general physical activity guidance makes no exception for the days of a period. Clinical guidance on period pain goes further than that and lists exercise among the measures that may help with it.'**
+  String get movementNotAvoidedBody;
+
+  /// Must not be strengthened. "Low quality evidence that exercise may reduce pain" is weaker than "exercise helps period pain" and it is the true one.
+  ///
+  /// In en, this message translates to:
+  /// **'A Cochrane review of exercise for period pain found that exercise may reduce how intense the pain is, on evidence the reviewers themselves rated as low quality. That is a modest finding and it is stated here at its real strength rather than at a more useful one. What it supports is only this: the direction of the evidence runs towards movement helping with cramps rather than making them worse.'**
+  String get movementEvidenceBody;
+
+  /// No description provided for @movementHowItFeelsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What changes is how it feels'**
+  String get movementHowItFeelsTitle;
+
+  /// No description provided for @movementHowItFeelsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'What varies across a cycle is the experience of moving, not what is permitted. Cramping pain around the start of bleeding, tiredness and low energy in the days before and during it, and how hard a given effort seems on the day are all part of that. The variation is wide between people and between one cycle and the next in the same person, which is why none of it turns into a rule.'**
+  String get movementHowItFeelsBody;
+
+  /// No description provided for @movementRestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Doing less is allowed'**
+  String get movementRestTitle;
+
+  /// Permission, never instruction. The requested version of this section was an instruction to rest, which is the same category error as an exercise prescription and is stated here as one.
+  ///
+  /// In en, this message translates to:
+  /// **'Doing less, or nothing at all, on a day when that is what is wanted is a reasonable choice and not a lapse. That is a permission rather than an instruction, and the difference is the whole point: an instruction to rest is the same mistake as an instruction to push, only kinder. Nothing on this page asks for more and nothing on it asks for less.'**
+  String get movementRestBody;
+
+  /// No description provided for @movementStopSignalsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Signals to stop'**
+  String get movementStopSignalsTitle;
+
+  /// No description provided for @movementStopSignalsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Some things are reasons to stop rather than to carry on. Feeling faint or light-headed during exertion, breathlessness out of proportion to the effort, and chest pain are among them, and each of those is a reason to get it looked at rather than to push on. None of this is particular to menstruation; it holds whenever it happens.'**
+  String get movementStopSignalsBody;
+
+  /// The same claim the iron section makes, cited to the same sources in MOVEMENT_SOURCES.md and NUTRITION_SOURCES.md so the two cannot drift. It is here because it explains a hard day without blaming the cycle for it.
+  ///
+  /// In en, this message translates to:
+  /// **'There is also a recognised reason why exertion can feel harder around heavy periods, and it is not that a cycle makes movement unwise. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia, whose commonly listed symptoms include tiredness, lack of energy and shortness of breath. Iron deficiency is confirmed by a blood test rather than by how a day felt, and it is worth taking to a doctor or nurse rather than working around.'**
+  String get movementAnaemiaBody;
+
+  /// No description provided for @movementPhaseClaimsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Planning exercise around cycle phase'**
+  String get movementPhaseClaimsTitle;
+
+  /// Says outright that the evidence is weak rather than quietly declining to use it. A reference that handed someone a prescription built on evidence this thin would be worse than one that says how thin it is.
+  ///
+  /// In en, this message translates to:
+  /// **'Schemes that assign different kinds of exercise to different parts of the cycle are widely promoted. The evidence underneath them is weak. Systematic review of cycle phase and exercise performance describes that research as low quality and inconsistent, with average effects that are trivial and with differences between individuals larger than the effect being looked for. No clinical guidance in the sources behind this page recommends planning exercise around cycle phase, and none says the chance of injury rises or falls with it.'**
+  String get movementPhaseClaimsBody;
+
+  /// No description provided for @movementContraceptionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Hormonal contraception is a further reason those schemes do not carry across. Combined hormonal contraception works by suppressing ovulation, so the rise and fall of oestrogen and progesterone that a phase-based scheme assumes is not what is going on underneath. A scheme built on phases, applied where those phases are not occurring, has nothing left to stand on.'**
+  String get movementContraceptionBody;
+
+  /// No description provided for @movementSeeSomeoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pain worth taking to someone'**
+  String get movementSeeSomeoneTitle;
+
+  /// The last thing on the screen, pointing at a person. Deliberately carries no threshold and no pain scale: both are numbers, and a number here is something to be talked out of by.
+  ///
+  /// In en, this message translates to:
+  /// **'Period pain that is severe, that is getting worse, that the usual measures do not ease, or that gets in the way of ordinary days is a reason to see a doctor or nurse. So is pain that began later in life, changed in character, or arrives alongside other symptoms — the causes named above are found by assessment rather than by tracking dates. No threshold is set out here and no scale, on purpose: a score is a thing to be argued down by, and nothing in this app could tell one cause of pain from another in any case.'**
+  String get movementSeeSomeoneBody;
+
+  /// No description provided for @movementSourcesNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Every claim on this page is listed with its source in MOVEMENT_SOURCES.md in the app\'s source repository.'**
+  String get movementSourcesNote;
+
+  /// No description provided for @movementEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pain and movement across the cycle'**
+  String get movementEntryTitle;
+
+  /// No description provided for @movementEntrySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What exercise does about period pain, how little supports planning it by cycle phase, and what is a reason to stop.'**
+  String get movementEntrySubtitle;
+
   /// No description provided for @conditionsTitle.
   ///
   /// In en, this message translates to:

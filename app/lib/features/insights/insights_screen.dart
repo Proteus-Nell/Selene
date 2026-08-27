@@ -10,6 +10,7 @@ import 'package:period_tracker/features/common/card_entrance.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/common/next_period_panel.dart';
 import 'package:period_tracker/features/insights/cycle_length_chart.dart';
+import 'package:period_tracker/features/movement/movement_screen.dart';
 import 'package:period_tracker/features/weight/weight_hormones_screen.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
@@ -82,11 +83,14 @@ class InsightsScreen extends ConsumerWidget {
             const SizedBox(height: 24),
             const CardEntrance(index: 4, child: _TrackRecordCard()),
             const SizedBox(height: 24),
-            // Last, deliberately. Everything above is this user's own data;
-            // the reference is general reading that happens to be shown to
-            // someone tracking a cycle, and putting it higher would make it
-            // look like a response to the figures above it (AND-35).
+            // Last, deliberately, and both of them. Everything above is this
+            // user's own data; the references are general reading that happens
+            // to be shown to someone tracking a cycle, and putting either
+            // higher would make it look like a response to the figures above
+            // it (AND-35, AND-36).
             const CardEntrance(index: 5, child: _WeightReferenceLink()),
+            const SizedBox(height: 16),
+            const CardEntrance(index: 6, child: _MovementReferenceLink()),
           ],
         ),
       ),
@@ -260,6 +264,33 @@ class _WeightReferenceLink extends StatelessWidget {
           MaterialPageRoute<void>(
             builder: (context) => const WeightHormonesScreen(),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The way in to the pain-and-movement reference (AND-36).
+///
+/// Same shape as the row above it, and the subtitle does the same job: it says
+/// what the page argues before anyone taps it. That matters more here than
+/// usual, because the popular version of this subject is a plan and this page
+/// is the opposite of one — somebody arriving hoping to be told which days to
+/// exercise on should be able to see that they will not be.
+class _MovementReferenceLink extends StatelessWidget {
+  const _MovementReferenceLink();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.menu_book_outlined),
+        title: Text(l10n.movementEntryTitle),
+        subtitle: Text(l10n.movementEntrySubtitle),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (context) => const MovementScreen()),
         ),
       ),
     );
