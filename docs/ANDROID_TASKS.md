@@ -55,6 +55,7 @@ The `app/` Flutter component of Period-Tracker, split into independently prompta
 | **Reference sections** | | | |
 | [AND-35](#and-35-body-composition-and-cycle-hormones) | Body composition and cycle hormones | AND-27, AND-34 | 1 |
 | [AND-36](#and-36-pain-and-movement-across-the-cycle) | Pain and movement across the cycle | AND-35 | 1 |
+| [AND-38](#and-38-the-launcher-icon-is-the-supplied-logo) | The launcher icon is the supplied logo | AND-34 | 0.25 |
 | **Tier B (optional, may never be built)** | | | |
 | [AND-20](#and-20-kotlin-executorch-channel) | Kotlin ExecuTorch platform channel | AND-19 | 2-3 |
 | [AND-21](#and-21-on-device-trainer-and-gate) | On-device trainer and the per-user gate | AND-20 | 2-3 |
@@ -2028,6 +2029,48 @@ worsening or life-interrupting pain is a reason to see someone, said without a
 threshold and without a pain scale. Cite every claim, mark them all [VERIFY],
 and gate RELEASE.md on the file.
 ```
+
+### AND-38 The launcher icon is the supplied logo
+
+**Depends on:** AND-34 · **Est:** 0.25 session
+
+**Goal.** Replace the generated ring-of-days mark with the artwork the owner
+supplied, without losing anything AND-34 built around it.
+
+**Done when.**
+- [x] The adaptive icon renders the supplied artwork, masked correctly on circle, squircle and teardrop launchers
+- [x] It follows the system theme rather than being a light icon pasted onto a dark home screen
+- [x] The icon is regenerated from the source art by a script, not hand-exported
+
+**The artwork is monochrome, and that is what makes this cheap.** Every ink
+pixel in `logo-source.png` is near-black on transparency, so the alpha channel
+carries all the information and the RGB carries none. The foreground is
+therefore emitted white-on-transparent once and **tinted** from
+`@color/ic_launcher_ink`, which `values-night` restates. Baking the colour in
+would have meant two sets of PNGs, and a black mark on a near-black tile in dark
+mode — an icon that is technically present and visually absent.
+
+**Inverting it in dark mode is a decision, not a side effect.** A silhouette
+tinted light reads as a negative of itself: the canopy becomes light, the sky
+behind it dark. That was previewed and chosen deliberately. The alternative —
+keeping the pale tile in both themes — never alters the drawing but leaves the
+icon glowing on a dark home screen.
+
+**It sits at 64 of the 108-unit canvas, not 72.** The artwork is itself a
+circle. At 72 it fills the safe zone exactly, which puts its outer ring on the
+mask boundary where a round launcher's antialiasing eats it. At 64 there is a
+visible ring of background inside every mask shape, and the inset reads as
+deliberate rather than as a clipping bug.
+
+**minSdk is 26**, the release adaptive icons arrived in, so every supported
+device resolves the adaptive XML and never the flattened density PNGs. Those are
+kept anyway: a few third-party launchers and share surfaces still ask for a
+plain drawable, and 36KB is not worth the argument.
+
+**Generated, not exported.** `tools/scripts/gen_launcher_icon.py` rebuilds all
+ten files from the source art, so a palette change or a new density is a script
+run rather than a redraw. The thing in version control is the artwork plus the
+rule for placing it.
 
 ---
 

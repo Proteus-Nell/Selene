@@ -11,10 +11,9 @@
 <resources>
     <!-- AppColors.lightSurfaceContainer. -->
     <color name="ic_launcher_background">#E4EBDF</color>
-    <!-- AppColors.lightSecondary: the three logged days. -->
-    <color name="ic_launcher_logged">#985331</color>
-    <!-- AppColors.lightPrimary: the nine other days on the ring. -->
-    <color name="ic_launcher_day">#3F6146</color>
+    <!-- AppColors.lightOnSurface. The launcher artwork is tinted with this,
+         so the mark is the same ink as the text everywhere else in the app. -->
+    <color name="ic_launcher_ink">#22261F</color>
 
     <!-- AppColors.lightSurface. This is the colour the window is painted
          while the process starts, so it is the first thing the user sees;

@@ -7,10 +7,11 @@
 <resources>
     <!-- AppColors.darkSurfaceContainer. -->
     <color name="ic_launcher_background">#20221C</color>
-    <!-- AppColors.darkSecondary. -->
-    <color name="ic_launcher_logged">#F0B48D</color>
-    <!-- AppColors.darkPrimary. -->
-    <color name="ic_launcher_day">#AFCCB2</color>
+    <!-- AppColors.darkOnSurface. Inverting the mark is deliberate: the
+         artwork is a silhouette, so in dark mode the canopy reads light and
+         the sky behind it dark. It is the same drawing as a negative, and it
+         is the only way it stays visible on a near-black tile. -->
+    <color name="ic_launcher_ink">#E5E7E0</color>
 
     <!-- AppColors.darkSurface. -->
     <color name="splash_background">#161713</color>
