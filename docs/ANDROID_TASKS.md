@@ -52,6 +52,8 @@ The `app/` Flutter component of Period-Tracker, split into independently prompta
 | [AND-33](#and-33-reported-bugs-app-lock-cutouts-and-the-activity-log) | Reported bugs: app lock, cutouts, activity log | AND-32 | 0.5 |
 | **Design pass** | | | |
 | [AND-34](#and-34-palette-typeface-motion-and-the-launcher-icon) | Palette, typeface, motion, launcher icon | AND-33 | 1 |
+| **Reference sections** | | | |
+| [AND-35](#and-35-body-composition-and-cycle-hormones) | Body composition and cycle hormones | AND-27, AND-34 | 1 |
 | **Tier B (optional, may never be built)** | | | |
 | [AND-20](#and-20-kotlin-executorch-channel) | Kotlin ExecuTorch platform channel | AND-19 | 2-3 |
 | [AND-21](#and-21-on-device-trainer-and-gate) | On-device trainer and the per-user gate | AND-20 | 2-3 |
@@ -1803,6 +1805,98 @@ MediaQuery.disableAnimationsOf, read at the token so no call site can forget.
 Tighten only strings over 100 characters, keep every safety qualifier, and do
 not touch the nutrition or hygiene copy: those are pinned to their sources.
 Regenerate the goldens and look at them before committing.
+```
+
+---
+
+## Reference sections
+
+### AND-35 Body composition and cycle hormones
+
+**Depends on:** AND-27, AND-34 · **Est:** 1 session
+
+**Goal.** Explain a mechanism, to somebody the app is not allowed to talk about.
+
+**Scope.** A reference section in the shape of the nutrition one, sources
+committed to the repo, two copy tests. **No weight entry, no weight log, no
+BMI, no schema change.**
+
+**Done when.**
+- [x] Reference text on aromatase in adipose tissue, energy availability and GnRH pulsatility, insulin and SHBG, PCOS, and thyroid function — reached from insights
+- [x] Every factual claim carries a citation, committed in the repo, `[VERIFY]`-marked until checked, and `RELEASE.md` gates on it
+- [x] `weight_sources_test.dart` fails on a claim the sources file does not cover
+- [x] `weight_copy_test.dart` fails on the banned vocabulary, on any digit in the section, and on any second person in it
+- [x] Nothing on the screen can be filled in, and the second paragraph says so
+
+**The single constraint everything else follows from.** It explains a mechanism
+and it never addresses the reader's own body. *"Adipose tissue expresses
+aromatase, which converts androgens into oestrogens"* is a statement about
+physiology. *"Your body fat is raising your oestrogen"* is a claim about a
+person, from data this app does not have and never asks for. Weight content in
+a cycle tracker is read by people for whom the subject is not neutral, and the
+failure mode is not embarrassment, it is harm — so where a sentence was
+ambiguous between mechanism and instruction, it was cut rather than softened.
+
+**Two guards are stricter here than anywhere else in the app, deliberately.**
+The nutrition rule bans second person only in a sentence that also names a
+nutrient, because the app already says *"once you have logged three cycles"* and
+a literal ban would fail on its own disclaimer. That reasoning does not carry
+over: nothing in this section needs a second person at all, so the ban is
+absolute over every `weight*` string. And no digit may appear in any of them —
+a BMI threshold, a weight range, a calorie figure and a day count are all
+numbers to measure a body against, and the safest number of them is none. Both
+are asserted rather than reviewed, because every softer version is a judgement
+call about whether *this* "your" is about the reader, and that judgement is
+precisely what a hurried edit gets wrong.
+
+**Both directions, or it does damage.** Too little body fat and too much both
+reach the cycle, by different routes. A3 in `docs/WEIGHT_SOURCES.md` gives the
+adipose mechanism with two ends; E3 and E4 are what stop functional
+hypothalamic amenorrhoea reading as a statement about a number on a scale —
+it is about energy availability, and it happens to people whose body weight is
+unremarkable, with no fall in body weight at all. A test fails if any of them
+stops being said.
+
+**P3 is the claim that had to be in here.** PCOS occurs across the whole weight
+spectrum, in people who are thin as well as in people who are not. The opposite
+impression is widespread, it is false, and it is one of the reasons the
+condition goes unrecognised — so a reference that named PCOS in a section about
+body composition and left it out would be reinforcing the error rather than
+correcting it. It is pinned by a test for the same reason the magnesium
+evidence caveat is: it is the sentence a brevity pass removes.
+
+**All eighteen claims are marked `[VERIFY]`.** The wording was written from
+general knowledge with the source named — NHS, NICE, ACOG, the Endocrine
+Society, the MSD Manual and StatPearls — and not read off the cited page. That
+is what the marker means, the suite prints the outstanding count on every run,
+and `RELEASE.md` now gates on this file the way it already gates on nutrition
+and hygiene.
+
+**The way in is the last card on insights, not the first.** Everything above it
+on that screen is the user's own data; putting a page about body composition
+among their figures would make it look like a response to them. The subtitle
+names the mechanisms, so somebody for whom this subject is not neutral can
+decide before opening it rather than after.
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read docs/PLAN.md 6.2, docs/NUTRITION_SOURCES.md and
+app/test/features/nutrition_copy_test.dart before writing a word of copy.
+
+Task AND-35: a reference section on body composition and cycle hormones,
+reached from insights, in the shape of the nutrition reference. Aromatase in
+adipose tissue, energy availability and GnRH pulsatility, insulin and SHBG,
+PCOS across the whole weight spectrum, thyroid function, and one closing line
+that points at a clinician.
+
+No weight entry, no BMI, no schema change: the app asks for nothing. No number
+that could function as a target. Never the second person about the reader's
+body, and never prescriptive. Give both directions evenhandedly — too little
+body fat and too much both reach the cycle. Where you cannot tell whether a
+sentence is a mechanism or an instruction, cut it.
+
+Cite every claim, mark them all [VERIFY], and gate RELEASE.md on the file.
 ```
 
 ---

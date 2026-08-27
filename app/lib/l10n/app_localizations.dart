@@ -1701,6 +1701,132 @@ abstract class AppLocalizations {
   /// **'Reference notes on two nutrients that come up around menstrual cycles.'**
   String get settingsNutritionSubtitle;
 
+  /// No description provided for @weightTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Body composition and cycle hormones'**
+  String get weightTitle;
+
+  /// The framing sentence for the whole screen. It has to establish that the page is reference text about mechanisms, not addressed to the reader, before anything else is named.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference notes on how body composition and several hormones interact with the menstrual cycle. This is background reading, not advice, and it describes mechanisms rather than any particular body. Nothing on this page is drawn from anything logged in this app.'**
+  String get weightIntro;
+
+  /// Sits directly under the intro. The section carries a real risk of harm around disordered eating, and the first thing it says is that the app wants nothing from the reader.
+  ///
+  /// In en, this message translates to:
+  /// **'This app records no body weight and asks for none. There is nothing to enter here, and no figure on this page to measure a body against.'**
+  String get weightNothingToEnterBody;
+
+  /// No description provided for @weightOestrogenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Where oestrogen is made'**
+  String get weightOestrogenTitle;
+
+  /// No description provided for @weightOestrogenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Adipose tissue — body fat — makes the enzyme aromatase, which converts androgens into oestrogens. That reaction happens in the tissue itself, so the ovaries are not the only place oestrogen comes from.'**
+  String get weightOestrogenBody;
+
+  /// Both ends of the mechanism, deliberately. Stated in one direction only this becomes an argument, and an argument is what this section must never be.
+  ///
+  /// In en, this message translates to:
+  /// **'The quantity of adipose tissue is therefore one of the inputs to how much oestrogen is circulating, and it runs in both directions: more of it adds to the total, and very little of it removes a source the ovaries do not make up for. It is one input among several rather than the whole picture.'**
+  String get weightOestrogenBalanceBody;
+
+  /// No description provided for @weightEnergyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy availability and the hypothalamus'**
+  String get weightEnergyTitle;
+
+  /// No description provided for @weightEnergyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The hypothalamus releases GnRH in pulses, and that rhythm is what drives LH and FSH from the pituitary, which in turn drive the ovary. When energy availability is low the pulses are suppressed: LH and FSH fall, ovulation stops, and periods stop with it. That state has a name — functional hypothalamic amenorrhoea.'**
+  String get weightEnergyBody;
+
+  /// Load-bearing. Without it the section reads as a statement about a number on a scale, which is both wrong and the most harmful thing this reference could be mistaken for.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy availability is what is left of the energy taken in once exercise has had its share, measured against what the body needs to run on. It is not a body weight and it is not a reading from a scale. Functional hypothalamic amenorrhoea occurs in people whose body weight is entirely unremarkable, and heavy training, illness or sustained stress can produce it with no fall in body weight at all.'**
+  String get weightEnergyNotAScaleBody;
+
+  /// No description provided for @weightInsulinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Insulin, SHBG and free androgen'**
+  String get weightInsulinTitle;
+
+  /// No description provided for @weightInsulinBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Sex hormone binding globulin, or SHBG, is a protein the liver puts into the blood, where it binds testosterone. Bound testosterone is held out of circulation, so only the free fraction reaches tissue. Insulin resistance lowers SHBG, and as SHBG falls the free fraction rises — even when the total amount of testosterone has not changed.'**
+  String get weightInsulinBody;
+
+  /// No description provided for @weightPcosTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'PCOS'**
+  String get weightPcosTitle;
+
+  /// No description provided for @weightPcosBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Polycystic ovary syndrome is androgen excess together with irregular or absent ovulation. Insulin resistance is common alongside it, and the mechanism above is part of how the androgen excess is sustained.'**
+  String get weightPcosBody;
+
+  /// Must not be dropped. The opposite impression is both common and false, and naming PCOS in a section about body composition without saying this would reinforce the error.
+  ///
+  /// In en, this message translates to:
+  /// **'PCOS occurs across the whole weight spectrum, in people who are thin as well as in people who are not. The widespread impression that it belongs at one end of that spectrum is not accurate, and it is one of the reasons the condition goes unrecognised.'**
+  String get weightPcosSpectrumBody;
+
+  /// No description provided for @weightThyroidTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Thyroid function'**
+  String get weightThyroidTitle;
+
+  /// No description provided for @weightThyroidBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Thyroid disease reaches the menstrual cycle too, and in both directions. An underactive thyroid is associated with heavier and more frequent bleeding; an overactive one with lighter, less frequent bleeding, or with none. Thyroid function is established by a blood test rather than by the shape of a cycle.'**
+  String get weightThyroidBody;
+
+  /// No description provided for @weightChangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When a cycle changes'**
+  String get weightChangeTitle;
+
+  /// The last thing on the screen. A page of mechanisms with no exit is an invitation to pick one, so this points at a person. Deliberately carries no threshold: a threshold is a number, and a number here is something to measure a body against.
+  ///
+  /// In en, this message translates to:
+  /// **'A change in cycle length, in the amount of bleeding, or in whether periods arrive at all has many possible causes, and the mechanisms on this page are only some of them. Cycle dates cannot separate one cause from another, and nothing in this app can diagnose anything. A change worth explaining is worth taking to a doctor or nurse.'**
+  String get weightChangeBody;
+
+  /// No description provided for @weightSourcesNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Every claim on this page is listed with its source in WEIGHT_SOURCES.md in the app\'s source repository.'**
+  String get weightSourcesNote;
+
+  /// No description provided for @weightEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Body composition and cycle hormones'**
+  String get weightEntryTitle;
+
+  /// No description provided for @weightEntrySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How body fat, energy availability, insulin and thyroid function interact with the cycle.'**
+  String get weightEntrySubtitle;
+
   /// No description provided for @conditionsTitle.
   ///
   /// In en, this message translates to:
