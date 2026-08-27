@@ -156,6 +156,14 @@ class _BarPainter extends CustomPainter {
   final Color barColor;
   final Color axisColor;
 
+  /// How strongly the cycles behind the most recent one are drawn.
+  ///
+  /// The last bar is the one the reader came for; the rest are the shape it
+  /// sits in. Holding them back is a drawing decision and nothing else — the
+  /// summary underneath, and the table behind the toggle, carry every figure at
+  /// full strength, so nothing here is the only way to reach a number.
+  static const double _historyAlpha = 0.35;
+
   @override
   void paint(Canvas canvas, Size size) {
     if (lengths.isEmpty) return;
@@ -168,6 +176,8 @@ class _BarPainter extends CustomPainter {
     final span = (maxLength - floor).clamp(1, 1000).toDouble();
 
     final barPaint = Paint()..color = barColor;
+    final historyPaint = Paint()
+      ..color = barColor.withValues(alpha: _historyAlpha);
     final axisPaint = Paint()
       ..color = axisColor
       ..strokeWidth = 1;
@@ -183,7 +193,7 @@ class _BarPainter extends CustomPainter {
           Rect.fromLTWH(left, size.height - height, barWidth, height),
           const Radius.circular(2),
         ),
-        barPaint,
+        i == lengths.length - 1 ? barPaint : historyPaint,
       );
     }
     canvas.drawLine(

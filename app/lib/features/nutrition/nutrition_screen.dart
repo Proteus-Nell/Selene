@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/domain/cycles/nutrition_hint.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
+import 'package:period_tracker/features/common/card_entrance.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Reference notes on iron and magnesium (AND-27).
@@ -48,32 +49,44 @@ class NutritionScreen extends ConsumerWidget {
             // three nutrients to find it. It is one card and it appears at most
             // once — see NutritionHints for why the threshold is three days.
             if (showHint) ...<Widget>[
-              const _Hint(),
+              const CardEntrance(index: 0, child: _Hint()),
               const SizedBox(height: 16),
             ],
-            _Section(
-              title: l10n.nutritionIronTitle,
-              paragraphs: <String>[
-                l10n.nutritionIronBody,
-                l10n.nutritionIronDiagnosisNote,
-                l10n.nutritionIronSourcesBody,
-                l10n.nutritionIronCautionBody,
-              ],
+            CardEntrance(
+              index: showHint ? 1 : 0,
+              child: _Section(
+                title: l10n.nutritionIronTitle,
+                paragraphs: <String>[
+                  l10n.nutritionIronBody,
+                  l10n.nutritionIronDiagnosisNote,
+                  l10n.nutritionIronSourcesBody,
+                  l10n.nutritionIronCautionBody,
+                ],
+              ),
             ),
-            _Section(
-              title: l10n.nutritionVitaminCTitle,
-              paragraphs: <String>[l10n.nutritionVitaminCBody],
+            CardEntrance(
+              index: showHint ? 2 : 1,
+              child: _Section(
+                title: l10n.nutritionVitaminCTitle,
+                paragraphs: <String>[l10n.nutritionVitaminCBody],
+              ),
             ),
-            _Section(
-              title: l10n.nutritionMagnesiumTitle,
-              paragraphs: <String>[
-                l10n.nutritionMagnesiumBody,
-                l10n.nutritionMagnesiumEvidenceBody,
-              ],
+            CardEntrance(
+              index: showHint ? 3 : 2,
+              child: _Section(
+                title: l10n.nutritionMagnesiumTitle,
+                paragraphs: <String>[
+                  l10n.nutritionMagnesiumBody,
+                  l10n.nutritionMagnesiumEvidenceBody,
+                ],
+              ),
             ),
-            _Section(
-              title: l10n.nutritionZincTitle,
-              paragraphs: <String>[l10n.nutritionZincBody],
+            CardEntrance(
+              index: showHint ? 4 : 3,
+              child: _Section(
+                title: l10n.nutritionZincTitle,
+                paragraphs: <String>[l10n.nutritionZincBody],
+              ),
             ),
             const SizedBox(height: 8),
             Text(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:period_tracker/core/motion.dart';
 import 'package:period_tracker/features/calendar/calendar_screen.dart';
 import 'package:period_tracker/features/insights/insights_screen.dart';
 import 'package:period_tracker/features/log/log_screen.dart';
@@ -74,8 +75,13 @@ GoRouter buildRouter(Ref ref) {
         path: Routes.onboarding,
         builder: (context, state) => const OnboardingScreen(),
       ),
-      StatefulShellRoute.indexedStack(
+      StatefulShellRoute(
         builder: (context, state, shell) => AppScaffold(shell: shell),
+        // A cross-fade instead of go_router's plain IndexedStack (AND-34). The
+        // four tabs are peers, not a stack, so nothing slides sideways: a
+        // horizontal transition tells the user they have gone deeper into
+        // something, and moving between the calendar and settings is not that.
+        navigatorContainerBuilder: _fadeThroughBranches,
         branches: <StatefulShellBranch>[
           StatefulShellBranch(
             routes: <RouteBase>[
@@ -163,4 +169,135 @@ class AppScaffold extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Builds the container that holds the four branch navigators (AND-34).
+///
+/// Replaces `StatefulShellRoute.indexedStack`, which switches branches on the
+/// frame the tab is tapped. The branches themselves are unchanged: every one
+/// stays alive with its own navigation stack, which is the whole reason for a
+/// stateful shell.
+Widget _fadeThroughBranches(
+  BuildContext context,
+  StatefulNavigationShell shell,
+  List<Widget> children,
+) => _FadeThroughBranches(currentIndex: shell.currentIndex, children: children);
+
+/// Cross-fades one branch out and the next in, over [Motion.standard].
+///
+/// The outgoing branch leaves over the first third and the incoming arrives
+/// over the rest, rather than both sitting half-transparent on top of each
+/// other, which is what makes a cross-fade look like a rendering fault.
+///
+/// Every child is wrapped identically whatever its state, and the wrappers only
+/// change their flags. Swapping one widget for another around a branch would
+/// mean tearing that branch's `Navigator` down and rebuilding it every time the
+/// user changed tab, which is the one thing a stateful shell exists to avoid.
+///
+/// Off-branch children are `Offstage`, exactly as `IndexedStack` leaves them.
+/// That is load-bearing rather than an optimisation: an offstage subtree is
+/// skipped by every default `Finder`, so the four screens do not all answer a
+/// `find.text` at once — and the branch on its way out stops being offstage for
+/// only as long as it is still being painted.
+class _FadeThroughBranches extends StatefulWidget {
+  const _FadeThroughBranches({
+    required this.currentIndex,
+    required this.children,
+  });
+
+  final int currentIndex;
+  final List<Widget> children;
+
+  @override
+  State<_FadeThroughBranches> createState() => _FadeThroughBranchesState();
+}
+
+class _FadeThroughBranchesState extends State<_FadeThroughBranches>
+    with SingleTickerProviderStateMixin {
+  /// Runs 0 to 1 on a branch change, and rests at 1.
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    value: 1,
+  );
+
+  /// Opacity of the branch being entered: nothing until the handover.
+  late final CurvedAnimation _arriving = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(_handover, 1, curve: Motion.curve),
+  );
+
+  /// Opacity of the branch being left: gone by the handover.
+  late final CurvedAnimation _leavingFade = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(0, _handover, curve: Motion.curve),
+  );
+
+  /// The branch being left. Null once it has finished leaving.
+  int? _leaving;
+
+  @override
+  void didUpdateWidget(_FadeThroughBranches oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentIndex != widget.currentIndex) {
+      _leaving = oldWidget.currentIndex;
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _arriving.dispose();
+    _leavingFade.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _controller.duration = Motion.standard(context);
+    // Rebuilt on every tick so that the frame the transition finishes is also
+    // the frame the branch left behind goes offstage again. With animations
+    // off the controller is already complete here, so it never appears at all.
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final leaving = _controller.isCompleted ? null : _leaving;
+        return Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            for (var index = 0; index < widget.children.length; index++)
+              _branch(index, leaving: leaving),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _branch(int index, {required int? leaving}) {
+    final active = index == widget.currentIndex;
+    return Offstage(
+      key: ValueKey<int>(index),
+      offstage: !active && index != leaving,
+      child: TickerMode(
+        enabled: active,
+        // On its way out and no longer the screen the user is on: it must not
+        // take a tap meant for what is arriving over it, and a screen reader
+        // must never be handed two screens at once.
+        child: IgnorePointer(
+          ignoring: !active,
+          child: ExcludeSemantics(
+            excluding: !active,
+            child: FadeTransition(
+              opacity: active ? _arriving : ReverseAnimation(_leavingFade),
+              child: widget.children[index],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Where the outgoing branch has finished leaving and the next starts to
+  /// arrive.
+  static const double _handover = 0.3;
 }

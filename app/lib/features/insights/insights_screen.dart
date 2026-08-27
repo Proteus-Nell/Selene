@@ -6,6 +6,7 @@ import 'package:period_tracker/domain/models/cycle_record.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 import 'package:period_tracker/domain/predict/track_record.dart';
+import 'package:period_tracker/features/common/card_entrance.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/common/next_period_panel.dart';
 import 'package:period_tracker/features/insights/cycle_length_chart.dart';
@@ -55,24 +56,30 @@ class InsightsScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: <Widget>[
             // Permanent, on the screen itself, not behind an "about" link.
-            const PermanentDisclaimer(),
+            const CardEntrance(index: 0, child: PermanentDisclaimer()),
             const SizedBox(height: 16),
-            prediction.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: CircularProgressIndicator(),
+            CardEntrance(
+              index: 1,
+              child: prediction.when(
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
+                error: (error, stack) => Text(l10n.errorGeneric),
+                data: (result) => NextPeriodPanel(result: result),
               ),
-              error: (error, stack) => Text(l10n.errorGeneric),
-              data: (result) => NextPeriodPanel(result: result),
             ),
             const SizedBox(height: 24),
-            _StatisticsCard(statistics: statistics),
+            CardEntrance(
+              index: 2,
+              child: _StatisticsCard(statistics: statistics),
+            ),
             const SizedBox(height: 24),
-            CycleLengthChart(cycles: cycles),
+            CardEntrance(index: 3, child: CycleLengthChart(cycles: cycles)),
             const SizedBox(height: 24),
-            const _TrackRecordCard(),
+            const CardEntrance(index: 4, child: _TrackRecordCard()),
           ],
         ),
       ),

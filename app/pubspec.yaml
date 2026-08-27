@@ -107,22 +107,34 @@ flutter:
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
 
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
+  # Figtree, bundled rather than fetched (AND-34). This app has no network
+  # permission, so a webfont is not on the table even if it were wanted, and
+  # the system font is not the same shape on every Android skin: a health
+  # record that reflows differently on someone else's phone is a layout nobody
+  # has tested.
   #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+  # Four static weights, 96KB in total. Google Fonts' **latin subset** (222
+  # codepoints), which covers every character in lib/l10n/app_en.arb — a future
+  # non-English locale would need a wider subset, and `fonts_test.dart` checks
+  # the coverage rather than trusting this comment.
+  #
+  # LICENCE: SIL Open Font License 1.1. assets/fonts/OFL.txt carries the
+  # copyright notice and the licence text, and it SHIPS WITH THE FONTS — the
+  # OFL requires the notice and licence to travel with the font files, so it is
+  # listed as an asset below rather than left in the repository. Removing it
+  # while keeping the .ttf files would make the app's distribution
+  # non-compliant, which is why `fonts_test.dart` fails if it goes missing.
+  assets:
+    - assets/fonts/OFL.txt
+
+  fonts:
+    - family: Figtree
+      fonts:
+        - asset: assets/fonts/Figtree-400.ttf
+          weight: 400
+        - asset: assets/fonts/Figtree-500.ttf
+          weight: 500
+        - asset: assets/fonts/Figtree-600.ttf
+          weight: 600
+        - asset: assets/fonts/Figtree-700.ttf
+          weight: 700

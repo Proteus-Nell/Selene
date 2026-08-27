@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The few app colours Android needs before Dart is running (AND-34).
+
+     These are the light halves of AppColors in lib/core/theme.dart, restated
+     here because the launcher and the window background exist before any of
+     that is loaded. They are the only place in the project where a colour is
+     written down twice; keep them in step by hand, and prefer changing the
+     Dart first.
+
+     values-night/colors.xml carries the dark halves. -->
+<resources>
+    <!-- AppColors.lightSurfaceContainer. -->
+    <color name="ic_launcher_background">#E4EBDF</color>
+    <!-- AppColors.lightSecondary: the three logged days. -->
+    <color name="ic_launcher_logged">#985331</color>
+    <!-- AppColors.lightPrimary: the nine other days on the ring. -->
+    <color name="ic_launcher_day">#3F6146</color>
+
+    <!-- AppColors.lightSurface. This is the colour the window is painted
+         while the process starts, so it is the first thing the user sees;
+         anything else here is a flash of the wrong app. -->
+    <color name="splash_background">#F7F7F1</color>
+</resources>

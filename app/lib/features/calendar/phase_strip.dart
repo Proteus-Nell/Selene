@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:period_tracker/core/motion.dart';
 import 'package:period_tracker/domain/cycles/cycle_phase.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
@@ -29,6 +30,27 @@ class PhaseStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Keyed on the phase and nothing else (AND-34). The day number changes
+    // every night and the strip must not cross-fade for that: an animation
+    // that fires on a rebuild teaches the reader to ignore it, and this is the
+    // one place in the app where a change of state is worth pointing at.
+    // `AnimatedSwitcher` compares keys, so an identical key is a plain swap.
+    return AnimatedSwitcher(
+      duration: Motion.standard(context),
+      switchInCurve: Motion.curve,
+      switchOutCurve: Motion.curve,
+      // Full width, so the strip keeps the left edge it has as a direct child
+      // of the calendar's list. Without it the switcher's Stack loosens the
+      // constraints and the whole strip shrink-wraps and centres.
+      child: SizedBox(
+        key: ValueKey<CyclePhase?>(position.phase),
+        width: double.infinity,
+        child: _content(context),
+      ),
+    );
+  }
+
+  Widget _content(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final day = position.dayOfCycle;

@@ -10,7 +10,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Period Tracker';
+  String get appTitle => 'Selene';
 
   @override
   String get commonContinue => 'Continue';
@@ -53,7 +53,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingIntro =>
-      'This app records your cycle on this device and predicts when your next period is likely to start. Everything stays on the phone: it has no internet permission at all, so nothing can be sent anywhere.';
+      'This app records your cycle on this device and predicts when your next period is likely to start. It has no internet permission, so nothing can be sent anywhere.';
 
   @override
   String get onboardingWhatItIsNotTitle => 'What this app is not';
@@ -68,11 +68,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingNotDiagnostic =>
-      'It cannot diagnose anything. It sees only the dates you record, so it knows nothing about contraception you take, pregnancy, medication, illness or stress.';
+      'It cannot diagnose anything. It sees only the dates you record — nothing about contraception you take, pregnancy, medication, illness or stress.';
 
   @override
   String get onboardingAlwaysARange =>
-      'Predictions are always a range of days, never a single date. Cycles vary, and a single date would claim a precision this app does not have.';
+      'Predictions are always a range of days, never a single date. Cycles vary, and one date would claim a precision this app does not have.';
 
   @override
   String get onboardingAcknowledge => 'I understand';
@@ -185,7 +185,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingSensitiveBody =>
-      'You can optionally record intercourse, and whether it was protected. It is the most sensitive thing this app stores. It never leaves your device, it is never used to predict anything, and you never have to record it. If you want the app to ask for your fingerprint or PIN before showing anything, turn on the app lock in settings.';
+      'You can record intercourse, and whether it was protected. It is the most sensitive thing stored here: it never leaves your device, is never used to predict anything, and is never required. The app lock in settings can ask for your fingerprint or PIN before anything shows.';
 
   @override
   String get logSectionPhysical => 'Physical';
@@ -336,7 +336,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'No predicted window is shown, because there is not enough to go on yet.';
 
   @override
-  String get calendarLongPressHint => 'Press and hold any day to change it.';
+  String get calendarLongPressHint => 'Hold any day to change it.';
 
   @override
   String get insightsTitle => 'Insights';
@@ -383,7 +383,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String insightsNotPersonalisedYet(int count) {
-    return 'Based on typical cycles rather than yours. It will use your own figures once you have logged $count cycles.';
+    return 'Based on typical cycles rather than yours. Your own figures take over after $count cycles.';
   }
 
   @override
@@ -391,7 +391,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get insightsNoDataBody =>
-      'Log the day your last period started and this screen will start filling in. Typical cycles run about 29 days, but yours are what matter here.';
+      'Log the day your last period started and this screen fills in. Typical cycles run about 29 days, but yours are what matter here.';
 
   @override
   String get insightsTooIrregularTitle =>
@@ -399,14 +399,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get insightsTooIrregularBody =>
-      'That is information, not a failure, and it is worth showing a clinician. Your own figures are below, and logging more will keep them sharp.';
+      'That is information, not a failure — and worth showing a clinician. Your figures are below; logging more keeps them sharp.';
 
   @override
   String get insightsLostTrackTitle => 'It has been a while';
 
   @override
   String insightsLostTrackBody(int days) {
-    return 'Nothing has been logged for $days days, so this app has lost the thread rather than guess. Log a day and it will pick up again.';
+    return 'Nothing logged for $days days, so this app has lost the thread rather than guess. Log a day and it picks up again.';
   }
 
   @override
@@ -495,7 +495,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get insightsTrackRecordNotYet =>
-      'Once you have logged a few more cycles, this app will show you how accurate its own predictions have been.';
+      'After a few more cycles, this app will show how accurate its own predictions have been.';
 
   @override
   String get insightsTrackRecordExplain =>
@@ -521,7 +521,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'An occasional prompt if nothing has been logged for a while. Off unless you turn it on.';
 
   @override
-  String get notificationGenericTitle => 'Period Tracker';
+  String get notificationGenericTitle => 'Selene';
 
   @override
   String get notificationGenericBody =>
@@ -582,14 +582,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsBatteryNoteBody =>
-      'Some phones stop scheduled reminders to save battery. If reminders stop arriving, allow this app to run in the background in the system battery settings.';
+      'Some phones stop scheduled reminders to save battery. If yours stop arriving, allow this app to run in the background in your battery settings.';
 
   @override
   String get settingsNotificationPermissionTitle => 'Turn on reminders?';
 
   @override
   String get settingsNotificationPermissionBody =>
-      'Now that you have logged a cycle, this app can remind you before the next one is expected. You can change this at any time.';
+      'Now that you have logged a cycle, this app can remind you before the next one is expected. Change it any time.';
 
   @override
   String get settingsNotificationPermissionAllow => 'Turn on reminders';
@@ -685,7 +685,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get insightsSuppressedPregnancyBody =>
-      'Your cycles are below, and nothing has been deleted. Add an end date to the pregnancy on the conditions screen and predictions will start again.';
+      'Your cycles are below, and nothing has been deleted. Add an end date to the pregnancy on the conditions screen and predictions start again.';
 
   @override
   String calendarPhaseDay(int day) {
@@ -707,7 +707,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarPhaseFollicularExplained =>
-      'The stretch after your period ends. Its length is where most of the variation between cycles sits, so it is the part this app is least certain about.';
+      'The stretch after your period ends. Most of the variation between cycles sits here, which makes it the part this app is least certain about.';
 
   @override
   String get calendarPhaseLutealExplained =>
@@ -756,7 +756,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAppLockUnavailable =>
-      'Your device has no PIN, pattern, password or fingerprint set up, so there is nothing for the app to ask for. Set a screen lock in your device settings, then come back.';
+      'Your device has no PIN, pattern, password or fingerprint set up, so there is nothing to ask for. Set a screen lock in your device settings, then come back.';
 
   @override
   String get settingsAppLockNotSupported => 'This device cannot lock the app.';
@@ -766,7 +766,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reExportBody =>
-      'This update changed the backup format. Any backup file you saved before now can no longer be restored by the app, so it is worth exporting again. Your data in the app is untouched.';
+      'This update changed the backup format. Files you saved before now can no longer be restored, so it is worth exporting again. Your data in the app is untouched.';
 
   @override
   String get reExportAction => 'Export now';
@@ -808,7 +808,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lookupMedicinesUnavailable =>
-      'The medicines reference has not been built into this version of the app. The other sections still work.';
+      'The medicines reference is not built into this version. The other sections still work.';
 
   @override
   String get lookupSectionPurpose => 'What it is for';
@@ -833,7 +833,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lookupSearchOnlineBody =>
-      'This app has no internet access at all, so it cannot look anything up for you. It can open your browser instead.';
+      'This app has no internet access, so it cannot look anything up for you. It can open your browser instead.';
 
   @override
   String get lookupSearchOnlineAction => 'Open a browser';
@@ -843,7 +843,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lookupLeavingBody =>
-      'Your browser will make the request, not this app. That means the search leaves your device, and your browser will normally keep it in its history and may sync it to other devices you are signed in on.';
+      'Your browser will make the request, not this app. The search leaves your device, and your browser normally keeps it in its history and may sync it to other devices you are signed in on.';
 
   @override
   String lookupLeavingWithTermBody(String term) {
@@ -1077,7 +1077,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsFlowSimplifiedSubtitle =>
-      'Record bleeding as yes or no, instead of choosing an intensity. Anything already recorded is kept, and comes back if you turn this off.';
+      'Record bleeding as yes or no rather than an intensity. Anything already recorded is kept, and comes back if you turn this off.';
 
   @override
   String get settingsCyclePhases => 'Name the cycle phase';
@@ -1104,7 +1104,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLogViewerSubtitle =>
-      'Everything this app records about its own behaviour. Read it: there are no dates or symptoms in here.';
+      'Everything this app records about itself. Read it: there are no dates or symptoms in here.';
 
   @override
   String get settingsLogViewerEmpty => 'Nothing recorded yet.';
@@ -1140,21 +1140,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyOnDeviceBody =>
-      'This app has no internet permission. It is removed from the app\'s manifest, and an automated check on every release refuses to build an app that asks for it. There is no account, no sync, no analytics and no crash reporting. Nothing you record can leave this device unless you export it yourself.';
+      'This app has no internet permission — a check on every release refuses to build one that asks for it. No account, no sync, no analytics, no crash reporting. Nothing leaves this device unless you export it.';
 
   @override
   String get privacyNotEncryptedTitle => 'The database is not encrypted';
 
   @override
   String get privacyNotEncryptedBody =>
-      'This is the honest limit of what \"private\" means here. Your data sits in this app\'s own storage, which other apps cannot read on a phone that has not been tampered with, and which Android\'s full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. There is no app lock in this version.';
+      'This is the honest limit of what \"private\" means here. Your data sits in this app\'s own storage, which other apps cannot read on a phone that has not been tampered with, and which Android\'s full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock does not encrypt anything: it covers the screen, not the file.';
 
   @override
   String get privacyBackupTitle => 'It is never backed up to the cloud';
 
   @override
   String get privacyBackupBody =>
-      'Android\'s automatic backup is switched off for this app, so your cycle history is never copied to a Google account. The consequence is that if you lose the phone, the data is gone unless you exported it.';
+      'Android\'s automatic backup is switched off for this app, so your cycle history is never copied to a Google account. If you lose the phone, the data is gone unless you exported it.';
 
   @override
   String get privacyDeletionTitle => 'Deleting really deletes';
@@ -1182,7 +1182,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bootstrapRecoveredBody =>
-      'The stored file was damaged, so this app started with an empty one. The damaged file has been kept next to it and has not been deleted. If you have a backup, restoring it now is the best way forward.';
+      'The stored file was damaged, so this app started with an empty one. The damaged file has been kept, not deleted. If you have a backup, restoring it now is the best way forward.';
 
   @override
   String get bootstrapRecoveredAction => 'Restore from a backup';

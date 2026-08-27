@@ -1,2 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Font binaries. `* text=auto` above detects these as binary by the NUL bytes
+# they contain, but saying so outright means a font that happens not to is
+# still never line-ending-normalised on checkout. A mangled .ttf renders as
+# nothing; app/test/features/fonts_test.dart checks the version tag for the
+# same reason.
+*.ttf binary

@@ -30,7 +30,7 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" tools:node="remove" />
 
     <application
-        android:label="period_tracker"
+        android:label="Selene"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"

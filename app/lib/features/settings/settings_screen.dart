@@ -10,6 +10,7 @@ import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/data/transfer/export_v1.dart';
 import 'package:period_tracker/data/transfer/import_v1.dart';
 import 'package:period_tracker/domain/predict/priors_bundled.dart';
+import 'package:period_tracker/features/common/chip_motion.dart';
 import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/conditions/conditions_screen.dart';
 import 'package:period_tracker/features/lookup/lookup_screen.dart';
@@ -567,17 +568,21 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
               for (final days in const <int>[1, 2, 3])
                 Padding(
                   padding: const EdgeInsets.only(left: 4),
-                  child: ChoiceChip(
+                  child: ChipMotion(
                     selected: leadDays == days,
-                    label: Text('$days'),
-                    onSelected: (_) async {
-                      setState(() => _leadDays = days);
-                      await settings.writeInt(
-                        SettingKey.reminderLeadDays,
-                        days,
-                      );
-                      _resync();
-                    },
+                    builder: (context, checkSlot) => ChoiceChip(
+                      avatar: checkSlot,
+                      selected: leadDays == days,
+                      label: Text('$days'),
+                      onSelected: (_) async {
+                        setState(() => _leadDays = days);
+                        await settings.writeInt(
+                          SettingKey.reminderLeadDays,
+                          days,
+                        );
+                        _resync();
+                      },
+                    ),
                   ),
                 ),
             ],

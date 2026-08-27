@@ -101,7 +101,7 @@ void main() {
       channelPredictionsDescription: 'd',
       channelRemindersName: 'Reminders',
       channelRemindersDescription: 'd',
-      genericTitle: 'Period Tracker',
+      genericTitle: 'Selene',
       genericBody: 'Open the app.',
       windowOpeningTitle: 'A period is expected soon',
       windowOpeningBody: 'The window runs from 10 July to 16 July.',

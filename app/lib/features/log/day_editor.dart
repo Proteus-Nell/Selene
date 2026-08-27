@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
+import 'package:period_tracker/features/common/chip_motion.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Edits one day's flow and symptoms.
@@ -62,10 +63,15 @@ class DayEditor extends ConsumerWidget {
             runSpacing: 8,
             children: <Widget>[
               for (final flow in FlowIntensity.values)
-                ChoiceChip(
+                ChipMotion(
                   selected: current.flow == flow,
-                  onSelected: (_) => _write(ref, current.copyWith(flow: flow)),
-                  label: Text(_flowLabel(l10n, flow)),
+                  builder: (context, checkSlot) => ChoiceChip(
+                    avatar: checkSlot,
+                    selected: current.flow == flow,
+                    onSelected: (_) =>
+                        _write(ref, current.copyWith(flow: flow)),
+                    label: Text(_flowLabel(l10n, flow)),
+                  ),
                 ),
             ],
           ),
@@ -171,12 +177,16 @@ class _IntercourseChips extends StatelessWidget {
       runSpacing: 8,
       children: <Widget>[
         for (final option in Intercourse.values)
-          ChoiceChip(
+          ChipMotion(
             selected: value == option,
-            // Re-selecting clears rather than re-writing the same value, so
-            // there is always a way back to having said nothing.
-            onSelected: (_) => onChanged(value == option ? null : option),
-            label: Text(_label(l10n, option)),
+            builder: (context, checkSlot) => ChoiceChip(
+              avatar: checkSlot,
+              selected: value == option,
+              // Re-selecting clears rather than re-writing the same value, so
+              // there is always a way back to having said nothing.
+              onSelected: (_) => onChanged(value == option ? null : option),
+              label: Text(_label(l10n, option)),
+            ),
           ),
       ],
     );
@@ -228,19 +238,27 @@ class _BleedingToggle extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: <Widget>[
-        ChoiceChip(
+        ChipMotion(
           selected: bleeding,
-          // Re-selecting the current answer writes nothing. That is what keeps
-          // a heavy day heavy: the user confirming "yes" must not quietly
-          // downgrade it to medium, and switching the preference on and off
-          // must leave the database untouched.
-          onSelected: (_) => bleeding ? null : onChanged(yesIntensity),
-          label: Text(l10n.logBleedingYes),
+          builder: (context, checkSlot) => ChoiceChip(
+            avatar: checkSlot,
+            selected: bleeding,
+            // Re-selecting the current answer writes nothing. That is what
+            // keeps a heavy day heavy: the user confirming "yes" must not
+            // quietly downgrade it to medium, and switching the preference on
+            // and off must leave the database untouched.
+            onSelected: (_) => bleeding ? null : onChanged(yesIntensity),
+            label: Text(l10n.logBleedingYes),
+          ),
         ),
-        ChoiceChip(
+        ChipMotion(
           selected: !bleeding,
-          onSelected: (_) => bleeding ? onChanged(FlowIntensity.none) : null,
-          label: Text(l10n.logBleedingNo),
+          builder: (context, checkSlot) => ChoiceChip(
+            avatar: checkSlot,
+            selected: !bleeding,
+            onSelected: (_) => bleeding ? onChanged(FlowIntensity.none) : null,
+            label: Text(l10n.logBleedingNo),
+          ),
         ),
       ],
     );
@@ -280,16 +298,22 @@ class _SymptomChip extends StatelessWidget {
         child: GestureDetector(
           excludeFromSemantics: true,
           onLongPress: () => _chooseSeverity(context),
-          child: FilterChip(
+          child: ChipMotion(
             selected: recorded,
-            onSelected: (value) => onChanged(
-              value ? SymptomSeverity.moderate : SymptomSeverity.none,
-            ),
-            // The severity is in the label rather than encoded in the fill
-            // alone, so the state survives greyscale and reaches a screen
-            // reader.
-            label: Text(
-              recorded ? '$label · ${_severityLabel(l10n, severity)}' : label,
+            builder: (context, checkSlot) => FilterChip(
+              avatar: checkSlot,
+              selected: recorded,
+              onSelected: (value) => onChanged(
+                value ? SymptomSeverity.moderate : SymptomSeverity.none,
+              ),
+              // The severity is in the label rather than encoded in the fill
+              // alone, so the state survives greyscale and reaches a screen
+              // reader. It is also why these chips still change width when
+              // they are selected, where the rest do not: the reserved
+              // checkmark slot holds the mark's width, not the label's.
+              label: Text(
+                recorded ? '$label · ${_severityLabel(l10n, severity)}' : label,
+              ),
             ),
           ),
         ),

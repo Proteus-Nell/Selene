@@ -50,6 +50,8 @@ The `app/` Flutter component of Period-Tracker, split into independently prompta
 | [AND-31](#and-31-medicines-artifact-generated-from-openfda-at-build-time) | Medicines artifact from openFDA, at build time | AND-19 | 1.5 |
 | [AND-32](#and-32-lookup-screen-hygiene-entries-and-the-browser-hand-off) | Lookup screen and browser hand-off | AND-31 | 1 |
 | [AND-33](#and-33-reported-bugs-app-lock-cutouts-and-the-activity-log) | Reported bugs: app lock, cutouts, activity log | AND-32 | 0.5 |
+| **Design pass** | | | |
+| [AND-34](#and-34-palette-typeface-motion-and-the-launcher-icon) | Palette, typeface, motion, launcher icon | AND-33 | 1 |
 | **Tier B (optional, may never be built)** | | | |
 | [AND-20](#and-20-kotlin-executorch-channel) | Kotlin ExecuTorch platform channel | AND-19 | 2-3 |
 | [AND-21](#and-21-on-device-trainer-and-gate) | On-device trainer and the per-user gate | AND-20 | 2-3 |
@@ -1666,6 +1668,142 @@ empty log would itself be a tell.
 **Every fix is pinned by a test that fails when it is reverted**, which is how
 the dead `insetPadding` was found: it was the one line whose removal changed
 nothing.
+
+### AND-34 Palette, typeface, motion, and the launcher icon
+
+**Depends on:** AND-33 · **Est:** 1 session
+
+**Goal.** Make it look like something somebody chose to build, without moving a
+single guarantee.
+
+**Done when.**
+- [x] A new palette, "Sage & Apricot", every pair still clearing the gate in `theme_test.dart` from the constants themselves
+- [x] Figtree bundled at four weights, 96KB, with its OFL licence shipping in the APK beside it
+- [x] `core/motion.dart`: durations that collapse to `Duration.zero` when the device asks for no animation, read at the token rather than at each call site
+- [x] Fade-through tabs, chip selection, month travel, card entrance, phase crossfade
+- [x] The long-form copy tightened, with every caveat still standing
+- [x] An adaptive launcher icon, a splash that does not flash, and a launcher label that does not announce the app to a room
+- [x] The twelve goldens regenerated, and looked at
+
+**The palette was the last thing in the app still deciding who its reader is.**
+Everything else had been through 6.3 — the copy says "you", the phase names are
+the clinical ones, nothing congratulates anybody — and it was all rendered in
+pink. The old tokens were chosen for contrast and were never *about* anything;
+the new ones are sage and a muted apricot, which is a decision rather than an
+absence of one. The doc comment on `AppColors` used to promise "no
+pink-for-girls shorthand", which was true and is now beside the point.
+
+**A palette swap is only safe because the gate reads the constants.**
+`theme_test.dart` recomputes every WCAG ratio from `AppColors` rather than
+asserting a number somebody measured once, so replacing twenty-two colours is a
+thing the suite can actually check. Every pair passes with margin: the tightest
+in either theme is the light outline against the light surface at 4.97:1
+against a floor of 3. Nothing in that file was touched, which is the only way
+the result means anything.
+
+**The font is bundled, because there is no other option and it is the better
+one anyway.** This app has no network permission, so a webfont was never on the
+table; and the system font is not the same shape on every Android skin, so a
+layout tuned on one phone reflows on another. Four static weights of Figtree,
+96KB in total, Google Fonts' latin subset. `fonts_test.dart` reads the font's
+own `cmap` and checks it against every character in `app_en.arb` — 222
+codepoints covering the 67 English needs — so the first locale that needs more
+finds out from a failing test rather than from a screen of tofu.
+
+**The OFL licence is an app asset, not a repository file.** SIL's licence
+requires the copyright notice and the licence text to be distributed *with* the
+font, so `assets/fonts/OFL.txt` is listed under `assets:` and ships inside the
+APK. A cleanup that dropped it while keeping the `.ttf` files would make every
+build after it non-compliant and nothing about the running app would say so, so
+that is a test too.
+
+**"Remove animations" is read at the token.** Android's accessibility setting
+and iOS's reduce-motion arrive as `MediaQuery.disableAnimationsOf`, and an app
+that honours it at one call site and forgets at the next is an app that still
+moves. Every duration in `core/motion.dart` is a function of a `BuildContext`
+and returns `Duration.zero` when the setting is on; `motion_test.dart` walks the
+whole set and fails on any that does not, and separately walks the token names
+so that adding one without wiring it into the guard fails too. What is dropped
+is the interpolation, never the state change: a tab still switches, a chip still
+shows its checkmark, a card is still there, all on the frame they were asked
+for.
+
+**Material's checkmark had to go, because it moves the row under the finger.**
+A selected chip with no avatar opens a drawer as wide as the chip is tall, so
+tapping "Cramps" pushes everything to its right along — and on a `Wrap` of
+sixteen symptom chips it can push one onto the next line, under a finger that
+has not lifted yet. `ChipMotion` reserves the slot up front and draws the mark
+itself, which also puts the fade on this app's clock instead of Material's fixed
+195ms that no accessibility setting reaches. `showCheckmark` is therefore
+`false` in the theme, which means an unwrapped selectable chip would have no
+checkmark at all and would stop surviving greyscale — so `motion_test.dart`
+scans `lib/` and fails on one. The scale is 0.96 to 1 and rests at 1 in *both*
+states: a chip painted at 96% is a tap target painted at 96%, and
+`a11y_test.dart` measures the rendered rect.
+
+**The tabs cross-fade because they are peers.** `StatefulShellRoute.indexedStack`
+switches on the frame the tab is tapped; this replaces the container with one
+that fades, with the outgoing branch leaving over the first third and the
+incoming arriving over the rest. Off-branch children stay `Offstage`, exactly as
+`IndexedStack` leaves them, and that is load-bearing rather than tidy: an
+offstage subtree is skipped by every default `Finder`, so the four screens do
+not all answer a `find.text` at once. Nothing slides sideways — a horizontal
+transition says the user has gone deeper into something, and moving from the
+calendar to settings is not that.
+
+**The goldens were photographs of Ahem.** `flutter test` does not register the
+fonts declared in `pubspec.yaml`, so every string in the twelve committed PNGs
+was a row of solid black rectangles: regression capture for the layout and for
+nothing else. `loadBundledFonts` fixes that — and is called **only** from the
+two golden files, deliberately. Loading it for the whole suite breaks
+`a11y_test.dart`, and not because anything is wrong: `textContrastGuideline`
+takes the pixels under a semantics node and compares the *most frequent* colour
+in the light half against the most frequent in the dark half. Ahem's fat solid
+glyphs make the text the mode of the dark group, so what it reports is the ratio
+between the two theme tokens, which is the thing worth asserting. Real 14px text
+is thin and anti-aliased: on a selected chip the modes came back as the 1px
+border and the fill, and it reported 3.75:1 for a pair that is 9.66:1, having
+never sampled a glyph. The two measure different things and both are worth
+having.
+
+**The launcher says "Project Selene".** What the launcher shows is readable by
+anyone who picks up the phone or glances at a home screen, and this app's whole
+premise is that what it stores is nobody else's business. The name is neutral
+without being a lie: it is plainly this app's name once it is open. The icon is
+an adaptive one — twelve marks on a ring, three of them a logged period —
+generated rather than drawn, with everything inside 28 of the 108 units so no
+launcher mask can clip it, and the colours as resources so `values-night` can
+restate them. The splash was `?android:colorBackground`, which is the OEM's idea
+of a background rather than this app's; launching now paints
+`AppColors.lightSurface`, or `darkSurface` in dark mode, so nothing flashes.
+
+**Copy: cut the hedging, never the caveat.** Twenty-four of the long-form
+strings, about 490 characters gone, and the rule throughout was that a qualifier
+is not filler. "The consequence is that if you lose the phone" loses four words
+and nothing else; `calendarOvulationCaveat`, `settingsDeleteConfirmBody` and
+`onboardingNotContraception` are untouched, because there is nothing in them
+that is not load-bearing. The nutrition and hygiene strings are out of scope
+entirely — every claim in them is pinned to a sources file by a test. The
+`privacy*` strings are pinned verbatim to `docs/PRIVACY.md`, so the two edits
+there were made in both places.
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read docs/PLAN.md 6.3, app/lib/core/theme.dart,
+app/test/features/theme_test.dart and app/test/features/a11y_test.dart first.
+
+Task AND-34: the aesthetic pass. A new palette, a bundled typeface, motion
+tokens, tightened long-form copy, a real launcher icon and splash.
+
+Every contrast assertion in theme_test.dart and a11y_test.dart has to keep
+passing without being weakened — if one fails, the palette application is
+wrong, not the threshold. Motion durations must collapse to Duration.zero under
+MediaQuery.disableAnimationsOf, read at the token so no call site can forget.
+Tighten only strings over 100 characters, keep every safety qualifier, and do
+not touch the nutrition or hygiene copy: those are pinned to their sources.
+Regenerate the goldens and look at them before committing.
+```
 
 ---
 

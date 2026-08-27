@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Ring of days" (AND-34). Twelve marks on a ring: the first three are a
+     logged period, the other nine are the rest of a cycle.
+
+     Drawn on the 108-unit adaptive canvas. Every mark is inside 28 units of
+     the centre, well within the 72-unit safe zone, so no launcher mask - round,
+     squircle, teardrop - can clip any of it.
+
+     The colours are resources rather than literals so values-night can restate
+     them: a launcher that honours dark mode gets the dark palette, and one that
+     does not gets the light one, which is correct either way.
+
+     Generated geometry, not hand-drawn: twelve dots at radius 23 from (54,54),
+     starting at -90 degrees and stepping 30. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/ic_launcher_logged"
+        android:pathData="M49.000,31.000 a5.000,5.000 0 1,0 10.000,0 a5.000,5.000 0 1,0 -10.000,0" />
+    <path
+        android:fillColor="@color/ic_launcher_logged"
+        android:pathData="M60.500,34.081 a5.000,5.000 0 1,0 10.000,0 a5.000,5.000 0 1,0 -10.000,0" />
+    <path
+        android:fillColor="@color/ic_launcher_logged"
+        android:pathData="M68.919,42.500 a5.000,5.000 0 1,0 10.000,0 a5.000,5.000 0 1,0 -10.000,0" />
+    <path
+        android:fillColor="@color/ic_launcher_day"
+        android:pathData="M73.400,54.000 a3.600,3.600 0 1,0 7.200,0 a3.600,3.600 0 1,0 -7.200,0" />
+    <path
+        android:fillColor="@color/ic_launcher_day"
+        android:pathData="M70.319,65.500 a3.600,3.600 0 1,0 7.200,0 a3.600,3.600 0 1,0 -7.200,0" />
+    <path
+        android:fillColor="@color/ic_launcher_day"
+        android:pathData="M61.900,73.919 a3.600,3.600 0 1,0 7.200,0 a3.600,3.600 0 1,0 -7.200,0" />
+    <path
+        android:fillColor="@color/ic_launcher_day"
+        android:pathData="M50.400,77.000 a3.600,3.600 0 1,0 7.200,0 a3.600,3.600 0 1,0 -7.200,0" />
+    <path
+        android:fillColor="@color/ic_launcher_day"
+        android:pathData="M38.900,73.919 a3.600,3.600 0 1,0 7.200,0 a3.600,3.600 0 1,0 -7.200,0" />
+    <path
+        android:fillColor="@color/ic_launcher_day"
+        android:pathData="M30.481,65.500 a3.600,3.600 0 1,0 7.200,0 a3.600,3.600 0 1,0 -7.200,0" />
+    <path
+        android:fillColor="@color/ic_launcher_day"
+        android:pathData="M27.400,54.000 a3.600,3.600 0 1,0 7.200,0 a3.600,3.600 0 1,0 -7.200,0" />
+    <path
+        android:fillColor="@color/ic_launcher_day"
+        android:pathData="M30.481,42.500 a3.600,3.600 0 1,0 7.200,0 a3.600,3.600 0 1,0 -7.200,0" />
+    <path
+        android:fillColor="@color/ic_launcher_day"
+        android:pathData="M38.900,34.081 a3.600,3.600 0 1,0 7.200,0 a3.600,3.600 0 1,0 -7.200,0" />
+</vector>
