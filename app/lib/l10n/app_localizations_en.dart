@@ -965,6 +965,82 @@ class AppLocalizationsEn extends AppLocalizations {
       'Reference notes on two nutrients that come up around menstrual cycles.';
 
   @override
+  String get weightTitle => 'Body composition and cycle hormones';
+
+  @override
+  String get weightIntro =>
+      'Reference notes on how body composition and several hormones interact with the menstrual cycle. This is background reading, not advice, and it describes mechanisms rather than any particular body. Nothing on this page is drawn from anything logged in this app.';
+
+  @override
+  String get weightNothingToEnterBody =>
+      'This app records no body weight and asks for none. There is nothing to enter here, and no figure on this page to measure a body against.';
+
+  @override
+  String get weightOestrogenTitle => 'Where oestrogen is made';
+
+  @override
+  String get weightOestrogenBody =>
+      'Adipose tissue — body fat — makes the enzyme aromatase, which converts androgens into oestrogens. That reaction happens in the tissue itself, so the ovaries are not the only place oestrogen comes from.';
+
+  @override
+  String get weightOestrogenBalanceBody =>
+      'The quantity of adipose tissue is therefore one of the inputs to how much oestrogen is circulating, and it runs in both directions: more of it adds to the total, and very little of it removes a source the ovaries do not make up for. It is one input among several rather than the whole picture.';
+
+  @override
+  String get weightEnergyTitle => 'Energy availability and the hypothalamus';
+
+  @override
+  String get weightEnergyBody =>
+      'The hypothalamus releases GnRH in pulses, and that rhythm is what drives LH and FSH from the pituitary, which in turn drive the ovary. When energy availability is low the pulses are suppressed: LH and FSH fall, ovulation stops, and periods stop with it. That state has a name — functional hypothalamic amenorrhoea.';
+
+  @override
+  String get weightEnergyNotAScaleBody =>
+      'Energy availability is what is left of the energy taken in once exercise has had its share, measured against what the body needs to run on. It is not a body weight and it is not a reading from a scale. Functional hypothalamic amenorrhoea occurs in people whose body weight is entirely unremarkable, and heavy training, illness or sustained stress can produce it with no fall in body weight at all.';
+
+  @override
+  String get weightInsulinTitle => 'Insulin, SHBG and free androgen';
+
+  @override
+  String get weightInsulinBody =>
+      'Sex hormone binding globulin, or SHBG, is a protein the liver puts into the blood, where it binds testosterone. Bound testosterone is held out of circulation, so only the free fraction reaches tissue. Insulin resistance lowers SHBG, and as SHBG falls the free fraction rises — even when the total amount of testosterone has not changed.';
+
+  @override
+  String get weightPcosTitle => 'PCOS';
+
+  @override
+  String get weightPcosBody =>
+      'Polycystic ovary syndrome is androgen excess together with irregular or absent ovulation. Insulin resistance is common alongside it, and the mechanism above is part of how the androgen excess is sustained.';
+
+  @override
+  String get weightPcosSpectrumBody =>
+      'PCOS occurs across the whole weight spectrum, in people who are thin as well as in people who are not. The widespread impression that it belongs at one end of that spectrum is not accurate, and it is one of the reasons the condition goes unrecognised.';
+
+  @override
+  String get weightThyroidTitle => 'Thyroid function';
+
+  @override
+  String get weightThyroidBody =>
+      'Thyroid disease reaches the menstrual cycle too, and in both directions. An underactive thyroid is associated with heavier and more frequent bleeding; an overactive one with lighter, less frequent bleeding, or with none. Thyroid function is established by a blood test rather than by the shape of a cycle.';
+
+  @override
+  String get weightChangeTitle => 'When a cycle changes';
+
+  @override
+  String get weightChangeBody =>
+      'A change in cycle length, in the amount of bleeding, or in whether periods arrive at all has many possible causes, and the mechanisms on this page are only some of them. Cycle dates cannot separate one cause from another, and nothing in this app can diagnose anything. A change worth explaining is worth taking to a doctor or nurse.';
+
+  @override
+  String get weightSourcesNote =>
+      'Every claim on this page is listed with its source in WEIGHT_SOURCES.md in the app\'s source repository.';
+
+  @override
+  String get weightEntryTitle => 'Body composition and cycle hormones';
+
+  @override
+  String get weightEntrySubtitle =>
+      'How body fat, energy availability, insulin and thyroid function interact with the cycle.';
+
+  @override
   String get conditionsTitle => 'Conditions and medication';
 
   @override

@@ -147,6 +147,7 @@ Checklist, in the order the failures actually happen:
 - [ ] No claim in `docs/NUTRITION_SOURCES.md` is still marked `[VERIFY]`
 - [ ] The medicines artifact has actually been fetched — see below
 - [ ] No claim in `docs/HYGIENE_SOURCES.md` is still marked `[VERIFY]`
+- [ ] No claim in `docs/WEIGHT_SOURCES.md` is still marked `[VERIFY]`
 
 ### The medicines artifact (export format aside)
 

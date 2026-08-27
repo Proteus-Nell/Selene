@@ -10,6 +10,7 @@ import 'package:period_tracker/features/common/card_entrance.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/common/next_period_panel.dart';
 import 'package:period_tracker/features/insights/cycle_length_chart.dart';
+import 'package:period_tracker/features/weight/weight_hormones_screen.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// The cycles the user has recorded, for the screen to draw.
@@ -80,6 +81,12 @@ class InsightsScreen extends ConsumerWidget {
             CardEntrance(index: 3, child: CycleLengthChart(cycles: cycles)),
             const SizedBox(height: 24),
             const CardEntrance(index: 4, child: _TrackRecordCard()),
+            const SizedBox(height: 24),
+            // Last, deliberately. Everything above is this user's own data;
+            // the reference is general reading that happens to be shown to
+            // someone tracking a cycle, and putting it higher would make it
+            // look like a response to the figures above it (AND-35).
+            const CardEntrance(index: 5, child: _WeightReferenceLink()),
           ],
         ),
       ),
@@ -227,6 +234,34 @@ class _LoggingCompleteness extends ConsumerWidget {
     return Text(
       l10n.insightsLoggingCompleteness(logged, total),
       style: Theme.of(context).textTheme.bodyMedium,
+    );
+  }
+}
+
+/// The way in to the body-composition reference (AND-35).
+///
+/// A row rather than a paragraph, because the reference is a place to go and
+/// not a thing this screen is saying. The subtitle names the mechanisms so that
+/// someone for whom this subject is not neutral can decide before opening it,
+/// rather than finding out on the other side of a tap.
+class _WeightReferenceLink extends StatelessWidget {
+  const _WeightReferenceLink();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.menu_book_outlined),
+        title: Text(l10n.weightEntryTitle),
+        subtitle: Text(l10n.weightEntrySubtitle),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (context) => const WeightHormonesScreen(),
+          ),
+        ),
+      ),
     );
   }
 }
