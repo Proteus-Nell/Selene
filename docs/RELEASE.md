@@ -148,6 +148,9 @@ Checklist, in the order the failures actually happen:
 - [ ] The medicines artifact has actually been fetched — see below
 - [ ] No claim in `docs/HYGIENE_SOURCES.md` is still marked `[VERIFY]`
 - [ ] No claim in `docs/WEIGHT_SOURCES.md` is still marked `[VERIFY]`
+- [ ] No claim in `docs/MOVEMENT_SOURCES.md` is still marked `[VERIFY]` —
+      including its three absence claims, which are cleared by reading the
+      named guidance and finding no phase-based recommendation in it
 
 ### The medicines artifact (export format aside)
 

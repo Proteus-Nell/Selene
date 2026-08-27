@@ -54,6 +54,7 @@ The `app/` Flutter component of Period-Tracker, split into independently prompta
 | [AND-34](#and-34-palette-typeface-motion-and-the-launcher-icon) | Palette, typeface, motion, launcher icon | AND-33 | 1 |
 | **Reference sections** | | | |
 | [AND-35](#and-35-body-composition-and-cycle-hormones) | Body composition and cycle hormones | AND-27, AND-34 | 1 |
+| [AND-36](#and-36-pain-and-movement-across-the-cycle) | Pain and movement across the cycle | AND-35 | 1 |
 | **Tier B (optional, may never be built)** | | | |
 | [AND-20](#and-20-kotlin-executorch-channel) | Kotlin ExecuTorch platform channel | AND-19 | 2-3 |
 | [AND-21](#and-21-on-device-trainer-and-gate) | On-device trainer and the per-user gate | AND-20 | 2-3 |
@@ -1897,6 +1898,135 @@ body fat and too much both reach the cycle. Where you cannot tell whether a
 sentence is a mechanism or an instruction, cut it.
 
 Cite every claim, mark them all [VERIFY], and gate RELEASE.md on the file.
+```
+
+---
+
+### AND-36 Pain and movement across the cycle
+
+**Depends on:** AND-35 · **Est:** 1 session
+
+**Goal.** Correct a popular claim without replacing it with a better-dressed
+one.
+
+**Scope.** A reference section in the shape of AND-35, sources committed to the
+repo, three tests. **No exercise entry, no plan, no schedule, no schema
+change.**
+
+**Done when.**
+- [x] Reference text on what period pain is, on movement during menstruation, on what actually varies, on signals to stop, on phase-based schemes, and on pain worth taking to a clinician — reached from insights
+- [x] Every factual claim carries a citation, committed in the repo, `[VERIFY]`-marked until checked, and `RELEASE.md` gates on it
+- [x] `movement_sources_test.dart` fails on a claim the sources file does not cover, and on `RELEASE.md` dropping the gate
+- [x] `movement_copy_test.dart` fails on the banned vocabulary, on any digit in the section, on any second person in it, and on the vocabulary of a training plan
+- [x] Nothing on the screen can be filled in, and the second paragraph says so
+
+**The requested version was wrong and is not what shipped.** This was asked for
+as *"avoid exercising during menstruation, doing so when follicular"*. Nothing
+in the register supports a blanket instruction to avoid exercise during a
+period, and the evidence runs the other way: a Cochrane review of exercise for
+dysmenorrhoea found that exercise may reduce how intense menstrual pain is (M2),
+and clinical guidance on period pain lists exercise among the measures that may
+help (M1). Shipping the requested version would have told people to stop doing
+a thing that helps them, on the authority of an app that cannot see them. M1 and
+M3 are what replaced it, and neither of them tells anyone to exercise either.
+
+**What varies is how it feels, not what is permitted.** F1 and F2 carry that:
+pain, tiredness and how hard a given effort seems, varying widely between people
+and between one cycle and the next in the same person. A population average
+applied to one person on one day is a guess wearing a citation, so nothing here
+becomes a rule.
+
+**Rest is a permission, and the copy says so in those words.** The honest line
+is *"rest when you need to"*, and it is banned by this section's own
+second-person rule — correctly, because it is an instruction to a body this app
+has never seen. What survives is the same permission in the third person, with
+the distinction stated outright, because an instruction to rest is the same
+category error as an exercise prescription, only kinder.
+
+**Signals to stop, and a mechanism that was already in this app.** Feeling faint
+or light-headed during exertion, breathlessness out of proportion to the effort,
+and chest pain are reasons to stop and be checked (S1). And there is a citable
+reason exertion can feel harder around heavy periods that is not "hormones make
+exercise bad": heavy menstrual bleeding is a recognised cause of iron deficiency
+anaemia, whose commonly listed symptoms include tiredness, lack of energy and
+shortness of breath. That is the nutrition reference's own claim — S2, S3 and S4
+are I3, I4 and I5 from `docs/NUTRITION_SOURCES.md`, borrowed and attributed
+identically rather than re-derived, and a test fails if the other end of the
+cross-reference disappears.
+
+**The phase-based claims are answered, not omitted.** Programming exercise by
+cycle phase and phase-varying injury risk are weak and contested: the systematic
+review evidence is low quality and inconsistent, with between-individual
+variation larger than the effect being looked for (E1), and no guidance in the
+register recommends either (E2, E3). Hormonal contraception is the last step of
+the argument (H1) — it suppresses ovulation, so a phase-based scheme is being
+applied to phases that are not occurring, and this app's own condition list
+names four hormonal methods. **No plan is built out of any of it.** A reference
+that hands someone a prescription built on evidence this thin is worse than one
+that says how thin it is, because the prescription survives being wrong and the
+caveat does not.
+
+**One claim is cited outside the register, deliberately.** E1 is a sports
+medicine systematic review, because no body in the register has published on
+whether exercise should be programmed by cycle phase — which is the point E2 and
+E3 make. Naming the review that has looked beat the two alternatives:
+attributing a training conclusion to NICE, which has not drawn one, or leaving
+the loudest claim in the subject unanswered on the one screen that is about it.
+`docs/MOVEMENT_SOURCES.md` says so at the claim.
+
+**Three of the claims are absence claims.** M3, E2 and E3 say that a named body
+does *not* say something. They are `[VERIFY]`-marked like the rest, and
+`RELEASE.md` says how they are cleared: by reading the named guidance and
+finding no phase-based recommendation in it. Finding one falsifies the claim,
+and the claim is then what changes.
+
+**Two guards differ from AND-35's, and the reasons are recorded in the test.**
+The training vocabulary — `train*`, `intensit*`, `sets` — is banned over the
+`movement*` strings rather than the whole ARB, because AND-35's own copy
+correctly says *"heavy training"* about functional hypothalamic amenorrhoea and
+the flow setting correctly offers to record bleeding *"rather than an
+intensity"*. A ban that fails the build on the app's own correct copy is
+enforcing a spelling, which is the finding `nutrition_copy_test.dart` already
+had to write down once. Everything unambiguous — the instruction forms of "do
+not exercise", the intensity bands, `rest days`, `workout`, `reps` — is banned
+over the whole ARB.
+
+**The way in is a second card on insights, under the first.** Both references
+sit below the user's own figures, for the reason AND-35 gives. The subtitle says
+what the page argues before anyone taps it, which matters more here than usual:
+the popular version of this subject is a plan, and somebody hoping to be told
+which days to exercise on should be able to see in advance that they will not
+be.
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read docs/PLAN.md 6.2, docs/WEIGHT_SOURCES.md,
+docs/NUTRITION_SOURCES.md and app/test/features/weight_copy_test.dart before
+writing a word of copy.
+
+Task AND-36: a reference section on pain and movement across the cycle, reached
+from insights, in the shape of the body-composition reference.
+
+This was requested as "avoid exercising during menstruation". Do not write that.
+It is not supported, and exercise is among the better-evidenced things for
+menstrual cramps — the requested version would tell people to stop doing
+something that helps them. Write the honest version: movement during
+menstruation is not contraindicated, what varies is how it feels, and "rest when
+you need to" is a permission rather than an instruction. Say explicitly that
+phase-based training and phase-varying injury risk are weak and contested, and
+do not build a plan out of them. Hormonal contraception is another reason not to
+prescribe by phase.
+
+Add signals to stop — faintness, disproportionate breathlessness, chest pain —
+as wariness and permission to stop, never as a reason not to start. The
+iron/anaemia link that explains a hard day is already cited in
+NUTRITION_SOURCES.md; cross-reference it rather than re-deriving it.
+
+No prescription, no numbers, no second person, no diagnostic framing. Severe,
+worsening or life-interrupting pain is a reason to see someone, said without a
+threshold and without a pain scale. Cite every claim, mark them all [VERIFY],
+and gate RELEASE.md on the file.
 ```
 
 ---
