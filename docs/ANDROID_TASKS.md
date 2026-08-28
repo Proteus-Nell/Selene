@@ -55,6 +55,7 @@ The `app/` Flutter component of Period-Tracker, split into independently prompta
 | **Reference sections** | | | |
 | [AND-35](#and-35-body-composition-and-cycle-hormones) | Body composition and cycle hormones | AND-27, AND-34 | 1 |
 | [AND-36](#and-36-pain-and-movement-across-the-cycle) | Pain and movement across the cycle | AND-35 | 1 |
+| [AND-37](#and-37-the-companion) | The companion | AND-34, AND-36 | 1 |
 | [AND-38](#and-38-the-launcher-icon-is-the-supplied-logo) | The launcher icon is the supplied logo | AND-34 | 0.25 |
 | **Tier B (optional, may never be built)** | | | |
 | [AND-20](#and-20-kotlin-executorch-channel) | Kotlin ExecuTorch platform channel | AND-19 | 2-3 |
@@ -2028,6 +2029,124 @@ No prescription, no numbers, no second person, no diagnostic framing. Severe,
 worsening or life-interrupting pain is a reason to see someone, said without a
 threshold and without a pain scale. Cite every claim, mark them all [VERIFY],
 and gate RELEASE.md on the file.
+```
+
+### AND-37 The companion
+
+**Depends on:** AND-34, AND-36 · **Est:** 1 session
+
+**Goal.** A small persistent presence that offers one relevant line, without
+becoming the thing PLAN 6.3 forbids.
+
+**Scope.** A rules engine over a closed set of written sentences, a control in
+the bottom bar, a dismissible sheet, sources committed to the repo, five tests.
+**No network, no model, no schema change, no new dependency.**
+
+**Done when.**
+- [x] A labelled control on every screen inside the shell, showing one suggestion when tapped and dismissible from inside it
+- [x] Thirteen written lines, selected by an ordered rule set over cycle phase, symptoms logged today, recent heavy flow, recorded conditions, silence and whether a prediction exists
+- [x] `companion_lines_test.dart` walks the rule set over every combination of its inputs and pins the complete set of sentences, written out in the test
+- [x] `companion_copy_test.dart` fails on euphemism, forced positivity, praise for logging, mind-reading and speculation about pregnancy — over the whole ARB — and on any digit, any second person and any exclamation mark in the companion's own copy
+- [x] Every health claim cited in `docs/COMPANION_SOURCES.md`, `[VERIFY]`-marked, gated in `RELEASE.md`, and every claim-free line recorded as claim-free with the reason
+- [x] Idle animation derived from the AND-34 tokens, zero under `MediaQuery.disableAnimations`, stopped when the app is not in the foreground
+- [x] Nothing it says is reachable before the app lock is satisfied, including a suggestion already open
+
+**It is a rules engine, and the tests are what make that checkable.** There is
+no network permission and nothing on the device that could generate a sentence,
+so the honest description of this feature is a `switch` over a thirteen-member
+enum. That is only reassuring if somebody can see the thirteen, so
+`companion_lines_test.dart` walks the rules over the cartesian product of every
+input they read, asserts that the lines produced are exactly the enum — no
+unreachable line, none missing — and asserts that each resolves to a sentence
+written out in the test itself. A fourteenth thing this app can say cannot be
+added without somebody typing it into that file.
+
+**The voice is where this feature goes wrong, so the voice is a build failure.**
+A character is exactly the thing that acquires a euphemism, an exclamation mark
+and a "well done, five days in a row". The vocabulary bans run over the whole
+ARB, because a euphemism is wrong on the calendar too. Three rules are absolute
+over the companion's own strings: **no digit** (a number here is a streak, a
+count or a score), **no exclamation mark or emoji** (the charm is the drawing
+and the motion; the words stay level), and **no second person at all**.
+
+**The second-person ban is what makes "it must not imply it knows how you feel"
+mechanical.** It is the rule AND-35 and AND-36 already drew, applied to a
+surface that speaks in the first person by nature. Every line ended up being a
+statement about what was logged, about what guidance says, or about what the app
+itself is doing, and none of those needs a "you". It costs some warmth. The
+alternative was a judgement call, on every line, about whether *this* "you" was
+a claim about somebody's body — and that judgement is what a hurried edit gets
+wrong.
+
+**A missed period is a data state, and the line for one says so and stops.** The
+predicted window passing produces *"That is a data state, and nothing here
+guesses at what is behind it"*. The copy test fails if that sentence starts
+containing "late", "missed" or "delayed", and the vocabulary ban on pregnancy
+speculation is app-wide. Nothing downstream of that line branches on it either.
+
+**Five of thirteen lines make a health claim; eight do not, and both halves are
+written down.** Cramps, sleep, tiredness, movement during a period and the
+iron/anaemia link are cited in `docs/COMPANION_SOURCES.md`. Three of the six
+claims are borrowed from the nutrition and movement references and attributed
+identically, with a test that fails if the other end disappears. The other eight
+lines — an offer to open the log, a paused prediction, "nothing to point at" —
+are listed in the same file as claim-free with the reason, because an uncited
+line and an uncitable line look identical from outside, and the sources note is
+shown in the sheet **only** under a line that carries a claim.
+
+**There is deliberately no line about mood**, although mood, irritability,
+anxiety and low mood are all in the catalogue and all on the same NHS list. A
+sentence from a character addressed to somebody who has just recorded low mood
+is the one place in this app where warmth most easily becomes presumption. The
+omission is recorded in the sources file so nobody restores it thinking it was
+overlooked.
+
+**It sits in the bottom bar, not over the screen.** The brief was a persistent
+presence that blocks no content and covers no tap target, and a floating badge
+can promise neither: it sits on the last line of every scrolled list and on the
+conditions screen's extended button. A slot at the end of the navigation bar
+makes "covers nothing" a property of the layout, and the test asserts the two
+rectangles do not meet. It costs no height — the bar was already tall enough for
+a 48dp target — only width the four destinations did not need.
+
+**The breath is a multiple of `Motion.standard`, not a sixth token.** Six of
+them, held long enough to read as breathing rather than as a control answering a
+finger. Multiplying keeps the accessibility guarantee for free: zero times
+anything is zero, so with "remove animations" on no ticker is created at all and
+the crescent is simply drawn. It also stops on anything other than `resumed`,
+which includes the frames behind this app's own credential prompt.
+
+**Prompt to paste.**
+
+```
+Repo: Period-Tracker. Read docs/PLAN.md 6.2 and 6.3, app/lib/core/motion.dart,
+app/lib/security/lock_gate.dart and docs/MOVEMENT_SOURCES.md with its two tests
+before writing a word of copy.
+
+Task AND-37: a companion — a small persistent, tappable presence reachable from
+any screen, offering one short relevant suggestion.
+
+It is a rules engine, not a model. No network permission and no on-device LLM
+exist here. It reads cycle phase, days logged, symptoms recorded today and
+recently, conditions and whether a prediction exists, and selects from a
+curated, finite set of written lines. It never composes a sentence; it chooses
+one. Write a test that walks the whole rule set and asserts the complete set of
+possible utterances, so every word it can say is readable in one place.
+
+The voice is where this will go wrong. It says "cramps", not "that time of the
+month"; "period", not "shark week". It never tells anyone to cheer up, never
+congratulates anyone for logging, has no streaks and no exclamation marks. It
+never guesses at pregnancy, loss or sex. A missed period is a data state. It
+must never imply it knows how the user feels — it knows what was logged, which
+is not the same thing. Warm is allowed; chirpy is not.
+
+Cite every health claim in docs/COMPANION_SOURCES.md on the MOVEMENT_SOURCES.md
+model, [VERIFY]-marked with a RELEASE.md gate, and record which lines are
+claim-free and why so the distinction is deliberate. Do not block content or
+cover a tap target. Collapse the idle animation under
+MediaQuery.disableAnimationsOf and pause it when backgrounded. Label it for a
+screen reader. Nothing it says may be visible before unlock, and no existing
+leak check may be weakened.
 ```
 
 ### AND-38 The launcher icon is the supplied logo

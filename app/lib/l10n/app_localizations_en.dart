@@ -1125,6 +1125,70 @@ class AppLocalizationsEn extends AppLocalizations {
       'What exercise does about period pain, how little supports planning it by cycle phase, and what is a reason to stop.';
 
   @override
+  String get companionLabel => 'Companion';
+
+  @override
+  String get companionHowItWorks =>
+      'This picks from a fixed set of written lines. It reads what has been logged on this device — which is not the same as knowing how anyone feels — and nothing else.';
+
+  @override
+  String get companionDismiss => 'Dismiss';
+
+  @override
+  String get companionSourcesNote =>
+      'Any health claim above is listed with its source in COMPANION_SOURCES.md in the app\'s source repository.';
+
+  @override
+  String get companionLineStillReading => 'The log is still being read.';
+
+  @override
+  String get companionLinePredictionPaused =>
+      'A pregnancy is recorded, so predictions are paused. Days can still be logged.';
+
+  @override
+  String get companionLineHeavyBleeding =>
+      'Heavy bleeding is recorded on several days. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia, which a blood test settles rather than symptoms.';
+
+  @override
+  String get companionLineCramps =>
+      'Cramps are recorded for today. Guidance on period pain lists heat, painkillers and exercise among the measures that may help.';
+
+  @override
+  String get companionLineSleep =>
+      'Disturbed sleep is recorded for today. Sleep problems are among the symptoms commonly reported around a period.';
+
+  @override
+  String get companionLineLowEnergy =>
+      'Low energy is recorded for today. Tiredness is among the symptoms commonly reported before and during a period.';
+
+  @override
+  String get companionLinePeriodToday =>
+      'A period is logged for today. Menstruation is not named anywhere in the guidance behind this app as a reason to stop moving.';
+
+  @override
+  String get companionLineOverdue =>
+      'The predicted window has passed with no period logged. That is a data state, and nothing here guesses at what is behind it.';
+
+  @override
+  String get companionLineNothingLoggedRecently =>
+      'Nothing has been logged for a few days. The log is on the first tab, whenever there is something to put in it.';
+
+  @override
+  String get companionLineNoLogsYet =>
+      'Nothing is recorded yet. One period start date is enough to begin.';
+
+  @override
+  String get companionLineNoPredictionYet =>
+      'There is not enough history for a prediction yet. Insights holds what has been recorded so far.';
+
+  @override
+  String get companionLineTodayLogged =>
+      'Today is already logged. The day can be opened again and changed.';
+
+  @override
+  String get companionLineNothingToPointAt => 'Nothing to point at just now.';
+
+  @override
   String get conditionsTitle => 'Conditions and medication';
 
   @override
