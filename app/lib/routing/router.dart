@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:period_tracker/core/motion.dart';
 import 'package:period_tracker/features/calendar/calendar_screen.dart';
+import 'package:period_tracker/features/companion/companion_dock.dart';
 import 'package:period_tracker/features/insights/insights_screen.dart';
 import 'package:period_tracker/features/log/log_screen.dart';
 import 'package:period_tracker/features/onboarding/onboarding_screen.dart';
@@ -140,32 +141,41 @@ class AppScaffold extends StatelessWidget {
       // on every prediction change, and a screen only does that while it is on
       // top.
       body: NotificationSync(child: shell),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: shell.currentIndex,
-        onDestinationSelected: (index) =>
-            shell.goBranch(index, initialLocation: index == shell.currentIndex),
-        destinations: <NavigationDestination>[
-          NavigationDestination(
-            icon: const Icon(Icons.edit_calendar_outlined),
-            selectedIcon: const Icon(Icons.edit_calendar),
-            label: l10n.navLog,
+      // The companion shares the bar rather than floating above the content
+      // (AND-37). Everything inside this Scaffold's body is a screen somebody
+      // is reading, including the ones pushed on top of a branch, so the one
+      // place a persistent presence can sit without covering something is the
+      // furniture around them.
+      bottomNavigationBar: CompanionDock(
+        navigationBar: NavigationBar(
+          selectedIndex: shell.currentIndex,
+          onDestinationSelected: (index) => shell.goBranch(
+            index,
+            initialLocation: index == shell.currentIndex,
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.calendar_month_outlined),
-            selectedIcon: const Icon(Icons.calendar_month),
-            label: l10n.navCalendar,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.insights_outlined),
-            selectedIcon: const Icon(Icons.insights),
-            label: l10n.navInsights,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings),
-            label: l10n.navSettings,
-          ),
-        ],
+          destinations: <NavigationDestination>[
+            NavigationDestination(
+              icon: const Icon(Icons.edit_calendar_outlined),
+              selectedIcon: const Icon(Icons.edit_calendar),
+              label: l10n.navLog,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.calendar_month_outlined),
+              selectedIcon: const Icon(Icons.calendar_month),
+              label: l10n.navCalendar,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.insights_outlined),
+              selectedIcon: const Icon(Icons.insights),
+              label: l10n.navInsights,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.settings_outlined),
+              selectedIcon: const Icon(Icons.settings),
+              label: l10n.navSettings,
+            ),
+          ],
+        ),
       ),
     );
   }

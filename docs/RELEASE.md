@@ -151,6 +151,12 @@ Checklist, in the order the failures actually happen:
 - [ ] No claim in `docs/MOVEMENT_SOURCES.md` is still marked `[VERIFY]` —
       including its three absence claims, which are cleared by reading the
       named guidance and finding no phase-based recommendation in it
+- [ ] No claim in `docs/COMPANION_SOURCES.md` is still marked `[VERIFY]` —
+      including its one absence claim, cleared by reading the physical activity
+      and period pain guidance and finding no instruction to stop. Three of the
+      six are shared with the nutrition and movement files: verify them once and
+      clear the marker in every file that carries them, or the three copies
+      start disagreeing
 
 ### The medicines artifact (export format aside)
 

@@ -1965,6 +1965,108 @@ abstract class AppLocalizations {
   /// **'What exercise does about period pain, how little supports planning it by cycle phase, and what is a reason to stop.'**
   String get movementEntrySubtitle;
 
+  /// The name of the small persistent control in the bottom bar. It is a control, so it needs a name a screen reader can announce; 'decoration' is not an option.
+  ///
+  /// In en, this message translates to:
+  /// **'Companion'**
+  String get companionLabel;
+
+  /// Shown under every suggestion. States what the thing is: a rules engine over local data with a finite vocabulary, which knows what was logged and not how the reader feels.
+  ///
+  /// In en, this message translates to:
+  /// **'This picks from a fixed set of written lines. It reads what has been logged on this device — which is not the same as knowing how anyone feels — and nothing else.'**
+  String get companionHowItWorks;
+
+  /// Closes the suggestion. The suggestion has to be dismissible from inside it, not only by the sheet's own gesture.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get companionDismiss;
+
+  /// Points at the sources file. Some lines make no health claim at all, and the file says which ones and why.
+  ///
+  /// In en, this message translates to:
+  /// **'Any health claim above is listed with its source in COMPANION_SOURCES.md in the app\'s source repository.'**
+  String get companionSourcesNote;
+
+  /// Shown while the logs, prediction or conditions are still loading. Says so rather than picking a line from a state it has not seen yet.
+  ///
+  /// In en, this message translates to:
+  /// **'The log is still being read.'**
+  String get companionLineStillReading;
+
+  /// Restates a state the user entered themselves and a behaviour the app already has. It never infers a pregnancy; it reads a recorded condition.
+  ///
+  /// In en, this message translates to:
+  /// **'A pregnancy is recorded, so predictions are paused. Days can still be logged.'**
+  String get companionLinePredictionPaused;
+
+  /// Carries a health claim (COMPANION_SOURCES.md I1, I2). A statement about physiology, followed by the sentence that stops it being read as a conclusion about the reader.
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy bleeding is recorded on several days. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia, which a blood test settles rather than symptoms.'**
+  String get companionLineHeavyBleeding;
+
+  /// Carries a health claim (COMPANION_SOURCES.md P1). Reports what guidance lists rather than telling anyone to do any of it.
+  ///
+  /// In en, this message translates to:
+  /// **'Cramps are recorded for today. Guidance on period pain lists heat, painkillers and exercise among the measures that may help.'**
+  String get companionLineCramps;
+
+  /// Carries a health claim (COMPANION_SOURCES.md S1). Says the symptom is commonly reported, which is not the same as saying it is caused by the cycle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disturbed sleep is recorded for today. Sleep problems are among the symptoms commonly reported around a period.'**
+  String get companionLineSleep;
+
+  /// Carries a health claim (COMPANION_SOURCES.md S2). Same shape as the sleep line and the same limit on it.
+  ///
+  /// In en, this message translates to:
+  /// **'Low energy is recorded for today. Tiredness is among the symptoms commonly reported before and during a period.'**
+  String get companionLineLowEnergy;
+
+  /// Carries a health claim (COMPANION_SOURCES.md M1), an absence claim borrowed from the movement reference. It tells nobody to move; it says no source tells anyone to stop.
+  ///
+  /// In en, this message translates to:
+  /// **'A period is logged for today. Menstruation is not named anywhere in the guidance behind this app as a reason to stop moving.'**
+  String get companionLinePeriodToday;
+
+  /// The line PLAN 6.3 is most specific about. A missed period is a data state, not a life event to comment on, and the second sentence is what keeps it one.
+  ///
+  /// In en, this message translates to:
+  /// **'The predicted window has passed with no period logged. That is a data state, and nothing here guesses at what is behind it.'**
+  String get companionLineOverdue;
+
+  /// An offer, never a nudge. No streak, no count, and no reason asked for: a gap may be pregnancy, loss, illness, or simply not wanting to think about it.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing has been logged for a few days. The log is on the first tab, whenever there is something to put in it.'**
+  String get companionLineNothingLoggedRecently;
+
+  /// The empty state, restating what onboarding already said rather than inventing a second version of it.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is recorded yet. One period start date is enough to begin.'**
+  String get companionLineNoLogsYet;
+
+  /// Says what is missing and where the user's own figures are, because withholding a prediction must not read as withholding their history.
+  ///
+  /// In en, this message translates to:
+  /// **'There is not enough history for a prediction yet. Insights holds what has been recorded so far.'**
+  String get companionLineNoPredictionYet;
+
+  /// Deliberately no praise. Logging is not an achievement and this app does not congratulate anyone for it.
+  ///
+  /// In en, this message translates to:
+  /// **'Today is already logged. The day can be opened again and changed.'**
+  String get companionLineTodayLogged;
+
+  /// The fallback. It says nothing rather than manufacturing something, which is the whole reason the set is finite.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to point at just now.'**
+  String get companionLineNothingToPointAt;
+
   /// No description provided for @conditionsTitle.
   ///
   /// In en, this message translates to:

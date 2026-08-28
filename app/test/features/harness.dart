@@ -31,6 +31,8 @@ Widget harness(
   Brightness brightness = Brightness.light,
   TextScaler textScaler = TextScaler.noScaling,
   bool accessibleNavigation = false,
+  bool disableAnimations = false,
+  Widget Function(BuildContext context, Widget child)? wrap,
   List<Override> overrides = const <Override>[],
 }) {
   final resolvedClock = clock ?? testClock;
@@ -78,8 +80,18 @@ Widget harness(
         data: MediaQuery.of(context).copyWith(
           textScaler: textScaler,
           accessibleNavigation: accessibleNavigation,
+          // Above the Navigator like the two above it, so that a route pushed
+          // on top of `child` — a dialog, a bottom sheet — is covered too. A
+          // widget that animates forever is otherwise unreachable by
+          // pumpAndSettle the moment it appears inside one.
+          disableAnimations: disableAnimations,
         ),
-        child: navigator!,
+        // Above the Navigator, which is where `app.dart` puts the lock gate —
+        // and the reason it puts it there is that a dialog or a bottom sheet is
+        // a route, so a gate wrapped around the screen instead would leave
+        // every one of them showing after the app locked. A test that needs
+        // that arrangement cannot get it by wrapping `child`.
+        child: wrap == null ? navigator! : wrap(context, navigator!),
       ),
       home: child,
     ),
