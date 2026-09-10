@@ -5,6 +5,7 @@ import 'package:period_tracker/core/motion.dart';
 import 'package:period_tracker/features/calendar/calendar_screen.dart';
 import 'package:period_tracker/features/companion/companion_dock.dart';
 import 'package:period_tracker/features/insights/insights_screen.dart';
+import 'package:period_tracker/features/learn/learn_screen.dart';
 import 'package:period_tracker/features/log/log_screen.dart';
 import 'package:period_tracker/features/onboarding/onboarding_screen.dart';
 import 'package:period_tracker/features/settings/settings_screen.dart';
@@ -28,6 +29,9 @@ abstract final class Routes {
 
   /// Prediction, history and self-metrics.
   static const String insights = '/insights';
+
+  /// The reference pages, collected (AND-39).
+  static const String learn = '/learn';
 
   /// Data controls, privacy text and the activity log.
   static const String settings = '/settings';
@@ -79,7 +83,7 @@ GoRouter buildRouter(Ref ref) {
       StatefulShellRoute(
         builder: (context, state, shell) => AppScaffold(shell: shell),
         // A cross-fade instead of go_router's plain IndexedStack (AND-34). The
-        // four tabs are peers, not a stack, so nothing slides sideways: a
+        // five tabs are peers, not a stack, so nothing slides sideways: a
         // horizontal transition tells the user they have gone deeper into
         // something, and moving between the calendar and settings is not that.
         navigatorContainerBuilder: _fadeThroughBranches,
@@ -111,6 +115,14 @@ GoRouter buildRouter(Ref ref) {
           StatefulShellBranch(
             routes: <RouteBase>[
               GoRoute(
+                path: Routes.learn,
+                builder: (context, state) => const LearnScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
                 path: Routes.settings,
                 builder: (context, state) => const SettingsScreen(),
               ),
@@ -125,7 +137,7 @@ GoRouter buildRouter(Ref ref) {
 /// The router, rebuilt if the onboarding state is overridden.
 final Provider<GoRouter> routerProvider = Provider<GoRouter>(buildRouter);
 
-/// The persistent frame around the four main screens.
+/// The persistent frame around the five main screens.
 class AppScaffold extends StatelessWidget {
   /// Wraps [shell], the branch navigator go_router manages.
   const AppScaffold({required this.shell, super.key});
@@ -155,8 +167,8 @@ class AppScaffold extends StatelessWidget {
           ),
           destinations: <NavigationDestination>[
             NavigationDestination(
-              icon: const Icon(Icons.edit_calendar_outlined),
-              selectedIcon: const Icon(Icons.edit_calendar),
+              icon: const Icon(Icons.schedule_outlined),
+              selectedIcon: const Icon(Icons.schedule),
               label: l10n.navLog,
             ),
             NavigationDestination(
@@ -170,6 +182,11 @@ class AppScaffold extends StatelessWidget {
               label: l10n.navInsights,
             ),
             NavigationDestination(
+              icon: const Icon(Icons.menu_book_outlined),
+              selectedIcon: const Icon(Icons.menu_book),
+              label: l10n.navLearn,
+            ),
+            NavigationDestination(
               icon: const Icon(Icons.settings_outlined),
               selectedIcon: const Icon(Icons.settings),
               label: l10n.navSettings,
@@ -181,7 +198,7 @@ class AppScaffold extends StatelessWidget {
   }
 }
 
-/// Builds the container that holds the four branch navigators (AND-34).
+/// Builds the container that holds the branch navigators (AND-34).
 ///
 /// Replaces `StatefulShellRoute.indexedStack`, which switches branches on the
 /// frame the tab is tapped. The branches themselves are unchanged: every one
@@ -206,7 +223,7 @@ Widget _fadeThroughBranches(
 ///
 /// Off-branch children are `Offstage`, exactly as `IndexedStack` leaves them.
 /// That is load-bearing rather than an optimisation: an offstage subtree is
-/// skipped by every default `Finder`, so the four screens do not all answer a
+/// skipped by every default `Finder`, so the five screens do not all answer a
 /// `find.text` at once — and the branch on its way out stops being offstage for
 /// only as long as it is still being painted.
 class _FadeThroughBranches extends StatefulWidget {

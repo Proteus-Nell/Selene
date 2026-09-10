@@ -37,13 +37,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonNotNow => 'Not now';
 
   @override
-  String get navLog => 'Log';
+  String get navLog => 'Today';
 
   @override
   String get navCalendar => 'Calendar';
 
   @override
   String get navInsights => 'Insights';
+
+  @override
+  String get navLearn => 'Learn';
 
   @override
   String get navSettings => 'Settings';
@@ -91,12 +94,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingFirstEntrySaved => 'Saved. You can change it any time.';
 
   @override
-  String get logTitle => 'Today';
+  String get logGreetingMorning => 'Good morning';
 
   @override
-  String logTodayIs(String date) {
-    return 'Today is $date';
+  String get logGreetingAfternoon => 'Good afternoon';
+
+  @override
+  String get logGreetingEvening => 'Good evening';
+
+  @override
+  String logPhaseAndDay(String phase, int day) {
+    return '$phase · day $day';
   }
+
+  @override
+  String logDayOfCycleShort(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String logCountdownRange(int from, int to) {
+    return 'in $from–$to days';
+  }
+
+  @override
+  String get logCountdownCaption => 'until your period is likely';
+
+  @override
+  String get logCountdownNow => 'any day now';
+
+  @override
+  String get logCountdownNowCaption => 'you are inside the expected range';
+
+  @override
+  String get logCountdownNothingYet => 'not yet';
+
+  @override
+  String get logCountdownNothingYetCaption =>
+      'log a period start and this fills in';
+
+  @override
+  String logRingLabel(String summary) {
+    return 'Your cycle as a ring. $summary';
+  }
+
+  @override
+  String get logLegendOvulation => 'Ovulation';
 
   @override
   String logStartedOn(String date) {
@@ -1292,6 +1335,92 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsConditionsSubtitle =>
       'Record long-term things that can change your cycle.';
+
+  @override
+  String get learnTitle => 'Learn';
+
+  @override
+  String get learnIntro =>
+      'Reference notes, written for this app and kept on the device. Every one of them says where its claims come from, and none of them is advice about you.';
+
+  @override
+  String get learnReferenceSection => 'Reference';
+
+  @override
+  String get learnYourRecordSection => 'Your record';
+
+  @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get settingsAppearanceSubtitle => 'Colour scheme and light or dark.';
+
+  @override
+  String get appearanceTitle => 'Appearance';
+
+  @override
+  String get appearanceSchemeSection => 'Colour scheme';
+
+  @override
+  String get appearanceSchemeNote =>
+      'Every scheme here was measured for contrast before it was offered. Pick whichever you can stand to look at.';
+
+  @override
+  String get appearanceThemeSection => 'Theme';
+
+  @override
+  String get appearanceThemeSystem => 'System';
+
+  @override
+  String get appearanceThemeLight => 'Light';
+
+  @override
+  String get appearanceThemeDark => 'Dark';
+
+  @override
+  String get appearanceThemeLockedByScheme =>
+      'Night is dark by design, so there is nothing to switch. Pick another scheme to choose.';
+
+  @override
+  String appearanceSchemeSelected(String scheme) {
+    return '$scheme, selected';
+  }
+
+  @override
+  String get appearanceSchemeRose => 'Rose & Plum';
+
+  @override
+  String get appearanceSchemeRoseSubtitle => 'Warm, soft';
+
+  @override
+  String get appearanceSchemeSage => 'Sage & Apricot';
+
+  @override
+  String get appearanceSchemeSageSubtitle => 'Calm, botanical';
+
+  @override
+  String get appearanceSchemeLilac => 'Lilac & Sage';
+
+  @override
+  String get appearanceSchemeLilacSubtitle => 'Cool, quiet';
+
+  @override
+  String get appearanceSchemePeriwinkle => 'Periwinkle & Clay';
+
+  @override
+  String get appearanceSchemePeriwinkleSubtitle => 'Soft blue, terracotta';
+
+  @override
+  String get appearanceSchemeInk => 'Ink & Ochre';
+
+  @override
+  String get appearanceSchemeInkSubtitle => 'Near-monochrome, discreet';
+
+  @override
+  String get appearanceSchemeNight => 'Night';
+
+  @override
+  String get appearanceSchemeNightSubtitle => 'Designed dark, not inverted';
 
   @override
   String get settingsDisplaySection => 'Display';

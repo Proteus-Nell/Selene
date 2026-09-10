@@ -1,6 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/clock.dart';
 import 'package:period_tracker/core/logging.dart';
+import 'package:period_tracker/core/palette.dart';
+import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/repositories/condition_repository.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
@@ -174,6 +177,45 @@ final StreamProvider<bool> showOvulationWindowProvider = StreamProvider<bool>(
   (ref) =>
       ref.watch(appDatabaseProvider).settingsDao.watchShowOvulationWindow(),
 );
+
+/// The colour scheme the app is wearing (AND-39).
+///
+/// A stream, so that tapping a scheme in settings repaints the app on the next
+/// frame. That immediacy is the whole point of the screen: a colour chosen
+/// against a swatch and applied on the next launch is a colour nobody can
+/// actually judge.
+///
+/// Falls back to [AppScheme.fallback] while the read is in flight and for a
+/// stored name this build does not have.
+final StreamProvider<AppScheme> colourSchemeProvider =
+    StreamProvider<AppScheme>(
+      (ref) => ref
+          .watch(appDatabaseProvider)
+          .settingsDao
+          .watchRaw(SettingKey.colourScheme)
+          .map(AppScheme.fromWireName),
+    );
+
+/// Whether the app follows the device theme, or is pinned light or dark.
+///
+/// Defaults to [ThemeMode.system], which is what the app did before there was
+/// a setting. An unrecognised stored value falls back to it rather than
+/// throwing, for the same reason the scheme does.
+final StreamProvider<ThemeMode> themeModeProvider = StreamProvider<ThemeMode>(
+  (ref) => ref
+      .watch(appDatabaseProvider)
+      .settingsDao
+      .watchRaw(SettingKey.themeMode)
+      .map(themeModeFromWireName),
+);
+
+/// The [ThemeMode] stored as [wireName], or [ThemeMode.system].
+ThemeMode themeModeFromWireName(String? wireName) {
+  for (final mode in ThemeMode.values) {
+    if (mode.name == wireName) return mode;
+  }
+  return ThemeMode.system;
+}
 
 /// The current prediction, recomputed whenever the logs change.
 ///

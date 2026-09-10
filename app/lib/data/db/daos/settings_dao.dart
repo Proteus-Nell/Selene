@@ -87,6 +87,19 @@ enum SettingKey {
   /// Epoch day the app was last opened, for missed-reminder detection.
   lastOpenedEpochDay('last_opened_epoch_day'),
 
+  /// Which of the six colour schemes the user picked (AND-39).
+  ///
+  /// Stored as `AppScheme.wireName`. Absent means never chosen, which is the
+  /// default scheme rather than an error; so is a name this build does not
+  /// have, because a database written by a later build must still open.
+  colourScheme('colour_scheme'),
+
+  /// Whether the app follows the device theme, or is pinned light or dark.
+  ///
+  /// Stored as a `ThemeMode` name. Absent means follow the device, which is
+  /// what the app did before there was a setting at all.
+  themeMode('theme_mode'),
+
   /// Whether the notification permission has already been asked for.
   ///
   /// Recorded so the app asks once. On Android 13+ a denial is close to final,
@@ -142,6 +155,22 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
     )..where((t) => t.settingKey.equals(key.wireName))).getSingleOrNull();
     return row?.settingValue;
   }
+
+  /// Watches the raw value stored for [key], re-emitting on every write.
+  ///
+  /// Raw rather than parsed because the two settings that use it — the colour
+  /// scheme and the theme mode — are enums declared in `lib/core`, and a DAO
+  /// that imported them would have the data layer depending on the theme. The
+  /// mapping happens in the providers, where both sides are already in scope.
+  Stream<String?> watchRaw(SettingKey key) {
+    final query = select(settings)
+      ..where((t) => t.settingKey.equals(key.wireName));
+    return query.watchSingleOrNull().map((row) => row?.settingValue).distinct();
+  }
+
+  /// Writes a string setting.
+  Future<void> writeString(SettingKey key, String value) =>
+      writeRaw(key.wireName, value);
 
   /// Reads a boolean setting, defaulting to [orElse].
   Future<bool> readBool(SettingKey key, {required bool orElse}) async =>

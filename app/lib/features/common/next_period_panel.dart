@@ -102,9 +102,13 @@ class _Window extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    return Card(
+    // Flat on the page rather than in a card (AND-39). A card says the thing
+    // inside it can be acted on, and this one cannot: it is the app telling
+    // the reader what it believes. The hairline keeps it a block without
+    // drawing a box round a paragraph.
+    return _Flat(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -189,9 +193,9 @@ class _Message extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    return _Flat(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -217,6 +221,34 @@ class _Message extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A block that is only being read: no fill, no border, one hairline above.
+///
+/// The panel used to be a [Card], and a card is a promise that what is inside
+/// it can be acted on. Everything here is the app stating what it believes, and
+/// a filled rounded box round a paragraph is one more edge the eye has to get
+/// past before it reaches the sentence (AND-39).
+class _Flat extends StatelessWidget {
+  const _Flat({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Divider(
+          height: 1,
+          thickness: 1,
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+        child,
+      ],
     );
   }
 }

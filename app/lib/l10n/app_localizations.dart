@@ -151,7 +151,7 @@ abstract class AppLocalizations {
   /// No description provided for @navLog.
   ///
   /// In en, this message translates to:
-  /// **'Log'**
+  /// **'Today'**
   String get navLog;
 
   /// No description provided for @navCalendar.
@@ -165,6 +165,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Insights'**
   String get navInsights;
+
+  /// No description provided for @navLearn.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn'**
+  String get navLearn;
 
   /// No description provided for @navSettings.
   ///
@@ -244,17 +250,83 @@ abstract class AppLocalizations {
   /// **'Saved. You can change it any time.'**
   String get onboardingFirstEntrySaved;
 
-  /// No description provided for @logTitle.
+  /// No description provided for @logGreetingMorning.
   ///
   /// In en, this message translates to:
-  /// **'Today'**
-  String get logTitle;
+  /// **'Good morning'**
+  String get logGreetingMorning;
 
-  /// No description provided for @logTodayIs.
+  /// No description provided for @logGreetingAfternoon.
   ///
   /// In en, this message translates to:
-  /// **'Today is {date}'**
-  String logTodayIs(String date);
+  /// **'Good afternoon'**
+  String get logGreetingAfternoon;
+
+  /// No description provided for @logGreetingEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get logGreetingEvening;
+
+  /// No description provided for @logPhaseAndDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{phase} · day {day}'**
+  String logPhaseAndDay(String phase, int day);
+
+  /// No description provided for @logDayOfCycleShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day}'**
+  String logDayOfCycleShort(int day);
+
+  /// No description provided for @logCountdownRange.
+  ///
+  /// In en, this message translates to:
+  /// **'in {from}–{to} days'**
+  String logCountdownRange(int from, int to);
+
+  /// No description provided for @logCountdownCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'until your period is likely'**
+  String get logCountdownCaption;
+
+  /// No description provided for @logCountdownNow.
+  ///
+  /// In en, this message translates to:
+  /// **'any day now'**
+  String get logCountdownNow;
+
+  /// No description provided for @logCountdownNowCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'you are inside the expected range'**
+  String get logCountdownNowCaption;
+
+  /// No description provided for @logCountdownNothingYet.
+  ///
+  /// In en, this message translates to:
+  /// **'not yet'**
+  String get logCountdownNothingYet;
+
+  /// No description provided for @logCountdownNothingYetCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'log a period start and this fills in'**
+  String get logCountdownNothingYetCaption;
+
+  /// No description provided for @logRingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cycle as a ring. {summary}'**
+  String logRingLabel(String summary);
+
+  /// No description provided for @logLegendOvulation.
+  ///
+  /// In en, this message translates to:
+  /// **'Ovulation'**
+  String get logLegendOvulation;
 
   /// No description provided for @logStartedOn.
   ///
@@ -2246,6 +2318,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Record long-term things that can change your cycle.'**
   String get settingsConditionsSubtitle;
+
+  /// No description provided for @learnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn'**
+  String get learnTitle;
+
+  /// No description provided for @learnIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference notes, written for this app and kept on the device. Every one of them says where its claims come from, and none of them is advice about you.'**
+  String get learnIntro;
+
+  /// No description provided for @learnReferenceSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference'**
+  String get learnReferenceSection;
+
+  /// No description provided for @learnYourRecordSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Your record'**
+  String get learnYourRecordSection;
+
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearance;
+
+  /// No description provided for @settingsAppearanceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour scheme and light or dark.'**
+  String get settingsAppearanceSubtitle;
+
+  /// No description provided for @appearanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearanceTitle;
+
+  /// No description provided for @appearanceSchemeSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour scheme'**
+  String get appearanceSchemeSection;
+
+  /// No description provided for @appearanceSchemeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Every scheme here was measured for contrast before it was offered. Pick whichever you can stand to look at.'**
+  String get appearanceSchemeNote;
+
+  /// No description provided for @appearanceThemeSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get appearanceThemeSection;
+
+  /// No description provided for @appearanceThemeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get appearanceThemeSystem;
+
+  /// No description provided for @appearanceThemeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get appearanceThemeLight;
+
+  /// No description provided for @appearanceThemeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get appearanceThemeDark;
+
+  /// No description provided for @appearanceThemeLockedByScheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Night is dark by design, so there is nothing to switch. Pick another scheme to choose.'**
+  String get appearanceThemeLockedByScheme;
+
+  /// No description provided for @appearanceSchemeSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{scheme}, selected'**
+  String appearanceSchemeSelected(String scheme);
+
+  /// No description provided for @appearanceSchemeRose.
+  ///
+  /// In en, this message translates to:
+  /// **'Rose & Plum'**
+  String get appearanceSchemeRose;
+
+  /// No description provided for @appearanceSchemeRoseSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm, soft'**
+  String get appearanceSchemeRoseSubtitle;
+
+  /// No description provided for @appearanceSchemeSage.
+  ///
+  /// In en, this message translates to:
+  /// **'Sage & Apricot'**
+  String get appearanceSchemeSage;
+
+  /// No description provided for @appearanceSchemeSageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calm, botanical'**
+  String get appearanceSchemeSageSubtitle;
+
+  /// No description provided for @appearanceSchemeLilac.
+  ///
+  /// In en, this message translates to:
+  /// **'Lilac & Sage'**
+  String get appearanceSchemeLilac;
+
+  /// No description provided for @appearanceSchemeLilacSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cool, quiet'**
+  String get appearanceSchemeLilacSubtitle;
+
+  /// No description provided for @appearanceSchemePeriwinkle.
+  ///
+  /// In en, this message translates to:
+  /// **'Periwinkle & Clay'**
+  String get appearanceSchemePeriwinkle;
+
+  /// No description provided for @appearanceSchemePeriwinkleSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft blue, terracotta'**
+  String get appearanceSchemePeriwinkleSubtitle;
+
+  /// No description provided for @appearanceSchemeInk.
+  ///
+  /// In en, this message translates to:
+  /// **'Ink & Ochre'**
+  String get appearanceSchemeInk;
+
+  /// No description provided for @appearanceSchemeInkSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Near-monochrome, discreet'**
+  String get appearanceSchemeInkSubtitle;
+
+  /// No description provided for @appearanceSchemeNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Night'**
+  String get appearanceSchemeNight;
+
+  /// No description provided for @appearanceSchemeNightSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Designed dark, not inverted'**
+  String get appearanceSchemeNightSubtitle;
 
   /// No description provided for @settingsDisplaySection.
   ///

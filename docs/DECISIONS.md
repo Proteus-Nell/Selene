@@ -290,6 +290,15 @@ the vocabulary around it. The risk this accepts is that a user reads "luteal
 phase" as fertility information; the mitigation is that the phase strip never
 names ovulation and the estimate stays opt-in.
 
+**Amended by AND-39, without moving the line.** The home screen's cycle ring has
+a band for the estimated ovulation range, which makes it a second surface the
+estimate could reach someone through. It is drawn only when the same setting is
+on, it is absent for the frame before that preference has loaded, and it is
+subtracted from the follicular phase rather than added to the cycle. All three
+are pinned in `today_hero_test.dart`. There is still no `CyclePhase.ovulation`:
+the enum has three values and the band is drawn from `ovulationEstimate`, so a
+screen that does not ask for the estimate cannot render it.
+
 ---
 
 ## ADR-0008: App lock gates the interface and does not encrypt the database

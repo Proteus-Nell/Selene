@@ -41,6 +41,14 @@ void main() {
     expect(find.text(l10n.onboardingTitle), findsOneWidget);
     // The non-claims are on the first screen the user sees, not behind a link.
     expect(find.text(l10n.onboardingNotContraception), findsOneWidget);
+
+    // Torn down inside the test rather than left to the harness. The app
+    // watches two settings streams for the colour scheme and the theme mode
+    // (AND-39), and drift schedules a zero-duration timer when a query stream
+    // is cancelled. Unmounting here lets the fake clock drain it; unmounting
+    // at teardown leaves it pending and fails the next test.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
   });
 
   testWidgets('the newer-schema screen builds without a database', (

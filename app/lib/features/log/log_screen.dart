@@ -10,6 +10,7 @@ import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/log/day_editor.dart';
 import 'package:period_tracker/features/settings/settings_screen.dart';
+import 'package:period_tracker/features/today/today_hero.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/main.dart';
 
@@ -96,60 +97,69 @@ class _LogScreenState extends ConsumerState<LogScreen> {
     final selected = today.addDays(-_daysBack);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.logTitle)),
+      // No app bar. The screen names itself in the greeting, and a title bar
+      // saying "Today" above a date saying today was the app talking to itself
+      // (AND-39). The tab is still labelled, so nothing is lost.
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          children: <Widget>[
-            const _RecoveryBanner(),
-            const _ReExportBanner(),
-            Text(
-              l10n.logTodayIs(today.weekdayDayAndMonth(context)),
-              style: theme.textTheme.titleMedium,
-            ),
-            const SizedBox(height: 4),
-            logs.when(
-              loading: () => const SizedBox(height: 24),
-              error: (error, stack) => Text(l10n.errorGeneric),
-              data: (entries) => _TodayState(entries: entries, today: today),
-            ),
-            const SizedBox(height: 20),
-            Text(l10n.logWhenDidItStart, style: theme.textTheme.titleSmall),
-            const SizedBox(height: 8),
-            _DaySelector(
-              today: today,
-              selected: _daysBack,
-              onSelected: (value) => setState(() => _daysBack = value),
-              offsets: _offsets,
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () => _logStart(selected),
-                icon: const Icon(Icons.water_drop_outlined),
-                label: Text(
-                  _daysBack == 0
-                      ? l10n.logPeriodStartedToday
-                      : l10n.logPeriodStartedOnDay(
-                          _offsetLabel(l10n, _daysBack),
-                        ),
+        // A scroll view over a Column rather than a ListView, since the hero
+        // arrived above the controls (AND-39). A ListView builds only what is
+        // near the viewport, and the ring is tall enough to push the primary
+        // action past it — which means the button does not exist until the
+        // user scrolls, and neither does anything a screen reader or a test
+        // would go looking for. The content here is bounded, so building all
+        // of it costs nothing worth having.
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              const _RecoveryBanner(),
+              const _ReExportBanner(),
+              const TodayHero(),
+              const SizedBox(height: 24),
+              logs.when(
+                loading: () => const SizedBox(height: 24),
+                error: (error, stack) => Text(l10n.errorGeneric),
+                data: (entries) => _TodayState(entries: entries, today: today),
+              ),
+              const SizedBox(height: 20),
+              Text(l10n.logWhenDidItStart, style: theme.textTheme.titleSmall),
+              const SizedBox(height: 8),
+              _DaySelector(
+                today: today,
+                selected: _daysBack,
+                onSelected: (value) => setState(() => _daysBack = value),
+                offsets: _offsets,
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => _logStart(selected),
+                  icon: const Icon(Icons.water_drop_outlined),
+                  label: Text(
+                    _daysBack == 0
+                        ? l10n.logPeriodStartedToday
+                        : l10n.logPeriodStartedOnDay(
+                            _offsetLabel(l10n, _daysBack),
+                          ),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            logs.when(
-              loading: () => const SizedBox.shrink(),
-              error: (error, stack) => const SizedBox.shrink(),
-              data: (entries) => DayEditor(
-                date: today,
-                existing: entries
-                    .where((e) => e.date == today)
-                    .cast<DayLog?>()
-                    .firstWhere((e) => true, orElse: () => null),
+              const SizedBox(height: 24),
+              logs.when(
+                loading: () => const SizedBox.shrink(),
+                error: (error, stack) => const SizedBox.shrink(),
+                data: (entries) => DayEditor(
+                  date: today,
+                  existing: entries
+                      .where((e) => e.date == today)
+                      .cast<DayLog?>()
+                      .firstWhere((e) => true, orElse: () => null),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

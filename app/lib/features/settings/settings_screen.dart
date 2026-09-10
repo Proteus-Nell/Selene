@@ -10,6 +10,7 @@ import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/data/transfer/export_v1.dart';
 import 'package:period_tracker/data/transfer/import_v1.dart';
 import 'package:period_tracker/domain/predict/priors_bundled.dart';
+import 'package:period_tracker/features/appearance/appearance_screen.dart';
 import 'package:period_tracker/features/common/chip_motion.dart';
 import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/conditions/conditions_screen.dart';
@@ -241,6 +242,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const _AppLockSetting(),
             const Divider(),
             _SectionHeading(l10n.settingsDisplaySection),
+            ListTile(
+              leading: const Icon(Icons.palette_outlined),
+              title: Text(l10n.settingsAppearance),
+              subtitle: Text(l10n.settingsAppearanceSubtitle),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const AppearanceScreen(),
+                ),
+              ),
+            ),
             const _DisplaySettings(),
             const Divider(),
             _SectionHeading(l10n.settingsPrivacySection),
