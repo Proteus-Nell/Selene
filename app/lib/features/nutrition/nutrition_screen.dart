@@ -78,6 +78,7 @@ class NutritionScreen extends ConsumerWidget {
                 paragraphs: <String>[
                   l10n.nutritionMagnesiumBody,
                   l10n.nutritionMagnesiumEvidenceBody,
+                  l10n.nutritionMagnesiumCreamBody,
                 ],
               ),
             ),

@@ -1638,7 +1638,7 @@ abstract class AppLocalizations {
   /// No description provided for @hygieneTamponsBody.
   ///
   /// In en, this message translates to:
-  /// **'Regulated as medical devices rather than as drugs. Absorbency ratings are standardised, so the same rating means the same thing across brands. General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says rather than leaving it longer.'**
+  /// **'General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says rather than leaving it longer.'**
   String get hygieneTamponsBody;
 
   /// No description provided for @hygieneCupsTitle.
@@ -1734,8 +1734,14 @@ abstract class AppLocalizations {
   /// Must not be dropped for brevity. It is the claim that stops the magnesium section reading as a recommendation.
   ///
   /// In en, this message translates to:
-  /// **'Evidence that magnesium supplements improve menstrual symptoms is limited and not conclusive.'**
+  /// **'Magnesium is widely taken for cramps and premenstrual symptoms. Some trials report a benefit, and reviews of those trials find the evidence limited and not conclusive. Oral forms differ in how well they are absorbed, with glycinate and citrate better absorbed than oxide.'**
   String get nutritionMagnesiumEvidenceBody;
+
+  /// No description provided for @nutritionMagnesiumCreamBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Creams, oils and balms are sold for the same purpose. Absorption through unbroken skin is minimal: a review of the topic found meaningful absorption unsupported, and the best trial of a cream found only a small change that could have been chance. No clinical guidance here names magnesium, in any form, as a treatment for period pain.'**
+  String get nutritionMagnesiumCreamBody;
 
   /// No description provided for @nutritionZincTitle.
   ///
@@ -1824,13 +1830,13 @@ abstract class AppLocalizations {
   /// No description provided for @weightEnergyBody.
   ///
   /// In en, this message translates to:
-  /// **'The hypothalamus releases GnRH in pulses, and that rhythm is what drives LH and FSH from the pituitary, which in turn drive the ovary. When energy availability is low the pulses are suppressed: LH and FSH fall, ovulation stops, and periods stop with it. That state has a name: functional hypothalamic amenorrhoea.'**
+  /// **'The brain drives the ovaries through a steady rhythm of hormone signals. When the body is running on too little energy that rhythm is suppressed: the signals fall away, ovulation stops, and periods stop with it. The name for that state is functional hypothalamic amenorrhoea.'**
   String get weightEnergyBody;
 
   /// Load-bearing. Without it the section reads as a statement about a number on a scale, which is both wrong and the most harmful thing this reference could be mistaken for.
   ///
   /// In en, this message translates to:
-  /// **'Energy availability is what is left of the energy taken in once exercise has had its share, measured against what the body needs to run on. It is not a body weight and it is not a reading from a scale. Functional hypothalamic amenorrhoea occurs in people whose body weight is entirely unremarkable, and heavy training, illness or sustained stress can produce it with no fall in body weight at all.'**
+  /// **'Energy availability is the energy left over from food once exercise has taken its share, set against what the body needs to run on. It is not a body weight and it is not a reading from a scale. This happens to people whose body weight is entirely unremarkable, and heavy training, illness or sustained stress can bring it on with no fall in body weight at all.'**
   String get weightEnergyNotAScaleBody;
 
   /// No description provided for @weightInsulinTitle.
@@ -1848,19 +1854,19 @@ abstract class AppLocalizations {
   /// No description provided for @weightPcosTitle.
   ///
   /// In en, this message translates to:
-  /// **'PCOS'**
+  /// **'PMOS'**
   String get weightPcosTitle;
 
   /// No description provided for @weightPcosBody.
   ///
   /// In en, this message translates to:
-  /// **'Polycystic ovary syndrome is androgen excess together with irregular or absent ovulation. Insulin resistance is common alongside it, and the mechanism above is part of how the androgen excess is sustained.'**
+  /// **'Polyendocrine metabolic ovarian syndrome, formerly polycystic ovary syndrome, is androgen excess together with irregular or absent ovulation. Insulin resistance is common alongside it, and the mechanism above is part of how the androgen excess is sustained.'**
   String get weightPcosBody;
 
   /// Must not be dropped. The opposite impression is both common and false, and naming PCOS in a section about body composition without saying this would reinforce the error.
   ///
   /// In en, this message translates to:
-  /// **'PCOS occurs across the whole weight spectrum, in people who are thin as well as in people who are not. The widespread impression that it belongs at one end of that spectrum is not accurate, and it is one of the reasons the condition goes unrecognised.'**
+  /// **'PMOS occurs across the whole weight spectrum, in people who are thin as well as in people who are not. The widespread impression that it belongs at one end of that spectrum is not accurate, and it is one of the reasons the condition goes unrecognised.'**
   String get weightPcosSpectrumBody;
 
   /// No description provided for @weightThyroidTitle.
@@ -1944,14 +1950,8 @@ abstract class AppLocalizations {
   /// The correction this section exists for. The popular version of this subject says the opposite, and a cycle app repeating it would be telling people to stop doing something that helps them.
   ///
   /// In en, this message translates to:
-  /// **'Menstruation is not named anywhere in the sources behind this page as a reason to stop, and general physical activity guidance makes no exception for the days of a period. Clinical guidance on period pain goes further than that and lists exercise among the measures that may help with it.'**
+  /// **'Menstruation is not named anywhere in the sources behind this page as a reason to stop, and general physical activity guidance makes no exception for the days of a period.'**
   String get movementNotAvoidedBody;
-
-  /// Must not be strengthened. "Low quality evidence that exercise may reduce pain" is weaker than "exercise helps period pain" and it is the true one.
-  ///
-  /// In en, this message translates to:
-  /// **'A Cochrane review of exercise for period pain found that exercise may reduce how intense the pain is, on evidence the reviewers themselves rated as low quality. That is a modest finding and it is stated here at its real strength rather than at a more useful one. What it supports is only this: the direction of the evidence runs towards movement helping with cramps rather than making them worse.'**
-  String get movementEvidenceBody;
 
   /// No description provided for @movementHowItFeelsTitle.
   ///
@@ -2010,7 +2010,7 @@ abstract class AppLocalizations {
   /// No description provided for @movementContraceptionBody.
   ///
   /// In en, this message translates to:
-  /// **'Hormonal contraception is a further reason those schemes do not carry across. Combined hormonal contraception works by suppressing ovulation, so the rise and fall of oestrogen and progesterone that a phase-based scheme assumes is not what is going on underneath. A scheme built on phases, applied where those phases are not occurring, has nothing left to stand on.'**
+  /// **'Hormonal contraception is another reason these schemes do not carry over. The combined pill works by stopping ovulation, so the rise and fall of oestrogen and progesterone that a phase-based plan assumes is not happening at all. A plan built on cycle phases has nothing underneath it when those phases are not occurring.'**
   String get movementContraceptionBody;
 
   /// No description provided for @movementSeeSomeoneTitle.
@@ -2274,7 +2274,7 @@ abstract class AppLocalizations {
   /// No description provided for @conditionPcos.
   ///
   /// In en, this message translates to:
-  /// **'PCOS'**
+  /// **'PMOS'**
   String get conditionPcos;
 
   /// No description provided for @conditionEndometriosis.

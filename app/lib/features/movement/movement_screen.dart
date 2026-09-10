@@ -75,10 +75,7 @@ class MovementScreen extends StatelessWidget {
               index: 2,
               child: _Section(
                 title: l10n.movementNotAvoidedTitle,
-                paragraphs: <String>[
-                  l10n.movementNotAvoidedBody,
-                  l10n.movementEvidenceBody,
-                ],
+                paragraphs: <String>[l10n.movementNotAvoidedBody],
               ),
             ),
             CardEntrance(

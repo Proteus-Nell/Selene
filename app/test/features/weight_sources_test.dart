@@ -66,6 +66,10 @@ const List<String> _subjects = <String>[
   'sex hormone binding globulin',
   'pcos',
   'polycystic',
+  // Both names, because the condition was renamed in 2026 and the app carries
+  // the old one once so a reader who knows it can still find themselves.
+  'pmos',
+  'polyendocrine',
   'weight spectrum',
   'thyroid',
   'blood test',

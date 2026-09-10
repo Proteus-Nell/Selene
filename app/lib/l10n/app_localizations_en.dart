@@ -927,7 +927,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hygieneTamponsBody =>
-      'Regulated as medical devices rather than as drugs. Absorbency ratings are standardised, so the same rating means the same thing across brands. General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says rather than leaving it longer.';
+      'General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says rather than leaving it longer.';
 
   @override
   String get hygieneCupsTitle => 'Menstrual cups';
@@ -985,7 +985,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nutritionMagnesiumEvidenceBody =>
-      'Evidence that magnesium supplements improve menstrual symptoms is limited and not conclusive.';
+      'Magnesium is widely taken for cramps and premenstrual symptoms. Some trials report a benefit, and reviews of those trials find the evidence limited and not conclusive. Oral forms differ in how well they are absorbed, with glycinate and citrate better absorbed than oxide.';
+
+  @override
+  String get nutritionMagnesiumCreamBody =>
+      'Creams, oils and balms are sold for the same purpose. Absorption through unbroken skin is minimal: a review of the topic found meaningful absorption unsupported, and the best trial of a cream found only a small change that could have been chance. No clinical guidance here names magnesium, in any form, as a treatment for period pain.';
 
   @override
   String get nutritionZincTitle => 'Why zinc is listed here';
@@ -1039,11 +1043,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weightEnergyBody =>
-      'The hypothalamus releases GnRH in pulses, and that rhythm is what drives LH and FSH from the pituitary, which in turn drive the ovary. When energy availability is low the pulses are suppressed: LH and FSH fall, ovulation stops, and periods stop with it. That state has a name: functional hypothalamic amenorrhoea.';
+      'The brain drives the ovaries through a steady rhythm of hormone signals. When the body is running on too little energy that rhythm is suppressed: the signals fall away, ovulation stops, and periods stop with it. The name for that state is functional hypothalamic amenorrhoea.';
 
   @override
   String get weightEnergyNotAScaleBody =>
-      'Energy availability is what is left of the energy taken in once exercise has had its share, measured against what the body needs to run on. It is not a body weight and it is not a reading from a scale. Functional hypothalamic amenorrhoea occurs in people whose body weight is entirely unremarkable, and heavy training, illness or sustained stress can produce it with no fall in body weight at all.';
+      'Energy availability is the energy left over from food once exercise has taken its share, set against what the body needs to run on. It is not a body weight and it is not a reading from a scale. This happens to people whose body weight is entirely unremarkable, and heavy training, illness or sustained stress can bring it on with no fall in body weight at all.';
 
   @override
   String get weightInsulinTitle => 'Insulin, SHBG and free androgen';
@@ -1053,15 +1057,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Sex hormone binding globulin, or SHBG, is a protein the liver puts into the blood, where it binds testosterone. Bound testosterone is held out of circulation, so only the free fraction reaches tissue. Insulin resistance lowers SHBG, and as SHBG falls the free fraction rises, even when the total amount of testosterone has not changed.';
 
   @override
-  String get weightPcosTitle => 'PCOS';
+  String get weightPcosTitle => 'PMOS';
 
   @override
   String get weightPcosBody =>
-      'Polycystic ovary syndrome is androgen excess together with irregular or absent ovulation. Insulin resistance is common alongside it, and the mechanism above is part of how the androgen excess is sustained.';
+      'Polyendocrine metabolic ovarian syndrome, formerly polycystic ovary syndrome, is androgen excess together with irregular or absent ovulation. Insulin resistance is common alongside it, and the mechanism above is part of how the androgen excess is sustained.';
 
   @override
   String get weightPcosSpectrumBody =>
-      'PCOS occurs across the whole weight spectrum, in people who are thin as well as in people who are not. The widespread impression that it belongs at one end of that spectrum is not accurate, and it is one of the reasons the condition goes unrecognised.';
+      'PMOS occurs across the whole weight spectrum, in people who are thin as well as in people who are not. The widespread impression that it belongs at one end of that spectrum is not accurate, and it is one of the reasons the condition goes unrecognised.';
 
   @override
   String get weightThyroidTitle => 'Thyroid function';
@@ -1112,11 +1116,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get movementNotAvoidedBody =>
-      'Menstruation is not named anywhere in the sources behind this page as a reason to stop, and general physical activity guidance makes no exception for the days of a period. Clinical guidance on period pain goes further than that and lists exercise among the measures that may help with it.';
-
-  @override
-  String get movementEvidenceBody =>
-      'A Cochrane review of exercise for period pain found that exercise may reduce how intense the pain is, on evidence the reviewers themselves rated as low quality. That is a modest finding and it is stated here at its real strength rather than at a more useful one. What it supports is only this: the direction of the evidence runs towards movement helping with cramps rather than making them worse.';
+      'Menstruation is not named anywhere in the sources behind this page as a reason to stop, and general physical activity guidance makes no exception for the days of a period.';
 
   @override
   String get movementHowItFeelsTitle => 'What changes is how it feels';
@@ -1152,7 +1152,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get movementContraceptionBody =>
-      'Hormonal contraception is a further reason those schemes do not carry across. Combined hormonal contraception works by suppressing ovulation, so the rise and fall of oestrogen and progesterone that a phase-based scheme assumes is not what is going on underneath. A scheme built on phases, applied where those phases are not occurring, has nothing left to stand on.';
+      'Hormonal contraception is another reason these schemes do not carry over. The combined pill works by stopping ovulation, so the rise and fall of oestrogen and progesterone that a phase-based plan assumes is not happening at all. A plan built on cycle phases has nothing underneath it when those phases are not occurring.';
 
   @override
   String get movementSeeSomeoneTitle => 'Pain worth taking to someone';
@@ -1313,7 +1313,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get conditionBreastfeeding => 'Breastfeeding';
 
   @override
-  String get conditionPcos => 'PCOS';
+  String get conditionPcos => 'PMOS';
 
   @override
   String get conditionEndometriosis => 'Endometriosis';

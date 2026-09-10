@@ -374,30 +374,11 @@ void main() {
             'the section no longer says that no source names menstruation as a '
             'reason to stop, which is the claim it was written to make',
       );
-      expect(
-        body,
-        contains('help'),
-        reason:
-            'the section no longer says guidance lists exercise among the '
-            'things that may help with period pain, so all that is left is an '
-            'absence, which reads as a shrug',
-      );
-    });
-
-    test('the exercise evidence is stated at its real strength', () {
-      // The claim most likely to be strengthened by a well-meaning edit.
-      // "Exercise helps period pain" is a better sentence than "low quality
-      // evidence that exercise may reduce pain", and it is not the true one.
-      final body = _movementCopy()['movementEvidenceBody']!.toLowerCase();
-      expect(body, contains('cochrane'));
-      expect(
-        body.contains('low quality') || body.contains('low-quality'),
-        isTrue,
-        reason:
-            'the evidence paragraph no longer says the reviewers rated the '
-            'evidence low quality, so it now overclaims in the direction it '
-            'happens to prefer',
-      );
+      // The "and guidance says exercise may help" half of this used to be
+      // asserted here too. M1 and M2 were dropped from the sources file at the
+      // owner's direction, so the section makes no positive claim left to
+      // check: what it says now is that no source names menstruation as a
+      // reason to stop, and nothing beyond that.
     });
 
     test('rest is offered as a permission and not as an instruction', () {

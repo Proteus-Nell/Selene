@@ -64,10 +64,27 @@ the reference says so rather than listing it as a second thing to think about.
 | --- | --- | --- | --- |
 | M1 | Magnesium is involved in muscle and nerve function, among many other processes. | NIH ODS, *Magnesium — Health Professional Fact Sheet* | **[VERIFY]** |
 | M2 | Magnesium is found in green leafy vegetables, legumes, nuts, seeds and wholegrains. | NIH ODS, *Magnesium*, sources section | **[VERIFY]** |
-| M3 | Evidence for magnesium supplementation improving menstrual symptoms is limited and not conclusive. | NIH ODS, *Magnesium*, section on magnesium and health | **[VERIFY]** |
+| M3 | Magnesium supplements are widely taken for period pain and premenstrual symptoms. Trials report some benefit, and reviews of those trials find the evidence limited and not conclusive. | Cochrane Database of Systematic Reviews, *Vitamin and mineral supplements for premenstrual syndrome* (Kaewrudee et al.); NIH ODS, *Magnesium*, section on magnesium and health | **[VERIFY]** |
+| M4 | Oral magnesium comes in several salts, and they are not equally absorbed; glycinate and citrate are better absorbed than oxide. | NIH ODS, *Magnesium*, section on dietary supplements | **[VERIFY]** |
+| M5 | Magnesium creams, oils and balms are sold for cramps, but absorption through intact skin is minimal. A narrative review of the topic concluded that meaningful transdermal absorption is not supported, and the best available trial found only a small, non-significant trend. | Gröber et al., *Myth or Reality — Transdermal Magnesium?*, Nutrients (2017); Kass et al., *Effect of transdermal magnesium cream on serum and urinary magnesium levels in humans*, PLOS One (2017) | **[VERIFY]** |
+| M6 | No clinical guidance in the register names magnesium, in any form, as a treatment for period pain. | NHS, *Period pain*; NICE CKS, *Dysmenorrhoea* | **[VERIFY]** *(absence claim)* |
 
-M3 matters more than the other two. It is the claim that stops this section
-reading as a recommendation, and it must not be dropped for brevity.
+M3, M5 and M6 matter more than M1, M2 and M4. They are the claims that stop
+this section reading as a recommendation, and none of them may be dropped for
+brevity. M5 and M6 were added when the section was widened to cover the creams,
+and they are the reason widening it did not turn it into an advertisement: the
+section now says what people use and what the evidence under it is worth, which
+is a different thing from saying it works.
+
+M5 is cited outside the usual register, which is NIH ODS, NHS and NICE for this
+file. The reason is that none of those bodies has published on transdermal
+magnesium at all, and the honest answer to "does the cream work" is in the two
+papers named. Citing nothing, or citing a fact sheet that does not mention it,
+would have been worse than citing the literature that exists.
+
+M6 is an absence claim: it says the guidance does *not* name magnesium as a
+treatment. It is verified by reading the two named pages and finding no such
+recommendation, and it is what keeps M3 and M5 in proportion.
 
 ### Why zinc is listed next to magnesium
 
