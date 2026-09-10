@@ -133,7 +133,6 @@ Future<void> showCompanionSuggestion(
               const SizedBox(height: 16),
               Text(line.text(l10n), style: theme.textTheme.bodyLarge),
               const SizedBox(height: 16),
-              Text(l10n.companionHowItWorks, style: theme.textTheme.bodySmall),
               // Only under a line that claims something about bodies. Printing
               // it under "nothing to point at" would suggest that sentence had
               // a source too, and the point of the split is that it does not.

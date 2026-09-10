@@ -369,30 +369,6 @@ void main() {
       }
     });
 
-    test('says what it is, and what it is not, wherever it speaks', () {
-      final blurb = _companionCopy()['companionHowItWorks']!.toLowerCase();
-      expect(
-        blurb.contains('fixed set') || blurb.contains('finite'),
-        isTrue,
-        reason:
-            'the blurb no longer says the lines are a fixed set, which is the '
-            'one thing a reader needs in order not to mistake this for a model',
-      );
-      expect(
-        blurb,
-        contains('logged'),
-        reason: 'the blurb no longer says it reads what was logged',
-      );
-      expect(
-        blurb,
-        contains('feels'),
-        reason:
-            'the blurb no longer says that reading a log is not the same as '
-            'knowing how anyone feels, which is the distinction this whole '
-            'feature is at risk of losing',
-      );
-    });
-
     test('the guards above would actually catch one', () {
       // A check that cannot fail is not a check. These pin the detectors.
       expect(_secondPerson.hasMatch('how are your cramps'), isTrue);

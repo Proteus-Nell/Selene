@@ -143,7 +143,6 @@ void main() {
       );
       for (final aside in <String>[
         l10n.companionLabel,
-        l10n.companionHowItWorks,
         l10n.companionSourcesNote,
       ]) {
         expect(find.text(aside), findsNothing);

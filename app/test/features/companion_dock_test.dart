@@ -199,13 +199,6 @@ void main() {
       expect(find.text(l10nOf(tester).companionSourcesNote), findsNothing);
     });
 
-    testWidgets('says what it is every time it speaks', (tester) async {
-      await pumpShell(tester, line: CompanionLine.overdue);
-      await tester.tap(find.byType(CompanionButton));
-      await tester.pumpAndSettle();
-      expect(find.text(l10nOf(tester).companionHowItWorks), findsOneWidget);
-    });
-
     testWidgets('reads the user own state rather than a fixed answer', (
       tester,
     ) async {

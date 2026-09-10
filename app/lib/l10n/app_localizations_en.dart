@@ -759,7 +759,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarPhaseLutealExplained =>
-      'The run of days before your next period is due. It tends to be the steadiest part of the cycle, which is why it is counted back from the date expected rather than forward from the last one.';
+      'The run of days before your next period is due. It tends to be the steadiest part of the cycle.';
 
   @override
   String get calendarPhaseUnknown => 'Not enough logged to say where you are.';
@@ -800,7 +800,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAppLockNotEncrypted =>
-      'This hides the screen. It does not encrypt your data, which is stored unencrypted in the app\'s private storage either way.';
+      'This hides the screen. It does not encrypt anything.';
 
   @override
   String get settingsAppLockUnavailable =>
@@ -927,7 +927,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hygieneTamponsBody =>
-      'Regulated as medical devices rather than as drugs, which is why they are not in the medicines section. Absorbency ratings are standardised, so the same rating means the same thing across brands. General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says rather than leaving it longer.';
+      'Regulated as medical devices rather than as drugs. Absorbency ratings are standardised, so the same rating means the same thing across brands. General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says rather than leaving it longer.';
 
   @override
   String get hygieneCupsTitle => 'Menstrual cups';
@@ -1159,7 +1159,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get movementSeeSomeoneBody =>
-      'Period pain that is severe, that is getting worse, that the usual measures do not ease, or that gets in the way of ordinary days is a reason to see a doctor or nurse. So is pain that began later in life, changed in character, or arrives alongside other symptoms. The causes named above are found by assessment rather than by tracking dates. No threshold is set out here and no scale, on purpose: a score is a thing to be argued down by, and nothing in this app could tell one cause of pain from another in any case.';
+      'Period pain that is severe, that is getting worse, that the usual measures do not ease, or that gets in the way of ordinary days is a reason to see a doctor or nurse. So is pain that began later in life, changed in character, or arrives alongside other symptoms. The causes named above are found by assessment rather than by tracking dates. No threshold is set out here and no scale.';
 
   @override
   String get movementSourcesNote =>
@@ -1174,10 +1174,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get companionLabel => 'Companion';
-
-  @override
-  String get companionHowItWorks =>
-      'This picks from a fixed set of written lines. It reads what has been logged on this device, which is not the same as knowing how anyone feels, and nothing else.';
 
   @override
   String get companionDismiss => 'Dismiss';
@@ -1501,7 +1497,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyNotEncryptedBody =>
-      'This is the honest limit of what \"private\" means here. Your data sits in this app\'s own storage, which other apps cannot read on a phone that has not been tampered with, and which Android\'s full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock does not encrypt anything: it covers the screen, not the file.';
+      'Your data sits in this app\'s own storage, which other apps cannot read on a phone that has not been tampered with, and which Android\'s full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock does not encrypt anything: it covers the screen, not the file.';
 
   @override
   String get privacyBackupTitle => 'It is never backed up to the cloud';
@@ -1522,7 +1518,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyLogsBody =>
-      'This app keeps a short log of what it did, such as \"a prediction was computed\" with a count of cycles. It is structurally incapable of recording a date, a flow level or a symptom. You can read it and clear it in Settings.';
+      'This app keeps a short log of what it did, such as \"a prediction was computed\" with a count of cycles. You can read it and clear it in Settings.';
 
   @override
   String get privacyExportTitle => 'Exports are yours to look after';

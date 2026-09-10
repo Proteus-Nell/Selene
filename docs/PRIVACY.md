@@ -20,7 +20,7 @@ This app has no internet permission, and a check on every release refuses to bui
 
 ### The database is not encrypted
 
-This is the honest limit of what "private" means here. Your data sits in this app's own storage, which other apps cannot read on a phone that has not been tampered with, and which Android's full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock does not encrypt anything: it covers the screen, not the file.
+Your data sits in this app's own storage, which other apps cannot read on a phone that has not been tampered with, and which Android's full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock does not encrypt anything: it covers the screen, not the file.
 
 ### It is never backed up to the cloud
 
@@ -32,7 +32,7 @@ Deleting a day removes the row. Deleting everything removes every row and then r
 
 ### The activity log holds no cycle content
 
-This app keeps a short log of what it did, such as "a prediction was computed" with a count of cycles. It is structurally incapable of recording a date, a flow level or a symptom. You can read it and clear it in Settings.
+This app keeps a short log of what it did, such as "a prediction was computed" with a count of cycles. You can read it and clear it in Settings.
 
 ### Exports are yours to look after
 
