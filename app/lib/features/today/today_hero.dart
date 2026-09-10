@@ -121,15 +121,28 @@ List<RingBand> _bandsFor({
   };
   final bleedDays = _typicalBleedDays(logs);
   final luteal = CyclePhases.lutealPhaseDays.toDouble();
-  // The ovulation band is a slice of the follicular phase rather than an extra
-  // one, so turning it on cannot make the ring add up to more than a cycle.
-  final ovular = showOvulation
-      ? (CyclePhases.ovulationSpreadDays * 2 + 1).toDouble()
-      : 0.0;
-  final follicular = (cycleLength - bleedDays - luteal - ovular).clamp(
+  // The days between the end of bleeding and the luteal boundary. Everything
+  // below is carved out of this, never added to it.
+  final betweenPhases = (cycleLength - bleedDays - luteal).clamp(
     0.0,
     cycleLength,
   );
+  // The ovulation band is a slice of the follicular phase rather than an extra
+  // one, so turning it on cannot make the ring add up to more than a cycle.
+  //
+  // Bounded by what is actually there, which is not a formality: a 21-day
+  // cycle with a 7-day period leaves nothing between a period and a 14-day
+  // luteal phase, and a fixed five-day band would have been five days the
+  // cycle does not contain. The ring normalises by its own total, so the
+  // symptom would not have been an error — it would have been every other
+  // band silently shrinking the moment the estimate was switched on.
+  final ovular = showOvulation
+      ? (CyclePhases.ovulationSpreadDays * 2 + 1).toDouble().clamp(
+          0.0,
+          betweenPhases,
+        )
+      : 0.0;
+  final follicular = betweenPhases - ovular;
 
   return <RingBand>[
     RingBand(
@@ -278,11 +291,19 @@ class _WeekDay extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = theme.colorScheme;
     final initial = date.weekdayInitial(context);
+    final l10n = AppLocalizations.of(context);
+    var label = date.weekdayDayAndMonth(context);
+    if (bleeding) label = l10n.logWeekBleedingSuffix(label);
+    if (isToday) label = l10n.calendarCellTodaySuffix(label);
+
     return Semantics(
-      // One label for the whole cell. Without it a screen reader reads a
-      // letter and a number as two unrelated fragments.
-      label: isToday ? date.weekdayDayAndMonth(context) : null,
-      excludeSemantics: isToday,
+      // One label for the whole cell, on every cell rather than only on
+      // today's. Without it a screen reader reads the letter, the number and
+      // the mark under them as three unrelated fragments — and it read them
+      // that way on six of the seven cells, because the label used to be
+      // conditional and the exclusion with it.
+      label: label,
+      excludeSemantics: true,
       child: Column(
         children: <Widget>[
           Text(

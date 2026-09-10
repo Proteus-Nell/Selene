@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/motion.dart';
@@ -30,15 +32,23 @@ class AppearanceScreen extends ConsumerWidget {
         ref.watch(colourSchemeProvider).valueOrNull ?? AppScheme.fallback;
     final mode = ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.system;
 
-    Future<void> chooseScheme(AppScheme chosen) => ref
-        .read(appDatabaseProvider)
-        .settingsDao
-        .writeString(SettingKey.colourScheme, chosen.wireName);
+    // `unawaited` rather than a discarded Future, as everywhere else in the
+    // app. Nothing here waits on the write: the screen redraws from the stream
+    // the write feeds, so awaiting it would only delay the frame that is
+    // already coming.
+    void chooseScheme(AppScheme chosen) => unawaited(
+      ref
+          .read(appDatabaseProvider)
+          .settingsDao
+          .writeString(SettingKey.colourScheme, chosen.wireName),
+    );
 
-    Future<void> chooseMode(ThemeMode chosen) => ref
-        .read(appDatabaseProvider)
-        .settingsDao
-        .writeString(SettingKey.themeMode, chosen.name);
+    void chooseMode(ThemeMode chosen) => unawaited(
+      ref
+          .read(appDatabaseProvider)
+          .settingsDao
+          .writeString(SettingKey.themeMode, chosen.name),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.appearanceTitle)),

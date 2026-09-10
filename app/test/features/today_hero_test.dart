@@ -115,22 +115,38 @@ void main() {
       // Otherwise turning it on would make the ring add up to more than a
       // cycle, and the phases either side would shrink to make room for an
       // estimate rather than the estimate sitting inside the days it covers.
-      await seedHistory(db, const <int>[28, 28, 28]);
-      await pump(tester);
-      final without = bandsOf(
-        tester,
-      ).fold<double>(0, (sum, band) => sum + band.days);
+      //
+      // Both a roomy cycle and one with no room at all. The short case is the
+      // one that caught a real bug: the band was a fixed five days, so on a
+      // 21-day cycle with a 7-day period — where a 14-day luteal phase leaves
+      // nothing between — the follicular phase clamped to zero while the band
+      // stayed five, and the total grew by five days that cycle did not have.
+      for (final history in const <(String, List<int>, int)>[
+        ('a roomy cycle', <int>[28, 28, 28], 4),
+        ('no room at all', <int>[21, 21, 21], 7),
+      ]) {
+        await db.dayLogDao.deleteEverything();
+        await db.settingsDao.writeBool(
+          SettingKey.showOvulationWindow,
+          value: false,
+        );
+        await seedHistory(db, history.$2, bleedingDays: history.$3);
+        await pump(tester);
+        final without = bandsOf(
+          tester,
+        ).fold<double>(0, (sum, band) => sum + band.days);
 
-      await db.settingsDao.writeBool(
-        SettingKey.showOvulationWindow,
-        value: true,
-      );
-      await tester.pumpAndSettle();
-      final with_ = bandsOf(
-        tester,
-      ).fold<double>(0, (sum, band) => sum + band.days);
+        await db.settingsDao.writeBool(
+          SettingKey.showOvulationWindow,
+          value: true,
+        );
+        await tester.pumpAndSettle();
+        final with_ = bandsOf(
+          tester,
+        ).fold<double>(0, (sum, band) => sum + band.days);
 
-      expect(with_, closeTo(without, 0.001));
+        expect(with_, closeTo(without, 0.001), reason: history.$1);
+      }
     });
   });
 
@@ -162,13 +178,29 @@ void main() {
       // A circle is a fixed box and text inside one is not. Above the
       // threshold the ring goes and the words stay, which is the right way
       // round: the ring never carried anything the words did not.
+      //
+      // Scoped to the ring's own painter. `find.byType(CustomPaint)` over the
+      // whole tree is not an assertion about anything — Flutter paints half a
+      // screen through CustomPaint, so it answers findsWidgets either way.
+      final ringPainter = find.descendant(
+        of: find.byType(CycleRing),
+        matching: find.byType(CustomPaint),
+      );
+
       await seedHistory(db, const <int>[28, 28, 28]);
+      await pump(tester);
+      expect(ringPainter, findsOneWidget, reason: 'no ring at 100%');
+
       await pump(tester, textScaler: const TextScaler.linear(2));
       expect(tester.takeException(), isNull);
-      expect(find.byType(CustomPaint), findsWidgets);
-      final rings = tester.widgetList<CycleRing>(find.byType(CycleRing));
-      expect(rings, hasLength(1), reason: 'the ring widget is still there');
+      expect(ringPainter, findsNothing, reason: 'the ring outstayed its box');
+      // What it gave way to is still there.
+      expect(find.byType(CycleRing), findsOneWidget);
       expect(find.byType(RingLegend), findsOneWidget);
+      expect(
+        find.text(l10nOf(tester).logCountdownCaption),
+        findsOneWidget,
+      );
     });
 
     testWidgets('paints in the scheme the app is wearing', (tester) async {

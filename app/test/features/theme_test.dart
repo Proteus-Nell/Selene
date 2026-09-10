@@ -37,10 +37,16 @@ double contrast(Color a, Color b) {
 }
 
 /// Every palette, each named for the failure message.
+///
+/// Eleven, not twelve: a scheme that forces dark has one palette in both slots,
+/// and listing it twice would report a pass for a "night light" that does not
+/// exist. `the schemes are dark-first only where they say so` is what holds the
+/// two halves being identical to `forcesDark`, so the skip here cannot start
+/// hiding a palette.
 Map<String, AppPalette> _allPalettes() {
   final palettes = <String, AppPalette>{};
   for (final scheme in AppScheme.values) {
-    palettes['${scheme.name} light'] = scheme.light;
+    if (!scheme.forcesDark) palettes['${scheme.name} light'] = scheme.light;
     palettes['${scheme.name} dark'] = scheme.dark;
   }
   return palettes;

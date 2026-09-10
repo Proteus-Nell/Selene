@@ -33,6 +33,8 @@
   "onboardingFirstEntrySkip": "Skip for now",
   "onboardingFirstEntrySaved": "Saved. You can change it any time.",
 
+  "logWeekBleedingSuffix": "{label}, bleeding logged",
+  "@logWeekBleedingSuffix": {"placeholders": {"label": {"type": "String"}}},
   "logGreetingMorning": "Good morning",
   "logGreetingAfternoon": "Good afternoon",
   "logGreetingEvening": "Good evening",

@@ -250,6 +250,12 @@ abstract class AppLocalizations {
   /// **'Saved. You can change it any time.'**
   String get onboardingFirstEntrySaved;
 
+  /// No description provided for @logWeekBleedingSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}, bleeding logged'**
+  String logWeekBleedingSuffix(String label);
+
   /// No description provided for @logGreetingMorning.
   ///
   /// In en, this message translates to:

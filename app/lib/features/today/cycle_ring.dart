@@ -14,9 +14,12 @@ class RingBand {
     required this.label,
   });
 
-  /// How many days the band covers. Never zero — an empty band is omitted
-  /// rather than drawn, because a zero-length arc with a gap either side is
-  /// just a wider gap.
+  /// How many days the band covers.
+  ///
+  /// Zero is allowed and means the band is not drawn and not named: the
+  /// ovulation band is zero whenever the user has not opted in, and the ring
+  /// and the legend both filter on it. Painting one anyway would put a
+  /// zero-length arc between two gaps, which is just a wider gap.
   final double days;
 
   /// The colour to paint it.

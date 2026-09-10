@@ -94,6 +94,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingFirstEntrySaved => 'Saved. You can change it any time.';
 
   @override
+  String logWeekBleedingSuffix(String label) {
+    return '$label, bleeding logged';
+  }
+
+  @override
   String get logGreetingMorning => 'Good morning';
 
   @override
