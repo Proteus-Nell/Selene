@@ -276,13 +276,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-              child: Text(
-                l10n.settingsAboutBody,
-                style: theme.textTheme.bodySmall,
-              ),
-            ),
+            const SizedBox(height: 24),
           ],
         ),
       ),

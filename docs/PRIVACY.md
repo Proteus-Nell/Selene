@@ -16,7 +16,7 @@ is only defensible if the user is told about it.
 
 ### Everything stays on this phone
 
-This app has no internet permission — a check on every release refuses to build one that asks for it. No account, no sync, no analytics, no crash reporting. Nothing leaves this device unless you export it.
+This app has no internet permission, and a check on every release refuses to build one that asks for it. No account, no sync, no analytics, no crash reporting. Nothing leaves this device unless you export it.
 
 ### The database is not encrypted
 

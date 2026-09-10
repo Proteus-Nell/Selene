@@ -71,7 +71,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingNotDiagnostic =>
-      'It cannot diagnose anything. It sees only the dates you record — nothing about contraception you take, pregnancy, medication, illness or stress.';
+      'It cannot diagnose anything. It sees only the dates you record, and nothing about contraception you take, pregnancy, medication, illness or stress.';
 
   @override
   String get onboardingAlwaysARange =>
@@ -391,7 +391,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get insightsDisclaimer =>
-      'Predictions are estimates from the dates you have logged. Not contraception, not medical advice.';
+      'Predictions are estimates based on the information logged. This does not serve as a contraceptive aid or medical advice.';
 
   @override
   String get insightsNextPeriodTitle => 'Next period';
@@ -447,7 +447,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get insightsTooIrregularBody =>
-      'That is information, not a failure — and worth showing a clinician. Your figures are below; logging more keeps them sharp.';
+      'That is information, not a failure, and worth showing a clinician. Your figures are below; logging more keeps them sharp.';
 
   @override
   String get insightsLostTrackTitle => 'It has been a while';
@@ -688,7 +688,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsDeleteAllSubtitle =>
-      'Removes every day, setting and stored figure from this device for good.';
+      'Remove all the logged days, settings and stored figures.';
 
   @override
   String get settingsDeleteConfirmTitle => 'Delete everything?';
@@ -852,7 +852,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lookupMedicinesUsOnly =>
-      'This is United States labelling. Strengths, brand names and warnings can differ where you are — check the packet you actually have.';
+      'This is United States labelling. Strengths, brand names and warnings can differ where you are, so check the packet you actually have.';
 
   @override
   String get lookupMedicinesUnavailable =>
@@ -920,7 +920,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hygieneTssBody =>
-      'Toxic shock syndrome is rare and life-threatening. It is caused by bacterial toxins, and it is associated with tampon and menstrual cup use — though it also happens to people who are not menstruating at all.';
+      'Toxic shock syndrome is rare and life-threatening. It is caused by bacterial toxins, and it is associated with tampon and menstrual cup use, though it also happens to people who are not menstruating at all.';
 
   @override
   String get hygieneTamponsTitle => 'Tampons';
@@ -934,7 +934,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hygieneCupsBody =>
-      'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products — follow the instructions that came with yours rather than a number from an app.';
+      'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products, so follow the instructions that came with yours rather than a number from an app.';
 
   @override
   String get hygieneExternalTitle => 'Pads and period underwear';
@@ -1028,7 +1028,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weightOestrogenBody =>
-      'Adipose tissue — body fat — makes the enzyme aromatase, which converts androgens into oestrogens. That reaction happens in the tissue itself, so the ovaries are not the only place oestrogen comes from.';
+      'Adipose tissue, or body fat, makes the enzyme aromatase, which converts androgens into oestrogens. That reaction happens in the tissue itself, so the ovaries are not the only place oestrogen comes from.';
 
   @override
   String get weightOestrogenBalanceBody =>
@@ -1039,7 +1039,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weightEnergyBody =>
-      'The hypothalamus releases GnRH in pulses, and that rhythm is what drives LH and FSH from the pituitary, which in turn drive the ovary. When energy availability is low the pulses are suppressed: LH and FSH fall, ovulation stops, and periods stop with it. That state has a name — functional hypothalamic amenorrhoea.';
+      'The hypothalamus releases GnRH in pulses, and that rhythm is what drives LH and FSH from the pituitary, which in turn drive the ovary. When energy availability is low the pulses are suppressed: LH and FSH fall, ovulation stops, and periods stop with it. That state has a name: functional hypothalamic amenorrhoea.';
 
   @override
   String get weightEnergyNotAScaleBody =>
@@ -1050,7 +1050,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weightInsulinBody =>
-      'Sex hormone binding globulin, or SHBG, is a protein the liver puts into the blood, where it binds testosterone. Bound testosterone is held out of circulation, so only the free fraction reaches tissue. Insulin resistance lowers SHBG, and as SHBG falls the free fraction rises — even when the total amount of testosterone has not changed.';
+      'Sex hormone binding globulin, or SHBG, is a protein the liver puts into the blood, where it binds testosterone. Bound testosterone is held out of circulation, so only the free fraction reaches tissue. Insulin resistance lowers SHBG, and as SHBG falls the free fraction rises, even when the total amount of testosterone has not changed.';
 
   @override
   String get weightPcosTitle => 'PCOS';
@@ -1104,7 +1104,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get movementPainBody =>
-      'Painful menstruation with no underlying disorder behind it is called primary dysmenorrhoea. The pain is typically cramping, felt low in the abdomen, strongest around the start of bleeding and easing over the following days. Prostaglandins released from the lining of the uterus drive the contractions that produce it. Where there is an underlying cause — endometriosis, adenomyosis and uterine fibroids are among the recognised ones — the term is secondary dysmenorrhoea.';
+      'Painful menstruation with no underlying disorder behind it is called primary dysmenorrhoea. The pain is typically cramping, felt low in the abdomen, strongest around the start of bleeding and easing over the following days. Prostaglandins released from the lining of the uterus drive the contractions that produce it. Where there is an underlying cause, such as endometriosis, adenomyosis or uterine fibroids, the term is secondary dysmenorrhoea.';
 
   @override
   String get movementNotAvoidedTitle =>
@@ -1159,7 +1159,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get movementSeeSomeoneBody =>
-      'Period pain that is severe, that is getting worse, that the usual measures do not ease, or that gets in the way of ordinary days is a reason to see a doctor or nurse. So is pain that began later in life, changed in character, or arrives alongside other symptoms — the causes named above are found by assessment rather than by tracking dates. No threshold is set out here and no scale, on purpose: a score is a thing to be argued down by, and nothing in this app could tell one cause of pain from another in any case.';
+      'Period pain that is severe, that is getting worse, that the usual measures do not ease, or that gets in the way of ordinary days is a reason to see a doctor or nurse. So is pain that began later in life, changed in character, or arrives alongside other symptoms. The causes named above are found by assessment rather than by tracking dates. No threshold is set out here and no scale, on purpose: a score is a thing to be argued down by, and nothing in this app could tell one cause of pain from another in any case.';
 
   @override
   String get movementSourcesNote =>
@@ -1177,7 +1177,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get companionHowItWorks =>
-      'This picks from a fixed set of written lines. It reads what has been logged on this device — which is not the same as knowing how anyone feels — and nothing else.';
+      'This picks from a fixed set of written lines. It reads what has been logged on this device, which is not the same as knowing how anyone feels, and nothing else.';
 
   @override
   String get companionDismiss => 'Dismiss';
@@ -1241,7 +1241,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get conditionsSubtitle =>
-      'Things that can change your cycle. Recorded so you can read your own history with them in mind — they are not used to work out your predictions.';
+      'Things that can change your cycle. Recorded so you can read your own history with them in mind. They are not used to work out your predictions.';
 
   @override
   String get conditionsEmpty => 'Nothing recorded.';
@@ -1462,7 +1462,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLogViewerSubtitle =>
-      'Everything this app records about itself. Read it: there are no dates or symptoms in here.';
+      'Everything this app records about itself.';
 
   @override
   String get settingsLogViewerEmpty => 'Nothing recorded yet.';
@@ -1487,10 +1487,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get settingsAboutBody =>
-      'Built as a personal project. No accounts, no analytics, no network permission.';
-
-  @override
   String get privacyHeading => 'What this app does with your data';
 
   @override
@@ -1498,7 +1494,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyOnDeviceBody =>
-      'This app has no internet permission — a check on every release refuses to build one that asks for it. No account, no sync, no analytics, no crash reporting. Nothing leaves this device unless you export it.';
+      'This app has no internet permission, and a check on every release refuses to build one that asks for it. No account, no sync, no analytics, no crash reporting. Nothing leaves this device unless you export it.';
 
   @override
   String get privacyNotEncryptedTitle => 'The database is not encrypted';

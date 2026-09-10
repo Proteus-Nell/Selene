@@ -211,7 +211,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingNotDiagnostic.
   ///
   /// In en, this message translates to:
-  /// **'It cannot diagnose anything. It sees only the dates you record — nothing about contraception you take, pregnancy, medication, illness or stress.'**
+  /// **'It cannot diagnose anything. It sees only the dates you record, and nothing about contraception you take, pregnancy, medication, illness or stress.'**
   String get onboardingNotDiagnostic;
 
   /// No description provided for @onboardingAlwaysARange.
@@ -763,7 +763,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsDisclaimer.
   ///
   /// In en, this message translates to:
-  /// **'Predictions are estimates from the dates you have logged. Not contraception, not medical advice.'**
+  /// **'Predictions are estimates based on the information logged. This does not serve as a contraceptive aid or medical advice.'**
   String get insightsDisclaimer;
 
   /// No description provided for @insightsNextPeriodTitle.
@@ -847,7 +847,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsTooIrregularBody.
   ///
   /// In en, this message translates to:
-  /// **'That is information, not a failure — and worth showing a clinician. Your figures are below; logging more keeps them sharp.'**
+  /// **'That is information, not a failure, and worth showing a clinician. Your figures are below; logging more keeps them sharp.'**
   String get insightsTooIrregularBody;
 
   /// No description provided for @insightsLostTrackTitle.
@@ -1230,7 +1230,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsDeleteAllSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Removes every day, setting and stored figure from this device for good.'**
+  /// **'Remove all the logged days, settings and stored figures.'**
   String get settingsDeleteAllSubtitle;
 
   /// No description provided for @settingsDeleteConfirmTitle.
@@ -1506,7 +1506,7 @@ abstract class AppLocalizations {
   /// Always shown with the medicines section. A reader applying US warnings to a box bought elsewhere is being quietly misinformed, and nothing else on the screen would tell them.
   ///
   /// In en, this message translates to:
-  /// **'This is United States labelling. Strengths, brand names and warnings can differ where you are — check the packet you actually have.'**
+  /// **'This is United States labelling. Strengths, brand names and warnings can differ where you are, so check the packet you actually have.'**
   String get lookupMedicinesUsOnly;
 
   /// Shown when the openFDA artifact has not been fetched. Says so plainly rather than rendering an empty list, which reads as a broken screen.
@@ -1626,7 +1626,7 @@ abstract class AppLocalizations {
   /// No description provided for @hygieneTssBody.
   ///
   /// In en, this message translates to:
-  /// **'Toxic shock syndrome is rare and life-threatening. It is caused by bacterial toxins, and it is associated with tampon and menstrual cup use — though it also happens to people who are not menstruating at all.'**
+  /// **'Toxic shock syndrome is rare and life-threatening. It is caused by bacterial toxins, and it is associated with tampon and menstrual cup use, though it also happens to people who are not menstruating at all.'**
   String get hygieneTssBody;
 
   /// No description provided for @hygieneTamponsTitle.
@@ -1650,7 +1650,7 @@ abstract class AppLocalizations {
   /// No description provided for @hygieneCupsBody.
   ///
   /// In en, this message translates to:
-  /// **'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products — follow the instructions that came with yours rather than a number from an app.'**
+  /// **'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products, so follow the instructions that came with yours rather than a number from an app.'**
   String get hygieneCupsBody;
 
   /// No description provided for @hygieneExternalTitle.
@@ -1806,7 +1806,7 @@ abstract class AppLocalizations {
   /// No description provided for @weightOestrogenBody.
   ///
   /// In en, this message translates to:
-  /// **'Adipose tissue — body fat — makes the enzyme aromatase, which converts androgens into oestrogens. That reaction happens in the tissue itself, so the ovaries are not the only place oestrogen comes from.'**
+  /// **'Adipose tissue, or body fat, makes the enzyme aromatase, which converts androgens into oestrogens. That reaction happens in the tissue itself, so the ovaries are not the only place oestrogen comes from.'**
   String get weightOestrogenBody;
 
   /// Both ends of the mechanism, deliberately. Stated in one direction only this becomes an argument, and an argument is what this section must never be.
@@ -1824,7 +1824,7 @@ abstract class AppLocalizations {
   /// No description provided for @weightEnergyBody.
   ///
   /// In en, this message translates to:
-  /// **'The hypothalamus releases GnRH in pulses, and that rhythm is what drives LH and FSH from the pituitary, which in turn drive the ovary. When energy availability is low the pulses are suppressed: LH and FSH fall, ovulation stops, and periods stop with it. That state has a name — functional hypothalamic amenorrhoea.'**
+  /// **'The hypothalamus releases GnRH in pulses, and that rhythm is what drives LH and FSH from the pituitary, which in turn drive the ovary. When energy availability is low the pulses are suppressed: LH and FSH fall, ovulation stops, and periods stop with it. That state has a name: functional hypothalamic amenorrhoea.'**
   String get weightEnergyBody;
 
   /// Load-bearing. Without it the section reads as a statement about a number on a scale, which is both wrong and the most harmful thing this reference could be mistaken for.
@@ -1842,7 +1842,7 @@ abstract class AppLocalizations {
   /// No description provided for @weightInsulinBody.
   ///
   /// In en, this message translates to:
-  /// **'Sex hormone binding globulin, or SHBG, is a protein the liver puts into the blood, where it binds testosterone. Bound testosterone is held out of circulation, so only the free fraction reaches tissue. Insulin resistance lowers SHBG, and as SHBG falls the free fraction rises — even when the total amount of testosterone has not changed.'**
+  /// **'Sex hormone binding globulin, or SHBG, is a protein the liver puts into the blood, where it binds testosterone. Bound testosterone is held out of circulation, so only the free fraction reaches tissue. Insulin resistance lowers SHBG, and as SHBG falls the free fraction rises, even when the total amount of testosterone has not changed.'**
   String get weightInsulinBody;
 
   /// No description provided for @weightPcosTitle.
@@ -1932,7 +1932,7 @@ abstract class AppLocalizations {
   /// No description provided for @movementPainBody.
   ///
   /// In en, this message translates to:
-  /// **'Painful menstruation with no underlying disorder behind it is called primary dysmenorrhoea. The pain is typically cramping, felt low in the abdomen, strongest around the start of bleeding and easing over the following days. Prostaglandins released from the lining of the uterus drive the contractions that produce it. Where there is an underlying cause — endometriosis, adenomyosis and uterine fibroids are among the recognised ones — the term is secondary dysmenorrhoea.'**
+  /// **'Painful menstruation with no underlying disorder behind it is called primary dysmenorrhoea. The pain is typically cramping, felt low in the abdomen, strongest around the start of bleeding and easing over the following days. Prostaglandins released from the lining of the uterus drive the contractions that produce it. Where there is an underlying cause, such as endometriosis, adenomyosis or uterine fibroids, the term is secondary dysmenorrhoea.'**
   String get movementPainBody;
 
   /// No description provided for @movementNotAvoidedTitle.
@@ -2022,7 +2022,7 @@ abstract class AppLocalizations {
   /// The last thing on the screen, pointing at a person. Deliberately carries no threshold and no pain scale: both are numbers, and a number here is something to be talked out of by.
   ///
   /// In en, this message translates to:
-  /// **'Period pain that is severe, that is getting worse, that the usual measures do not ease, or that gets in the way of ordinary days is a reason to see a doctor or nurse. So is pain that began later in life, changed in character, or arrives alongside other symptoms — the causes named above are found by assessment rather than by tracking dates. No threshold is set out here and no scale, on purpose: a score is a thing to be argued down by, and nothing in this app could tell one cause of pain from another in any case.'**
+  /// **'Period pain that is severe, that is getting worse, that the usual measures do not ease, or that gets in the way of ordinary days is a reason to see a doctor or nurse. So is pain that began later in life, changed in character, or arrives alongside other symptoms. The causes named above are found by assessment rather than by tracking dates. No threshold is set out here and no scale, on purpose: a score is a thing to be argued down by, and nothing in this app could tell one cause of pain from another in any case.'**
   String get movementSeeSomeoneBody;
 
   /// No description provided for @movementSourcesNote.
@@ -2052,7 +2052,7 @@ abstract class AppLocalizations {
   /// Shown under every suggestion. States what the thing is: a rules engine over local data with a finite vocabulary, which knows what was logged and not how the reader feels.
   ///
   /// In en, this message translates to:
-  /// **'This picks from a fixed set of written lines. It reads what has been logged on this device — which is not the same as knowing how anyone feels — and nothing else.'**
+  /// **'This picks from a fixed set of written lines. It reads what has been logged on this device, which is not the same as knowing how anyone feels, and nothing else.'**
   String get companionHowItWorks;
 
   /// Closes the suggestion. The suggestion has to be dismissible from inside it, not only by the sheet's own gesture.
@@ -2154,7 +2154,7 @@ abstract class AppLocalizations {
   /// Under the screen title. States plainly that these do not reach the model, so nobody expects predictions to improve after entering them.
   ///
   /// In en, this message translates to:
-  /// **'Things that can change your cycle. Recorded so you can read your own history with them in mind — they are not used to work out your predictions.'**
+  /// **'Things that can change your cycle. Recorded so you can read your own history with them in mind. They are not used to work out your predictions.'**
   String get conditionsSubtitle;
 
   /// No description provided for @conditionsEmpty.
@@ -2550,7 +2550,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsLogViewerSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Everything this app records about itself. Read it: there are no dates or symptoms in here.'**
+  /// **'Everything this app records about itself.'**
   String get settingsLogViewerSubtitle;
 
   /// No description provided for @settingsLogViewerEmpty.
@@ -2589,12 +2589,6 @@ abstract class AppLocalizations {
   /// **'Prediction model {version}'**
   String settingsModelVersion(String version);
 
-  /// No description provided for @settingsAboutBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Built as a personal project. No accounts, no analytics, no network permission.'**
-  String get settingsAboutBody;
-
   /// No description provided for @privacyHeading.
   ///
   /// In en, this message translates to:
@@ -2610,7 +2604,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyOnDeviceBody.
   ///
   /// In en, this message translates to:
-  /// **'This app has no internet permission — a check on every release refuses to build one that asks for it. No account, no sync, no analytics, no crash reporting. Nothing leaves this device unless you export it.'**
+  /// **'This app has no internet permission, and a check on every release refuses to build one that asks for it. No account, no sync, no analytics, no crash reporting. Nothing leaves this device unless you export it.'**
   String get privacyOnDeviceBody;
 
   /// No description provided for @privacyNotEncryptedTitle.

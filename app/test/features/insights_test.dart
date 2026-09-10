@@ -44,9 +44,23 @@ void main() {
     ) async {
       await pumpInsights(tester);
       expect(find.byType(PermanentDisclaimer), findsOneWidget);
+      // Checked as two claims rather than as one phrasing. This used to pin
+      // the exact words "not contraception" and "not medical advice", and the
+      // disclaimer was reworded to "does not serve as a contraceptive aid or
+      // medical advice", which says the same thing. A test that fails on a
+      // rewrite meaning the same thing teaches the next person to edit the
+      // test instead of thinking about the claim.
+      //
+      // Both exclusions still have to be there, and both still have to be
+      // denials: dropping either, or stating one as a permission, fails here.
       final text = l10nOf(tester).insightsDisclaimer.toLowerCase();
-      expect(text, contains('not contraception'));
-      expect(text, contains('not medical advice'));
+      expect(text, contains('contracept'));
+      expect(text, contains('medical advice'));
+      expect(
+        RegExp(r'\b(not|never|no)\b').hasMatch(text),
+        isTrue,
+        reason: 'the disclaimer names the exclusions but does not deny them',
+      );
     });
 
     testWidgets('stays put once there is a real prediction', (tester) async {
