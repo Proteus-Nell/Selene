@@ -122,10 +122,22 @@ void main() {
       expect(find.text(l10n.lookupLeavingTitle), findsOneWidget);
 
       final body = l10n.lookupLeavingBody.toLowerCase();
+      // Two claims, each checked, neither pinned to one spelling: the browser
+      // is named as the thing making the request, and this app is named as the
+      // thing that is not. Pinning a single sentence meant the second half was
+      // only ever implied, and a rewrite that dropped it would have passed.
       expect(
-        body,
-        contains('browser will make the request'),
+        body.contains('request comes from your browser') ||
+            body.contains('browser will make the request'),
+        isTrue,
         reason: 'the warning no longer says who makes the request',
+      );
+      expect(
+        body.contains('rather than from this app') ||
+            body.contains('not this app'),
+        isTrue,
+        reason:
+            'the warning no longer says the request is not this app making it',
       );
       expect(
         body,

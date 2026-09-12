@@ -235,7 +235,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingFirstEntryBody.
   ///
   /// In en, this message translates to:
-  /// **'One date is enough to begin. Predictions start out wide and narrow as you log more cycles.'**
+  /// **'One date is enough to begin. Predictions start wide and get narrower as you log more cycles.'**
   String get onboardingFirstEntryBody;
 
   /// No description provided for @onboardingFirstEntrySkip.
@@ -481,7 +481,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingSensitiveTitle.
   ///
   /// In en, this message translates to:
-  /// **'One thing worth knowing before you start'**
+  /// **'About recording intercourse'**
   String get onboardingSensitiveTitle;
 
   /// Shown during onboarding, before the user has recorded anything. It names the most sensitive field the app holds rather than letting them find it themselves, and points at the app lock in the same breath.
@@ -655,7 +655,7 @@ abstract class AppLocalizations {
   /// No description provided for @logWelcomeBack.
   ///
   /// In en, this message translates to:
-  /// **'Welcome back. Log a day whenever you are ready and the predictions will pick up again.'**
+  /// **'Welcome back. Log a day and the predictions pick up again.'**
   String get logWelcomeBack;
 
   /// No description provided for @calendarTitle.
@@ -1014,7 +1014,7 @@ abstract class AppLocalizations {
   /// No description provided for @notificationChannelPredictionsDescription.
   ///
   /// In en, this message translates to:
-  /// **'When a period is expected, and when one looks late.'**
+  /// **'When a period is expected, and when the predicted window has passed.'**
   String get notificationChannelPredictionsDescription;
 
   /// No description provided for @notificationChannelReminders.
@@ -1290,7 +1290,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsReminderSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'A notification in the morning, the chosen number of days ahead.'**
+  /// **'A notification in the morning, the number of days ahead you choose.'**
   String get settingsReminderSubtitle;
 
   /// No description provided for @insightsSuppressedPregnancyTitle.
@@ -1350,7 +1350,7 @@ abstract class AppLocalizations {
   /// No description provided for @calendarPhaseUnknown.
   ///
   /// In en, this message translates to:
-  /// **'Not enough logged to say where you are.'**
+  /// **'Not enough logged to say which phase this is.'**
   String get calendarPhaseUnknown;
 
   /// No description provided for @calendarOvulationTitle.
@@ -1572,7 +1572,7 @@ abstract class AppLocalizations {
   /// The confirmation before a browser hand-off. It has to be specific about what changes: this app makes no requests, the browser does, and the browser remembers.
   ///
   /// In en, this message translates to:
-  /// **'Your browser will make the request, not this app. The search leaves your device, and your browser normally keeps it in its history and may sync it to other devices you are signed in on.'**
+  /// **'The request comes from your browser rather than from this app. The search leaves your device, and your browser normally keeps it in its history and may sync it to other devices you are signed in on.'**
   String get lookupLeavingBody;
 
   /// Shown only when a term is pre-filled. Naming the term back to the user is the point — a hand-off that silently carries a drug name into browser history is the thing this warning exists to prevent.
@@ -1632,7 +1632,7 @@ abstract class AppLocalizations {
   /// No description provided for @hygieneTamponsBody.
   ///
   /// In en, this message translates to:
-  /// **'General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says rather than leaving it longer.'**
+  /// **'General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says.'**
   String get hygieneTamponsBody;
 
   /// No description provided for @hygieneCupsTitle.
@@ -1734,7 +1734,7 @@ abstract class AppLocalizations {
   /// No description provided for @nutritionMagnesiumCreamBody.
   ///
   /// In en, this message translates to:
-  /// **'Creams, oils and balms are sold for the same purpose. Absorption through unbroken skin is minimal: a review of the topic found meaningful absorption unsupported, and the best trial of a cream found only a small change that could have been chance. No clinical guidance here names magnesium, in any form, as a treatment for period pain.'**
+  /// **'Creams, oils and balms are sold for the same purpose. Absorption through unbroken skin is minimal: a review of the topic found meaningful absorption unsupported, and the strongest trial of a cream found a change small enough to be chance. No clinical guidance here names magnesium, in any form, as a treatment for period pain.'**
   String get nutritionMagnesiumCreamBody;
 
   /// No description provided for @nutritionZincTitle.
@@ -2046,7 +2046,7 @@ abstract class AppLocalizations {
   /// Carries a health claim (COMPANION_SOURCES.md I1, I2). A statement about physiology, followed by the sentence that stops it being read as a conclusion about the reader.
   ///
   /// In en, this message translates to:
-  /// **'Heavy bleeding is recorded on several days. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia, which a blood test settles rather than symptoms.'**
+  /// **'Heavy bleeding is recorded on several days. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia. A blood test is what settles it.'**
   String get companionLineHeavyBleeding;
 
   /// Carries a health claim (COMPANION_SOURCES.md P1). Reports what guidance lists rather than telling anyone to do any of it.
@@ -2586,7 +2586,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyBackupTitle.
   ///
   /// In en, this message translates to:
-  /// **'It is never backed up to the cloud'**
+  /// **'Nothing is backed up to the cloud'**
   String get privacyBackupTitle;
 
   /// No description provided for @privacyBackupBody.

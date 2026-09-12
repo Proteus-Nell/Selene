@@ -22,7 +22,7 @@ This app has no internet permission, and a check on every release refuses to bui
 
 Your data sits in this app's own storage. Other apps cannot read it on a phone that has not been tampered with, and Android's full-device encryption protects it while the phone is switched off. But it is stored as plain text, so anyone who picks up your unlocked phone, or takes a forensic copy of it, can read it. The app lock hides the screen. It does not encrypt the file underneath.
 
-### It is never backed up to the cloud
+### Nothing is backed up to the cloud
 
 Android's automatic backup is switched off for this app, so your cycle history is never copied to a Google account. If you lose the phone, the data is gone unless you exported it.
 

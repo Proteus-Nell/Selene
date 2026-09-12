@@ -37,8 +37,8 @@ const Map<CompanionLine, String> everythingItCanSay = <CompanionLine, String>{
       'logged.',
   CompanionLine.heavyBleeding:
       'Heavy bleeding is recorded on several days. Heavy menstrual bleeding is '
-      'a recognised cause of iron deficiency anaemia, which a blood test '
-      'settles rather than symptoms.',
+      'a recognised cause of iron deficiency anaemia. A blood test is what '
+      'settles it.',
   CompanionLine.cramps:
       'Cramps are recorded for today. Guidance on period pain lists heat, '
       'painkillers and exercise among the measures that may help.',

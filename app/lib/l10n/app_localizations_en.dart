@@ -85,7 +85,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingFirstEntryBody =>
-      'One date is enough to begin. Predictions start out wide and narrow as you log more cycles.';
+      'One date is enough to begin. Predictions start wide and get narrower as you log more cycles.';
 
   @override
   String get onboardingFirstEntrySkip => 'Skip for now';
@@ -228,8 +228,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get onboardingSensitiveTitle =>
-      'One thing worth knowing before you start';
+  String get onboardingSensitiveTitle => 'About recording intercourse';
 
   @override
   String get onboardingSensitiveBody =>
@@ -321,7 +320,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logWelcomeBack =>
-      'Welcome back. Log a day whenever you are ready and the predictions will pick up again.';
+      'Welcome back. Log a day and the predictions pick up again.';
 
   @override
   String get calendarTitle => 'Calendar';
@@ -559,7 +558,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationChannelPredictionsDescription =>
-      'When a period is expected, and when one looks late.';
+      'When a period is expected, and when the predicted window has passed.';
 
   @override
   String get notificationChannelReminders => 'Logging reminders';
@@ -725,7 +724,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsReminderSubtitle =>
-      'A notification in the morning, the chosen number of days ahead.';
+      'A notification in the morning, the number of days ahead you choose.';
 
   @override
   String get insightsSuppressedPregnancyTitle =>
@@ -762,7 +761,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'The days between ovulation and the start of your next period. Its length varies less than the rest of the cycle.';
 
   @override
-  String get calendarPhaseUnknown => 'Not enough logged to say where you are.';
+  String get calendarPhaseUnknown =>
+      'Not enough logged to say which phase this is.';
 
   @override
   String get calendarOvulationTitle => 'Estimated ovulation';
@@ -887,7 +887,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lookupLeavingBody =>
-      'Your browser will make the request, not this app. The search leaves your device, and your browser normally keeps it in its history and may sync it to other devices you are signed in on.';
+      'The request comes from your browser rather than from this app. The search leaves your device, and your browser normally keeps it in its history and may sync it to other devices you are signed in on.';
 
   @override
   String lookupLeavingWithTermBody(String term) {
@@ -923,7 +923,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hygieneTamponsBody =>
-      'General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says rather than leaving it longer.';
+      'General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says.';
 
   @override
   String get hygieneCupsTitle => 'Menstrual cups';
@@ -985,7 +985,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nutritionMagnesiumCreamBody =>
-      'Creams, oils and balms are sold for the same purpose. Absorption through unbroken skin is minimal: a review of the topic found meaningful absorption unsupported, and the best trial of a cream found only a small change that could have been chance. No clinical guidance here names magnesium, in any form, as a treatment for period pain.';
+      'Creams, oils and balms are sold for the same purpose. Absorption through unbroken skin is minimal: a review of the topic found meaningful absorption unsupported, and the strongest trial of a cream found a change small enough to be chance. No clinical guidance here names magnesium, in any form, as a treatment for period pain.';
 
   @override
   String get nutritionZincTitle => 'Why zinc is listed here';
@@ -1171,7 +1171,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get companionLineHeavyBleeding =>
-      'Heavy bleeding is recorded on several days. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia, which a blood test settles rather than symptoms.';
+      'Heavy bleeding is recorded on several days. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia. A blood test is what settles it.';
 
   @override
   String get companionLineCramps =>
@@ -1480,7 +1480,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your data sits in this app\'s own storage. Other apps cannot read it on a phone that has not been tampered with, and Android\'s full-device encryption protects it while the phone is switched off. But it is stored as plain text, so anyone who picks up your unlocked phone, or takes a forensic copy of it, can read it. The app lock hides the screen. It does not encrypt the file underneath.';
 
   @override
-  String get privacyBackupTitle => 'It is never backed up to the cloud';
+  String get privacyBackupTitle => 'Nothing is backed up to the cloud';
 
   @override
   String get privacyBackupBody =>
