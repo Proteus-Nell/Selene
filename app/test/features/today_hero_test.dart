@@ -150,6 +150,43 @@ void main() {
     });
   });
 
+  group('the phase note', () {
+    testWidgets('names the phase and explains it on tap', (tester) async {
+      // The sentence is the same on every visit and the screen under it is
+      // what somebody opened the app to use, so it sits behind a tap. What
+      // must not happen is the name appearing with no way to find out what it
+      // means: "luteal" is a word most people have not been given a
+      // definition for.
+      await seedHistory(db, const <int>[28, 28, 28]);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+
+      expect(find.text(l10n.calendarPhasePeriod), findsWidgets);
+      expect(
+        find.text(l10n.calendarPhasePeriodExplained),
+        findsNothing,
+        reason: 'the explanation is printed rather than offered',
+      );
+
+      await tester.ensureVisible(find.byIcon(Icons.chevron_right).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.chevron_right).first);
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.calendarPhasePeriodExplained), findsOneWidget);
+
+      await tester.tap(find.text(l10n.commonClose));
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.calendarPhasePeriodExplained), findsNothing);
+    });
+
+    testWidgets('is absent when the app will not name a phase', (tester) async {
+      // Nothing logged means no phase, and a row offering to explain one that
+      // was never named would be a dead end.
+      await pump(tester);
+      expect(find.byIcon(Icons.chevron_right), findsNothing);
+    });
+  });
+
   group('the ring', () {
     testWidgets('names every band it draws, and draws every band it names', (
       tester,

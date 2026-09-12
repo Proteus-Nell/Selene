@@ -356,10 +356,10 @@ void main() {
     );
   });
 
-  test('the suggestion points the reader at the sources file', () {
-    // Otherwise "cited" means "cited somewhere the user cannot get to".
-    final note = _companionCopy()['companionSourcesNote'];
-    expect(note, isNotNull);
-    expect(note!.toUpperCase(), contains('COMPANION_SOURCES'));
-  });
+  // The line that used to sit here pointed the reader at a file in the
+  // source repository by name. It was removed at the owner's direction:
+  // a filename is not somewhere a reader can go from a phone, so it
+  // read as provenance without being any. The claims are still listed
+  // with their sources in this file; what is gone is the app telling
+  // the reader so.
 }

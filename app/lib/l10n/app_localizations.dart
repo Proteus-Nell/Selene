@@ -1491,12 +1491,6 @@ abstract class AppLocalizations {
   /// **'Tampons, cups and pads'**
   String get lookupHygieneHeading;
 
-  /// No description provided for @lookupCuratedNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Written for this app and checked against the sources listed in HYGIENE_SOURCES.md. Not a regulator\'s own wording, unlike the medicines below.'**
-  String get lookupCuratedNote;
-
   /// No description provided for @lookupMedicinesSource.
   ///
   /// In en, this message translates to:
@@ -1767,12 +1761,6 @@ abstract class AppLocalizations {
   /// **'On several days recently you logged heavy flow and fatigue together. That pattern is worth raising with a doctor or nurse, who can look into it properly.'**
   String get nutritionHintBody;
 
-  /// No description provided for @nutritionSourcesNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Every claim on this page is listed with its source in NUTRITION_SOURCES.md in the app\'s source repository.'**
-  String get nutritionSourcesNote;
-
   /// No description provided for @settingsNutrition.
   ///
   /// In en, this message translates to:
@@ -1892,12 +1880,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A change in cycle length, in the amount of bleeding, or in whether periods arrive at all has many possible causes, and the mechanisms on this page are only some of them. Cycle dates cannot separate one cause from another, and nothing in this app can diagnose anything. A change worth explaining is worth taking to a doctor or nurse.'**
   String get weightChangeBody;
-
-  /// No description provided for @weightSourcesNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Every claim on this page is listed with its source in WEIGHT_SOURCES.md in the app\'s source repository.'**
-  String get weightSourcesNote;
 
   /// No description provided for @weightEntryTitle.
   ///
@@ -2025,12 +2007,6 @@ abstract class AppLocalizations {
   /// **'Period pain that is severe, that is getting worse, that the usual measures do not ease, or that gets in the way of ordinary days is a reason to see a doctor or nurse. So is pain that began later in life, changed in character, or arrives alongside other symptoms. The causes named above are found by assessment rather than by tracking dates. No threshold is set out here and no scale.'**
   String get movementSeeSomeoneBody;
 
-  /// No description provided for @movementSourcesNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Every claim on this page is listed with its source in MOVEMENT_SOURCES.md in the app\'s source repository.'**
-  String get movementSourcesNote;
-
   /// No description provided for @movementEntryTitle.
   ///
   /// In en, this message translates to:
@@ -2054,12 +2030,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dismiss'**
   String get companionDismiss;
-
-  /// Points at the sources file. Some lines make no health claim at all, and the file says which ones and why.
-  ///
-  /// In en, this message translates to:
-  /// **'Any health claim above is listed with its source in COMPANION_SOURCES.md in the app\'s source repository.'**
-  String get companionSourcesNote;
 
   /// Shown while the logs, prediction or conditions are still loading. Says so rather than picking a line from a state it has not seen yet.
   ///

@@ -23,7 +23,7 @@ class PeriodTrackerApp extends ConsumerWidget {
     // than the repaint (AND-39).
     final scheme =
         ref.watch(colourSchemeProvider).valueOrNull ?? AppScheme.fallback;
-    final mode = ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.system;
+    final mode = ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.light;
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       theme: AppTheme.light(scheme),

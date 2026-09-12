@@ -106,8 +106,6 @@ class WeightHormonesScreen extends StatelessWidget {
                 paragraphs: <String>[l10n.weightChangeBody],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(l10n.weightSourcesNote, style: theme.textTheme.bodySmall),
           ],
         ),
       ),

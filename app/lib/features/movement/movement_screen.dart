@@ -119,8 +119,6 @@ class MovementScreen extends StatelessWidget {
                 paragraphs: <String>[l10n.movementSeeSomeoneBody],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(l10n.movementSourcesNote, style: theme.textTheme.bodySmall),
           ],
         ),
       ),

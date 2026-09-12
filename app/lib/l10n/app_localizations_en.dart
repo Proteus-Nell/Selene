@@ -842,10 +842,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lookupHygieneHeading => 'Tampons, cups and pads';
 
   @override
-  String get lookupCuratedNote =>
-      'Written for this app and checked against the sources listed in HYGIENE_SOURCES.md. Not a regulator\'s own wording, unlike the medicines below.';
-
-  @override
   String lookupMedicinesSource(String date) {
     return 'From US drug labelling published by openFDA, as it stood on $date.';
   }
@@ -1006,10 +1002,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'On several days recently you logged heavy flow and fatigue together. That pattern is worth raising with a doctor or nurse, who can look into it properly.';
 
   @override
-  String get nutritionSourcesNote =>
-      'Every claim on this page is listed with its source in NUTRITION_SOURCES.md in the app\'s source repository.';
-
-  @override
   String get settingsNutrition => 'Iron and magnesium';
 
   @override
@@ -1080,10 +1072,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get weightChangeBody =>
       'A change in cycle length, in the amount of bleeding, or in whether periods arrive at all has many possible causes, and the mechanisms on this page are only some of them. Cycle dates cannot separate one cause from another, and nothing in this app can diagnose anything. A change worth explaining is worth taking to a doctor or nurse.';
-
-  @override
-  String get weightSourcesNote =>
-      'Every claim on this page is listed with its source in WEIGHT_SOURCES.md in the app\'s source repository.';
 
   @override
   String get weightEntryTitle => 'Body composition and cycle hormones';
@@ -1162,10 +1150,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Period pain that is severe, that is getting worse, that the usual measures do not ease, or that gets in the way of ordinary days is a reason to see a doctor or nurse. So is pain that began later in life, changed in character, or arrives alongside other symptoms. The causes named above are found by assessment rather than by tracking dates. No threshold is set out here and no scale.';
 
   @override
-  String get movementSourcesNote =>
-      'Every claim on this page is listed with its source in MOVEMENT_SOURCES.md in the app\'s source repository.';
-
-  @override
   String get movementEntryTitle => 'Pain and movement across the cycle';
 
   @override
@@ -1177,10 +1161,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get companionDismiss => 'Dismiss';
-
-  @override
-  String get companionSourcesNote =>
-      'Any health claim above is listed with its source in COMPANION_SOURCES.md in the app\'s source repository.';
 
   @override
   String get companionLineStillReading => 'The log is still being read.';

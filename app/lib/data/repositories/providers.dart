@@ -198,8 +198,13 @@ final StreamProvider<AppScheme> colourSchemeProvider =
 
 /// Whether the app follows the device theme, or is pinned light or dark.
 ///
-/// Defaults to [ThemeMode.system], which is what the app did before there was
-/// a setting. An unrecognised stored value falls back to it rather than
+/// Defaults to [ThemeMode.light] rather than following the device. The app is
+/// read in daylight far more often than not, and a first launch that opens
+/// dark because the phone is on a night schedule shows the palette at its
+/// least representative. Following the device is still one tap away in
+/// Appearance, and a stored choice always wins over this default.
+///
+/// An unrecognised stored value falls back to the same default rather than
 /// throwing, for the same reason the scheme does.
 final StreamProvider<ThemeMode> themeModeProvider = StreamProvider<ThemeMode>(
   (ref) => ref
@@ -209,12 +214,12 @@ final StreamProvider<ThemeMode> themeModeProvider = StreamProvider<ThemeMode>(
       .map(themeModeFromWireName),
 );
 
-/// The [ThemeMode] stored as [wireName], or [ThemeMode.system].
+/// The [ThemeMode] stored as [wireName], or [ThemeMode.light].
 ThemeMode themeModeFromWireName(String? wireName) {
   for (final mode in ThemeMode.values) {
     if (mode.name == wireName) return mode;
   }
-  return ThemeMode.system;
+  return ThemeMode.light;
 }
 
 /// The current prediction, recomputed whenever the logs change.

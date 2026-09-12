@@ -161,10 +161,20 @@ class AppScaffold extends StatelessWidget {
       bottomNavigationBar: CompanionDock(
         navigationBar: NavigationBar(
           selectedIndex: shell.currentIndex,
-          onDestinationSelected: (index) => shell.goBranch(
-            index,
-            initialLocation: index == shell.currentIndex,
-          ),
+          // Always the branch's initial location, not only when the tab
+          // already selected is tapped again. A stateful shell otherwise
+          // keeps each branch's navigation stack, so leaving Learn from
+          // inside "Look something up" and coming back later drops the
+          // reader into that page rather than the list they were expecting
+          // — and the same for Settings and Insights, which also have pages
+          // under them. Tapping a tab now means the same thing every time.
+          //
+          // What this gives up is resuming a sub-page after a glance at
+          // another tab. That is a real loss, and it is the smaller one:
+          // arriving somewhere you did not ask for is more disorienting than
+          // having to tap once more to get back.
+          onDestinationSelected: (index) =>
+              shell.goBranch(index, initialLocation: true),
           destinations: <NavigationDestination>[
             NavigationDestination(
               icon: const Icon(Icons.schedule_outlined),

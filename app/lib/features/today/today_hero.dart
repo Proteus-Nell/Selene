@@ -497,24 +497,95 @@ class _PhaseNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     final phases = PhaseColors.of(context);
-    return FlatNote(
-      dividerAbove: true,
-      swatch: switch (phase) {
-        CyclePhase.period => phases.menstrual,
-        CyclePhase.follicular => phases.follicular,
-        CyclePhase.luteal => phases.luteal,
-      },
-      title: switch (phase) {
+    final label = _label(l10n, phase);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: theme.colorScheme.outline.withValues(alpha: 0.2),
+          ),
+          InkWell(
+            onTap: () => _explain(context, phase),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minHeight: AppTheme.minTapTarget,
+              ),
+              child: Row(
+                children: <Widget>[
+                  ExcludeSemantics(
+                    child: Container(
+                      width: 13,
+                      height: 13,
+                      decoration: BoxDecoration(
+                        color: switch (phase) {
+                          CyclePhase.period => phases.menstrual,
+                          CyclePhase.follicular => phases.follicular,
+                          CyclePhase.luteal => phases.luteal,
+                        },
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Text(label, style: theme.textTheme.titleSmall),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Opens the one-sentence explanation.
+  ///
+  /// Behind a tap rather than printed under the name, because the sentence is
+  /// the same on every visit and the screen underneath it is the one somebody
+  /// opened the app to use. The calendar already explains a phase this way, so
+  /// this is the second place the gesture means the same thing rather than a
+  /// second way of saying it.
+  Future<void> _explain(BuildContext context, CyclePhase phase) {
+    final l10n = AppLocalizations.of(context);
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        // Scrollable, so a large text scale shrinks the dialog to fit rather
+        // than overflowing it past the top of the screen and under a cutout.
+        scrollable: true,
+        title: Text(_label(l10n, phase)),
+        content: Text(switch (phase) {
+          CyclePhase.period => l10n.calendarPhasePeriodExplained,
+          CyclePhase.follicular => l10n.calendarPhaseFollicularExplained,
+          CyclePhase.luteal => l10n.calendarPhaseLutealExplained,
+        }),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.commonClose),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _label(AppLocalizations l10n, CyclePhase phase) =>
+      switch (phase) {
         CyclePhase.period => l10n.calendarPhasePeriod,
         CyclePhase.follicular => l10n.calendarPhaseFollicular,
         CyclePhase.luteal => l10n.calendarPhaseLuteal,
-      },
-      body: switch (phase) {
-        CyclePhase.period => l10n.calendarPhasePeriodExplained,
-        CyclePhase.follicular => l10n.calendarPhaseFollicularExplained,
-        CyclePhase.luteal => l10n.calendarPhaseLutealExplained,
-      },
-    );
-  }
+      };
 }

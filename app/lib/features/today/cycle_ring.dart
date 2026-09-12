@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:period_tracker/core/theme.dart';
 
 /// One band of the ring: a colour and how many days it covers.
 @immutable
@@ -230,104 +229,6 @@ class RingLegend extends StatelessWidget {
             ],
           ),
       ],
-    );
-  }
-}
-
-/// A flat block: an icon, a heading and a sentence, with no card around it.
-///
-/// Cards are for things the user can act on. Anything the app is merely telling
-/// them sits flat on the page, because a box drawn round a sentence is a box
-/// the eye has to dismiss before it can read (AND-39, and the reason
-/// [AppTheme.cardRadius] got smaller at the same time).
-class FlatNote extends StatelessWidget {
-  /// Creates a flat note.
-  const FlatNote({
-    required this.title,
-    required this.body,
-    this.swatch,
-    this.icon,
-    this.dividerAbove = false,
-    super.key,
-  });
-
-  /// The heading, or null for a note that is only a sentence.
-  final String? title;
-
-  /// The sentence.
-  final String body;
-
-  /// A phase colour to mark it with, if it belongs to a phase.
-  final Color? swatch;
-
-  /// An icon to mark it with, when there is no [swatch].
-  final IconData? icon;
-
-  /// Whether a hairline separates it from what is above.
-  final bool dividerAbove;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final heading = title;
-    return Padding(
-      padding: EdgeInsets.only(top: dividerAbove ? 20 : 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          if (dividerAbove)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 18),
-              child: Divider(
-                height: 1,
-                thickness: 1,
-                color: theme.colorScheme.outline.withValues(alpha: 0.2),
-              ),
-            ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              ExcludeSemantics(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 3, right: 11),
-                  child: swatch != null
-                      ? Container(
-                          width: 13,
-                          height: 13,
-                          decoration: BoxDecoration(
-                            color: swatch,
-                            shape: BoxShape.circle,
-                          ),
-                        )
-                      : Icon(
-                          icon ?? Icons.info_outline,
-                          size: 17,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    if (heading != null) ...<Widget>[
-                      Text(heading, style: theme.textTheme.titleSmall),
-                      const SizedBox(height: 3),
-                    ],
-                    Text(
-                      body,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

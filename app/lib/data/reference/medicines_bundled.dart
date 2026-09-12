@@ -41,7 +41,7 @@ const String medicinesJurisdiction = 'US';
 
 /// The notice openFDA asks to travel with the data.
 const String medicinesDisclaimer =
-    '[VERIFY] Data from openFDA. This information comes from US drug labelling and has not been evaluated for use outside the United States. It is not a substitute for advice from a doctor or pharmacist.';
+    'Data from openFDA. This information comes from US drug labelling and has not been evaluated for use outside the United States. It is not a substitute for advice from a doctor or pharmacist.';
 
 /// Every medicine compiled into the app.
 const List<Medicine> bundledMedicines = <Medicine>[];
