@@ -123,7 +123,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get logCountdownCaption => 'until your period is likely';
+  String get logCountdownCaption => 'until your period is expected';
 
   @override
   String get logCountdownNow => 'any day now';
@@ -233,7 +233,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingSensitiveBody =>
-      'You can record intercourse, and whether it was protected. It is the most sensitive thing stored here: it never leaves your device, is never used to predict anything, and is never required. The app lock in settings can ask for your fingerprint or PIN before anything shows.';
+      'You can record intercourse, and whether it was protected. That is the most sensitive thing stored here. Recording it is optional, and what you record stays on this device and is never used to predict anything. The app lock in settings can ask for your fingerprint or PIN before anything shows.';
 
   @override
   String get logSectionPhysical => 'Physical';
@@ -381,7 +381,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarNoPredictedWindow =>
-      'No predicted window is shown, because there is not enough to go on yet.';
+      'No predicted window is shown yet. There are not enough logged cycles to work one out.';
 
   @override
   String get calendarLongPressHint => 'Hold any day to change it.';
@@ -439,7 +439,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get insightsNoDataBody =>
-      'Log the day your last period started and this screen fills in. Typical cycles run about 29 days, but yours are what matter here.';
+      'Log the day your last period started and this screen fills in. Typical cycles run about 29 days, and your own figures replace that number as you log.';
 
   @override
   String get insightsTooIrregularTitle =>
@@ -447,22 +447,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get insightsTooIrregularBody =>
-      'That is information, not a failure, and worth showing a clinician. Your figures are below; logging more keeps them sharp.';
+      'Cycles that vary this much are worth showing a clinician. Your figures are below, and they get more precise the more you log.';
 
   @override
   String get insightsLostTrackTitle => 'It has been a while';
 
   @override
   String insightsLostTrackBody(int days) {
-    return 'Nothing logged for $days days, so this app has lost the thread rather than guess. Log a day and it picks up again.';
+    return 'Nothing logged for $days days. That gap is too long to predict from, so nothing is shown here. Log a day and predictions start again.';
   }
 
   @override
-  String get insightsInconsistentTitle => 'Something does not add up';
+  String get insightsInconsistentTitle => 'The stored dates disagree';
 
   @override
   String get insightsInconsistentBody =>
-      'The stored dates contradict each other, so no prediction is shown. Check the calendar for a day that looks wrong.';
+      'Two of the stored dates cannot both be right, so no prediction is shown. Check the calendar for a day that looks wrong.';
 
   @override
   String get insightsClockChanged =>
@@ -602,7 +602,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationLateNoticeBody =>
-      'Nothing has been logged since the window closed. Cycles vary for many reasons, and a prediction being wrong is one of them.';
+      'Nothing has been logged since the window closed. Cycles vary, and a prediction can simply be wrong.';
 
   @override
   String get notificationLogAction => 'Started today';
@@ -616,14 +616,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsNudgeSubtitle =>
-      'Off by default. At most one every seven days, and never after the app has lost track.';
+      'Off by default. At most one every seven days, and none once predictions have stopped.';
 
   @override
   String get settingsDetailedNotifications => 'Show details on the lock screen';
 
   @override
   String get settingsDetailedNotificationsSubtitle =>
-      'Off by default. With this off, notifications say only the app name until the phone is unlocked.';
+      'Off by default. While it is off, notifications show only the app name until the phone is unlocked.';
 
   @override
   String get settingsBatteryNoteTitle => 'If reminders do not arrive';
@@ -653,7 +653,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsExportSubtitle =>
-      'Writes a file you choose the location of. This is the only backup there is.';
+      'Writes a file to a location you choose. Nothing else backs this app up.';
 
   @override
   String settingsExportDone(int count) {
@@ -751,15 +751,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarPhasePeriodExplained =>
-      'The days you have logged bleeding for. This one is read from what you recorded, not estimated.';
+      'The days you have logged bleeding for. This one comes from what you recorded; the other two are estimated.';
 
   @override
   String get calendarPhaseFollicularExplained =>
-      'The stretch after your period ends. Most of the variation between cycles sits here, which makes it the part this app is least certain about.';
+      'The days between the end of your period and ovulation. Cycle length varies most here, which makes it the part this app predicts least well.';
 
   @override
   String get calendarPhaseLutealExplained =>
-      'The run of days before your next period is due. It tends to be the steadiest part of the cycle.';
+      'The days between ovulation and the start of your next period. Its length varies less than the rest of the cycle.';
 
   @override
   String get calendarPhaseUnknown => 'Not enough logged to say where you are.';
@@ -848,7 +848,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lookupMedicinesUsOnly =>
-      'This is United States labelling. Strengths, brand names and warnings can differ where you are, so check the packet you actually have.';
+      'This is United States labelling. Strengths, brand names and warnings can differ where you are, so check the packet in front of you.';
 
   @override
   String get lookupMedicinesUnavailable =>
@@ -930,14 +930,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hygieneCupsBody =>
-      'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products, so follow the instructions that came with yours rather than a number from an app.';
+      'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products, so follow the instructions that came with yours.';
 
   @override
   String get hygieneExternalTitle => 'Pads and period underwear';
 
   @override
   String get hygieneExternalBody =>
-      'Worn outside the body, and not associated with toxic shock syndrome in the way internally worn products are.';
+      'Worn outside the body. The link with toxic shock syndrome is to products worn inside it.';
 
   @override
   String get nutritionTitle => 'Iron and magnesium';
@@ -955,7 +955,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nutritionIronDiagnosisNote =>
-      'Iron deficiency is confirmed by a blood test. Symptoms alone cannot establish it, and neither can anything in this app.';
+      'A blood test is what establishes iron deficiency. Symptoms alone cannot, and nothing in this app can.';
 
   @override
   String get nutritionIronSourcesBody =>
@@ -992,7 +992,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nutritionZincBody =>
-      'Zinc is an essential mineral involved in immune function and wound healing. It is often sold together with magnesium, which is worth knowing alongside the next line: taken at high doses over time, zinc can interfere with how the body absorbs copper.';
+      'Zinc is an essential mineral involved in immune function and wound healing. It is often sold together with magnesium, which matters here because at high doses over time zinc can interfere with how the body absorbs copper.';
 
   @override
   String get nutritionHintTitle => 'Something worth mentioning';
@@ -1028,7 +1028,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weightOestrogenBalanceBody =>
-      'The quantity of adipose tissue is therefore one of the inputs to how much oestrogen is circulating, and it runs in both directions: more of it adds to the total, and very little of it removes a source the ovaries do not make up for. It is one input among several rather than the whole picture.';
+      'The quantity of adipose tissue is therefore one of the inputs to how much oestrogen is circulating, and it runs in both directions: more of it adds to the total, and very little of it removes a source the ovaries do not make up for. It is one input among several.';
 
   @override
   String get weightEnergyTitle => 'Energy availability and the hypothalamus';
@@ -1064,14 +1064,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weightThyroidBody =>
-      'Thyroid disease reaches the menstrual cycle too, and in both directions. An underactive thyroid is associated with heavier and more frequent bleeding; an overactive one with lighter, less frequent bleeding, or with none. Thyroid function is established by a blood test rather than by the shape of a cycle.';
+      'Thyroid disease affects the menstrual cycle too, in both directions. An underactive thyroid is associated with heavier and more frequent bleeding; an overactive one with lighter, less frequent bleeding, or with none. Thyroid function is established by a blood test rather than by the shape of a cycle.';
 
   @override
   String get weightChangeTitle => 'When a cycle changes';
 
   @override
   String get weightChangeBody =>
-      'A change in cycle length, in the amount of bleeding, or in whether periods arrive at all has many possible causes, and the mechanisms on this page are only some of them. Cycle dates cannot separate one cause from another, and nothing in this app can diagnose anything. A change worth explaining is worth taking to a doctor or nurse.';
+      'A change in cycle length, in the amount of bleeding, or in whether periods arrive at all has many possible causes, and the mechanisms on this page are only some of them. Cycle dates cannot separate one cause from another, and nothing in this app can diagnose anything. A doctor or nurse is who can work out which one it is.';
 
   @override
   String get weightEntryTitle => 'Body composition and cycle hormones';
@@ -1111,7 +1111,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get movementHowItFeelsBody =>
-      'What varies across a cycle is the experience of moving, not what is permitted. Cramping pain around the start of bleeding, tiredness and low energy in the days before and during it, and how hard a given effort seems on the day are all part of that. The variation is wide between people and between one cycle and the next in the same person, which is why none of it turns into a rule.';
+      'What varies across a cycle is how moving feels. Cramping pain around the start of bleeding, tiredness and low energy in the days before and during it, and how hard a given effort seems on the day are all part of that. The variation is wide between people, and wide between one cycle and the next in the same person, which is why none of it turns into a rule.';
 
   @override
   String get movementRestTitle => 'Doing less is allowed';
@@ -1125,18 +1125,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get movementStopSignalsBody =>
-      'Some things are reasons to stop rather than to carry on. Feeling faint or light-headed during exertion, breathlessness out of proportion to the effort, and chest pain are among them, and each of those is a reason to get it looked at rather than to push on. None of this is particular to menstruation; it holds whenever it happens.';
+      'Some things are reasons to stop. Feeling faint or light-headed during exertion, breathlessness out of proportion to the effort, and chest pain are among them, and each is worth getting looked at. None of this is particular to menstruation. It applies whenever it happens.';
 
   @override
   String get movementAnaemiaBody =>
-      'There is also a recognised reason why exertion can feel harder around heavy periods, and it is not that a cycle makes movement unwise. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia, whose commonly listed symptoms include tiredness, lack of energy and shortness of breath. Iron deficiency is confirmed by a blood test rather than by how a day felt, and it is worth taking to a doctor or nurse rather than working around.';
+      'Exertion can feel harder around heavy periods, and there is a recognised reason for it. Heavy menstrual bleeding is a known cause of iron deficiency anaemia, whose commonly listed symptoms include tiredness, lack of energy and shortness of breath. A blood test is what confirms iron deficiency, rather than how a day felt, and it is worth taking to a doctor or nurse.';
 
   @override
   String get movementPhaseClaimsTitle => 'Planning exercise around cycle phase';
 
   @override
   String get movementPhaseClaimsBody =>
-      'Schemes that assign different kinds of exercise to different parts of the cycle are widely promoted. The evidence underneath them is weak. Systematic review of cycle phase and exercise performance describes that research as low quality and inconsistent, with average effects that are trivial and with differences between individuals larger than the effect being looked for. No clinical guidance in the sources behind this page recommends planning exercise around cycle phase, and none says the chance of injury rises or falls with it.';
+      'Schemes that assign different kinds of exercise to different parts of the cycle are widely promoted. The evidence underneath them is weak. Systematic review of cycle phase and exercise performance describes that research as low quality and inconsistent: the average effects are trivial, and the differences between individuals are larger than the effect being looked for. No clinical guidance in the sources behind this page recommends planning exercise around cycle phase, and none says the chance of injury rises or falls with it.';
 
   @override
   String get movementContraceptionBody =>
@@ -1154,7 +1154,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get movementEntrySubtitle =>
-      'What exercise does about period pain, how little supports planning it by cycle phase, and what is a reason to stop.';
+      'What exercise does about period pain, how weak the evidence for planning it by cycle phase is, and what is a reason to stop.';
 
   @override
   String get companionLabel => 'Companion';
@@ -1191,7 +1191,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get companionLineOverdue =>
-      'The predicted window has passed with no period logged. That is a data state, and nothing here guesses at what is behind it.';
+      'The predicted window has passed with no period logged. That is a data state, and nothing here guesses at the reason.';
 
   @override
   String get companionLineNothingLoggedRecently =>
@@ -1344,7 +1344,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appearanceSchemeNote =>
-      'Every scheme here was measured for contrast before it was offered. Pick whichever you can stand to look at.';
+      'Every scheme here was measured for contrast before it was offered. Pick the one you like.';
 
   @override
   String get appearanceThemeSection => 'Theme';
@@ -1360,7 +1360,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appearanceThemeLockedByScheme =>
-      'Night is dark by design, so there is nothing to switch. Pick another scheme to choose.';
+      'Night is a dark scheme, so there is nothing to switch here. Pick another scheme to get the choice back.';
 
   @override
   String appearanceSchemeSelected(String scheme) {
@@ -1401,7 +1401,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearanceSchemeNight => 'Night';
 
   @override
-  String get appearanceSchemeNightSubtitle => 'Designed dark, not inverted';
+  String get appearanceSchemeNightSubtitle => 'Dark from the start';
 
   @override
   String get settingsDisplaySection => 'Display';
@@ -1477,7 +1477,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyNotEncryptedBody =>
-      'Your data sits in this app\'s own storage, which other apps cannot read on a phone that has not been tampered with, and which Android\'s full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock hides the screen. It does not encrypt the file underneath.';
+      'Your data sits in this app\'s own storage. Other apps cannot read it on a phone that has not been tampered with, and Android\'s full-device encryption protects it while the phone is switched off. But it is stored as plain text, so anyone who picks up your unlocked phone, or takes a forensic copy of it, can read it. The app lock hides the screen. It does not encrypt the file underneath.';
 
   @override
   String get privacyBackupTitle => 'It is never backed up to the cloud';
@@ -1512,7 +1512,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bootstrapRecoveredBody =>
-      'The stored file was damaged, so this app started with an empty one. The damaged file has been kept, not deleted. If you have a backup, restoring it now is the best way forward.';
+      'The stored file was damaged, so this app started with an empty one. The damaged file is still on the device. If you have a backup, restoring it now is the best way forward.';
 
   @override
   String get bootstrapRecoveredAction => 'Restore from a backup';

@@ -53,7 +53,7 @@ const Map<CompanionLine, String> everythingItCanSay = <CompanionLine, String>{
       'guidance behind this app as a reason to stop moving.',
   CompanionLine.overdue:
       'The predicted window has passed with no period logged. That is a data '
-      'state, and nothing here guesses at what is behind it.',
+      'state, and nothing here guesses at the reason.',
   CompanionLine.nothingLoggedRecently:
       'Nothing has been logged for a few days. The log is on the first tab, '
       'whenever there is something to put in it.',

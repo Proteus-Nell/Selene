@@ -295,7 +295,7 @@ abstract class AppLocalizations {
   /// No description provided for @logCountdownCaption.
   ///
   /// In en, this message translates to:
-  /// **'until your period is likely'**
+  /// **'until your period is expected'**
   String get logCountdownCaption;
 
   /// No description provided for @logCountdownNow.
@@ -487,7 +487,7 @@ abstract class AppLocalizations {
   /// Shown during onboarding, before the user has recorded anything. It names the most sensitive field the app holds rather than letting them find it themselves, and points at the app lock in the same breath.
   ///
   /// In en, this message translates to:
-  /// **'You can record intercourse, and whether it was protected. It is the most sensitive thing stored here: it never leaves your device, is never used to predict anything, and is never required. The app lock in settings can ask for your fingerprint or PIN before anything shows.'**
+  /// **'You can record intercourse, and whether it was protected. That is the most sensitive thing stored here. Recording it is optional, and what you record stays on this device and is never used to predict anything. The app lock in settings can ask for your fingerprint or PIN before anything shows.'**
   String get onboardingSensitiveBody;
 
   /// Heading over the symptoms felt in the body.
@@ -745,7 +745,7 @@ abstract class AppLocalizations {
   /// No description provided for @calendarNoPredictedWindow.
   ///
   /// In en, this message translates to:
-  /// **'No predicted window is shown, because there is not enough to go on yet.'**
+  /// **'No predicted window is shown yet. There are not enough logged cycles to work one out.'**
   String get calendarNoPredictedWindow;
 
   /// No description provided for @calendarLongPressHint.
@@ -835,7 +835,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsNoDataBody.
   ///
   /// In en, this message translates to:
-  /// **'Log the day your last period started and this screen fills in. Typical cycles run about 29 days, but yours are what matter here.'**
+  /// **'Log the day your last period started and this screen fills in. Typical cycles run about 29 days, and your own figures replace that number as you log.'**
   String get insightsNoDataBody;
 
   /// No description provided for @insightsTooIrregularTitle.
@@ -847,7 +847,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsTooIrregularBody.
   ///
   /// In en, this message translates to:
-  /// **'That is information, not a failure, and worth showing a clinician. Your figures are below; logging more keeps them sharp.'**
+  /// **'Cycles that vary this much are worth showing a clinician. Your figures are below, and they get more precise the more you log.'**
   String get insightsTooIrregularBody;
 
   /// No description provided for @insightsLostTrackTitle.
@@ -859,19 +859,19 @@ abstract class AppLocalizations {
   /// No description provided for @insightsLostTrackBody.
   ///
   /// In en, this message translates to:
-  /// **'Nothing logged for {days} days, so this app has lost the thread rather than guess. Log a day and it picks up again.'**
+  /// **'Nothing logged for {days} days. That gap is too long to predict from, so nothing is shown here. Log a day and predictions start again.'**
   String insightsLostTrackBody(int days);
 
   /// No description provided for @insightsInconsistentTitle.
   ///
   /// In en, this message translates to:
-  /// **'Something does not add up'**
+  /// **'The stored dates disagree'**
   String get insightsInconsistentTitle;
 
   /// No description provided for @insightsInconsistentBody.
   ///
   /// In en, this message translates to:
-  /// **'The stored dates contradict each other, so no prediction is shown. Check the calendar for a day that looks wrong.'**
+  /// **'Two of the stored dates cannot both be right, so no prediction is shown. Check the calendar for a day that looks wrong.'**
   String get insightsInconsistentBody;
 
   /// No description provided for @insightsClockChanged.
@@ -1086,7 +1086,7 @@ abstract class AppLocalizations {
   /// No description provided for @notificationLateNoticeBody.
   ///
   /// In en, this message translates to:
-  /// **'Nothing has been logged since the window closed. Cycles vary for many reasons, and a prediction being wrong is one of them.'**
+  /// **'Nothing has been logged since the window closed. Cycles vary, and a prediction can simply be wrong.'**
   String get notificationLateNoticeBody;
 
   /// No description provided for @notificationLogAction.
@@ -1110,7 +1110,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsNudgeSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Off by default. At most one every seven days, and never after the app has lost track.'**
+  /// **'Off by default. At most one every seven days, and none once predictions have stopped.'**
   String get settingsNudgeSubtitle;
 
   /// No description provided for @settingsDetailedNotifications.
@@ -1122,7 +1122,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsDetailedNotificationsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Off by default. With this off, notifications say only the app name until the phone is unlocked.'**
+  /// **'Off by default. While it is off, notifications show only the app name until the phone is unlocked.'**
   String get settingsDetailedNotificationsSubtitle;
 
   /// No description provided for @settingsBatteryNoteTitle.
@@ -1176,7 +1176,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsExportSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Writes a file you choose the location of. This is the only backup there is.'**
+  /// **'Writes a file to a location you choose. Nothing else backs this app up.'**
   String get settingsExportSubtitle;
 
   /// No description provided for @settingsExportDone.
@@ -1332,19 +1332,19 @@ abstract class AppLocalizations {
   /// Shown when the user taps the Period chip. Plain language, one line, no clinical claim.
   ///
   /// In en, this message translates to:
-  /// **'The days you have logged bleeding for. This one is read from what you recorded, not estimated.'**
+  /// **'The days you have logged bleeding for. This one comes from what you recorded; the other two are estimated.'**
   String get calendarPhasePeriodExplained;
 
   /// No description provided for @calendarPhaseFollicularExplained.
   ///
   /// In en, this message translates to:
-  /// **'The stretch after your period ends. Most of the variation between cycles sits here, which makes it the part this app is least certain about.'**
+  /// **'The days between the end of your period and ovulation. Cycle length varies most here, which makes it the part this app predicts least well.'**
   String get calendarPhaseFollicularExplained;
 
   /// No description provided for @calendarPhaseLutealExplained.
   ///
   /// In en, this message translates to:
-  /// **'The run of days before your next period is due. It tends to be the steadiest part of the cycle.'**
+  /// **'The days between ovulation and the start of your next period. Its length varies less than the rest of the cycle.'**
   String get calendarPhaseLutealExplained;
 
   /// No description provided for @calendarPhaseUnknown.
@@ -1500,7 +1500,7 @@ abstract class AppLocalizations {
   /// Always shown with the medicines section. A reader applying US warnings to a box bought elsewhere is being quietly misinformed, and nothing else on the screen would tell them.
   ///
   /// In en, this message translates to:
-  /// **'This is United States labelling. Strengths, brand names and warnings can differ where you are, so check the packet you actually have.'**
+  /// **'This is United States labelling. Strengths, brand names and warnings can differ where you are, so check the packet in front of you.'**
   String get lookupMedicinesUsOnly;
 
   /// Shown when the openFDA artifact has not been fetched. Says so plainly rather than rendering an empty list, which reads as a broken screen.
@@ -1644,7 +1644,7 @@ abstract class AppLocalizations {
   /// No description provided for @hygieneCupsBody.
   ///
   /// In en, this message translates to:
-  /// **'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products, so follow the instructions that came with yours rather than a number from an app.'**
+  /// **'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products, so follow the instructions that came with yours.'**
   String get hygieneCupsBody;
 
   /// No description provided for @hygieneExternalTitle.
@@ -1656,7 +1656,7 @@ abstract class AppLocalizations {
   /// No description provided for @hygieneExternalBody.
   ///
   /// In en, this message translates to:
-  /// **'Worn outside the body, and not associated with toxic shock syndrome in the way internally worn products are.'**
+  /// **'Worn outside the body. The link with toxic shock syndrome is to products worn inside it.'**
   String get hygieneExternalBody;
 
   /// No description provided for @nutritionTitle.
@@ -1686,7 +1686,7 @@ abstract class AppLocalizations {
   /// Sits directly under the iron text. The claim that stops the section reading as a checklist the reader can apply to themselves.
   ///
   /// In en, this message translates to:
-  /// **'Iron deficiency is confirmed by a blood test. Symptoms alone cannot establish it, and neither can anything in this app.'**
+  /// **'A blood test is what establishes iron deficiency. Symptoms alone cannot, and nothing in this app can.'**
   String get nutritionIronDiagnosisNote;
 
   /// No description provided for @nutritionIronSourcesBody.
@@ -1746,7 +1746,7 @@ abstract class AppLocalizations {
   /// No description provided for @nutritionZincBody.
   ///
   /// In en, this message translates to:
-  /// **'Zinc is an essential mineral involved in immune function and wound healing. It is often sold together with magnesium, which is worth knowing alongside the next line: taken at high doses over time, zinc can interfere with how the body absorbs copper.'**
+  /// **'Zinc is an essential mineral involved in immune function and wound healing. It is often sold together with magnesium, which matters here because at high doses over time zinc can interfere with how the body absorbs copper.'**
   String get nutritionZincBody;
 
   /// No description provided for @nutritionHintTitle.
@@ -1806,7 +1806,7 @@ abstract class AppLocalizations {
   /// Both ends of the mechanism, deliberately. Stated in one direction only this becomes an argument, and an argument is what this section must never be.
   ///
   /// In en, this message translates to:
-  /// **'The quantity of adipose tissue is therefore one of the inputs to how much oestrogen is circulating, and it runs in both directions: more of it adds to the total, and very little of it removes a source the ovaries do not make up for. It is one input among several rather than the whole picture.'**
+  /// **'The quantity of adipose tissue is therefore one of the inputs to how much oestrogen is circulating, and it runs in both directions: more of it adds to the total, and very little of it removes a source the ovaries do not make up for. It is one input among several.'**
   String get weightOestrogenBalanceBody;
 
   /// No description provided for @weightEnergyTitle.
@@ -1866,7 +1866,7 @@ abstract class AppLocalizations {
   /// No description provided for @weightThyroidBody.
   ///
   /// In en, this message translates to:
-  /// **'Thyroid disease reaches the menstrual cycle too, and in both directions. An underactive thyroid is associated with heavier and more frequent bleeding; an overactive one with lighter, less frequent bleeding, or with none. Thyroid function is established by a blood test rather than by the shape of a cycle.'**
+  /// **'Thyroid disease affects the menstrual cycle too, in both directions. An underactive thyroid is associated with heavier and more frequent bleeding; an overactive one with lighter, less frequent bleeding, or with none. Thyroid function is established by a blood test rather than by the shape of a cycle.'**
   String get weightThyroidBody;
 
   /// No description provided for @weightChangeTitle.
@@ -1878,7 +1878,7 @@ abstract class AppLocalizations {
   /// The last thing on the screen. A page of mechanisms with no exit is an invitation to pick one, so this points at a person. Deliberately carries no threshold: a threshold is a number, and a number here is something to measure a body against.
   ///
   /// In en, this message translates to:
-  /// **'A change in cycle length, in the amount of bleeding, or in whether periods arrive at all has many possible causes, and the mechanisms on this page are only some of them. Cycle dates cannot separate one cause from another, and nothing in this app can diagnose anything. A change worth explaining is worth taking to a doctor or nurse.'**
+  /// **'A change in cycle length, in the amount of bleeding, or in whether periods arrive at all has many possible causes, and the mechanisms on this page are only some of them. Cycle dates cannot separate one cause from another, and nothing in this app can diagnose anything. A doctor or nurse is who can work out which one it is.'**
   String get weightChangeBody;
 
   /// No description provided for @weightEntryTitle.
@@ -1944,7 +1944,7 @@ abstract class AppLocalizations {
   /// No description provided for @movementHowItFeelsBody.
   ///
   /// In en, this message translates to:
-  /// **'What varies across a cycle is the experience of moving, not what is permitted. Cramping pain around the start of bleeding, tiredness and low energy in the days before and during it, and how hard a given effort seems on the day are all part of that. The variation is wide between people and between one cycle and the next in the same person, which is why none of it turns into a rule.'**
+  /// **'What varies across a cycle is how moving feels. Cramping pain around the start of bleeding, tiredness and low energy in the days before and during it, and how hard a given effort seems on the day are all part of that. The variation is wide between people, and wide between one cycle and the next in the same person, which is why none of it turns into a rule.'**
   String get movementHowItFeelsBody;
 
   /// No description provided for @movementRestTitle.
@@ -1968,13 +1968,13 @@ abstract class AppLocalizations {
   /// No description provided for @movementStopSignalsBody.
   ///
   /// In en, this message translates to:
-  /// **'Some things are reasons to stop rather than to carry on. Feeling faint or light-headed during exertion, breathlessness out of proportion to the effort, and chest pain are among them, and each of those is a reason to get it looked at rather than to push on. None of this is particular to menstruation; it holds whenever it happens.'**
+  /// **'Some things are reasons to stop. Feeling faint or light-headed during exertion, breathlessness out of proportion to the effort, and chest pain are among them, and each is worth getting looked at. None of this is particular to menstruation. It applies whenever it happens.'**
   String get movementStopSignalsBody;
 
   /// The same claim the iron section makes, cited to the same sources in MOVEMENT_SOURCES.md and NUTRITION_SOURCES.md so the two cannot drift. It is here because it explains a hard day without blaming the cycle for it.
   ///
   /// In en, this message translates to:
-  /// **'There is also a recognised reason why exertion can feel harder around heavy periods, and it is not that a cycle makes movement unwise. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia, whose commonly listed symptoms include tiredness, lack of energy and shortness of breath. Iron deficiency is confirmed by a blood test rather than by how a day felt, and it is worth taking to a doctor or nurse rather than working around.'**
+  /// **'Exertion can feel harder around heavy periods, and there is a recognised reason for it. Heavy menstrual bleeding is a known cause of iron deficiency anaemia, whose commonly listed symptoms include tiredness, lack of energy and shortness of breath. A blood test is what confirms iron deficiency, rather than how a day felt, and it is worth taking to a doctor or nurse.'**
   String get movementAnaemiaBody;
 
   /// No description provided for @movementPhaseClaimsTitle.
@@ -1986,7 +1986,7 @@ abstract class AppLocalizations {
   /// Says outright that the evidence is weak rather than quietly declining to use it. A reference that handed someone a prescription built on evidence this thin would be worse than one that says how thin it is.
   ///
   /// In en, this message translates to:
-  /// **'Schemes that assign different kinds of exercise to different parts of the cycle are widely promoted. The evidence underneath them is weak. Systematic review of cycle phase and exercise performance describes that research as low quality and inconsistent, with average effects that are trivial and with differences between individuals larger than the effect being looked for. No clinical guidance in the sources behind this page recommends planning exercise around cycle phase, and none says the chance of injury rises or falls with it.'**
+  /// **'Schemes that assign different kinds of exercise to different parts of the cycle are widely promoted. The evidence underneath them is weak. Systematic review of cycle phase and exercise performance describes that research as low quality and inconsistent: the average effects are trivial, and the differences between individuals are larger than the effect being looked for. No clinical guidance in the sources behind this page recommends planning exercise around cycle phase, and none says the chance of injury rises or falls with it.'**
   String get movementPhaseClaimsBody;
 
   /// No description provided for @movementContraceptionBody.
@@ -2016,7 +2016,7 @@ abstract class AppLocalizations {
   /// No description provided for @movementEntrySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'What exercise does about period pain, how little supports planning it by cycle phase, and what is a reason to stop.'**
+  /// **'What exercise does about period pain, how weak the evidence for planning it by cycle phase is, and what is a reason to stop.'**
   String get movementEntrySubtitle;
 
   /// The name of the small persistent control in the bottom bar. It is a control, so it needs a name a screen reader can announce; 'decoration' is not an option.
@@ -2076,7 +2076,7 @@ abstract class AppLocalizations {
   /// The line PLAN 6.3 is most specific about. A missed period is a data state, not a life event to comment on, and the second sentence is what keeps it one.
   ///
   /// In en, this message translates to:
-  /// **'The predicted window has passed with no period logged. That is a data state, and nothing here guesses at what is behind it.'**
+  /// **'The predicted window has passed with no period logged. That is a data state, and nothing here guesses at the reason.'**
   String get companionLineOverdue;
 
   /// An offer, never a nudge. No streak, no count, and no reason asked for: a gap may be pregnancy, loss, illness, or simply not wanting to think about it.
@@ -2340,7 +2340,7 @@ abstract class AppLocalizations {
   /// No description provided for @appearanceSchemeNote.
   ///
   /// In en, this message translates to:
-  /// **'Every scheme here was measured for contrast before it was offered. Pick whichever you can stand to look at.'**
+  /// **'Every scheme here was measured for contrast before it was offered. Pick the one you like.'**
   String get appearanceSchemeNote;
 
   /// No description provided for @appearanceThemeSection.
@@ -2370,7 +2370,7 @@ abstract class AppLocalizations {
   /// No description provided for @appearanceThemeLockedByScheme.
   ///
   /// In en, this message translates to:
-  /// **'Night is dark by design, so there is nothing to switch. Pick another scheme to choose.'**
+  /// **'Night is a dark scheme, so there is nothing to switch here. Pick another scheme to get the choice back.'**
   String get appearanceThemeLockedByScheme;
 
   /// No description provided for @appearanceSchemeSelected.
@@ -2448,7 +2448,7 @@ abstract class AppLocalizations {
   /// No description provided for @appearanceSchemeNightSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Designed dark, not inverted'**
+  /// **'Dark from the start'**
   String get appearanceSchemeNightSubtitle;
 
   /// No description provided for @settingsDisplaySection.
@@ -2580,7 +2580,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyNotEncryptedBody.
   ///
   /// In en, this message translates to:
-  /// **'Your data sits in this app\'s own storage, which other apps cannot read on a phone that has not been tampered with, and which Android\'s full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock hides the screen. It does not encrypt the file underneath.'**
+  /// **'Your data sits in this app\'s own storage. Other apps cannot read it on a phone that has not been tampered with, and Android\'s full-device encryption protects it while the phone is switched off. But it is stored as plain text, so anyone who picks up your unlocked phone, or takes a forensic copy of it, can read it. The app lock hides the screen. It does not encrypt the file underneath.'**
   String get privacyNotEncryptedBody;
 
   /// No description provided for @privacyBackupTitle.
@@ -2640,7 +2640,7 @@ abstract class AppLocalizations {
   /// No description provided for @bootstrapRecoveredBody.
   ///
   /// In en, this message translates to:
-  /// **'The stored file was damaged, so this app started with an empty one. The damaged file has been kept, not deleted. If you have a backup, restoring it now is the best way forward.'**
+  /// **'The stored file was damaged, so this app started with an empty one. The damaged file is still on the device. If you have a backup, restoring it now is the best way forward.'**
   String get bootstrapRecoveredBody;
 
   /// No description provided for @bootstrapRecoveredAction.
