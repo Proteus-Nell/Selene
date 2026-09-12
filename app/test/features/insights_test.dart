@@ -86,7 +86,7 @@ void main() {
       await pumpInsights(tester);
       final l10n = l10nOf(tester);
       expect(find.text(l10n.insightsNextPeriodTitle), findsOneWidget);
-      expect(find.text(l10n.insightsNotPersonalisedYet(5)), findsOneWidget);
+      expect(find.text(l10n.insightsNotPersonalisedYet), findsOneWidget);
     });
 
     testWidgets('a settled history', (tester) async {

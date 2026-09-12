@@ -107,7 +107,7 @@ void main() {
       await pumpLog(tester);
       final hint = l10nOf(tester).logIntercourseHint.toLowerCase();
       expect(hint, contains('optional'));
-      expect(hint, contains('never used for predictions'));
+      expect(hint, contains('not used for predictions'));
     });
 
     testWidgets('offers no third "not recorded" option', (tester) async {

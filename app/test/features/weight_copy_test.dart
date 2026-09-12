@@ -234,22 +234,16 @@ void main() {
   });
 
   group('the claims that stop the section reading as advice', () {
-    test('says up front that the app asks for nothing', () {
-      // The first thing a reader who opened this warily should learn.
-      final body = _weightCopy()['weightNothingToEnterBody']!.toLowerCase();
-      expect(
-        body.contains('records no body weight') || body.contains('asks for'),
-        isTrue,
-        reason:
-            'the section no longer says the app wants nothing from the reader, '
-            'which is what separates a reference page from a food diary',
-      );
-      expect(
-        body,
-        contains('nothing to enter'),
-        reason: 'the section no longer says there is nothing to fill in',
-      );
-    });
+    // `weightNothingToEnterBody` was removed at the owner's direction, and the
+    // test that pinned it went with it. It was the callout above the first
+    // mechanism saying the app records no body weight and offers no figure to
+    // measure against, and it existed because this subject carries a real risk
+    // of harm around disordered eating. Nothing now states that claim.
+    //
+    // The guards that remain are the ones that scan the whole ARB: no weight
+    // target, no judgement about a body, no second-person risk framing, no
+    // number anywhere in this section. Those still hold. What is gone is the
+    // section saying outright that it wants nothing from the reader.
 
     test('the intro disclaims advice and disclaims the reader own data', () {
       final intro = _weightCopy()['weightIntro']!.toLowerCase();

@@ -34,20 +34,6 @@ void main() {
       expect(find.text(l10nOf(tester).weightIntro), findsOneWidget);
     });
 
-    testWidgets('says the app wants nothing, above the reference text', (
-      tester,
-    ) async {
-      // A reader who opened this warily should not have to scroll past five
-      // mechanisms to find out that there is nothing here to fill in.
-      await pump(tester);
-      final l10n = l10nOf(tester);
-      final note = tester.getTopLeft(
-        find.text(l10n.weightNothingToEnterBody),
-      );
-      final first = tester.getTopLeft(find.text(l10n.weightOestrogenTitle));
-      expect(note.dy, lessThan(first.dy));
-    });
-
     testWidgets('covers every mechanism the sources file cites', (
       tester,
     ) async {

@@ -43,7 +43,7 @@ class NextPeriodPanel extends StatelessWidget {
       InsufficientData(:final populationPrior) => _Window(
         dense: dense,
         prediction: populationPrior,
-        subtitle: l10n.insightsNotPersonalisedYet(5),
+        subtitle: l10n.insightsNotPersonalisedYet,
       ),
       TooIrregular() => _Message(
         dense: dense,

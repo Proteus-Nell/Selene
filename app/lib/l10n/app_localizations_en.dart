@@ -211,7 +211,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logIntercourseHint =>
-      'Optional, and never used for predictions. Tap again to clear.';
+      'Optional, and not used for predictions. Tap again to clear.';
 
   @override
   String get logIntercourseProtected => 'Protected';
@@ -407,7 +407,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get insightsFourInFive =>
-      'About four times in five it starts in this range.';
+      'About four out of five times start in this range.';
 
   @override
   String insightsHalfTheTime(String start, String end) {
@@ -429,9 +429,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String insightsNotPersonalisedYet(int count) {
-    return 'Based on typical cycles rather than yours. Your own figures take over after $count cycles.';
-  }
+  String get insightsNotPersonalisedYet =>
+      'Based on typical cycles which improve as you log your cycles.';
 
   @override
   String get insightsNoDataTitle => 'Nothing logged yet';
@@ -546,7 +545,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get insightsTrackRecordExplain =>
-      'Worked out on this device by re-running the prediction against cycles you had already logged. Nothing is sent anywhere.';
+      'Worked out on this device by re-running the prediction against cycles you had already logged.';
 
   @override
   String insightsLoggingCompleteness(int logged, int total) {
@@ -940,11 +939,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Worn outside the body. The link with toxic shock syndrome is to products worn inside it.';
 
   @override
-  String get nutritionTitle => 'Iron and magnesium';
+  String get nutritionTitle => 'Supplements';
 
   @override
   String get nutritionIntro =>
-      'Reference notes on two nutrients that come up around menstrual cycles. This is background reading, not advice about your body, and nothing here is based on what you have logged.';
+      'Reference notes on the nutrients that come up around menstrual cycles. This is background reading, not advice about your body, and nothing here is based on what you have logged.';
 
   @override
   String get nutritionIronTitle => 'Iron';
@@ -962,7 +961,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Dietary iron comes in two forms: haem iron from meat and fish, and non-haem iron from plants and fortified foods. They are absorbed differently.';
 
   @override
-  String get nutritionVitaminCTitle => 'Why vitamin C is listed here';
+  String get nutritionVitaminCTitle => 'Vitamin C';
 
   @override
   String get nutritionVitaminCBody =>
@@ -988,7 +987,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Creams, oils and balms are sold for the same purpose. Absorption through unbroken skin is minimal: a review of the topic found meaningful absorption unsupported, and the strongest trial of a cream found a change small enough to be chance. No clinical guidance here names magnesium, in any form, as a treatment for period pain.';
 
   @override
-  String get nutritionZincTitle => 'Why zinc is listed here';
+  String get nutritionZincTitle => 'Zinc';
 
   @override
   String get nutritionZincBody =>
@@ -1002,11 +1001,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'On several days recently you logged heavy flow and fatigue together. That pattern is worth raising with a doctor or nurse, who can look into it properly.';
 
   @override
-  String get settingsNutrition => 'Iron and magnesium';
+  String get settingsNutrition => 'Supplements';
 
   @override
   String get settingsNutritionSubtitle =>
-      'Reference notes on two nutrients that come up around menstrual cycles.';
+      'Reference notes on the nutrients that come up around menstrual cycles.';
 
   @override
   String get weightTitle => 'Body composition and cycle hormones';
@@ -1014,10 +1013,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get weightIntro =>
       'Reference notes on how body composition and several hormones interact with the menstrual cycle. This is background reading, not advice, and it describes mechanisms rather than any particular body. Nothing on this page is drawn from anything logged in this app.';
-
-  @override
-  String get weightNothingToEnterBody =>
-      'This app records no body weight, so there is nothing to enter here. The page describes how bodies work in general and gives you no figure to measure yourself against.';
 
   @override
   String get weightOestrogenTitle => 'Where oestrogen is made';
@@ -1086,10 +1081,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get movementIntro =>
       'Reference notes on period pain, on what movement does about it, and on how well the evidence supports the popular advice. This is background reading, not advice, and it describes what is known about bodies in general. It draws on nothing you have logged.';
-
-  @override
-  String get movementNothingToFollowBody =>
-      'This app records no exercise, so there is nothing to enter here. What follows is background reading: it describes what is known, with no plan to follow.';
 
   @override
   String get movementPainTitle => 'What period pain is';
@@ -1322,7 +1313,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get learnIntro =>
-      'Reference notes, written for this app and kept on the device. Every one of them says where its claims come from, and none of them is advice about you.';
+      'Notes that are intended for your perusal and assistance.';
 
   @override
   String get learnReferenceSection => 'Reference';

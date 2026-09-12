@@ -319,24 +319,17 @@ void main() {
       );
     });
 
-    test('says up front that there is no plan here', () {
-      // The first thing a reader who came looking for a schedule should learn,
-      // because the popular version of this subject is nothing but schedules.
-      final body = _movementCopy()['movementNothingToFollowBody']!
-          .toLowerCase();
-      expect(
-        body,
-        contains('nothing to enter'),
-        reason: 'the section no longer says there is nothing to fill in',
-      );
-      expect(
-        body.contains('no plan') || body.contains('to follow'),
-        isTrue,
-        reason:
-            'the section no longer says there is no plan on the page, which is '
-            'what separates a reference from a programme',
-      );
-    });
+    // `movementNothingToFollowBody` was removed at the owner's direction, and
+    // the test that pinned it went with it. It was the callout above the first
+    // section saying the app records no exercise and the page holds no plan,
+    // and it was aimed at the reader who arrives expecting to be told what to
+    // do. Nothing now states that claim.
+    //
+    // The guards that remain are the ones that scan the whole ARB: no
+    // prescription vocabulary, no intensity, no figure of any kind in this
+    // section, and the phase-based claims still have to be called weak out
+    // loud. Those still hold. What is gone is the section saying outright that
+    // it is not going to tell anyone what to do.
 
     test('says that a period is not a reason to stop', () {
       // The correction this whole section exists for. It was requested as

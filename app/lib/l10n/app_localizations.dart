@@ -451,7 +451,7 @@ abstract class AppLocalizations {
   /// Under the intercourse control. Says both things a user needs before touching it: that it is optional, and that recording it does not feed the model — which they would otherwise reasonably assume it does.
   ///
   /// In en, this message translates to:
-  /// **'Optional, and never used for predictions. Tap again to clear.'**
+  /// **'Optional, and not used for predictions. Tap again to clear.'**
   String get logIntercourseHint;
 
   /// No description provided for @logIntercourseProtected.
@@ -787,7 +787,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsFourInFive.
   ///
   /// In en, this message translates to:
-  /// **'About four times in five it starts in this range.'**
+  /// **'About four out of five times start in this range.'**
   String get insightsFourInFive;
 
   /// No description provided for @insightsHalfTheTime.
@@ -823,8 +823,8 @@ abstract class AppLocalizations {
   /// No description provided for @insightsNotPersonalisedYet.
   ///
   /// In en, this message translates to:
-  /// **'Based on typical cycles rather than yours. Your own figures take over after {count} cycles.'**
-  String insightsNotPersonalisedYet(int count);
+  /// **'Based on typical cycles which improve as you log your cycles.'**
+  String get insightsNotPersonalisedYet;
 
   /// No description provided for @insightsNoDataTitle.
   ///
@@ -996,7 +996,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsTrackRecordExplain.
   ///
   /// In en, this message translates to:
-  /// **'Worked out on this device by re-running the prediction against cycles you had already logged. Nothing is sent anywhere.'**
+  /// **'Worked out on this device by re-running the prediction against cycles you had already logged.'**
   String get insightsTrackRecordExplain;
 
   /// No description provided for @insightsLoggingCompleteness.
@@ -1662,13 +1662,13 @@ abstract class AppLocalizations {
   /// No description provided for @nutritionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Iron and magnesium'**
+  /// **'Supplements'**
   String get nutritionTitle;
 
   /// The framing sentence for the whole screen. It has to establish that the page is reference text and not addressed to the reader personally, before any nutrient is named.
   ///
   /// In en, this message translates to:
-  /// **'Reference notes on two nutrients that come up around menstrual cycles. This is background reading, not advice about your body, and nothing here is based on what you have logged.'**
+  /// **'Reference notes on the nutrients that come up around menstrual cycles. This is background reading, not advice about your body, and nothing here is based on what you have logged.'**
   String get nutritionIntro;
 
   /// No description provided for @nutritionIronTitle.
@@ -1698,7 +1698,7 @@ abstract class AppLocalizations {
   /// No description provided for @nutritionVitaminCTitle.
   ///
   /// In en, this message translates to:
-  /// **'Why vitamin C is listed here'**
+  /// **'Vitamin C'**
   String get nutritionVitaminCTitle;
 
   /// No description provided for @nutritionVitaminCBody.
@@ -1740,7 +1740,7 @@ abstract class AppLocalizations {
   /// No description provided for @nutritionZincTitle.
   ///
   /// In en, this message translates to:
-  /// **'Why zinc is listed here'**
+  /// **'Zinc'**
   String get nutritionZincTitle;
 
   /// No description provided for @nutritionZincBody.
@@ -1764,13 +1764,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsNutrition.
   ///
   /// In en, this message translates to:
-  /// **'Iron and magnesium'**
+  /// **'Supplements'**
   String get settingsNutrition;
 
   /// No description provided for @settingsNutritionSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Reference notes on two nutrients that come up around menstrual cycles.'**
+  /// **'Reference notes on the nutrients that come up around menstrual cycles.'**
   String get settingsNutritionSubtitle;
 
   /// No description provided for @weightTitle.
@@ -1784,12 +1784,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reference notes on how body composition and several hormones interact with the menstrual cycle. This is background reading, not advice, and it describes mechanisms rather than any particular body. Nothing on this page is drawn from anything logged in this app.'**
   String get weightIntro;
-
-  /// Sits directly under the intro. The section carries a real risk of harm around disordered eating, and the first thing it says is that the app wants nothing from the reader.
-  ///
-  /// In en, this message translates to:
-  /// **'This app records no body weight, so there is nothing to enter here. The page describes how bodies work in general and gives you no figure to measure yourself against.'**
-  String get weightNothingToEnterBody;
 
   /// No description provided for @weightOestrogenTitle.
   ///
@@ -1904,12 +1898,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reference notes on period pain, on what movement does about it, and on how well the evidence supports the popular advice. This is background reading, not advice, and it describes what is known about bodies in general. It draws on nothing you have logged.'**
   String get movementIntro;
-
-  /// Sits directly under the intro. The reader most likely to be harmed by this subject is the one who arrives expecting to be told what to do, and the first thing the section says is that it is not going to.
-  ///
-  /// In en, this message translates to:
-  /// **'This app records no exercise, so there is nothing to enter here. What follows is background reading: it describes what is known, with no plan to follow.'**
-  String get movementNothingToFollowBody;
 
   /// No description provided for @movementPainTitle.
   ///
@@ -2298,7 +2286,7 @@ abstract class AppLocalizations {
   /// No description provided for @learnIntro.
   ///
   /// In en, this message translates to:
-  /// **'Reference notes, written for this app and kept on the device. Every one of them says where its claims come from, and none of them is advice about you.'**
+  /// **'Notes that are intended for your perusal and assistance.'**
   String get learnIntro;
 
   /// No description provided for @learnReferenceSection.
