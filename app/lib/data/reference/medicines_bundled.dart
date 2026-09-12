@@ -16,7 +16,7 @@ import 'package:period_tracker/data/reference/medicine.dart';
 /// repository and never fetched at runtime. `gen_medicines.py --check` fails
 /// CI if the two stop matching.
 const String medicinesArtifactSha256 =
-    '49cad45aaa0c88b3c020425afcaa77bbd496411f932e4bef1a770c0fa771e8f1';
+    '84044155e0e45cf4ec5d19cc6bdffafccbe206020ce381f1c18017419411893d';
 
 /// Whether the artifact has actually been populated from openFDA.
 ///
