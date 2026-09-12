@@ -68,6 +68,19 @@ final Provider<bool> onboardingCompleteProvider = Provider<bool>(
 
 final GlobalKey<NavigatorState> _rootKey = GlobalKey<NavigatorState>();
 
+/// One navigator key per branch, so a tab can be emptied when it is opened.
+///
+/// Needed because every screen under a tab is pushed imperatively with
+/// `Navigator.push` rather than declared as a `GoRoute`. `goBranch` moves
+/// go_router's own location, and an imperatively pushed route is not part of
+/// that: it sits on the branch's `Navigator` and stays there. Resetting a tab
+/// therefore means popping its navigator, which needs a handle on it.
+final List<GlobalKey<NavigatorState>> _branchKeys =
+    List<GlobalKey<NavigatorState>>.generate(
+      5,
+      (index) => GlobalKey<NavigatorState>(debugLabel: 'branch$index'),
+    );
+
 /// Builds the app's router.
 GoRouter buildRouter(Ref ref) {
   final onboarded = ref.watch(onboardingCompleteProvider);
@@ -89,6 +102,7 @@ GoRouter buildRouter(Ref ref) {
         navigatorContainerBuilder: _fadeThroughBranches,
         branches: <StatefulShellBranch>[
           StatefulShellBranch(
+            navigatorKey: _branchKeys[0],
             routes: <RouteBase>[
               GoRoute(
                 path: Routes.log,
@@ -97,6 +111,7 @@ GoRouter buildRouter(Ref ref) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: _branchKeys[1],
             routes: <RouteBase>[
               GoRoute(
                 path: Routes.calendar,
@@ -105,6 +120,7 @@ GoRouter buildRouter(Ref ref) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: _branchKeys[2],
             routes: <RouteBase>[
               GoRoute(
                 path: Routes.insights,
@@ -113,6 +129,7 @@ GoRouter buildRouter(Ref ref) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: _branchKeys[3],
             routes: <RouteBase>[
               GoRoute(
                 path: Routes.learn,
@@ -121,6 +138,7 @@ GoRouter buildRouter(Ref ref) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: _branchKeys[4],
             routes: <RouteBase>[
               GoRoute(
                 path: Routes.settings,
@@ -173,8 +191,14 @@ class AppScaffold extends StatelessWidget {
           // another tab. That is a real loss, and it is the smaller one:
           // arriving somewhere you did not ask for is more disorienting than
           // having to tap once more to get back.
-          onDestinationSelected: (index) =>
-              shell.goBranch(index, initialLocation: true),
+          onDestinationSelected: (index) {
+            // Empty the branch first, then switch to it. `goBranch` alone is
+            // not enough: it sets go_router's location, and the reference
+            // pages are pushed imperatively, so they outlive it and the
+            // reader lands back on whichever one they left.
+            _branchKeys[index].currentState?.popUntil((route) => route.isFirst);
+            shell.goBranch(index, initialLocation: true);
+          },
           destinations: <NavigationDestination>[
             NavigationDestination(
               icon: const Icon(Icons.schedule_outlined),

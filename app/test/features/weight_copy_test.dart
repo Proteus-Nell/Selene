@@ -97,9 +97,6 @@ const List<String> _riskFraming = <String>[
 /// Applied only to the `weight*` strings, and there it is absolute. Matched on
 /// word boundaries so "young" and "your" are told apart, and so a rename that
 /// buried "you" inside a longer word does not slip through.
-final RegExp _secondPerson = RegExp(
-  r"\b(you|your|yours|yourself|you're|youre)\b",
-);
 
 /// Any digit.
 final RegExp _digit = RegExp(r'\d');
@@ -198,27 +195,16 @@ void main() {
   });
 
   group('the reference itself', () {
-    test('never once addresses the reader', () {
-      // The single most important constraint on this section, and the reason it
-      // is an absolute: every softer version of the rule is a judgement call
-      // about whether *this* "your" is about the reader's body, and that is the
-      // judgement a hurried edit gets wrong. There is nothing on this page that
-      // needs a second person — it is reference text that happens to be shown
-      // to someone tracking a cycle.
-      final offences = <String>[];
-      _weightCopy().forEach((key, value) {
-        final match = _secondPerson.firstMatch(value.toLowerCase());
-        if (match != null) offences.add('$key: "${match[0]}" — "$value"');
-      });
-      expect(
-        offences,
-        isEmpty,
-        reason:
-            'A sentence about body composition that addresses the reader is a '
-            'claim about their body. This section describes mechanisms and is '
-            'not allowed to describe anyone.\n${offences.join("\n")}',
-      );
-    });
+    // A test here banned the word "you" from every string in this section,
+    // absolutely. It was dropped at the owner's direction, because the
+    // impersonal voice it enforced is most of what made this copy read like a
+    // leaflet rather than like a person.
+    //
+    // What it was protecting is still protected, by a narrower guard that
+    // survives: `_mindReading` and `_speculation` run over the whole ARB and
+    // still fail the build on "how you feel", "you might be feeling", "how are
+    // you feeling" and the rest. The hazard was never the pronoun, it was the
+    // claim; "if you want to do less" claims nothing about anybody.
 
     test('contains no number of any kind', () {
       // No BMI threshold, no weight range, no calorie figure, no day count.
@@ -242,13 +228,6 @@ void main() {
 
     test('the guards above would actually catch one', () {
       // A check that cannot fail is not a check. These pin the detectors.
-      expect(_secondPerson.hasMatch('your weight may be affecting this'), true);
-      expect(_secondPerson.hasMatch('you are at the low end'), isTrue);
-      expect(
-        _secondPerson.hasMatch('adipose tissue expresses aromatase'),
-        false,
-      );
-      expect(_secondPerson.hasMatch('a young person'), isFalse);
       expect(_digit.hasMatch('a bmi over 30'), isTrue);
       expect(_digit.hasMatch('across the whole weight spectrum'), isFalse);
     });

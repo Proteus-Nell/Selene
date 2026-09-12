@@ -136,9 +136,6 @@ final Map<String, RegExp> _trainingVocabulary = <String, RegExp>{
 /// Applied only to the `movement*` strings, and there it is absolute. Matched
 /// on word boundaries so "young" and "your" are told apart, and so a rename
 /// that buried "you" inside a longer word does not slip through.
-final RegExp _secondPerson = RegExp(
-  r"\b(you|your|yours|yourself|you're|youre)\b",
-);
 
 /// Any digit.
 final RegExp _digit = RegExp(r'\d');
@@ -237,29 +234,16 @@ void main() {
   });
 
   group('the reference itself', () {
-    test('never once addresses the reader', () {
-      // The single most important constraint on this section. There is nothing
-      // on this page that needs a second person: it is reference text about
-      // pain, movement and the state of the evidence, shown to somebody
-      // tracking a cycle. The moment it says "you", it is making a claim about
-      // a body it has never seen — and on this subject the friendliest phrasing
-      // ("listen to your body", "rest when you need to") is exactly the one
-      // that does it.
-      final offences = <String>[];
-      _movementCopy().forEach((key, value) {
-        final match = _secondPerson.firstMatch(value.toLowerCase());
-        if (match != null) offences.add('$key: "${match[0]}" — "$value"');
-      });
-      expect(
-        offences,
-        isEmpty,
-        reason:
-            'A sentence about pain or exertion that addresses the reader is a '
-            'claim about their body, or an instruction to it. This section '
-            'describes a subject and is not allowed to describe '
-            'anyone.\n${offences.join("\n")}',
-      );
-    });
+    // A test here banned the word "you" from every string in this section,
+    // absolutely. It was dropped at the owner's direction, because the
+    // impersonal voice it enforced is most of what made this copy read like a
+    // leaflet rather than like a person.
+    //
+    // What it was protecting is still protected, by a narrower guard that
+    // survives: `_mindReading` and `_speculation` run over the whole ARB and
+    // still fail the build on "how you feel", "you might be feeling", "how are
+    // you feeling" and the rest. The hazard was never the pronoun, it was the
+    // claim; "if you want to do less" claims nothing about anybody.
 
     test('contains no number of any kind', () {
       // A digit here is one of two things and neither is allowed: a training
@@ -303,13 +287,6 @@ void main() {
 
     test('the guards above would actually catch one', () {
       // A check that cannot fail is not a check. These pin the detectors.
-      expect(_secondPerson.hasMatch('listen to your body'), isTrue);
-      expect(_secondPerson.hasMatch('rest when you need to'), isTrue);
-      expect(
-        _secondPerson.hasMatch('exercise may reduce menstrual pain'),
-        isFalse,
-      );
-      expect(_secondPerson.hasMatch('a young person'), isFalse);
       expect(_digit.hasMatch('30 minutes of light cardio'), isTrue);
       expect(_digit.hasMatch('how hard a given effort seems'), isFalse);
       expect(_trainingVocabulary['train']!.hasMatch('train harder'), isTrue);

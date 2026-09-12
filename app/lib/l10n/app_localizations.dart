@@ -199,25 +199,25 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingNotContraception.
   ///
   /// In en, this message translates to:
-  /// **'It is not contraception. It cannot tell you when sex is unlikely to lead to pregnancy, and it must never be used to try.'**
+  /// **'This is a record of dates, not contraception. It cannot tell you when sex is unlikely to lead to pregnancy, and it must never be used to try.'**
   String get onboardingNotContraception;
 
   /// No description provided for @onboardingNotMedical.
   ///
   /// In en, this message translates to:
-  /// **'It is not medical advice. If something about your cycle worries you, talk to a clinician.'**
+  /// **'This is a record, not medical advice. If something about your cycle worries you, talk to a clinician.'**
   String get onboardingNotMedical;
 
   /// No description provided for @onboardingNotDiagnostic.
   ///
   /// In en, this message translates to:
-  /// **'It cannot diagnose anything. It sees only the dates you record, and nothing about contraception you take, pregnancy, medication, illness or stress.'**
+  /// **'It works from the dates you record and nothing else. It knows nothing about your contraception, pregnancy, medication, illness or stress, so it cannot diagnose anything.'**
   String get onboardingNotDiagnostic;
 
   /// No description provided for @onboardingAlwaysARange.
   ///
   /// In en, this message translates to:
-  /// **'Predictions are always a range of days, never a single date. Cycles vary, and one date would claim a precision this app does not have.'**
+  /// **'Predictions come as a range of days. Cycles vary enough that a single date would claim a precision this app does not have.'**
   String get onboardingAlwaysARange;
 
   /// No description provided for @onboardingAcknowledge.
@@ -1788,7 +1788,7 @@ abstract class AppLocalizations {
   /// Sits directly under the intro. The section carries a real risk of harm around disordered eating, and the first thing it says is that the app wants nothing from the reader.
   ///
   /// In en, this message translates to:
-  /// **'This app records no body weight and asks for none. There is nothing to enter here, and no figure on this page to measure a body against.'**
+  /// **'This app records no body weight, so there is nothing to enter here. The page describes how bodies work in general and gives you no figure to measure yourself against.'**
   String get weightNothingToEnterBody;
 
   /// No description provided for @weightOestrogenTitle.
@@ -1824,7 +1824,7 @@ abstract class AppLocalizations {
   /// Load-bearing. Without it the section reads as a statement about a number on a scale, which is both wrong and the most harmful thing this reference could be mistaken for.
   ///
   /// In en, this message translates to:
-  /// **'Energy availability is the energy left over from food once exercise has taken its share, set against what the body needs to run on. It is not a body weight and it is not a reading from a scale. This happens to people whose body weight is entirely unremarkable, and heavy training, illness or sustained stress can bring it on with no fall in body weight at all.'**
+  /// **'Energy availability is the energy left over from food once exercise has taken its share, measured against what the body needs to run on. It is a balance between what goes in and what is spent, and a scale reads neither. It happens at entirely unremarkable body weights, and heavy training, illness or sustained stress can bring it on while weight holds steady.'**
   String get weightEnergyNotAScaleBody;
 
   /// No description provided for @weightInsulinTitle.
@@ -1854,7 +1854,7 @@ abstract class AppLocalizations {
   /// Must not be dropped. The opposite impression is both common and false, and naming PCOS in a section about body composition without saying this would reinforce the error.
   ///
   /// In en, this message translates to:
-  /// **'PMOS occurs across the whole weight spectrum, in people who are thin as well as in people who are not. The widespread impression that it belongs at one end of that spectrum is not accurate, and it is one of the reasons the condition goes unrecognised.'**
+  /// **'PMOS occurs across the whole weight spectrum, including in people who are thin. The widespread impression that it belongs at one end is wrong, and it is one reason the condition goes unrecognised.'**
   String get weightPcosSpectrumBody;
 
   /// No description provided for @weightThyroidTitle.
@@ -1902,13 +1902,13 @@ abstract class AppLocalizations {
   /// The framing sentence for the whole screen. It has to establish that the page is reference text about a subject, not addressed to the reader and not a plan, before anything else is named.
   ///
   /// In en, this message translates to:
-  /// **'Reference notes on period pain, on what movement does and does not do about it, and on how much of the popular advice on the subject the evidence actually supports. This is background reading, not advice, and it describes what is known rather than any particular body. Nothing on this page is drawn from anything logged in this app.'**
+  /// **'Reference notes on period pain, on what movement does about it, and on how well the evidence supports the popular advice. This is background reading, not advice, and it describes what is known about bodies in general. It draws on nothing you have logged.'**
   String get movementIntro;
 
   /// Sits directly under the intro. The reader most likely to be harmed by this subject is the one who arrives expecting to be told what to do, and the first thing the section says is that it is not going to.
   ///
   /// In en, this message translates to:
-  /// **'This app records no exercise and asks for none. There is nothing to enter here and no plan on this page to follow, so there is nothing on it to keep up with or to fall behind.'**
+  /// **'This app records no exercise, so there is nothing to enter here. What follows is background reading: it describes what is known, with no plan to follow.'**
   String get movementNothingToFollowBody;
 
   /// No description provided for @movementPainTitle.
@@ -1956,7 +1956,7 @@ abstract class AppLocalizations {
   /// Permission, never instruction. The requested version of this section was an instruction to rest, which is the same category error as an exercise prescription and is stated here as one.
   ///
   /// In en, this message translates to:
-  /// **'Doing less, or nothing at all, on a day when that is what is wanted is a reasonable choice and not a lapse. That is a permission rather than an instruction, and the difference is the whole point: an instruction to rest is the same mistake as an instruction to push, only kinder. Nothing on this page asks for more and nothing on it asks for less.'**
+  /// **'If you want to do less on a given day, or nothing at all, that is a reasonable choice. This page gives you permission rather than instructions: it holds you to no target, so there is nothing here to fall short of.'**
   String get movementRestBody;
 
   /// No description provided for @movementStopSignalsTitle.
@@ -2004,7 +2004,7 @@ abstract class AppLocalizations {
   /// The last thing on the screen, pointing at a person. Deliberately carries no threshold and no pain scale: both are numbers, and a number here is something to be talked out of by.
   ///
   /// In en, this message translates to:
-  /// **'Period pain that is severe, that is getting worse, that the usual measures do not ease, or that gets in the way of ordinary days is a reason to see a doctor or nurse. So is pain that began later in life, changed in character, or arrives alongside other symptoms. The causes named above are found by assessment rather than by tracking dates. No threshold is set out here and no scale.'**
+  /// **'Period pain that is severe, that is getting worse, that the usual measures do not ease, or that gets in the way of ordinary days is a reason to see a doctor or nurse. So is pain that began later in life, changed in character, or arrives alongside other symptoms. The causes named above are found by assessment rather than by tracking dates. No threshold is offered here, and no scale for you to score yourself against.'**
   String get movementSeeSomeoneBody;
 
   /// No description provided for @movementEntryTitle.
@@ -2568,7 +2568,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyOnDeviceBody.
   ///
   /// In en, this message translates to:
-  /// **'This app has no internet permission, and a check on every release refuses to build one that asks for it. No account, no sync, no analytics, no crash reporting. Nothing leaves this device unless you export it.'**
+  /// **'This app has no internet permission, and a check on every release refuses to build one that asks for it. There is no account to sign into, no sync, and it collects no analytics or crash reports. What you record stays here until you export it.'**
   String get privacyOnDeviceBody;
 
   /// No description provided for @privacyNotEncryptedTitle.
@@ -2580,7 +2580,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyNotEncryptedBody.
   ///
   /// In en, this message translates to:
-  /// **'Your data sits in this app\'s own storage, which other apps cannot read on a phone that has not been tampered with, and which Android\'s full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock does not encrypt anything: it covers the screen, not the file.'**
+  /// **'Your data sits in this app\'s own storage, which other apps cannot read on a phone that has not been tampered with, and which Android\'s full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock hides the screen. It does not encrypt the file underneath.'**
   String get privacyNotEncryptedBody;
 
   /// No description provided for @privacyBackupTitle.
