@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:period_tracker/core/motion.dart';
+import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/features/calendar/calendar_screen.dart';
 import 'package:period_tracker/features/companion/companion_dock.dart';
 import 'package:period_tracker/features/insights/insights_screen.dart';
@@ -155,8 +156,15 @@ GoRouter buildRouter(Ref ref) {
 /// The router, rebuilt if the onboarding state is overridden.
 final Provider<GoRouter> routerProvider = Provider<GoRouter>(buildRouter);
 
-/// The persistent frame around the five main screens.
-class AppScaffold extends StatelessWidget {
+/// The persistent frame around the main screens.
+///
+/// The shell always holds five branches, whatever the navigation bar shows.
+/// Learn being optional is a question of which destinations are offered, not of
+/// how many navigators exist: dropping a branch would renumber the others, move
+/// every `_branchKeys` index, and rebuild the router the moment the preference
+/// changed. The branch stays, the destination goes, and [_visibleBranches] maps
+/// what the user taps back to the branch it belongs to.
+class AppScaffold extends ConsumerWidget {
   /// Wraps [shell], the branch navigator go_router manages.
   const AppScaffold({required this.shell, super.key});
 
@@ -164,8 +172,16 @@ class AppScaffold extends StatelessWidget {
   final StatefulNavigationShell shell;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final showLearn = ref.watch(showLearnTabProvider).valueOrNull ?? false;
+    final showCompanion = ref.watch(showCompanionProvider).valueOrNull ?? false;
+    final branches = _visibleBranches(showLearn: showLearn);
+    // The Learn branch can be the one in view when the preference is turned
+    // off from Settings — which is itself a different tab, so in practice this
+    // is the deep-link and restore case. Falling back to the first destination
+    // beats a NavigationBar with selectedIndex pointing at nothing.
+    final selected = branches.indexOf(shell.currentIndex);
     return Scaffold(
       // Wrapped here rather than in a screen: the requirement is to reschedule
       // on every prediction change, and a screen only does that while it is on
@@ -177,8 +193,9 @@ class AppScaffold extends StatelessWidget {
       // place a persistent presence can sit without covering something is the
       // furniture around them.
       bottomNavigationBar: CompanionDock(
+        showCompanion: showCompanion,
         navigationBar: NavigationBar(
-          selectedIndex: shell.currentIndex,
+          selectedIndex: selected < 0 ? 0 : selected,
           // Always the branch's initial location, not only when the tab
           // already selected is tapped again. A stateful shell otherwise
           // keeps each branch's navigation stack, so leaving Learn from
@@ -192,12 +209,17 @@ class AppScaffold extends StatelessWidget {
           // arriving somewhere you did not ask for is more disorienting than
           // having to tap once more to get back.
           onDestinationSelected: (index) {
+            // The tapped destination is an index into what is on screen, which
+            // is not the branch index once Learn is hidden.
+            final branch = branches[index];
             // Empty the branch first, then switch to it. `goBranch` alone is
             // not enough: it sets go_router's location, and the reference
             // pages are pushed imperatively, so they outlive it and the
             // reader lands back on whichever one they left.
-            _branchKeys[index].currentState?.popUntil((route) => route.isFirst);
-            shell.goBranch(index, initialLocation: true);
+            _branchKeys[branch].currentState?.popUntil(
+              (route) => route.isFirst,
+            );
+            shell.goBranch(branch, initialLocation: true);
           },
           destinations: <NavigationDestination>[
             NavigationDestination(
@@ -215,11 +237,12 @@ class AppScaffold extends StatelessWidget {
               selectedIcon: const Icon(Icons.insights),
               label: l10n.navInsights,
             ),
-            NavigationDestination(
-              icon: const Icon(Icons.menu_book_outlined),
-              selectedIcon: const Icon(Icons.menu_book),
-              label: l10n.navLearn,
-            ),
+            if (showLearn)
+              NavigationDestination(
+                icon: const Icon(Icons.menu_book_outlined),
+                selectedIcon: const Icon(Icons.menu_book),
+                label: l10n.navLearn,
+              ),
             NavigationDestination(
               icon: const Icon(Icons.settings_outlined),
               selectedIcon: const Icon(Icons.settings),
@@ -231,6 +254,19 @@ class AppScaffold extends StatelessWidget {
     );
   }
 }
+
+/// The branch index behind each destination the navigation bar is showing.
+///
+/// The shell's branches never change; the destinations do. Returning the
+/// mapping rather than recomputing an offset at each call site is what stops a
+/// hidden Learn tab turning a tap on Settings into a jump to Learn.
+List<int> _visibleBranches({required bool showLearn}) => <int>[
+  0,
+  1,
+  2,
+  if (showLearn) 3,
+  4,
+];
 
 /// Builds the container that holds the branch navigators (AND-34).
 ///

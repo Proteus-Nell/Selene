@@ -52,6 +52,7 @@ class _Shell extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
     body: const Text('diary'),
     bottomNavigationBar: CompanionDock(
+      showCompanion: true,
       navigationBar: NavigationBar(
         destinations: <NavigationDestination>[
           NavigationDestination(

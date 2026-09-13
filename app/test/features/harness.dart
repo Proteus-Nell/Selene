@@ -169,3 +169,15 @@ Future<void> loadBundledFonts() async {
   }
   await figtree.load();
 }
+
+/// Pumps a fixed number of frames rather than settling.
+///
+/// `pumpAndSettle` never returns against the real shell: the companion in the
+/// bottom bar animates while it is idle, so the tree is never quiet. The smoke
+/// flow pumps for a fixed span for the same reason.
+Future<void> pumpFor(WidgetTester tester, [int seconds = 1]) async {
+  await tester.pump();
+  for (var i = 0; i < seconds * 10; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}

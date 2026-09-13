@@ -218,16 +218,17 @@ void main() {
       );
     });
 
-    test('magnesium says the evidence is limited', () {
-      // The claim most likely to be dropped for brevity, and the one that stops
-      // the section reading as a recommendation.
-      final body = _copy()['nutritionMagnesiumEvidenceBody']!.toLowerCase();
-      expect(
-        body.contains('limited') || body.contains('not conclusive'),
-        isTrue,
-        reason: 'the magnesium section no longer qualifies its own evidence',
-      );
-    });
+    // The magnesium section no longer qualifies its own evidence, and the test
+    // that required it to went with the sentence, at the owner's direction.
+    // What is gone: that trials of magnesium for cramps report limited and
+    // inconclusive evidence, that absorption through unbroken skin is minimal,
+    // and that no clinical guidance names magnesium as a treatment for period
+    // pain. The section now says magnesium is widely taken for cramps, which
+    // oral forms absorb best, and that creams are sold for the same purpose.
+    //
+    // The guards that remain still hold: nothing here asserts a deficiency,
+    // recommends a supplement, tells the reader about their own nutrients, or
+    // uses diagnostic framing, and the intro still says the page is not advice.
 
     test('the intro says the page is not about the reader', () {
       final intro = _copy()['nutritionIntro']!.toLowerCase();

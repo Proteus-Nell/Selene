@@ -15,10 +15,12 @@ import 'package:period_tracker/features/common/chip_motion.dart';
 import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/conditions/conditions_screen.dart';
 import 'package:period_tracker/features/lookup/lookup_screen.dart';
+import 'package:period_tracker/features/movement/movement_screen.dart';
 import 'package:period_tracker/features/nutrition/nutrition_screen.dart';
 import 'package:period_tracker/features/settings/delete_everything_dialog.dart';
 import 'package:period_tracker/features/settings/log_viewer.dart';
 import 'package:period_tracker/features/settings/privacy_section.dart';
+import 'package:period_tracker/features/weight/weight_hormones_screen.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/notifications/scheduler.dart';
 import 'package:period_tracker/security/app_lock.dart';
@@ -228,6 +230,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             ListTile(
+              leading: const Icon(Icons.directions_walk),
+              title: Text(l10n.movementEntryTitle),
+              subtitle: Text(l10n.movementEntrySubtitle),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const MovementScreen(),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.monitor_weight_outlined),
+              title: Text(l10n.weightEntryTitle),
+              subtitle: Text(l10n.weightEntrySubtitle),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const WeightHormonesScreen(),
+                ),
+              ),
+            ),
+            ListTile(
               leading: const Icon(Icons.medical_information_outlined),
               title: Text(l10n.settingsConditions),
               subtitle: Text(l10n.settingsConditionsSubtitle),
@@ -401,6 +423,8 @@ class _DisplaySettings extends ConsumerWidget {
     final phases = ref.watch(showCyclePhasesProvider).valueOrNull ?? true;
     final ovulation =
         ref.watch(showOvulationWindowProvider).valueOrNull ?? false;
+    final learnTab = ref.watch(showLearnTabProvider).valueOrNull ?? false;
+    final companion = ref.watch(showCompanionProvider).valueOrNull ?? false;
     return Column(
       children: <Widget>[
         SwitchListTile(
@@ -427,6 +451,23 @@ class _DisplaySettings extends ConsumerWidget {
               settings.writeBool(SettingKey.showOvulationWindow, value: value),
           title: Text(l10n.settingsOvulationWindow),
           subtitle: Text(l10n.settingsOvulationWindowSubtitle),
+        ),
+        // Both off until switched on. Neither is a safety gate the way the
+        // ovulation window is: the reference pages stay listed above whatever
+        // this is set to, and the companion only ever restates the log.
+        SwitchListTile(
+          value: learnTab,
+          onChanged: (value) =>
+              settings.writeBool(SettingKey.showLearnTab, value: value),
+          title: Text(l10n.settingsLearnTab),
+          subtitle: Text(l10n.settingsLearnTabSubtitle),
+        ),
+        SwitchListTile(
+          value: companion,
+          onChanged: (value) =>
+              settings.writeBool(SettingKey.showCompanion, value: value),
+          title: Text(l10n.settingsCompanion),
+          subtitle: Text(l10n.settingsCompanionSubtitle),
         ),
       ],
     );

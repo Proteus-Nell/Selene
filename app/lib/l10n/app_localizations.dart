@@ -1704,7 +1704,7 @@ abstract class AppLocalizations {
   /// No description provided for @nutritionVitaminCBody.
   ///
   /// In en, this message translates to:
-  /// **'Vitamin C eaten in the same meal increases how much non-haem iron the body absorbs. That is the only reason it appears in a menstrual cycle app.'**
+  /// **'Vitamin C eaten in the same meal increases how much non-haem iron the body absorbs.'**
   String get nutritionVitaminCBody;
 
   /// No description provided for @nutritionIronCautionBody.
@@ -1728,13 +1728,13 @@ abstract class AppLocalizations {
   /// Must not be dropped for brevity. It is the claim that stops the magnesium section reading as a recommendation.
   ///
   /// In en, this message translates to:
-  /// **'Magnesium is widely taken for cramps and premenstrual symptoms. Some trials report a benefit, and reviews of those trials find the evidence limited and not conclusive. Oral forms differ in how well they are absorbed, with glycinate and citrate better absorbed than oxide.'**
+  /// **'Magnesium is widely taken for cramps and premenstrual symptoms. Oral forms differ in how well they are absorbed, with glycinate and citrate better absorbed than oxide.'**
   String get nutritionMagnesiumEvidenceBody;
 
   /// No description provided for @nutritionMagnesiumCreamBody.
   ///
   /// In en, this message translates to:
-  /// **'Creams, oils and balms are sold for the same purpose. Absorption through unbroken skin is minimal: a review of the topic found meaningful absorption unsupported, and the strongest trial of a cream found a change small enough to be chance. No clinical guidance here names magnesium, in any form, as a treatment for period pain.'**
+  /// **'Creams, oils and balms are sold for the same purpose.'**
   String get nutritionMagnesiumCreamBody;
 
   /// No description provided for @nutritionZincTitle.
@@ -2480,6 +2480,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show an estimated ovulation range. Worked out from your cycle dates alone, and not accurate enough to plan or avoid pregnancy with.'**
   String get settingsOvulationWindowSubtitle;
+
+  /// No description provided for @settingsLearnTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the Learn tab'**
+  String get settingsLearnTab;
+
+  /// No description provided for @settingsLearnTabSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Off by default. The reference pages are listed here in Settings either way.'**
+  String get settingsLearnTabSubtitle;
+
+  /// No description provided for @settingsCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the companion'**
+  String get settingsCompanion;
+
+  /// No description provided for @settingsCompanionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Off by default. A control at the end of the navigation bar that offers one line about what is already logged.'**
+  String get settingsCompanionSubtitle;
 
   /// No description provided for @settingsPrivacySection.
   ///

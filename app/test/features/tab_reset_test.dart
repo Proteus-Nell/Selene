@@ -14,6 +14,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/features/learn/learn_screen.dart';
@@ -25,22 +26,17 @@ import 'package:period_tracker/routing/router.dart';
 
 import 'harness.dart';
 
-/// Pumps a fixed number of frames rather than settling.
-///
-/// `pumpAndSettle` never returns against the real shell: the companion in the
-/// bottom bar animates while it is idle, so the tree is never quiet. The smoke
-/// flow pumps for a fixed span for the same reason.
-Future<void> pumpFor(WidgetTester tester, [int seconds = 1]) async {
-  await tester.pump();
-  for (var i = 0; i < seconds * 10; i++) {
-    await tester.pump(const Duration(milliseconds: 100));
-  }
-}
-
 void main() {
   late AppDatabase db;
 
-  setUp(() => db = memoryDatabase());
+  setUp(() async {
+    db = memoryDatabase();
+    // Learn is off by default, so the tab these cases walk through is not in
+    // the bar until it is switched on. Written here rather than in the test
+    // body: a drift write awaited inside `testWidgets` completes on the real
+    // event loop, which the fake-async zone never turns.
+    await db.settingsDao.writeBool(SettingKey.showLearnTab, value: true);
+  });
   tearDown(() => db.close());
 
   AppLocalizations l10n(WidgetTester tester) =>

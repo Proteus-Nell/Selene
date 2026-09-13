@@ -178,6 +178,24 @@ final StreamProvider<bool> showOvulationWindowProvider = StreamProvider<bool>(
       ref.watch(appDatabaseProvider).settingsDao.watchShowOvulationWindow(),
 );
 
+/// Whether the Learn tab appears in the navigation bar (AND-39).
+///
+/// **Off by default**, and unlike the ovulation window that default is a taste
+/// rather than a safety property: the reference pages make no claim about the
+/// reader, and every one of them is also listed in Settings. Turning the tab
+/// off hides a route to the reading, not the reading.
+final StreamProvider<bool> showLearnTabProvider = StreamProvider<bool>(
+  (ref) => ref.watch(appDatabaseProvider).settingsDao.watchShowLearnTab(),
+);
+
+/// Whether the companion sits at the end of the navigation bar (AND-37).
+///
+/// **Off by default.** The companion restates what the log already holds and
+/// never guesses at a reason, so whether it is there at all is a preference.
+final StreamProvider<bool> showCompanionProvider = StreamProvider<bool>(
+  (ref) => ref.watch(appDatabaseProvider).settingsDao.watchShowCompanion(),
+);
+
 /// The colour scheme the app is wearing (AND-39).
 ///
 /// A stream, so that tapping a scheme in settings repaints the app on the next

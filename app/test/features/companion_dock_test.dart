@@ -40,6 +40,7 @@ class _Shell extends StatelessWidget {
     return Scaffold(
       body: const Placeholder(key: ValueKey<String>('body')),
       bottomNavigationBar: CompanionDock(
+        showCompanion: true,
         navigationBar: NavigationBar(
           destinations: <NavigationDestination>[
             NavigationDestination(

@@ -965,7 +965,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nutritionVitaminCBody =>
-      'Vitamin C eaten in the same meal increases how much non-haem iron the body absorbs. That is the only reason it appears in a menstrual cycle app.';
+      'Vitamin C eaten in the same meal increases how much non-haem iron the body absorbs.';
 
   @override
   String get nutritionIronCautionBody =>
@@ -980,11 +980,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nutritionMagnesiumEvidenceBody =>
-      'Magnesium is widely taken for cramps and premenstrual symptoms. Some trials report a benefit, and reviews of those trials find the evidence limited and not conclusive. Oral forms differ in how well they are absorbed, with glycinate and citrate better absorbed than oxide.';
+      'Magnesium is widely taken for cramps and premenstrual symptoms. Oral forms differ in how well they are absorbed, with glycinate and citrate better absorbed than oxide.';
 
   @override
   String get nutritionMagnesiumCreamBody =>
-      'Creams, oils and balms are sold for the same purpose. Absorption through unbroken skin is minimal: a review of the topic found meaningful absorption unsupported, and the strongest trial of a cream found a change small enough to be chance. No clinical guidance here names magnesium, in any form, as a treatment for period pain.';
+      'Creams, oils and balms are sold for the same purpose.';
 
   @override
   String get nutritionZincTitle => 'Zinc';
@@ -1417,6 +1417,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsOvulationWindowSubtitle =>
       'Show an estimated ovulation range. Worked out from your cycle dates alone, and not accurate enough to plan or avoid pregnancy with.';
+
+  @override
+  String get settingsLearnTab => 'Show the Learn tab';
+
+  @override
+  String get settingsLearnTabSubtitle =>
+      'Off by default. The reference pages are listed here in Settings either way.';
+
+  @override
+  String get settingsCompanion => 'Show the companion';
+
+  @override
+  String get settingsCompanionSubtitle =>
+      'Off by default. A control at the end of the navigation bar that offers one line about what is already logged.';
 
   @override
   String get settingsPrivacySection => 'Privacy';
