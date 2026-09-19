@@ -51,7 +51,7 @@ Future<void> handleBackgroundNotificationResponse(
 
   const clock = SystemClock();
   // The same open, the same integrity check and the same migration the app
-  // performs, with recovery declined — see openAppDatabaseWithoutRecovery for
+  // performs, with recovery declined. See openAppDatabaseWithoutRecovery for
   // why this isolate must not quarantine a damaged file. Null means the day
   // goes unlogged, and the next foreground launch deals with the damage in the
   // open, where there is a screen to say so on.

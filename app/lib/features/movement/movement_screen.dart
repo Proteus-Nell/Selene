@@ -1,11 +1,22 @@
+/// Pain and movement reference (AND-36).
+///
+/// Describes how movement feels across a cycle and prescribes nothing: no
+/// sets, no intensities, no schedule, and not even an instruction to rest.
+/// The screen holds no fields and reads the same for everyone who opens it.
+///
+/// Includes:
+///     - MovementScreen: The reference page, and its sections in order.
+///     - _Section: One heading and its paragraphs.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:period_tracker/features/common/card_entrance.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// Reference notes on pain and movement across the cycle (AND-36).
+/// Movement screen: pain and movement across the cycle, prescribing nothing.
 ///
-/// The same shape as the body-composition reference, and the same rule
-/// underneath it: this page describes a subject and never addresses the
+/// The same shape as the body-composition reference (AND-36), and the same
+/// rule underneath it: this page describes a subject and never addresses the
 /// reader's own body. What is different here is what the page had to refuse to
 /// say.
 ///
@@ -17,7 +28,7 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// requested version would have told people to stop doing a thing that helps
 /// them, on the authority of an app that cannot see them.
 ///
-/// What actually varies across a cycle is **how movement feels** — pain,
+/// What actually varies across a cycle is **how movement feels**: pain,
 /// tiredness, and how hard a given effort seems on the day. That is a
 /// description, not a permission system, and the section is written as one.
 ///
@@ -25,10 +36,11 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 ///
 /// - **Nothing is prescribed.** No sets, no repetitions, no intensities, no
 ///   durations, no schedule, no phase-by-phase plan. `movement_copy_test.dart`
+///   fails on the vocabulary of one, over the whole of this section's copy.
 /// - **No numbers.** A digit here would be either a training figure or a pain
 ///   score, and the section is not allowed to hand out either.
 /// - **No second person, at all.** Not "your period", and specifically not
-///   *"listen to your body"* — the friendliest sentence in this subject area,
+///   *"listen to your body"*, the friendliest sentence in this subject area,
 ///   and still an instruction addressed to somebody this app cannot see.
 ///
 /// Rest is written as a **permission rather than an instruction**, because an
@@ -38,7 +50,7 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// Every factual claim is listed with its source in `docs/MOVEMENT_SOURCES.md`,
 /// and `movement_sources_test.dart` fails the build if a claim appears here
 /// without one. The claims are marked `[VERIFY]` until someone has opened each
-/// source and checked it — a release blocker, not a formality.
+/// source and checked it. That is a release blocker, not a formality.
 class MovementScreen extends StatelessWidget {
   /// Creates the pain-and-movement reference screen.
   const MovementScreen({super.key});
@@ -56,10 +68,6 @@ class MovementScreen extends StatelessWidget {
           children: <Widget>[
             Text(l10n.movementIntro, style: theme.textTheme.bodyMedium),
             const SizedBox(height: 12),
-            // Before any claim is made. Somebody who opened this expecting to
-            // be handed a plan is told in the second paragraph that there is
-            // no plan here, which is the honest thing to lead with when the
-            // popular version of this subject is nothing but plans.
             const SizedBox(height: 16),
             CardEntrance(
               index: 0,
@@ -123,11 +131,23 @@ class MovementScreen extends StatelessWidget {
   }
 }
 
-/// The statement that this screen is not a plan and wants nothing entered.
+/// One section of the reference: a heading and its paragraphs.
+///
+/// Attributes:
+///     title (String): The heading.
+///     paragraphs (`List<String>`): The body, one paragraph per entry.
 class _Section extends StatelessWidget {
+  /// Creates a section.
+  ///
+  /// Args:
+  ///     title (String): The heading.
+  ///     paragraphs (`List<String>`): The body, one paragraph per entry.
   const _Section({required this.title, required this.paragraphs});
 
+  /// The heading.
   final String title;
+
+  /// The body, rendered as one paragraph per entry.
   final List<String> paragraphs;
 
   @override
