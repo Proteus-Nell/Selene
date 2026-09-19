@@ -1,3 +1,23 @@
+/// Day log model.
+///
+/// Holds everything the user records against one calendar day, and the closed
+/// vocabularies that record it. This is the only user-entered data in the app:
+/// cycles, statistics and predictions are all derived from an ordered list of
+/// these, which is why export and import deal in [DayLog] alone.
+///
+/// Every enum member here is a wire value, written to the database and to the
+/// export file by name. Renaming one orphans stored rows; the labels the user
+/// reads live in the ARB file instead.
+///
+/// Includes:
+///     - FlowIntensity: How heavy bleeding was.
+///     - SymptomSection: How a symptom is grouped on screen.
+///     - Symptom: The fixed symptom set.
+///     - SymptomSeverity: How strongly one was felt.
+///     - Intercourse: Whether intercourse was recorded, and if protected.
+///     - DayLog: The day itself.
+library;
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/domain/models/converters.dart';
@@ -5,7 +25,7 @@ import 'package:period_tracker/domain/models/converters.dart';
 part 'day_log.freezed.dart';
 part 'day_log.g.dart';
 
-/// How heavy bleeding was on a given day.
+/// Flow intensity: how heavy bleeding was on a given day.
 enum FlowIntensity {
   /// Nothing recorded for this day.
   none,
@@ -24,8 +44,8 @@ enum FlowIntensity {
 
   /// Whether this intensity counts as a bleeding day for cycle segmentation.
   ///
-  /// [spotting] deliberately does **not** count. Treating spotting as the start
-  /// of a period is a common source of spurious short cycles, which the
+  /// [spotting] deliberately does **not** count. Treating spotting as the
+  /// start of a period is a common source of spurious short cycles, which the
   /// prediction filter then has to treat as outliers. Spotting is still worth
   /// recording, it just does not open a cycle. See `docs/PLAN.md` 5.5.
   bool get isBleeding =>
@@ -34,14 +54,14 @@ enum FlowIntensity {
       this == FlowIntensity.heavy;
 }
 
-/// How a [Symptom] is grouped in the day editor.
+/// Symptom section: how a [Symptom] is grouped in the day editor.
 ///
 /// A display property and nothing more. The section is **not** part of what is
-/// stored: only the symptom's name reaches the database and the export file, so
-/// moving one between sections later is a one-line change with no migration.
-/// That is worth knowing for [Symptom.energy], which is filed as emotional here
-/// and is arguably physical — a decision that can be revisited cheaply, unlike
-/// the wire names.
+/// stored: only the symptom's name reaches the database and the export file,
+/// so moving one between sections later is a one-line change with no
+/// migration. That is worth knowing for [Symptom.energy], which is filed as
+/// emotional here and is arguably physical. That decision can be revisited
+/// cheaply, unlike the wire names.
 enum SymptomSection {
   /// Felt in the body.
   physical,
@@ -53,7 +73,7 @@ enum SymptomSection {
   emotional,
 }
 
-/// The fixed symptom set the app records.
+/// Symptom: the fixed symptom set the app records.
 ///
 /// Deliberately closed. A free-text symptom field would be the single most
 /// sensitive thing in the database and cannot be meaningfully analysed, so it
@@ -62,18 +82,23 @@ enum SymptomSection {
 /// nobody can express is a symptom that goes unlogged.
 ///
 /// **The names are wire values.** They are written to the database and to
-/// exports by name, so renaming a member orphans every stored row that used it,
-/// and no migration recovers a name the code has forgotten. The label shown to
-/// the user is in the ARB file and can be changed freely; the member cannot.
+/// exports by name, so renaming a member orphans every stored row that used
+/// it, and no migration recovers a name the code has forgotten. The label
+/// shown to the user is in the ARB file and can be changed freely; the member
+/// cannot.
 ///
-/// Adding a value is a schema change even though no column moves — an older
+/// Adding a value is a schema change even though no column moves. An older
 /// build throws on a name it does not know, and the version is the only thing
 /// that makes it refuse the file first. `enum_widening_test.dart` has the
 /// argument in full.
 ///
 /// Declared in section order so that reading the enum and reading the screen
-/// give the same picture. Nothing depends on the order: storage is by name, and
-/// the editor groups by [section] rather than by position.
+/// give the same picture. Nothing depends on the order: storage is by name,
+/// and the editor groups by [section] rather than by position.
+///
+/// Attributes:
+///     section (SymptomSection): Which group it is shown under. Display
+///         only; never stored.
 enum Symptom {
   /// Abdominal or pelvic cramping.
   cramps(SymptomSection.physical),
@@ -128,12 +153,18 @@ enum Symptom {
   /// Which group this symptom is shown under. Display only; never stored.
   final SymptomSection section;
 
-  /// The symptoms in [section], in declaration order.
+  /// Return the symptoms in one section, in declaration order.
+  ///
+  /// Args:
+  ///     section (SymptomSection): The group to filter to.
+  ///
+  /// Returns:
+  ///     `List<Symptom>`: The members of that section, in declaration order.
   static List<Symptom> inSection(SymptomSection section) =>
       values.where((s) => s.section == section).toList();
 }
 
-/// How strongly a [Symptom] was felt.
+/// Symptom severity: how strongly a [Symptom] was felt.
 ///
 /// An enum rather than an `int` so an out-of-range severity cannot be
 /// constructed at all. The four levels map onto the 0..3 scale in the plan.
@@ -151,7 +182,7 @@ enum SymptomSeverity {
   severe,
 }
 
-/// Whether intercourse was recorded for a day, and whether it was protected.
+/// Intercourse: whether it was recorded for a day, and whether protected.
 ///
 /// **The most sensitive thing this app stores.** `docs/PLAN.md` 6.5 says to
 /// treat everything here as if it will be read by someone the user did not
@@ -159,17 +190,18 @@ enum SymptomSeverity {
 /// the consequences of being wrong are worst. `PRIVACY.md` and the onboarding
 /// name it explicitly rather than letting a user discover it themselves.
 ///
-/// **Nothing in `lib/domain/predict/` may read it.** Assumption A5 forbids this
-/// app from presenting a fertile window or a safe day, and the shortest path to
-/// breaking that rule is a well-meaning correlation between this column and a
-/// cycle phase. `intercourse_isolation_test.dart` fails the build on any
-/// reference to the type from the prediction layer, the same way ADR-0010's
-/// guard does for conditions.
+/// **Nothing in `lib/domain/predict/` may read it.** Assumption A5 forbids
+/// this app from presenting a fertile window or a safe day, and the shortest
+/// path to breaking that rule is a well-meaning correlation between this
+/// column and a cycle phase. `intercourse_isolation_test.dart` fails the build
+/// on any reference to the type from the prediction layer, the same way
+/// ADR-0010's guard does for conditions.
 ///
 /// There is deliberately **no "none" value**. The column is nullable, and null
-/// means not recorded — which has to stay distinguishable from a recorded
+/// means not recorded, which has to stay distinguishable from a recorded
 /// answer. A user who logs nothing has said nothing, and an app that recorded
-/// "no" on their behalf would be inventing a statement about their private life.
+/// "no" on their behalf would be inventing a statement about their private
+/// life.
 enum Intercourse {
   /// Recorded as protected.
   protected,
@@ -178,14 +210,30 @@ enum Intercourse {
   unprotected,
 }
 
-/// Everything recorded for a single calendar day.
+/// Day log: everything recorded for a single calendar day.
 ///
 /// This is the only user-entered data in the app. Cycles, statistics and
 /// predictions are all derived from an ordered list of these, which is why
 /// export and import deal in [DayLog] alone: it is the irreducible record.
+///
+/// Attributes:
+///     date (CivilDate): The calendar day this describes.
+///     flow (FlowIntensity): How heavy bleeding was. Defaults to
+///         [FlowIntensity.none].
+///     symptoms (`Map<Symptom, SymptomSeverity>`): What was felt, and how
+///         strongly. Defaults to empty.
+///     intercourse (Intercourse?): What was recorded, or null for nothing.
 @freezed
 abstract class DayLog with _$DayLog {
   /// Creates a log entry for [date].
+  ///
+  /// Args:
+  ///     date (CivilDate): The calendar day this describes.
+  ///     flow (FlowIntensity, optional): Defaults to [FlowIntensity.none].
+  ///     symptoms (`Map<Symptom, SymptomSeverity>`, optional): Defaults to
+  ///         empty.
+  ///     intercourse (Intercourse?, optional): Defaults to null, meaning not
+  ///         recorded.
   const factory DayLog({
     @CivilDateConverter() required CivilDate date,
     @Default(FlowIntensity.none) FlowIntensity flow,
@@ -200,7 +248,13 @@ abstract class DayLog with _$DayLog {
 
   const DayLog._();
 
-  /// Rebuilds a log entry from its JSON form.
+  /// Rebuild a log entry from its JSON form.
+  ///
+  /// Args:
+  ///     json (`Map<String, dynamic>`): The encoded entry.
+  ///
+  /// Returns:
+  ///     DayLog: The decoded day.
   factory DayLog.fromJson(Map<String, dynamic> json) => _$DayLogFromJson(json);
 
   /// Whether this day counts as a bleeding day.
@@ -208,9 +262,9 @@ abstract class DayLog with _$DayLog {
 
   /// Whether this entry records anything at all.
   ///
-  /// An entry with no flow and no symptoms carries no information and should be
-  /// deleted rather than stored, so that a gap in the data means "not logged"
-  /// rather than "logged as nothing".
+  /// An entry with no flow and no symptoms carries no information and should
+  /// be deleted rather than stored, so that a gap in the data means "not
+  /// logged" rather than "logged as nothing".
   bool get isEmpty =>
       flow == FlowIntensity.none &&
       symptoms.values.every((s) => s == SymptomSeverity.none) &&
@@ -219,7 +273,14 @@ abstract class DayLog with _$DayLog {
       // accept the tap and then silently discard it on write.
       intercourse == null;
 
-  /// Severity recorded for [symptom], or [SymptomSeverity.none].
+  /// Return the severity recorded for one symptom.
+  ///
+  /// Args:
+  ///     symptom (Symptom): The symptom to look up.
+  ///
+  /// Returns:
+  ///     SymptomSeverity: What was recorded, or [SymptomSeverity.none] when
+  ///     the symptom is absent from the map.
   SymptomSeverity severityOf(Symptom symptom) =>
       symptoms[symptom] ?? SymptomSeverity.none;
 }
