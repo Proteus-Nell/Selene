@@ -1,3 +1,17 @@
+/// Routing and the app shell.
+///
+/// Defines where each screen lives, builds the router, and holds the five-
+/// branch stateful shell the navigation bar drives. The shell always has five
+/// branches; which destinations the bar shows is a preference, which is why
+/// the index a tap reports and the branch behind it are mapped in one place.
+///
+/// Includes:
+///     - Routes: Every path, as a constant.
+///     - buildRouter: The router itself.
+///     - AppScaffold: The shell, its bar and the companion dock.
+///     - _FadeThroughBranches: The cross-fade between branches.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,10 +27,10 @@ import 'package:period_tracker/features/settings/settings_screen.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/notifications/notification_sync.dart';
 
-/// Where each screen lives.
+/// Routes: where each screen lives.
 ///
-/// Paths as constants rather than string literals at every call site: a typo in
-/// a literal is a runtime 404 that only shows up when someone taps that one
+/// Paths as constants rather than string literals at every call site: a typo
+/// in a literal is a runtime 404 that only shows up when someone taps that one
 /// button.
 abstract final class Routes {
   /// First-run disclaimer and first entry.
@@ -82,7 +96,15 @@ final List<GlobalKey<NavigatorState>> _branchKeys =
       (index) => GlobalKey<NavigatorState>(debugLabel: 'branch$index'),
     );
 
-/// Builds the app's router.
+/// Build the app's router.
+///
+/// Args:
+///     ref (Ref): Watched for the onboarding flag, which decides where the
+///         app opens, and read for the route guard.
+///
+/// Returns:
+///     GoRouter: The router, with the onboarding route and the five-branch
+///     stateful shell.
 GoRouter buildRouter(Ref ref) {
   final onboarded = ref.watch(onboardingCompleteProvider);
   return GoRouter(
@@ -178,7 +200,7 @@ class AppScaffold extends ConsumerWidget {
     final showCompanion = ref.watch(showCompanionProvider).valueOrNull ?? false;
     final branches = _visibleBranches(showLearn: showLearn);
     // The Learn branch can be the one in view when the preference is turned
-    // off from Settings — which is itself a different tab, so in practice this
+    // off from Settings, which is itself a different tab, so in practice this
     // is the deep-link and restore case. Falling back to the first destination
     // beats a NavigationBar with selectedIndex pointing at nothing.
     final selected = branches.indexOf(shell.currentIndex);
@@ -200,8 +222,8 @@ class AppScaffold extends ConsumerWidget {
           // already selected is tapped again. A stateful shell otherwise
           // keeps each branch's navigation stack, so leaving Learn from
           // inside "Look something up" and coming back later drops the
-          // reader into that page rather than the list they were expecting
-          // — and the same for Settings and Insights, which also have pages
+          // reader into that page rather than the list they were expecting,
+          // and the same for Settings and Insights, which also have pages
           // under them. Tapping a tab now means the same thing every time.
           //
           // What this gives up is resuming a sub-page after a glance at
@@ -255,11 +277,18 @@ class AppScaffold extends ConsumerWidget {
   }
 }
 
-/// The branch index behind each destination the navigation bar is showing.
+/// Map each visible destination onto the branch behind it.
 ///
 /// The shell's branches never change; the destinations do. Returning the
 /// mapping rather than recomputing an offset at each call site is what stops a
 /// hidden Learn tab turning a tap on Settings into a jump to Learn.
+///
+/// Args:
+///     showLearn (bool): Whether the Learn destination is in the bar.
+///
+/// Returns:
+///     `List<int>`: Branch indices, in the order the bar shows them. Four
+///     entries with Learn hidden, five with it shown.
 List<int> _visibleBranches({required bool showLearn}) => <int>[
   0,
   1,
@@ -268,12 +297,20 @@ List<int> _visibleBranches({required bool showLearn}) => <int>[
   4,
 ];
 
-/// Builds the container that holds the branch navigators (AND-34).
+/// Build the container that holds the branch navigators (AND-34).
 ///
 /// Replaces `StatefulShellRoute.indexedStack`, which switches branches on the
 /// frame the tab is tapped. The branches themselves are unchanged: every one
 /// stays alive with its own navigation stack, which is the whole reason for a
 /// stateful shell.
+///
+/// Args:
+///     context (BuildContext): Unused; required by go_router's signature.
+///     shell (StatefulNavigationShell): Supplies the current branch index.
+///     children (`List<Widget>`): One navigator per branch.
+///
+/// Returns:
+///     Widget: The cross-fading container.
 Widget _fadeThroughBranches(
   BuildContext context,
   StatefulNavigationShell shell,
@@ -294,21 +331,34 @@ Widget _fadeThroughBranches(
 /// Off-branch children are `Offstage`, exactly as `IndexedStack` leaves them.
 /// That is load-bearing rather than an optimisation: an offstage subtree is
 /// skipped by every default `Finder`, so the five screens do not all answer a
-/// `find.text` at once — and the branch on its way out stops being offstage for
+/// `find.text` at once, and the branch on its way out stops being offstage for
 /// only as long as it is still being painted.
+///
+/// Attributes:
+///     currentIndex (int): Which branch is in view.
+///     children (`List<Widget>`): One navigator per branch.
 class _FadeThroughBranches extends StatefulWidget {
+  /// Creates the cross-fading container.
+  ///
+  /// Args:
+  ///     currentIndex (int): Which branch is in view.
+  ///     children (`List<Widget>`): One navigator per branch.
   const _FadeThroughBranches({
     required this.currentIndex,
     required this.children,
   });
 
+  /// Which branch is in view.
   final int currentIndex;
+
+  /// One navigator per branch. Never reordered.
   final List<Widget> children;
 
   @override
   State<_FadeThroughBranches> createState() => _FadeThroughBranchesState();
 }
 
+/// State for [_FadeThroughBranches]. Owns the cross-fade controller.
 class _FadeThroughBranchesState extends State<_FadeThroughBranches>
     with SingleTickerProviderStateMixin {
   /// Runs 0 to 1 on a branch change, and rests at 1.
@@ -370,6 +420,17 @@ class _FadeThroughBranchesState extends State<_FadeThroughBranches>
     );
   }
 
+  /// Wrap one branch in the offstage and ticker flags its state needs.
+  ///
+  /// Every child is wrapped identically whatever its state, so no branch's
+  /// `Navigator` is ever torn down and rebuilt.
+  ///
+  /// Args:
+  ///     index (int): Which branch this is.
+  ///     leaving (int?): The branch on its way out, or null when settled.
+  ///
+  /// Returns:
+  ///     Widget: The wrapped branch, offstage unless it is active or leaving.
   Widget _branch(int index, {required int? leaving}) {
     final active = index == widget.currentIndex;
     return Offstage(

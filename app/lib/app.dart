@@ -1,3 +1,13 @@
+/// The application widget.
+///
+/// Wires the router, the themes, localisation and the lock gate, and nothing
+/// else. Everything with behaviour sits behind a provider so a widget test can
+/// replace it.
+///
+/// Includes:
+///     - PeriodTrackerApp: The `MaterialApp.router` itself.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/palette.dart';
@@ -7,7 +17,7 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/routing/router.dart';
 import 'package:period_tracker/security/lock_gate.dart';
 
-/// The application widget.
+/// Period tracker app: the root widget.
 ///
 /// Deliberately thin: it wires the router, the themes and localisation, and
 /// nothing else. Everything with behaviour lives behind a provider so that a
@@ -28,7 +38,7 @@ class PeriodTrackerApp extends ConsumerWidget {
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       theme: AppTheme.light(scheme),
       darkTheme: AppTheme.dark(scheme),
-      // Night has no light half — choosing it *is* choosing dark, and the
+      // Night has no light half. Choosing it *is* choosing dark, and the
       // appearance screen says so rather than leaving a control that does
       // nothing.
       themeMode: scheme.forcesDark ? ThemeMode.dark : mode,
