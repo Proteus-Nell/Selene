@@ -78,6 +78,7 @@ class NutritionScreen extends ConsumerWidget {
                 paragraphs: <String>[
                   l10n.nutritionMagnesiumBody,
                   l10n.nutritionMagnesiumEvidenceBody,
+                  l10n.nutritionMagnesiumCreamBody,
                 ],
               ),
             ),
@@ -87,11 +88,6 @@ class NutritionScreen extends ConsumerWidget {
                 title: l10n.nutritionZincTitle,
                 paragraphs: <String>[l10n.nutritionZincBody],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.nutritionSourcesNote,
-              style: theme.textTheme.bodySmall,
             ),
           ],
         ),

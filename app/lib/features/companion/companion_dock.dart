@@ -29,10 +29,23 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// the disclaimer, and nothing should be sitting beside it offering advice.
 class CompanionDock extends StatelessWidget {
   /// Wraps [navigationBar] and puts the companion at the end of the same row.
-  const CompanionDock({required this.navigationBar, super.key});
+  ///
+  /// With [showCompanion] false the row is the navigation bar alone, and the
+  /// width the companion was taking goes back to the destinations.
+  const CompanionDock({
+    required this.navigationBar,
+    this.showCompanion = false,
+    super.key,
+  });
 
   /// The app's navigation bar, laid out in the space the companion leaves.
   final Widget navigationBar;
+
+  /// Whether the companion is offered at all (AND-37).
+  ///
+  /// Off by default, so a caller that has not been taught about the preference
+  /// gets the bar without it rather than one the user did not ask for.
+  final bool showCompanion;
 
   @override
   Widget build(BuildContext context) {
@@ -55,10 +68,11 @@ class CompanionDock extends StatelessWidget {
                 child: navigationBar,
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.only(right: 4),
-              child: CompanionButton(),
-            ),
+            if (showCompanion)
+              const Padding(
+                padding: EdgeInsets.only(right: 4),
+                child: CompanionButton(),
+              ),
           ],
         ),
       ),
@@ -133,17 +147,6 @@ Future<void> showCompanionSuggestion(
               const SizedBox(height: 16),
               Text(line.text(l10n), style: theme.textTheme.bodyLarge),
               const SizedBox(height: 16),
-              Text(l10n.companionHowItWorks, style: theme.textTheme.bodySmall),
-              // Only under a line that claims something about bodies. Printing
-              // it under "nothing to point at" would suggest that sentence had
-              // a source too, and the point of the split is that it does not.
-              if (line.carriesHealthClaim) ...<Widget>[
-                const SizedBox(height: 8),
-                Text(
-                  l10n.companionSourcesNote,
-                  style: theme.textTheme.bodySmall,
-                ),
-              ],
               const SizedBox(height: 16),
               Align(
                 alignment: AlignmentDirectional.centerEnd,

@@ -25,8 +25,6 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 ///
 /// - **Nothing is prescribed.** No sets, no repetitions, no intensities, no
 ///   durations, no schedule, no phase-by-phase plan. `movement_copy_test.dart`
-///   fails on the vocabulary of one, and `movementNothingToFollowBody` says so
-///   before any claim is named.
 /// - **No numbers.** A digit here would be either a training figure or a pain
 ///   score, and the section is not allowed to hand out either.
 /// - **No second person, at all.** Not "your period", and specifically not
@@ -62,41 +60,37 @@ class MovementScreen extends StatelessWidget {
             // be handed a plan is told in the second paragraph that there is
             // no plan here, which is the honest thing to lead with when the
             // popular version of this subject is nothing but plans.
-            const CardEntrance(index: 0, child: _NothingToFollow()),
             const SizedBox(height: 16),
             CardEntrance(
-              index: 1,
+              index: 0,
               child: _Section(
                 title: l10n.movementPainTitle,
                 paragraphs: <String>[l10n.movementPainBody],
               ),
             ),
             CardEntrance(
-              index: 2,
+              index: 1,
               child: _Section(
                 title: l10n.movementNotAvoidedTitle,
-                paragraphs: <String>[
-                  l10n.movementNotAvoidedBody,
-                  l10n.movementEvidenceBody,
-                ],
+                paragraphs: <String>[l10n.movementNotAvoidedBody],
               ),
             ),
             CardEntrance(
-              index: 3,
+              index: 2,
               child: _Section(
                 title: l10n.movementHowItFeelsTitle,
                 paragraphs: <String>[l10n.movementHowItFeelsBody],
               ),
             ),
             CardEntrance(
-              index: 4,
+              index: 3,
               child: _Section(
                 title: l10n.movementRestTitle,
                 paragraphs: <String>[l10n.movementRestBody],
               ),
             ),
             CardEntrance(
-              index: 5,
+              index: 4,
               child: _Section(
                 title: l10n.movementStopSignalsTitle,
                 paragraphs: <String>[
@@ -106,7 +100,7 @@ class MovementScreen extends StatelessWidget {
               ),
             ),
             CardEntrance(
-              index: 6,
+              index: 5,
               child: _Section(
                 title: l10n.movementPhaseClaimsTitle,
                 paragraphs: <String>[
@@ -116,14 +110,12 @@ class MovementScreen extends StatelessWidget {
               ),
             ),
             CardEntrance(
-              index: 7,
+              index: 6,
               child: _Section(
                 title: l10n.movementSeeSomeoneTitle,
                 paragraphs: <String>[l10n.movementSeeSomeoneBody],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(l10n.movementSourcesNote, style: theme.textTheme.bodySmall),
           ],
         ),
       ),
@@ -132,38 +124,6 @@ class MovementScreen extends StatelessWidget {
 }
 
 /// The statement that this screen is not a plan and wants nothing entered.
-class _NothingToFollow extends StatelessWidget {
-  const _NothingToFollow();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            ExcludeSemantics(
-              child: Icon(
-                Icons.info_outline,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                AppLocalizations.of(context).movementNothingToFollowBody,
-                style: theme.textTheme.bodyMedium,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _Section extends StatelessWidget {
   const _Section({required this.title, required this.paragraphs});
 

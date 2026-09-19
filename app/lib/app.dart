@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:period_tracker/core/palette.dart';
 import 'package:period_tracker/core/theme.dart';
+import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/routing/router.dart';
 import 'package:period_tracker/security/lock_gate.dart';
@@ -16,11 +18,20 @@ class PeriodTrackerApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Both fall back while the read is in flight rather than holding a blank
+    // frame. A splash screen to avoid one repaint of a colour is a worse trade
+    // than the repaint (AND-39).
+    final scheme =
+        ref.watch(colourSchemeProvider).valueOrNull ?? AppScheme.fallback;
+    final mode = ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.light;
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      // Theme mode is left at its default, which follows the device.
+      theme: AppTheme.light(scheme),
+      darkTheme: AppTheme.dark(scheme),
+      // Night has no light half — choosing it *is* choosing dark, and the
+      // appearance screen says so rather than leaving a control that does
+      // nothing.
+      themeMode: scheme.forcesDark ? ThemeMode.dark : mode,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(routerProvider),

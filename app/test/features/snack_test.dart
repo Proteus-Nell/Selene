@@ -27,7 +27,16 @@ void main() {
   tearDown(() => db.close());
 
   /// Taps the primary action and returns once the pop-up is on screen.
+  ///
+  /// Scrolled into view first: since AND-39 the cycle ring sits above the
+  /// primary action, so on a 600-tall test viewport the button starts below
+  /// the fold. What is being tested here is the pop-up, not where the button
+  /// happens to land.
   Future<void> logAndConfirm(WidgetTester tester) async {
+    await tester.ensureVisible(
+      find.text(l10nOf(tester).logPeriodStartedToday),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text(l10nOf(tester).logPeriodStartedToday));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));

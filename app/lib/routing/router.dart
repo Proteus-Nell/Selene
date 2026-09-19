@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:period_tracker/core/motion.dart';
+import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/features/calendar/calendar_screen.dart';
 import 'package:period_tracker/features/companion/companion_dock.dart';
 import 'package:period_tracker/features/insights/insights_screen.dart';
+import 'package:period_tracker/features/learn/learn_screen.dart';
 import 'package:period_tracker/features/log/log_screen.dart';
 import 'package:period_tracker/features/onboarding/onboarding_screen.dart';
 import 'package:period_tracker/features/settings/settings_screen.dart';
@@ -28,6 +30,9 @@ abstract final class Routes {
 
   /// Prediction, history and self-metrics.
   static const String insights = '/insights';
+
+  /// The reference pages, collected (AND-39).
+  static const String learn = '/learn';
 
   /// Data controls, privacy text and the activity log.
   static const String settings = '/settings';
@@ -64,6 +69,19 @@ final Provider<bool> onboardingCompleteProvider = Provider<bool>(
 
 final GlobalKey<NavigatorState> _rootKey = GlobalKey<NavigatorState>();
 
+/// One navigator key per branch, so a tab can be emptied when it is opened.
+///
+/// Needed because every screen under a tab is pushed imperatively with
+/// `Navigator.push` rather than declared as a `GoRoute`. `goBranch` moves
+/// go_router's own location, and an imperatively pushed route is not part of
+/// that: it sits on the branch's `Navigator` and stays there. Resetting a tab
+/// therefore means popping its navigator, which needs a handle on it.
+final List<GlobalKey<NavigatorState>> _branchKeys =
+    List<GlobalKey<NavigatorState>>.generate(
+      5,
+      (index) => GlobalKey<NavigatorState>(debugLabel: 'branch$index'),
+    );
+
 /// Builds the app's router.
 GoRouter buildRouter(Ref ref) {
   final onboarded = ref.watch(onboardingCompleteProvider);
@@ -79,12 +97,13 @@ GoRouter buildRouter(Ref ref) {
       StatefulShellRoute(
         builder: (context, state, shell) => AppScaffold(shell: shell),
         // A cross-fade instead of go_router's plain IndexedStack (AND-34). The
-        // four tabs are peers, not a stack, so nothing slides sideways: a
+        // five tabs are peers, not a stack, so nothing slides sideways: a
         // horizontal transition tells the user they have gone deeper into
         // something, and moving between the calendar and settings is not that.
         navigatorContainerBuilder: _fadeThroughBranches,
         branches: <StatefulShellBranch>[
           StatefulShellBranch(
+            navigatorKey: _branchKeys[0],
             routes: <RouteBase>[
               GoRoute(
                 path: Routes.log,
@@ -93,6 +112,7 @@ GoRouter buildRouter(Ref ref) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: _branchKeys[1],
             routes: <RouteBase>[
               GoRoute(
                 path: Routes.calendar,
@@ -101,6 +121,7 @@ GoRouter buildRouter(Ref ref) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: _branchKeys[2],
             routes: <RouteBase>[
               GoRoute(
                 path: Routes.insights,
@@ -109,6 +130,16 @@ GoRouter buildRouter(Ref ref) {
             ],
           ),
           StatefulShellBranch(
+            navigatorKey: _branchKeys[3],
+            routes: <RouteBase>[
+              GoRoute(
+                path: Routes.learn,
+                builder: (context, state) => const LearnScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            navigatorKey: _branchKeys[4],
             routes: <RouteBase>[
               GoRoute(
                 path: Routes.settings,
@@ -125,8 +156,15 @@ GoRouter buildRouter(Ref ref) {
 /// The router, rebuilt if the onboarding state is overridden.
 final Provider<GoRouter> routerProvider = Provider<GoRouter>(buildRouter);
 
-/// The persistent frame around the four main screens.
-class AppScaffold extends StatelessWidget {
+/// The persistent frame around the main screens.
+///
+/// The shell always holds five branches, whatever the navigation bar shows.
+/// Learn being optional is a question of which destinations are offered, not of
+/// how many navigators exist: dropping a branch would renumber the others, move
+/// every `_branchKeys` index, and rebuild the router the moment the preference
+/// changed. The branch stays, the destination goes, and [_visibleBranches] maps
+/// what the user taps back to the branch it belongs to.
+class AppScaffold extends ConsumerWidget {
   /// Wraps [shell], the branch navigator go_router manages.
   const AppScaffold({required this.shell, super.key});
 
@@ -134,8 +172,16 @@ class AppScaffold extends StatelessWidget {
   final StatefulNavigationShell shell;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final showLearn = ref.watch(showLearnTabProvider).valueOrNull ?? false;
+    final showCompanion = ref.watch(showCompanionProvider).valueOrNull ?? false;
+    final branches = _visibleBranches(showLearn: showLearn);
+    // The Learn branch can be the one in view when the preference is turned
+    // off from Settings — which is itself a different tab, so in practice this
+    // is the deep-link and restore case. Falling back to the first destination
+    // beats a NavigationBar with selectedIndex pointing at nothing.
+    final selected = branches.indexOf(shell.currentIndex);
     return Scaffold(
       // Wrapped here rather than in a screen: the requirement is to reschedule
       // on every prediction change, and a screen only does that while it is on
@@ -147,16 +193,38 @@ class AppScaffold extends StatelessWidget {
       // place a persistent presence can sit without covering something is the
       // furniture around them.
       bottomNavigationBar: CompanionDock(
+        showCompanion: showCompanion,
         navigationBar: NavigationBar(
-          selectedIndex: shell.currentIndex,
-          onDestinationSelected: (index) => shell.goBranch(
-            index,
-            initialLocation: index == shell.currentIndex,
-          ),
+          selectedIndex: selected < 0 ? 0 : selected,
+          // Always the branch's initial location, not only when the tab
+          // already selected is tapped again. A stateful shell otherwise
+          // keeps each branch's navigation stack, so leaving Learn from
+          // inside "Look something up" and coming back later drops the
+          // reader into that page rather than the list they were expecting
+          // — and the same for Settings and Insights, which also have pages
+          // under them. Tapping a tab now means the same thing every time.
+          //
+          // What this gives up is resuming a sub-page after a glance at
+          // another tab. That is a real loss, and it is the smaller one:
+          // arriving somewhere you did not ask for is more disorienting than
+          // having to tap once more to get back.
+          onDestinationSelected: (index) {
+            // The tapped destination is an index into what is on screen, which
+            // is not the branch index once Learn is hidden.
+            final branch = branches[index];
+            // Empty the branch first, then switch to it. `goBranch` alone is
+            // not enough: it sets go_router's location, and the reference
+            // pages are pushed imperatively, so they outlive it and the
+            // reader lands back on whichever one they left.
+            _branchKeys[branch].currentState?.popUntil(
+              (route) => route.isFirst,
+            );
+            shell.goBranch(branch, initialLocation: true);
+          },
           destinations: <NavigationDestination>[
             NavigationDestination(
-              icon: const Icon(Icons.edit_calendar_outlined),
-              selectedIcon: const Icon(Icons.edit_calendar),
+              icon: const Icon(Icons.schedule_outlined),
+              selectedIcon: const Icon(Icons.schedule),
               label: l10n.navLog,
             ),
             NavigationDestination(
@@ -169,6 +237,12 @@ class AppScaffold extends StatelessWidget {
               selectedIcon: const Icon(Icons.insights),
               label: l10n.navInsights,
             ),
+            if (showLearn)
+              NavigationDestination(
+                icon: const Icon(Icons.menu_book_outlined),
+                selectedIcon: const Icon(Icons.menu_book),
+                label: l10n.navLearn,
+              ),
             NavigationDestination(
               icon: const Icon(Icons.settings_outlined),
               selectedIcon: const Icon(Icons.settings),
@@ -181,7 +255,20 @@ class AppScaffold extends StatelessWidget {
   }
 }
 
-/// Builds the container that holds the four branch navigators (AND-34).
+/// The branch index behind each destination the navigation bar is showing.
+///
+/// The shell's branches never change; the destinations do. Returning the
+/// mapping rather than recomputing an offset at each call site is what stops a
+/// hidden Learn tab turning a tap on Settings into a jump to Learn.
+List<int> _visibleBranches({required bool showLearn}) => <int>[
+  0,
+  1,
+  2,
+  if (showLearn) 3,
+  4,
+];
+
+/// Builds the container that holds the branch navigators (AND-34).
 ///
 /// Replaces `StatefulShellRoute.indexedStack`, which switches branches on the
 /// frame the tab is tapped. The branches themselves are unchanged: every one
@@ -206,7 +293,7 @@ Widget _fadeThroughBranches(
 ///
 /// Off-branch children are `Offstage`, exactly as `IndexedStack` leaves them.
 /// That is load-bearing rather than an optimisation: an offstage subtree is
-/// skipped by every default `Finder`, so the four screens do not all answer a
+/// skipped by every default `Finder`, so the five screens do not all answer a
 /// `find.text` at once — and the branch on its way out stops being offstage for
 /// only as long as it is still being painted.
 class _FadeThroughBranches extends StatefulWidget {

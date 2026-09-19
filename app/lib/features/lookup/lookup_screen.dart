@@ -107,13 +107,16 @@ class _LookupScreenState extends State<LookupScreen> {
                 l10n.lookupHygieneHeading,
                 style: theme.textTheme.titleMedium,
               ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.lookupCuratedNote,
-                style: theme.textTheme.bodySmall,
-              ),
               const SizedBox(height: 8),
-              for (final entry in hygiene) _HygieneCard(entry: entry),
+              // Separated rather than stacked flush. The cards carry no
+              // margin of their own (`cardTheme`), so without this the
+              // urgent entry and the ones under it share an edge and read as
+              // one block.
+              for (final entry in hygiene)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _HygieneCard(entry: entry),
+                ),
               const SizedBox(height: 20),
             ],
 

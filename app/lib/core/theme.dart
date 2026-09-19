@@ -1,88 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:period_tracker/core/palette.dart';
 
-/// The app's colour tokens and themes.
+/// The cycle-phase colours, carried on [ThemeData] so a widget can reach them.
+///
+/// A theme extension rather than a global constant, because since AND-39 there
+/// is no single answer: the colours depend on which of the six schemes the user
+/// picked and whether the phone is in dark mode. Reaching for a constant would
+/// have quietly painted every ring in Rose & Plum.
+@immutable
+class PhaseColors extends ThemeExtension<PhaseColors> {
+  /// Wraps [palette]'s phase colours.
+  const PhaseColors(this.palette);
+
+  /// The palette these came from.
+  final AppPalette palette;
+
+  /// The bleeding days, as logged.
+  Color get menstrual => palette.menstrual;
+
+  /// Between the end of bleeding and the luteal phase.
+  Color get follicular => palette.follicular;
+
+  /// The estimated ovulation range, shown only where the user opted in.
+  Color get ovular => palette.ovular;
+
+  /// The run of days before a period is due.
+  Color get luteal => palette.luteal;
+
+  /// The four, in cycle order.
+  List<Color> get inCycleOrder => palette.phaseColors;
+
+  /// The phase colours of the theme in [context].
+  ///
+  /// `Something.of(context)` is the shape every Flutter reader already knows,
+  /// and a constructor cannot carry the fallback below.
+  // ignore: prefer_constructors_over_static_methods
+  static PhaseColors of(BuildContext context) =>
+      Theme.of(context).extension<PhaseColors>() ??
+      const PhaseColors(AppPalettes.roseLight);
+
+  @override
+  PhaseColors copyWith({AppPalette? palette}) =>
+      PhaseColors(palette ?? this.palette);
+
+  @override
+  PhaseColors lerp(ThemeExtension<PhaseColors>? other, double t) =>
+      other is PhaseColors
+      ? PhaseColors(palette.lerpTo(other.palette, t))
+      : this;
+}
+
+/// Builds the app's [ThemeData].
 ///
 /// The palette is chosen for contrast first. Every pair used for text clears
 /// 4.5:1 and every pair used for a control clears 3:1, with margin, because
 /// AND-18 turns those into a CI gate and retrofitting a palette that fails is
-/// painful. `theme_test.dart` recomputes every ratio from these constants, so a
-/// colour cannot be nudged without the suite noticing.
+/// painful. `theme_test.dart` recomputes every ratio for all eleven palettes
+/// from [AppPalettes], so a colour cannot be nudged without the suite noticing.
 ///
-/// It is deliberately quiet: sage green and a muted apricot, low-saturation,
-/// nothing pink and nothing that reads as a mood. There is no pink-for-girls
-/// shorthand here, and since AND-34 there is no pink at all — the hue was the
-/// last thing in the app still deciding what its reader is. This is a health
-/// record, and it is read by people whose relationship with the subject is not
-/// always a cheerful one (`docs/PLAN.md` 6.3).
-abstract final class AppColors {
-  /// Background behind everything, light theme.
-  static const Color lightSurface = Color(0xFFF7F7F1);
-
-  /// Body text and icons on [lightSurface].
-  static const Color lightOnSurface = Color(0xFF22261F);
-
-  /// Raised surfaces such as cards, light theme.
-  static const Color lightSurfaceContainer = Color(0xFFE4EBDF);
-
-  /// Secondary text, light theme.
-  static const Color lightOnSurfaceVariant = Color(0xFF474E44);
-
-  /// Primary action colour, light theme.
-  static const Color lightPrimary = Color(0xFF3F6146);
-
-  /// Text on [lightPrimary].
-  static const Color lightOnPrimary = Color(0xFFFFFFFF);
-
-  /// Secondary accent, used for the predicted window.
-  static const Color lightSecondary = Color(0xFF985331);
-
-  /// Text on [lightSecondary].
-  static const Color lightOnSecondary = Color(0xFFFFFFFF);
-
-  /// Error colour, light theme.
-  static const Color lightError = Color(0xFF9A2F2A);
-
-  /// Text on [lightError].
-  static const Color lightOnError = Color(0xFFFFFFFF);
-
-  /// Borders and dividers, light theme.
-  static const Color lightOutline = Color(0xFF666D62);
-
-  /// Background behind everything, dark theme.
-  static const Color darkSurface = Color(0xFF161713);
-
-  /// Body text and icons on [darkSurface].
-  static const Color darkOnSurface = Color(0xFFE5E7E0);
-
-  /// Raised surfaces such as cards, dark theme.
-  static const Color darkSurfaceContainer = Color(0xFF20221C);
-
-  /// Secondary text, dark theme.
-  static const Color darkOnSurfaceVariant = Color(0xFFC2C6BC);
-
-  /// Primary action colour, dark theme.
-  static const Color darkPrimary = Color(0xFFAFCCB2);
-
-  /// Text on [darkPrimary].
-  static const Color darkOnPrimary = Color(0xFF17321D);
-
-  /// Secondary accent, dark theme.
-  static const Color darkSecondary = Color(0xFFF0B48D);
-
-  /// Text on [darkSecondary].
-  static const Color darkOnSecondary = Color(0xFF4C2609);
-
-  /// Error colour, dark theme.
-  static const Color darkError = Color(0xFFFFB4AB);
-
-  /// Text on [darkError].
-  static const Color darkOnError = Color(0xFF690005);
-
-  /// Borders and dividers, dark theme.
-  static const Color darkOutline = Color(0xFF8D9189);
-}
-
-/// Builds the app's [ThemeData].
+/// Every scheme is deliberately quiet, and none of them is the pink-for-girls
+/// shorthand: Rose & Plum, the default since AND-39, is a deep rose against a
+/// plum, not a bubblegum. This is a health record, read by people whose
+/// relationship with the subject is not always a cheerful one
+/// (`docs/PLAN.md` 6.3), and the six-way choice exists because that
+/// relationship is not the same for everyone — Ink & Ochre is there for a
+/// screen someone else can see, and Night for reading at 3am.
 abstract final class AppTheme {
   /// Smallest interactive size, in logical pixels.
   ///
@@ -90,45 +72,44 @@ abstract final class AppTheme {
   /// Applied through the themes below rather than remembered per widget.
   static const double minTapTarget = 48;
 
-  /// The light theme.
-  static ThemeData light() => _build(_lightScheme);
+  /// Corner radius for a block the user can act on.
+  ///
+  /// Cards are for actionable things. Anything the app is merely telling the
+  /// user sits flat on the page instead, with no fill and no border — a box
+  /// drawn round a sentence is a box the eye has to dismiss before it can read
+  /// (AND-39).
+  static const double cardRadius = 10;
 
-  /// The dark theme.
-  static ThemeData dark() => _build(_darkScheme);
+  /// The light theme for [scheme].
+  static ThemeData light([AppScheme scheme = AppScheme.fallback]) =>
+      _build(scheme.palette(Brightness.light), Brightness.light);
 
-  static const ColorScheme _lightScheme = ColorScheme(
-    brightness: Brightness.light,
-    primary: AppColors.lightPrimary,
-    onPrimary: AppColors.lightOnPrimary,
-    secondary: AppColors.lightSecondary,
-    onSecondary: AppColors.lightOnSecondary,
-    error: AppColors.lightError,
-    onError: AppColors.lightOnError,
-    surface: AppColors.lightSurface,
-    onSurface: AppColors.lightOnSurface,
-    surfaceContainer: AppColors.lightSurfaceContainer,
-    surfaceContainerHighest: AppColors.lightSurfaceContainer,
-    onSurfaceVariant: AppColors.lightOnSurfaceVariant,
-    outline: AppColors.lightOutline,
+  /// The dark theme for [scheme].
+  static ThemeData dark([AppScheme scheme = AppScheme.fallback]) =>
+      _build(scheme.palette(Brightness.dark), Brightness.dark);
+
+  /// The [ColorScheme] for [palette] at [brightness].
+  static ColorScheme colorSchemeOf(
+    AppPalette palette,
+    Brightness brightness,
+  ) => ColorScheme(
+    brightness: brightness,
+    primary: palette.primary,
+    onPrimary: palette.onPrimary,
+    secondary: palette.secondary,
+    onSecondary: palette.onSecondary,
+    error: palette.error,
+    onError: palette.onError,
+    surface: palette.surface,
+    onSurface: palette.onSurface,
+    surfaceContainer: palette.surfaceContainer,
+    surfaceContainerHighest: palette.surfaceContainer,
+    onSurfaceVariant: palette.onSurfaceVariant,
+    outline: palette.outline,
   );
 
-  static const ColorScheme _darkScheme = ColorScheme(
-    brightness: Brightness.dark,
-    primary: AppColors.darkPrimary,
-    onPrimary: AppColors.darkOnPrimary,
-    secondary: AppColors.darkSecondary,
-    onSecondary: AppColors.darkOnSecondary,
-    error: AppColors.darkError,
-    onError: AppColors.darkOnError,
-    surface: AppColors.darkSurface,
-    onSurface: AppColors.darkOnSurface,
-    surfaceContainer: AppColors.darkSurfaceContainer,
-    surfaceContainerHighest: AppColors.darkSurfaceContainer,
-    onSurfaceVariant: AppColors.darkOnSurfaceVariant,
-    outline: AppColors.darkOutline,
-  );
-
-  static ThemeData _build(ColorScheme scheme) {
+  static ThemeData _build(AppPalette palette, Brightness brightness) {
+    final scheme = colorSchemeOf(palette, brightness);
     final base = ThemeData(
       colorScheme: scheme,
       useMaterial3: true,
@@ -144,6 +125,7 @@ abstract final class AppTheme {
     );
     return base.copyWith(
       scaffoldBackgroundColor: scheme.surface,
+      extensions: <ThemeExtension<dynamic>>[PhaseColors(palette)],
       // Every interactive default is pushed to the 48dp floor here rather than
       // at each call site, because the call site is where it gets forgotten.
       filledButtonTheme: FilledButtonThemeData(
@@ -172,6 +154,29 @@ abstract final class AppTheme {
         minVerticalPadding: 12,
         iconColor: scheme.onSurfaceVariant,
         textColor: scheme.onSurface,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: scheme.surface,
+        indicatorColor: scheme.primary.withValues(alpha: 0.14),
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => base.textTheme.labelSmall?.copyWith(
+            color: states.contains(WidgetState.selected)
+                ? scheme.primary
+                : scheme.onSurfaceVariant,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w600
+                : FontWeight.w500,
+          ),
+        ),
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? scheme.primary
+                : scheme.onSurfaceVariant,
+          ),
+        ),
       ),
       chipTheme: base.chipTheme.copyWith(
         // Chips carry state, so the state must survive greyscale and reach a
@@ -210,7 +215,7 @@ abstract final class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(cardRadius),
           side: BorderSide(color: scheme.outline.withValues(alpha: 0.4)),
         ),
       ),

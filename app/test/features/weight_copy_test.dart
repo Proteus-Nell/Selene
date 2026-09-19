@@ -97,9 +97,6 @@ const List<String> _riskFraming = <String>[
 /// Applied only to the `weight*` strings, and there it is absolute. Matched on
 /// word boundaries so "young" and "your" are told apart, and so a rename that
 /// buried "you" inside a longer word does not slip through.
-final RegExp _secondPerson = RegExp(
-  r"\b(you|your|yours|yourself|you're|youre)\b",
-);
 
 /// Any digit.
 final RegExp _digit = RegExp(r'\d');
@@ -198,27 +195,16 @@ void main() {
   });
 
   group('the reference itself', () {
-    test('never once addresses the reader', () {
-      // The single most important constraint on this section, and the reason it
-      // is an absolute: every softer version of the rule is a judgement call
-      // about whether *this* "your" is about the reader's body, and that is the
-      // judgement a hurried edit gets wrong. There is nothing on this page that
-      // needs a second person — it is reference text that happens to be shown
-      // to someone tracking a cycle.
-      final offences = <String>[];
-      _weightCopy().forEach((key, value) {
-        final match = _secondPerson.firstMatch(value.toLowerCase());
-        if (match != null) offences.add('$key: "${match[0]}" — "$value"');
-      });
-      expect(
-        offences,
-        isEmpty,
-        reason:
-            'A sentence about body composition that addresses the reader is a '
-            'claim about their body. This section describes mechanisms and is '
-            'not allowed to describe anyone.\n${offences.join("\n")}',
-      );
-    });
+    // A test here banned the word "you" from every string in this section,
+    // absolutely. It was dropped at the owner's direction, because the
+    // impersonal voice it enforced is most of what made this copy read like a
+    // leaflet rather than like a person.
+    //
+    // What it was protecting is still protected, by a narrower guard that
+    // survives: `_mindReading` and `_speculation` run over the whole ARB and
+    // still fail the build on "how you feel", "you might be feeling", "how are
+    // you feeling" and the rest. The hazard was never the pronoun, it was the
+    // claim; "if you want to do less" claims nothing about anybody.
 
     test('contains no number of any kind', () {
       // No BMI threshold, no weight range, no calorie figure, no day count.
@@ -242,35 +228,22 @@ void main() {
 
     test('the guards above would actually catch one', () {
       // A check that cannot fail is not a check. These pin the detectors.
-      expect(_secondPerson.hasMatch('your weight may be affecting this'), true);
-      expect(_secondPerson.hasMatch('you are at the low end'), isTrue);
-      expect(
-        _secondPerson.hasMatch('adipose tissue expresses aromatase'),
-        false,
-      );
-      expect(_secondPerson.hasMatch('a young person'), isFalse);
       expect(_digit.hasMatch('a bmi over 30'), isTrue);
       expect(_digit.hasMatch('across the whole weight spectrum'), isFalse);
     });
   });
 
   group('the claims that stop the section reading as advice', () {
-    test('says up front that the app asks for nothing', () {
-      // The first thing a reader who opened this warily should learn.
-      final body = _weightCopy()['weightNothingToEnterBody']!.toLowerCase();
-      expect(
-        body.contains('records no body weight') || body.contains('asks for'),
-        isTrue,
-        reason:
-            'the section no longer says the app wants nothing from the reader, '
-            'which is what separates a reference page from a food diary',
-      );
-      expect(
-        body,
-        contains('nothing to enter'),
-        reason: 'the section no longer says there is nothing to fill in',
-      );
-    });
+    // `weightNothingToEnterBody` was removed at the owner's direction, and the
+    // test that pinned it went with it. It was the callout above the first
+    // mechanism saying the app records no body weight and offers no figure to
+    // measure against, and it existed because this subject carries a real risk
+    // of harm around disordered eating. Nothing now states that claim.
+    //
+    // The guards that remain are the ones that scan the whole ARB: no weight
+    // target, no judgement about a body, no second-person risk framing, no
+    // number anywhere in this section. Those still hold. What is gone is the
+    // section saying outright that it wants nothing from the reader.
 
     test('the intro disclaims advice and disclaims the reader own data', () {
       final intro = _weightCopy()['weightIntro']!.toLowerCase();

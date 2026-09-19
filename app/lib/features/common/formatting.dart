@@ -21,6 +21,15 @@ extension CivilDateFormatting on CivilDate {
   String full(BuildContext context) =>
       DateFormat.yMMMMd(_locale(context)).format(toLocalMidnight());
 
+  /// The single letter a week strip labels its columns with.
+  ///
+  /// The locale's narrow weekday, so it is not always the first letter of the
+  /// full name and is not always unique — English has two of both T and S,
+  /// which is why the strip is decoration beside a date the reader can also
+  /// read in full.
+  String weekdayInitial(BuildContext context) =>
+      DateFormat('EEEEE', _locale(context)).format(toLocalMidnight());
+
   /// The day number alone, for a calendar cell.
   String dayNumber(BuildContext context) =>
       DateFormat.d(_locale(context)).format(toLocalMidnight());

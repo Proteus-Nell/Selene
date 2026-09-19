@@ -52,6 +52,7 @@ class _Shell extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
     body: const Text('diary'),
     bottomNavigationBar: CompanionDock(
+      showCompanion: true,
       navigationBar: NavigationBar(
         destinations: <NavigationDestination>[
           NavigationDestination(
@@ -141,13 +142,11 @@ void main() {
       final l10n = AppLocalizations.of(
         tester.element(find.byType(Scaffold).first),
       );
-      for (final aside in <String>[
-        l10n.companionLabel,
-        l10n.companionHowItWorks,
-        l10n.companionSourcesNote,
-      ]) {
-        expect(find.text(aside), findsNothing);
-      }
+      // The citation note used to be probed here too, alongside the label.
+      // It was removed from the app at the owner's direction. The thirteen
+      // lines above are what carry this test: they are everything the
+      // companion can say, and none of them may be visible before the unlock.
+      expect(find.text(l10n.companionLabel), findsNothing);
     });
 
     testWidgets('an open suggestion does not survive the app locking again', (

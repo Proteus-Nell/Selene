@@ -105,20 +105,18 @@ reason is given at that claim.
 
 | # | Claim | Source | Status |
 | --- | --- | --- | --- |
-| M1 | Clinical guidance on period pain lists exercise among the measures that may help with it. | NHS, *Period pain*, self-help section; NICE CKS, *Dysmenorrhoea* | **[VERIFY]** |
-| M2 | A Cochrane systematic review of exercise for dysmenorrhoea found that exercise may reduce how intense menstrual pain is, on evidence the reviewers rated as low quality. | Cochrane Database of Systematic Reviews, *Exercise for dysmenorrhoea* (Armour et al.) | **[VERIFY]** |
 | M3 | General physical activity guidance makes no exception for the days of a menstrual period, and menstruation is not listed anywhere in the register as a reason to stop exercising. | NHS, *Physical activity guidelines for adults aged 19 to 64*; NHS, *Period pain*; NICE CKS, *Dysmenorrhoea* | **[VERIFY]** *(absence claim)* |
 
-M2 is deliberately stated at its real strength rather than at its most useful
-one. "Low quality evidence that exercise may reduce pain" is a weaker sentence
-than "exercise helps period pain", and it is the true one. What it is strong
-enough to support is the only thing this section needs it for: the direction of
-the evidence runs towards movement helping with cramps, not towards it making
-them worse.
+M3 is now the whole of this section, and that is deliberate. The two claims
+that used to sit beside it said that guidance lists exercise among the measures
+that may help with period pain, and that a Cochrane review found it may reduce
+how intense the pain is on low-quality evidence. Both were dropped at the
+owner's direction.
 
-M1 and M3 together are what replace the claim this task was asked for. Neither
-of them says anyone should exercise. They say that no source in the register
-tells anyone to stop.
+What survives is an absence claim and nothing more: no source in the register
+names menstruation as a reason to stop. It does not say anyone should exercise,
+and with M1 and M2 gone the section no longer says exercise helps. That is a
+narrower page than it was, and the narrower reading is the one it now supports.
 
 ---
 
@@ -188,7 +186,7 @@ neither can the way a day felt.
 | E1 | Systematic review of menstrual cycle phase and exercise performance reports low-quality evidence, average effects that are trivial, and variation between individuals larger than the effect under study. | McNulty et al., *The Effects of Menstrual Cycle Phase on Exercise Performance in Eumenorrheic Women: A Systematic Review and Meta-Analysis*, Sports Medicine | **[VERIFY]** |
 | E2 | No guidance from NHS, NICE or ACOG recommends planning exercise around menstrual cycle phase. | NHS, *Physical activity guidelines for adults aged 19 to 64*; NICE CKS, *Dysmenorrhoea*; ACOG, patient guidance on exercise and fitness | **[VERIFY]** *(absence claim)* |
 | E3 | No guidance from NHS, NICE or ACOG states that the chance of injury rises or falls with menstrual cycle phase. | NHS, *Physical activity guidelines for adults aged 19 to 64*; ACOG, patient guidance on exercise and fitness | **[VERIFY]** *(absence claim)* |
-| H1 | Combined hormonal contraception works by suppressing ovulation, so the cyclical rise and fall of oestrogen and progesterone that a phase-based scheme assumes is not what is happening. | MSD Manual (Professional), *Contraception*; StatPearls, *Combined Oral Contraceptive Pills*; NHS, *Combined pill* | **[VERIFY]** |
+| H1 | Combined hormonal contraception works by stopping ovulation. The rise and fall of oestrogen and progesterone that a phase-based scheme assumes is therefore not occurring, so the scheme has nothing underneath it. | MSD Manual (Professional), *Contraception*; StatPearls, *Combined Oral Contraceptive Pills*; NHS, *Combined pill* | **[VERIFY]** |
 
 **E1 is cited outside the register, and this is the only claim that is.** No body
 in the register has published on whether exercise should be programmed by cycle

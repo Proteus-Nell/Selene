@@ -218,22 +218,21 @@ class CycleRepository {
   ///
   /// The one-tap paths — the log screen's primary button and the notification
   /// action — know the flow and nothing else. Handing [upsert] a bare [DayLog]
-  /// for that silently erases the day's symptoms, because a save replaces the
-  /// whole day: flow and symptoms are stored as one fact, so writing one
-  /// without the other deletes the other. Someone who logged cramps in the
-  /// morning and taps "period started" in the afternoon must not lose the
-  /// cramps, and would have no way of knowing they had.
+  /// for that silently erases the rest of the day, because a save replaces the
+  /// whole day: everything recorded against a date is stored as one fact, so
+  /// writing one field without the others deletes the others. Someone who
+  /// logged cramps in the morning and taps "period started" in the afternoon
+  /// must not lose the cramps, and would have no way of knowing they had.
+  ///
+  /// So the day is read first and rebuilt from what was there, changing the
+  /// flow and nothing else. Every field [DayLog] gains has to be carried here.
   Future<Result<void, WriteRefused>> markPeriodStart(
     CivilDate date, {
     FlowIntensity flow = FlowIntensity.medium,
   }) async {
     final existing = await logFor(date);
     return upsert(
-      DayLog(
-        date: date,
-        flow: flow,
-        symptoms: existing?.symptoms ?? const <Symptom, SymptomSeverity>{},
-      ),
+      (existing ?? DayLog(date: date)).copyWith(flow: flow),
     );
   }
 

@@ -41,6 +41,22 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Brings [finder] into view and taps it, the way a person would.
+  ///
+  /// The flow control sits below the fold on the home screen since AND-39 put
+  /// the cycle ring above it, and a test viewport is 600 tall. Scrolling to a
+  /// control is not the same as the control being unreachable: what would be a
+  /// real regression is a scroll that cannot reach it at all, and that fails
+  /// here as a failed tap rather than passing quietly. The tap budgets in
+  /// `log_screen_test.dart` count taps against 2.4.2 and use the same helper
+  /// for the same reason.
+  Future<void> tapReachable(WidgetTester tester, Finder finder) async {
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
+    await tester.tap(finder);
+    await tester.pumpAndSettle();
+  }
+
   /// Everything the database holds about days, in a comparable form.
   Future<List<String>> snapshot(AppDatabase database) async {
     final logs = await database.dayLogDao.allLogs();
@@ -101,8 +117,7 @@ void main() {
       await simplify(value: true);
       await pumpLog(tester);
 
-      await tester.tap(find.text(l10nOf(tester).logBleedingYes));
-      await tester.pumpAndSettle();
+      await tapReachable(tester, find.text(l10nOf(tester).logBleedingYes));
 
       final logs = await db.dayLogDao.allLogs();
       expect(logs, hasLength(1));
@@ -123,8 +138,7 @@ void main() {
       // period start, or the feature silently costs them their history.
       await simplify(value: true);
       await pumpLog(tester);
-      await tester.tap(find.text(l10nOf(tester).logBleedingYes));
-      await tester.pumpAndSettle();
+      await tapReachable(tester, find.text(l10nOf(tester).logBleedingYes));
 
       final episodes = Segmentation.bleedingEpisodes(
         await db.dayLogDao.allLogs(),
@@ -141,8 +155,7 @@ void main() {
       await simplify(value: true);
       await pumpLog(tester);
 
-      await tester.tap(find.text(l10nOf(tester).logBleedingNo));
-      await tester.pumpAndSettle();
+      await tapReachable(tester, find.text(l10nOf(tester).logBleedingNo));
 
       // The day carried nothing else, so it is removed rather than stored as an
       // empty row — "logged as nothing" must stay distinguishable from "not
@@ -166,8 +179,7 @@ void main() {
       expect(tester.widget<ChoiceChip>(yes).selected, isTrue);
 
       // Confirming the answer it already shows must not downgrade it.
-      await tester.tap(find.text(l10nOf(tester).logBleedingYes));
-      await tester.pumpAndSettle();
+      await tapReachable(tester, find.text(l10nOf(tester).logBleedingYes));
       expect((await db.dayLogDao.allLogs()).single.flow, FlowIntensity.heavy);
     });
 
@@ -188,8 +200,7 @@ void main() {
       );
       expect(tester.widget<ChoiceChip>(no).selected, isTrue);
 
-      await tester.tap(find.text(l10nOf(tester).logBleedingNo));
-      await tester.pumpAndSettle();
+      await tapReachable(tester, find.text(l10nOf(tester).logBleedingNo));
       expect(
         (await db.dayLogDao.allLogs()).single.flow,
         FlowIntensity.spotting,

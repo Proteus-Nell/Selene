@@ -151,7 +151,7 @@ abstract class AppLocalizations {
   /// No description provided for @navLog.
   ///
   /// In en, this message translates to:
-  /// **'Log'**
+  /// **'Today'**
   String get navLog;
 
   /// No description provided for @navCalendar.
@@ -165,6 +165,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Insights'**
   String get navInsights;
+
+  /// No description provided for @navLearn.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn'**
+  String get navLearn;
 
   /// No description provided for @navSettings.
   ///
@@ -193,25 +199,25 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingNotContraception.
   ///
   /// In en, this message translates to:
-  /// **'It is not contraception. It cannot tell you when sex is unlikely to lead to pregnancy, and it must never be used to try.'**
+  /// **'This is a record of dates, not contraception. It cannot tell you when sex is unlikely to lead to pregnancy, and it must never be used to try.'**
   String get onboardingNotContraception;
 
   /// No description provided for @onboardingNotMedical.
   ///
   /// In en, this message translates to:
-  /// **'It is not medical advice. If something about your cycle worries you, talk to a clinician.'**
+  /// **'This is a record, not medical advice. If something about your cycle worries you, talk to a clinician.'**
   String get onboardingNotMedical;
 
   /// No description provided for @onboardingNotDiagnostic.
   ///
   /// In en, this message translates to:
-  /// **'It cannot diagnose anything. It sees only the dates you record — nothing about contraception you take, pregnancy, medication, illness or stress.'**
+  /// **'It works from the dates you record and nothing else. It knows nothing about your contraception, pregnancy, medication, illness or stress, so it cannot diagnose anything.'**
   String get onboardingNotDiagnostic;
 
   /// No description provided for @onboardingAlwaysARange.
   ///
   /// In en, this message translates to:
-  /// **'Predictions are always a range of days, never a single date. Cycles vary, and one date would claim a precision this app does not have.'**
+  /// **'Predictions come as a range of days. Cycles vary enough that a single date would claim a precision this app does not have.'**
   String get onboardingAlwaysARange;
 
   /// No description provided for @onboardingAcknowledge.
@@ -229,7 +235,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingFirstEntryBody.
   ///
   /// In en, this message translates to:
-  /// **'One date is enough to begin. Predictions start out wide and narrow as you log more cycles.'**
+  /// **'One date is enough to begin. Predictions start wide and get narrower as you log more cycles.'**
   String get onboardingFirstEntryBody;
 
   /// No description provided for @onboardingFirstEntrySkip.
@@ -244,17 +250,89 @@ abstract class AppLocalizations {
   /// **'Saved. You can change it any time.'**
   String get onboardingFirstEntrySaved;
 
-  /// No description provided for @logTitle.
+  /// No description provided for @logWeekBleedingSuffix.
   ///
   /// In en, this message translates to:
-  /// **'Today'**
-  String get logTitle;
+  /// **'{label}, bleeding logged'**
+  String logWeekBleedingSuffix(String label);
 
-  /// No description provided for @logTodayIs.
+  /// No description provided for @logGreetingMorning.
   ///
   /// In en, this message translates to:
-  /// **'Today is {date}'**
-  String logTodayIs(String date);
+  /// **'Good morning'**
+  String get logGreetingMorning;
+
+  /// No description provided for @logGreetingAfternoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Good afternoon'**
+  String get logGreetingAfternoon;
+
+  /// No description provided for @logGreetingEvening.
+  ///
+  /// In en, this message translates to:
+  /// **'Good evening'**
+  String get logGreetingEvening;
+
+  /// No description provided for @logPhaseAndDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{phase} · day {day}'**
+  String logPhaseAndDay(String phase, int day);
+
+  /// No description provided for @logDayOfCycleShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day}'**
+  String logDayOfCycleShort(int day);
+
+  /// No description provided for @logCountdownRange.
+  ///
+  /// In en, this message translates to:
+  /// **'in {from}–{to} days'**
+  String logCountdownRange(int from, int to);
+
+  /// No description provided for @logCountdownCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'until your period is expected'**
+  String get logCountdownCaption;
+
+  /// No description provided for @logCountdownNow.
+  ///
+  /// In en, this message translates to:
+  /// **'any day now'**
+  String get logCountdownNow;
+
+  /// No description provided for @logCountdownNowCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'you are inside the expected range'**
+  String get logCountdownNowCaption;
+
+  /// No description provided for @logCountdownNothingYet.
+  ///
+  /// In en, this message translates to:
+  /// **'not yet'**
+  String get logCountdownNothingYet;
+
+  /// No description provided for @logCountdownNothingYetCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'log a period start and this fills in'**
+  String get logCountdownNothingYetCaption;
+
+  /// No description provided for @logRingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cycle as a ring. {summary}'**
+  String logRingLabel(String summary);
+
+  /// No description provided for @logLegendOvulation.
+  ///
+  /// In en, this message translates to:
+  /// **'Ovulation'**
+  String get logLegendOvulation;
 
   /// No description provided for @logStartedOn.
   ///
@@ -373,7 +451,7 @@ abstract class AppLocalizations {
   /// Under the intercourse control. Says both things a user needs before touching it: that it is optional, and that recording it does not feed the model — which they would otherwise reasonably assume it does.
   ///
   /// In en, this message translates to:
-  /// **'Optional, and never used for predictions. Tap again to clear.'**
+  /// **'Optional, and not used for predictions. Tap again to clear.'**
   String get logIntercourseHint;
 
   /// No description provided for @logIntercourseProtected.
@@ -403,13 +481,13 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingSensitiveTitle.
   ///
   /// In en, this message translates to:
-  /// **'One thing worth knowing before you start'**
+  /// **'About recording intercourse'**
   String get onboardingSensitiveTitle;
 
   /// Shown during onboarding, before the user has recorded anything. It names the most sensitive field the app holds rather than letting them find it themselves, and points at the app lock in the same breath.
   ///
   /// In en, this message translates to:
-  /// **'You can record intercourse, and whether it was protected. It is the most sensitive thing stored here: it never leaves your device, is never used to predict anything, and is never required. The app lock in settings can ask for your fingerprint or PIN before anything shows.'**
+  /// **'You can record intercourse, and whether it was protected. That is the most sensitive thing stored here. Recording it is optional, and what you record stays on this device and is never used to predict anything. The app lock in settings can ask for your fingerprint or PIN before anything shows.'**
   String get onboardingSensitiveBody;
 
   /// Heading over the symptoms felt in the body.
@@ -577,7 +655,7 @@ abstract class AppLocalizations {
   /// No description provided for @logWelcomeBack.
   ///
   /// In en, this message translates to:
-  /// **'Welcome back. Log a day whenever you are ready and the predictions will pick up again.'**
+  /// **'Welcome back. Log a day and the predictions pick up again.'**
   String get logWelcomeBack;
 
   /// No description provided for @calendarTitle.
@@ -667,7 +745,7 @@ abstract class AppLocalizations {
   /// No description provided for @calendarNoPredictedWindow.
   ///
   /// In en, this message translates to:
-  /// **'No predicted window is shown, because there is not enough to go on yet.'**
+  /// **'No predicted window is shown yet. There are not enough logged cycles to work one out.'**
   String get calendarNoPredictedWindow;
 
   /// No description provided for @calendarLongPressHint.
@@ -685,7 +763,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsDisclaimer.
   ///
   /// In en, this message translates to:
-  /// **'Predictions are estimates from the dates you have logged. Not contraception, not medical advice.'**
+  /// **'Predictions are estimates based on the information logged. This does not serve as a contraceptive aid or medical advice.'**
   String get insightsDisclaimer;
 
   /// No description provided for @insightsNextPeriodTitle.
@@ -709,7 +787,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsFourInFive.
   ///
   /// In en, this message translates to:
-  /// **'About four times in five it starts in this range.'**
+  /// **'About four out of five times start in this range.'**
   String get insightsFourInFive;
 
   /// No description provided for @insightsHalfTheTime.
@@ -745,8 +823,8 @@ abstract class AppLocalizations {
   /// No description provided for @insightsNotPersonalisedYet.
   ///
   /// In en, this message translates to:
-  /// **'Based on typical cycles rather than yours. Your own figures take over after {count} cycles.'**
-  String insightsNotPersonalisedYet(int count);
+  /// **'Based on typical cycles which improve as you log your cycles.'**
+  String get insightsNotPersonalisedYet;
 
   /// No description provided for @insightsNoDataTitle.
   ///
@@ -757,7 +835,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsNoDataBody.
   ///
   /// In en, this message translates to:
-  /// **'Log the day your last period started and this screen fills in. Typical cycles run about 29 days, but yours are what matter here.'**
+  /// **'Log the day your last period started and this screen fills in. Typical cycles run about 29 days, and your own figures replace that number as you log.'**
   String get insightsNoDataBody;
 
   /// No description provided for @insightsTooIrregularTitle.
@@ -769,7 +847,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsTooIrregularBody.
   ///
   /// In en, this message translates to:
-  /// **'That is information, not a failure — and worth showing a clinician. Your figures are below; logging more keeps them sharp.'**
+  /// **'Cycles that vary this much are worth showing a clinician. Your figures are below, and they get more precise the more you log.'**
   String get insightsTooIrregularBody;
 
   /// No description provided for @insightsLostTrackTitle.
@@ -781,19 +859,19 @@ abstract class AppLocalizations {
   /// No description provided for @insightsLostTrackBody.
   ///
   /// In en, this message translates to:
-  /// **'Nothing logged for {days} days, so this app has lost the thread rather than guess. Log a day and it picks up again.'**
+  /// **'Nothing logged for {days} days. That gap is too long to predict from, so nothing is shown here. Log a day and predictions start again.'**
   String insightsLostTrackBody(int days);
 
   /// No description provided for @insightsInconsistentTitle.
   ///
   /// In en, this message translates to:
-  /// **'Something does not add up'**
+  /// **'The stored dates disagree'**
   String get insightsInconsistentTitle;
 
   /// No description provided for @insightsInconsistentBody.
   ///
   /// In en, this message translates to:
-  /// **'The stored dates contradict each other, so no prediction is shown. Check the calendar for a day that looks wrong.'**
+  /// **'Two of the stored dates cannot both be right, so no prediction is shown. Check the calendar for a day that looks wrong.'**
   String get insightsInconsistentBody;
 
   /// No description provided for @insightsClockChanged.
@@ -918,7 +996,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsTrackRecordExplain.
   ///
   /// In en, this message translates to:
-  /// **'Worked out on this device by re-running the prediction against cycles you had already logged. Nothing is sent anywhere.'**
+  /// **'Worked out on this device by re-running the prediction against cycles you had already logged.'**
   String get insightsTrackRecordExplain;
 
   /// No description provided for @insightsLoggingCompleteness.
@@ -936,7 +1014,7 @@ abstract class AppLocalizations {
   /// No description provided for @notificationChannelPredictionsDescription.
   ///
   /// In en, this message translates to:
-  /// **'When a period is expected, and when one looks late.'**
+  /// **'When a period is expected, and when the predicted window has passed.'**
   String get notificationChannelPredictionsDescription;
 
   /// No description provided for @notificationChannelReminders.
@@ -1008,7 +1086,7 @@ abstract class AppLocalizations {
   /// No description provided for @notificationLateNoticeBody.
   ///
   /// In en, this message translates to:
-  /// **'Nothing has been logged since the window closed. Cycles vary for many reasons, and a prediction being wrong is one of them.'**
+  /// **'Nothing has been logged since the window closed. Cycles vary, and a prediction can simply be wrong.'**
   String get notificationLateNoticeBody;
 
   /// No description provided for @notificationLogAction.
@@ -1032,7 +1110,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsNudgeSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Off by default. At most one every seven days, and never after the app has lost track.'**
+  /// **'Off by default. At most one every seven days, and none once predictions have stopped.'**
   String get settingsNudgeSubtitle;
 
   /// No description provided for @settingsDetailedNotifications.
@@ -1044,7 +1122,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsDetailedNotificationsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Off by default. With this off, notifications say only the app name until the phone is unlocked.'**
+  /// **'Off by default. While it is off, notifications show only the app name until the phone is unlocked.'**
   String get settingsDetailedNotificationsSubtitle;
 
   /// No description provided for @settingsBatteryNoteTitle.
@@ -1098,7 +1176,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsExportSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Writes a file you choose the location of. This is the only backup there is.'**
+  /// **'Writes a file to a location you choose. Nothing else backs this app up.'**
   String get settingsExportSubtitle;
 
   /// No description provided for @settingsExportDone.
@@ -1152,7 +1230,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsDeleteAllSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Removes every day, setting and stored figure from this device for good.'**
+  /// **'Remove all the logged days, settings and stored figures.'**
   String get settingsDeleteAllSubtitle;
 
   /// No description provided for @settingsDeleteConfirmTitle.
@@ -1212,7 +1290,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsReminderSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'A notification in the morning, the chosen number of days ahead.'**
+  /// **'A notification in the morning, the number of days ahead you choose.'**
   String get settingsReminderSubtitle;
 
   /// No description provided for @insightsSuppressedPregnancyTitle.
@@ -1254,25 +1332,25 @@ abstract class AppLocalizations {
   /// Shown when the user taps the Period chip. Plain language, one line, no clinical claim.
   ///
   /// In en, this message translates to:
-  /// **'The days you have logged bleeding for. This one is read from what you recorded, not estimated.'**
+  /// **'The days you have logged bleeding for. This one comes from what you recorded; the other two are estimated.'**
   String get calendarPhasePeriodExplained;
 
   /// No description provided for @calendarPhaseFollicularExplained.
   ///
   /// In en, this message translates to:
-  /// **'The stretch after your period ends. Most of the variation between cycles sits here, which makes it the part this app is least certain about.'**
+  /// **'The days between the end of your period and ovulation. Cycle length varies most here, which makes it the part this app predicts least well.'**
   String get calendarPhaseFollicularExplained;
 
   /// No description provided for @calendarPhaseLutealExplained.
   ///
   /// In en, this message translates to:
-  /// **'The run of days before your next period is due. It tends to be the steadiest part of the cycle, which is why it is counted back from the date expected rather than forward from the last one.'**
+  /// **'The days between ovulation and the start of your next period. Its length varies less than the rest of the cycle.'**
   String get calendarPhaseLutealExplained;
 
   /// No description provided for @calendarPhaseUnknown.
   ///
   /// In en, this message translates to:
-  /// **'Not enough logged to say where you are.'**
+  /// **'Not enough logged to say which phase this is.'**
   String get calendarPhaseUnknown;
 
   /// No description provided for @calendarOvulationTitle.
@@ -1338,7 +1416,7 @@ abstract class AppLocalizations {
   /// Sits under the app-lock toggle, always visible, on or off. A lock a user mistakes for encryption is worse than no lock, so this is not behind a link.
   ///
   /// In en, this message translates to:
-  /// **'This hides the screen. It does not encrypt your data, which is stored unencrypted in the app\'s private storage either way.'**
+  /// **'This hides the screen. It does not encrypt anything.'**
   String get settingsAppLockNotEncrypted;
 
   /// Replaces the toggle when no credential is enrolled. Names the fix, which is in the device settings and not in this app.
@@ -1413,12 +1491,6 @@ abstract class AppLocalizations {
   /// **'Tampons, cups and pads'**
   String get lookupHygieneHeading;
 
-  /// No description provided for @lookupCuratedNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Written for this app and checked against the sources listed in HYGIENE_SOURCES.md. Not a regulator\'s own wording, unlike the medicines below.'**
-  String get lookupCuratedNote;
-
   /// No description provided for @lookupMedicinesSource.
   ///
   /// In en, this message translates to:
@@ -1428,7 +1500,7 @@ abstract class AppLocalizations {
   /// Always shown with the medicines section. A reader applying US warnings to a box bought elsewhere is being quietly misinformed, and nothing else on the screen would tell them.
   ///
   /// In en, this message translates to:
-  /// **'This is United States labelling. Strengths, brand names and warnings can differ where you are — check the packet you actually have.'**
+  /// **'This is United States labelling. Strengths, brand names and warnings can differ where you are, so check the packet in front of you.'**
   String get lookupMedicinesUsOnly;
 
   /// Shown when the openFDA artifact has not been fetched. Says so plainly rather than rendering an empty list, which reads as a broken screen.
@@ -1500,7 +1572,7 @@ abstract class AppLocalizations {
   /// The confirmation before a browser hand-off. It has to be specific about what changes: this app makes no requests, the browser does, and the browser remembers.
   ///
   /// In en, this message translates to:
-  /// **'Your browser will make the request, not this app. The search leaves your device, and your browser normally keeps it in its history and may sync it to other devices you are signed in on.'**
+  /// **'The request comes from your browser rather than from this app. The search leaves your device, and your browser normally keeps it in its history and may sync it to other devices you are signed in on.'**
   String get lookupLeavingBody;
 
   /// Shown only when a term is pre-filled. Naming the term back to the user is the point — a hand-off that silently carries a drug name into browser history is the thing this warning exists to prevent.
@@ -1548,7 +1620,7 @@ abstract class AppLocalizations {
   /// No description provided for @hygieneTssBody.
   ///
   /// In en, this message translates to:
-  /// **'Toxic shock syndrome is rare and life-threatening. It is caused by bacterial toxins, and it is associated with tampon and menstrual cup use — though it also happens to people who are not menstruating at all.'**
+  /// **'Toxic shock syndrome is rare and life-threatening. It is caused by bacterial toxins, and it is associated with tampon and menstrual cup use, though it also happens to people who are not menstruating at all.'**
   String get hygieneTssBody;
 
   /// No description provided for @hygieneTamponsTitle.
@@ -1560,7 +1632,7 @@ abstract class AppLocalizations {
   /// No description provided for @hygieneTamponsBody.
   ///
   /// In en, this message translates to:
-  /// **'Regulated as medical devices rather than as drugs, which is why they are not in the medicines section. Absorbency ratings are standardised, so the same rating means the same thing across brands. General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says rather than leaving it longer.'**
+  /// **'General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says.'**
   String get hygieneTamponsBody;
 
   /// No description provided for @hygieneCupsTitle.
@@ -1572,7 +1644,7 @@ abstract class AppLocalizations {
   /// No description provided for @hygieneCupsBody.
   ///
   /// In en, this message translates to:
-  /// **'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products — follow the instructions that came with yours rather than a number from an app.'**
+  /// **'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products, so follow the instructions that came with yours.'**
   String get hygieneCupsBody;
 
   /// No description provided for @hygieneExternalTitle.
@@ -1584,19 +1656,19 @@ abstract class AppLocalizations {
   /// No description provided for @hygieneExternalBody.
   ///
   /// In en, this message translates to:
-  /// **'Worn outside the body, and not associated with toxic shock syndrome in the way internally worn products are.'**
+  /// **'Worn outside the body. The link with toxic shock syndrome is to products worn inside it.'**
   String get hygieneExternalBody;
 
   /// No description provided for @nutritionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Iron and magnesium'**
+  /// **'Supplements'**
   String get nutritionTitle;
 
   /// The framing sentence for the whole screen. It has to establish that the page is reference text and not addressed to the reader personally, before any nutrient is named.
   ///
   /// In en, this message translates to:
-  /// **'Reference notes on two nutrients that come up around menstrual cycles. This is background reading, not advice about your body, and nothing here is based on what you have logged.'**
+  /// **'Reference notes on the nutrients that come up around menstrual cycles. This is background reading, not advice about your body, and nothing here is based on what you have logged.'**
   String get nutritionIntro;
 
   /// No description provided for @nutritionIronTitle.
@@ -1614,7 +1686,7 @@ abstract class AppLocalizations {
   /// Sits directly under the iron text. The claim that stops the section reading as a checklist the reader can apply to themselves.
   ///
   /// In en, this message translates to:
-  /// **'Iron deficiency is confirmed by a blood test. Symptoms alone cannot establish it, and neither can anything in this app.'**
+  /// **'A blood test is what establishes iron deficiency. Symptoms alone cannot, and nothing in this app can.'**
   String get nutritionIronDiagnosisNote;
 
   /// No description provided for @nutritionIronSourcesBody.
@@ -1626,13 +1698,13 @@ abstract class AppLocalizations {
   /// No description provided for @nutritionVitaminCTitle.
   ///
   /// In en, this message translates to:
-  /// **'Why vitamin C is listed here'**
+  /// **'Vitamin C'**
   String get nutritionVitaminCTitle;
 
   /// No description provided for @nutritionVitaminCBody.
   ///
   /// In en, this message translates to:
-  /// **'Vitamin C eaten in the same meal increases how much non-haem iron the body absorbs. That is the only reason it appears in a menstrual cycle app.'**
+  /// **'Vitamin C eaten in the same meal increases how much non-haem iron the body absorbs.'**
   String get nutritionVitaminCBody;
 
   /// No description provided for @nutritionIronCautionBody.
@@ -1656,19 +1728,25 @@ abstract class AppLocalizations {
   /// Must not be dropped for brevity. It is the claim that stops the magnesium section reading as a recommendation.
   ///
   /// In en, this message translates to:
-  /// **'Evidence that magnesium supplements improve menstrual symptoms is limited and not conclusive.'**
+  /// **'Magnesium is widely taken for cramps and premenstrual symptoms. Oral forms differ in how well they are absorbed, with glycinate and citrate better absorbed than oxide.'**
   String get nutritionMagnesiumEvidenceBody;
+
+  /// No description provided for @nutritionMagnesiumCreamBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Creams, oils and balms are sold for the same purpose.'**
+  String get nutritionMagnesiumCreamBody;
 
   /// No description provided for @nutritionZincTitle.
   ///
   /// In en, this message translates to:
-  /// **'Why zinc is listed here'**
+  /// **'Zinc'**
   String get nutritionZincTitle;
 
   /// No description provided for @nutritionZincBody.
   ///
   /// In en, this message translates to:
-  /// **'Zinc is an essential mineral involved in immune function and wound healing. It is often sold together with magnesium, which is worth knowing alongside the next line: taken at high doses over time, zinc can interfere with how the body absorbs copper.'**
+  /// **'Zinc is an essential mineral involved in immune function and wound healing. It is often sold together with magnesium, which matters here because at high doses over time zinc can interfere with how the body absorbs copper.'**
   String get nutritionZincBody;
 
   /// No description provided for @nutritionHintTitle.
@@ -1683,22 +1761,16 @@ abstract class AppLocalizations {
   /// **'On several days recently you logged heavy flow and fatigue together. That pattern is worth raising with a doctor or nurse, who can look into it properly.'**
   String get nutritionHintBody;
 
-  /// No description provided for @nutritionSourcesNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Every claim on this page is listed with its source in NUTRITION_SOURCES.md in the app\'s source repository.'**
-  String get nutritionSourcesNote;
-
   /// No description provided for @settingsNutrition.
   ///
   /// In en, this message translates to:
-  /// **'Iron and magnesium'**
+  /// **'Supplements'**
   String get settingsNutrition;
 
   /// No description provided for @settingsNutritionSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Reference notes on two nutrients that come up around menstrual cycles.'**
+  /// **'Reference notes on the nutrients that come up around menstrual cycles.'**
   String get settingsNutritionSubtitle;
 
   /// No description provided for @weightTitle.
@@ -1713,12 +1785,6 @@ abstract class AppLocalizations {
   /// **'Reference notes on how body composition and several hormones interact with the menstrual cycle. This is background reading, not advice, and it describes mechanisms rather than any particular body. Nothing on this page is drawn from anything logged in this app.'**
   String get weightIntro;
 
-  /// Sits directly under the intro. The section carries a real risk of harm around disordered eating, and the first thing it says is that the app wants nothing from the reader.
-  ///
-  /// In en, this message translates to:
-  /// **'This app records no body weight and asks for none. There is nothing to enter here, and no figure on this page to measure a body against.'**
-  String get weightNothingToEnterBody;
-
   /// No description provided for @weightOestrogenTitle.
   ///
   /// In en, this message translates to:
@@ -1728,13 +1794,13 @@ abstract class AppLocalizations {
   /// No description provided for @weightOestrogenBody.
   ///
   /// In en, this message translates to:
-  /// **'Adipose tissue — body fat — makes the enzyme aromatase, which converts androgens into oestrogens. That reaction happens in the tissue itself, so the ovaries are not the only place oestrogen comes from.'**
+  /// **'Adipose tissue, or body fat, makes the enzyme aromatase, which converts androgens into oestrogens. That reaction happens in the tissue itself, so the ovaries are not the only place oestrogen comes from.'**
   String get weightOestrogenBody;
 
   /// Both ends of the mechanism, deliberately. Stated in one direction only this becomes an argument, and an argument is what this section must never be.
   ///
   /// In en, this message translates to:
-  /// **'The quantity of adipose tissue is therefore one of the inputs to how much oestrogen is circulating, and it runs in both directions: more of it adds to the total, and very little of it removes a source the ovaries do not make up for. It is one input among several rather than the whole picture.'**
+  /// **'The quantity of adipose tissue is therefore one of the inputs to how much oestrogen is circulating, and it runs in both directions: more of it adds to the total, and very little of it removes a source the ovaries do not make up for. It is one input among several.'**
   String get weightOestrogenBalanceBody;
 
   /// No description provided for @weightEnergyTitle.
@@ -1746,13 +1812,13 @@ abstract class AppLocalizations {
   /// No description provided for @weightEnergyBody.
   ///
   /// In en, this message translates to:
-  /// **'The hypothalamus releases GnRH in pulses, and that rhythm is what drives LH and FSH from the pituitary, which in turn drive the ovary. When energy availability is low the pulses are suppressed: LH and FSH fall, ovulation stops, and periods stop with it. That state has a name — functional hypothalamic amenorrhoea.'**
+  /// **'The brain drives the ovaries through a steady rhythm of hormone signals. When the body is running on too little energy that rhythm is suppressed: the signals fall away, ovulation stops, and periods stop with it. The name for that state is functional hypothalamic amenorrhoea.'**
   String get weightEnergyBody;
 
   /// Load-bearing. Without it the section reads as a statement about a number on a scale, which is both wrong and the most harmful thing this reference could be mistaken for.
   ///
   /// In en, this message translates to:
-  /// **'Energy availability is what is left of the energy taken in once exercise has had its share, measured against what the body needs to run on. It is not a body weight and it is not a reading from a scale. Functional hypothalamic amenorrhoea occurs in people whose body weight is entirely unremarkable, and heavy training, illness or sustained stress can produce it with no fall in body weight at all.'**
+  /// **'Energy availability is the energy left over from food once exercise has taken its share, measured against what the body needs to run on. It is a balance between what goes in and what is spent, and a scale reads neither. It happens at entirely unremarkable body weights, and heavy training, illness or sustained stress can bring it on while weight holds steady.'**
   String get weightEnergyNotAScaleBody;
 
   /// No description provided for @weightInsulinTitle.
@@ -1764,25 +1830,25 @@ abstract class AppLocalizations {
   /// No description provided for @weightInsulinBody.
   ///
   /// In en, this message translates to:
-  /// **'Sex hormone binding globulin, or SHBG, is a protein the liver puts into the blood, where it binds testosterone. Bound testosterone is held out of circulation, so only the free fraction reaches tissue. Insulin resistance lowers SHBG, and as SHBG falls the free fraction rises — even when the total amount of testosterone has not changed.'**
+  /// **'Sex hormone binding globulin, or SHBG, is a protein the liver puts into the blood, where it binds testosterone. Bound testosterone is held out of circulation, so only the free fraction reaches tissue. Insulin resistance lowers SHBG, and as SHBG falls the free fraction rises, even when the total amount of testosterone has not changed.'**
   String get weightInsulinBody;
 
   /// No description provided for @weightPcosTitle.
   ///
   /// In en, this message translates to:
-  /// **'PCOS'**
+  /// **'PMOS'**
   String get weightPcosTitle;
 
   /// No description provided for @weightPcosBody.
   ///
   /// In en, this message translates to:
-  /// **'Polycystic ovary syndrome is androgen excess together with irregular or absent ovulation. Insulin resistance is common alongside it, and the mechanism above is part of how the androgen excess is sustained.'**
+  /// **'Polyendocrine metabolic ovarian syndrome, formerly polycystic ovary syndrome, is androgen excess together with irregular or absent ovulation. Insulin resistance is common alongside it, and the mechanism above is part of how the androgen excess is sustained.'**
   String get weightPcosBody;
 
   /// Must not be dropped. The opposite impression is both common and false, and naming PCOS in a section about body composition without saying this would reinforce the error.
   ///
   /// In en, this message translates to:
-  /// **'PCOS occurs across the whole weight spectrum, in people who are thin as well as in people who are not. The widespread impression that it belongs at one end of that spectrum is not accurate, and it is one of the reasons the condition goes unrecognised.'**
+  /// **'PMOS occurs across the whole weight spectrum, including in people who are thin. The widespread impression that it belongs at one end is wrong, and it is one reason the condition goes unrecognised.'**
   String get weightPcosSpectrumBody;
 
   /// No description provided for @weightThyroidTitle.
@@ -1794,7 +1860,7 @@ abstract class AppLocalizations {
   /// No description provided for @weightThyroidBody.
   ///
   /// In en, this message translates to:
-  /// **'Thyroid disease reaches the menstrual cycle too, and in both directions. An underactive thyroid is associated with heavier and more frequent bleeding; an overactive one with lighter, less frequent bleeding, or with none. Thyroid function is established by a blood test rather than by the shape of a cycle.'**
+  /// **'Thyroid disease affects the menstrual cycle too, in both directions. An underactive thyroid is associated with heavier and more frequent bleeding; an overactive one with lighter, less frequent bleeding, or with none. Thyroid function is established by a blood test rather than by the shape of a cycle.'**
   String get weightThyroidBody;
 
   /// No description provided for @weightChangeTitle.
@@ -1806,14 +1872,8 @@ abstract class AppLocalizations {
   /// The last thing on the screen. A page of mechanisms with no exit is an invitation to pick one, so this points at a person. Deliberately carries no threshold: a threshold is a number, and a number here is something to measure a body against.
   ///
   /// In en, this message translates to:
-  /// **'A change in cycle length, in the amount of bleeding, or in whether periods arrive at all has many possible causes, and the mechanisms on this page are only some of them. Cycle dates cannot separate one cause from another, and nothing in this app can diagnose anything. A change worth explaining is worth taking to a doctor or nurse.'**
+  /// **'A change in cycle length, in the amount of bleeding, or in whether periods arrive at all has many possible causes, and the mechanisms on this page are only some of them. Cycle dates cannot separate one cause from another, and nothing in this app can diagnose anything. A doctor or nurse is who can work out which one it is.'**
   String get weightChangeBody;
-
-  /// No description provided for @weightSourcesNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Every claim on this page is listed with its source in WEIGHT_SOURCES.md in the app\'s source repository.'**
-  String get weightSourcesNote;
 
   /// No description provided for @weightEntryTitle.
   ///
@@ -1836,14 +1896,8 @@ abstract class AppLocalizations {
   /// The framing sentence for the whole screen. It has to establish that the page is reference text about a subject, not addressed to the reader and not a plan, before anything else is named.
   ///
   /// In en, this message translates to:
-  /// **'Reference notes on period pain, on what movement does and does not do about it, and on how much of the popular advice on the subject the evidence actually supports. This is background reading, not advice, and it describes what is known rather than any particular body. Nothing on this page is drawn from anything logged in this app.'**
+  /// **'Reference notes on period pain, on what movement does about it, and on how well the evidence supports the popular advice. This is background reading, not advice, and it describes what is known about bodies in general. It draws on nothing you have logged.'**
   String get movementIntro;
-
-  /// Sits directly under the intro. The reader most likely to be harmed by this subject is the one who arrives expecting to be told what to do, and the first thing the section says is that it is not going to.
-  ///
-  /// In en, this message translates to:
-  /// **'This app records no exercise and asks for none. There is nothing to enter here and no plan on this page to follow, so there is nothing on it to keep up with or to fall behind.'**
-  String get movementNothingToFollowBody;
 
   /// No description provided for @movementPainTitle.
   ///
@@ -1854,7 +1908,7 @@ abstract class AppLocalizations {
   /// No description provided for @movementPainBody.
   ///
   /// In en, this message translates to:
-  /// **'Painful menstruation with no underlying disorder behind it is called primary dysmenorrhoea. The pain is typically cramping, felt low in the abdomen, strongest around the start of bleeding and easing over the following days. Prostaglandins released from the lining of the uterus drive the contractions that produce it. Where there is an underlying cause — endometriosis, adenomyosis and uterine fibroids are among the recognised ones — the term is secondary dysmenorrhoea.'**
+  /// **'Painful menstruation with no underlying disorder behind it is called primary dysmenorrhoea. The pain is typically cramping, felt low in the abdomen, strongest around the start of bleeding and easing over the following days. Prostaglandins released from the lining of the uterus drive the contractions that produce it. Where there is an underlying cause, such as endometriosis, adenomyosis or uterine fibroids, the term is secondary dysmenorrhoea.'**
   String get movementPainBody;
 
   /// No description provided for @movementNotAvoidedTitle.
@@ -1866,14 +1920,8 @@ abstract class AppLocalizations {
   /// The correction this section exists for. The popular version of this subject says the opposite, and a cycle app repeating it would be telling people to stop doing something that helps them.
   ///
   /// In en, this message translates to:
-  /// **'Menstruation is not named anywhere in the sources behind this page as a reason to stop, and general physical activity guidance makes no exception for the days of a period. Clinical guidance on period pain goes further than that and lists exercise among the measures that may help with it.'**
+  /// **'Menstruation is not named anywhere in the sources behind this page as a reason to stop, and general physical activity guidance makes no exception for the days of a period.'**
   String get movementNotAvoidedBody;
-
-  /// Must not be strengthened. "Low quality evidence that exercise may reduce pain" is weaker than "exercise helps period pain" and it is the true one.
-  ///
-  /// In en, this message translates to:
-  /// **'A Cochrane review of exercise for period pain found that exercise may reduce how intense the pain is, on evidence the reviewers themselves rated as low quality. That is a modest finding and it is stated here at its real strength rather than at a more useful one. What it supports is only this: the direction of the evidence runs towards movement helping with cramps rather than making them worse.'**
-  String get movementEvidenceBody;
 
   /// No description provided for @movementHowItFeelsTitle.
   ///
@@ -1884,7 +1932,7 @@ abstract class AppLocalizations {
   /// No description provided for @movementHowItFeelsBody.
   ///
   /// In en, this message translates to:
-  /// **'What varies across a cycle is the experience of moving, not what is permitted. Cramping pain around the start of bleeding, tiredness and low energy in the days before and during it, and how hard a given effort seems on the day are all part of that. The variation is wide between people and between one cycle and the next in the same person, which is why none of it turns into a rule.'**
+  /// **'What varies across a cycle is how moving feels. Cramping pain around the start of bleeding, tiredness and low energy in the days before and during it, and how hard a given effort seems on the day are all part of that. The variation is wide between people, and wide between one cycle and the next in the same person, which is why none of it turns into a rule.'**
   String get movementHowItFeelsBody;
 
   /// No description provided for @movementRestTitle.
@@ -1896,7 +1944,7 @@ abstract class AppLocalizations {
   /// Permission, never instruction. The requested version of this section was an instruction to rest, which is the same category error as an exercise prescription and is stated here as one.
   ///
   /// In en, this message translates to:
-  /// **'Doing less, or nothing at all, on a day when that is what is wanted is a reasonable choice and not a lapse. That is a permission rather than an instruction, and the difference is the whole point: an instruction to rest is the same mistake as an instruction to push, only kinder. Nothing on this page asks for more and nothing on it asks for less.'**
+  /// **'If you want to do less on a given day, or nothing at all, that is a reasonable choice. This page gives you permission rather than instructions: it holds you to no target, so there is nothing here to fall short of.'**
   String get movementRestBody;
 
   /// No description provided for @movementStopSignalsTitle.
@@ -1908,13 +1956,13 @@ abstract class AppLocalizations {
   /// No description provided for @movementStopSignalsBody.
   ///
   /// In en, this message translates to:
-  /// **'Some things are reasons to stop rather than to carry on. Feeling faint or light-headed during exertion, breathlessness out of proportion to the effort, and chest pain are among them, and each of those is a reason to get it looked at rather than to push on. None of this is particular to menstruation; it holds whenever it happens.'**
+  /// **'Some things are reasons to stop. Feeling faint or light-headed during exertion, breathlessness out of proportion to the effort, and chest pain are among them, and each is worth getting looked at. None of this is particular to menstruation. It applies whenever it happens.'**
   String get movementStopSignalsBody;
 
   /// The same claim the iron section makes, cited to the same sources in MOVEMENT_SOURCES.md and NUTRITION_SOURCES.md so the two cannot drift. It is here because it explains a hard day without blaming the cycle for it.
   ///
   /// In en, this message translates to:
-  /// **'There is also a recognised reason why exertion can feel harder around heavy periods, and it is not that a cycle makes movement unwise. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia, whose commonly listed symptoms include tiredness, lack of energy and shortness of breath. Iron deficiency is confirmed by a blood test rather than by how a day felt, and it is worth taking to a doctor or nurse rather than working around.'**
+  /// **'Exertion can feel harder around heavy periods, and there is a recognised reason for it. Heavy menstrual bleeding is a known cause of iron deficiency anaemia, whose commonly listed symptoms include tiredness, lack of energy and shortness of breath. A blood test is what confirms iron deficiency, rather than how a day felt, and it is worth taking to a doctor or nurse.'**
   String get movementAnaemiaBody;
 
   /// No description provided for @movementPhaseClaimsTitle.
@@ -1926,13 +1974,13 @@ abstract class AppLocalizations {
   /// Says outright that the evidence is weak rather than quietly declining to use it. A reference that handed someone a prescription built on evidence this thin would be worse than one that says how thin it is.
   ///
   /// In en, this message translates to:
-  /// **'Schemes that assign different kinds of exercise to different parts of the cycle are widely promoted. The evidence underneath them is weak. Systematic review of cycle phase and exercise performance describes that research as low quality and inconsistent, with average effects that are trivial and with differences between individuals larger than the effect being looked for. No clinical guidance in the sources behind this page recommends planning exercise around cycle phase, and none says the chance of injury rises or falls with it.'**
+  /// **'Schemes that assign different kinds of exercise to different parts of the cycle are widely promoted. The evidence underneath them is weak. Systematic review of cycle phase and exercise performance describes that research as low quality and inconsistent: the average effects are trivial, and the differences between individuals are larger than the effect being looked for. No clinical guidance in the sources behind this page recommends planning exercise around cycle phase, and none says the chance of injury rises or falls with it.'**
   String get movementPhaseClaimsBody;
 
   /// No description provided for @movementContraceptionBody.
   ///
   /// In en, this message translates to:
-  /// **'Hormonal contraception is a further reason those schemes do not carry across. Combined hormonal contraception works by suppressing ovulation, so the rise and fall of oestrogen and progesterone that a phase-based scheme assumes is not what is going on underneath. A scheme built on phases, applied where those phases are not occurring, has nothing left to stand on.'**
+  /// **'Hormonal contraception is another reason these schemes do not carry over. The combined pill works by stopping ovulation, so the rise and fall of oestrogen and progesterone that a phase-based plan assumes is not happening at all. A plan built on cycle phases has nothing underneath it when those phases are not occurring.'**
   String get movementContraceptionBody;
 
   /// No description provided for @movementSeeSomeoneTitle.
@@ -1944,14 +1992,8 @@ abstract class AppLocalizations {
   /// The last thing on the screen, pointing at a person. Deliberately carries no threshold and no pain scale: both are numbers, and a number here is something to be talked out of by.
   ///
   /// In en, this message translates to:
-  /// **'Period pain that is severe, that is getting worse, that the usual measures do not ease, or that gets in the way of ordinary days is a reason to see a doctor or nurse. So is pain that began later in life, changed in character, or arrives alongside other symptoms — the causes named above are found by assessment rather than by tracking dates. No threshold is set out here and no scale, on purpose: a score is a thing to be argued down by, and nothing in this app could tell one cause of pain from another in any case.'**
+  /// **'Period pain that is severe, that is getting worse, that the usual measures do not ease, or that gets in the way of ordinary days is a reason to see a doctor or nurse. So is pain that began later in life, changed in character, or arrives alongside other symptoms. The causes named above are found by assessment rather than by tracking dates. No threshold is offered here, and no scale for you to score yourself against.'**
   String get movementSeeSomeoneBody;
-
-  /// No description provided for @movementSourcesNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Every claim on this page is listed with its source in MOVEMENT_SOURCES.md in the app\'s source repository.'**
-  String get movementSourcesNote;
 
   /// No description provided for @movementEntryTitle.
   ///
@@ -1962,7 +2004,7 @@ abstract class AppLocalizations {
   /// No description provided for @movementEntrySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'What exercise does about period pain, how little supports planning it by cycle phase, and what is a reason to stop.'**
+  /// **'What exercise does about period pain, how weak the evidence for planning it by cycle phase is, and what is a reason to stop.'**
   String get movementEntrySubtitle;
 
   /// The name of the small persistent control in the bottom bar. It is a control, so it needs a name a screen reader can announce; 'decoration' is not an option.
@@ -1971,23 +2013,11 @@ abstract class AppLocalizations {
   /// **'Companion'**
   String get companionLabel;
 
-  /// Shown under every suggestion. States what the thing is: a rules engine over local data with a finite vocabulary, which knows what was logged and not how the reader feels.
-  ///
-  /// In en, this message translates to:
-  /// **'This picks from a fixed set of written lines. It reads what has been logged on this device — which is not the same as knowing how anyone feels — and nothing else.'**
-  String get companionHowItWorks;
-
   /// Closes the suggestion. The suggestion has to be dismissible from inside it, not only by the sheet's own gesture.
   ///
   /// In en, this message translates to:
   /// **'Dismiss'**
   String get companionDismiss;
-
-  /// Points at the sources file. Some lines make no health claim at all, and the file says which ones and why.
-  ///
-  /// In en, this message translates to:
-  /// **'Any health claim above is listed with its source in COMPANION_SOURCES.md in the app\'s source repository.'**
-  String get companionSourcesNote;
 
   /// Shown while the logs, prediction or conditions are still loading. Says so rather than picking a line from a state it has not seen yet.
   ///
@@ -2004,7 +2034,7 @@ abstract class AppLocalizations {
   /// Carries a health claim (COMPANION_SOURCES.md I1, I2). A statement about physiology, followed by the sentence that stops it being read as a conclusion about the reader.
   ///
   /// In en, this message translates to:
-  /// **'Heavy bleeding is recorded on several days. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia, which a blood test settles rather than symptoms.'**
+  /// **'Heavy bleeding is recorded on several days. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia. A blood test is what settles it.'**
   String get companionLineHeavyBleeding;
 
   /// Carries a health claim (COMPANION_SOURCES.md P1). Reports what guidance lists rather than telling anyone to do any of it.
@@ -2034,7 +2064,7 @@ abstract class AppLocalizations {
   /// The line PLAN 6.3 is most specific about. A missed period is a data state, not a life event to comment on, and the second sentence is what keeps it one.
   ///
   /// In en, this message translates to:
-  /// **'The predicted window has passed with no period logged. That is a data state, and nothing here guesses at what is behind it.'**
+  /// **'The predicted window has passed with no period logged. That is a data state, and nothing here guesses at the reason.'**
   String get companionLineOverdue;
 
   /// An offer, never a nudge. No streak, no count, and no reason asked for: a gap may be pregnancy, loss, illness, or simply not wanting to think about it.
@@ -2076,7 +2106,7 @@ abstract class AppLocalizations {
   /// Under the screen title. States plainly that these do not reach the model, so nobody expects predictions to improve after entering them.
   ///
   /// In en, this message translates to:
-  /// **'Things that can change your cycle. Recorded so you can read your own history with them in mind — they are not used to work out your predictions.'**
+  /// **'Things that can change your cycle. Recorded so you can read your own history with them in mind. They are not used to work out your predictions.'**
   String get conditionsSubtitle;
 
   /// No description provided for @conditionsEmpty.
@@ -2202,7 +2232,7 @@ abstract class AppLocalizations {
   /// No description provided for @conditionPcos.
   ///
   /// In en, this message translates to:
-  /// **'PCOS'**
+  /// **'PMOS'**
   String get conditionPcos;
 
   /// No description provided for @conditionEndometriosis.
@@ -2247,6 +2277,168 @@ abstract class AppLocalizations {
   /// **'Record long-term things that can change your cycle.'**
   String get settingsConditionsSubtitle;
 
+  /// No description provided for @learnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn'**
+  String get learnTitle;
+
+  /// No description provided for @learnIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes that are intended for your perusal and assistance.'**
+  String get learnIntro;
+
+  /// No description provided for @learnReferenceSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference'**
+  String get learnReferenceSection;
+
+  /// No description provided for @learnYourRecordSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Your record'**
+  String get learnYourRecordSection;
+
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearance;
+
+  /// No description provided for @settingsAppearanceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour scheme and light or dark.'**
+  String get settingsAppearanceSubtitle;
+
+  /// No description provided for @appearanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearanceTitle;
+
+  /// No description provided for @appearanceSchemeSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour scheme'**
+  String get appearanceSchemeSection;
+
+  /// No description provided for @appearanceSchemeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Every scheme here was measured for contrast before it was offered. Pick the one you like.'**
+  String get appearanceSchemeNote;
+
+  /// No description provided for @appearanceThemeSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get appearanceThemeSection;
+
+  /// No description provided for @appearanceThemeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get appearanceThemeSystem;
+
+  /// No description provided for @appearanceThemeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get appearanceThemeLight;
+
+  /// No description provided for @appearanceThemeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get appearanceThemeDark;
+
+  /// No description provided for @appearanceThemeLockedByScheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Night is a dark scheme, so there is nothing to switch here. Pick another scheme to get the choice back.'**
+  String get appearanceThemeLockedByScheme;
+
+  /// No description provided for @appearanceSchemeSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{scheme}, selected'**
+  String appearanceSchemeSelected(String scheme);
+
+  /// No description provided for @appearanceSchemeRose.
+  ///
+  /// In en, this message translates to:
+  /// **'Rose & Plum'**
+  String get appearanceSchemeRose;
+
+  /// No description provided for @appearanceSchemeRoseSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm, soft'**
+  String get appearanceSchemeRoseSubtitle;
+
+  /// No description provided for @appearanceSchemeSage.
+  ///
+  /// In en, this message translates to:
+  /// **'Sage & Apricot'**
+  String get appearanceSchemeSage;
+
+  /// No description provided for @appearanceSchemeSageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Calm, botanical'**
+  String get appearanceSchemeSageSubtitle;
+
+  /// No description provided for @appearanceSchemeLilac.
+  ///
+  /// In en, this message translates to:
+  /// **'Lilac & Sage'**
+  String get appearanceSchemeLilac;
+
+  /// No description provided for @appearanceSchemeLilacSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cool, quiet'**
+  String get appearanceSchemeLilacSubtitle;
+
+  /// No description provided for @appearanceSchemePeriwinkle.
+  ///
+  /// In en, this message translates to:
+  /// **'Periwinkle & Clay'**
+  String get appearanceSchemePeriwinkle;
+
+  /// No description provided for @appearanceSchemePeriwinkleSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft blue, terracotta'**
+  String get appearanceSchemePeriwinkleSubtitle;
+
+  /// No description provided for @appearanceSchemeInk.
+  ///
+  /// In en, this message translates to:
+  /// **'Ink & Ochre'**
+  String get appearanceSchemeInk;
+
+  /// No description provided for @appearanceSchemeInkSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Near-monochrome, discreet'**
+  String get appearanceSchemeInkSubtitle;
+
+  /// No description provided for @appearanceSchemeNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Night'**
+  String get appearanceSchemeNight;
+
+  /// No description provided for @appearanceSchemeNightSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark from the start'**
+  String get appearanceSchemeNightSubtitle;
+
   /// No description provided for @settingsDisplaySection.
   ///
   /// In en, this message translates to:
@@ -2289,6 +2481,30 @@ abstract class AppLocalizations {
   /// **'Show an estimated ovulation range. Worked out from your cycle dates alone, and not accurate enough to plan or avoid pregnancy with.'**
   String get settingsOvulationWindowSubtitle;
 
+  /// No description provided for @settingsLearnTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the Learn tab'**
+  String get settingsLearnTab;
+
+  /// No description provided for @settingsLearnTabSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Off by default. The reference pages are listed here in Settings either way.'**
+  String get settingsLearnTabSubtitle;
+
+  /// No description provided for @settingsCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the companion'**
+  String get settingsCompanion;
+
+  /// No description provided for @settingsCompanionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Off by default. A control at the end of the navigation bar that offers one line about what is already logged.'**
+  String get settingsCompanionSubtitle;
+
   /// No description provided for @settingsPrivacySection.
   ///
   /// In en, this message translates to:
@@ -2310,7 +2526,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsLogViewerSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Everything this app records about itself. Read it: there are no dates or symptoms in here.'**
+  /// **'Everything this app records about itself.'**
   String get settingsLogViewerSubtitle;
 
   /// No description provided for @settingsLogViewerEmpty.
@@ -2349,12 +2565,6 @@ abstract class AppLocalizations {
   /// **'Prediction model {version}'**
   String settingsModelVersion(String version);
 
-  /// No description provided for @settingsAboutBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Built as a personal project. No accounts, no analytics, no network permission.'**
-  String get settingsAboutBody;
-
   /// No description provided for @privacyHeading.
   ///
   /// In en, this message translates to:
@@ -2370,7 +2580,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyOnDeviceBody.
   ///
   /// In en, this message translates to:
-  /// **'This app has no internet permission — a check on every release refuses to build one that asks for it. No account, no sync, no analytics, no crash reporting. Nothing leaves this device unless you export it.'**
+  /// **'This app has no internet permission, and a check on every release refuses to build one that asks for it. There is no account to sign into, no sync, and it collects no analytics or crash reports. What you record stays here until you export it.'**
   String get privacyOnDeviceBody;
 
   /// No description provided for @privacyNotEncryptedTitle.
@@ -2382,13 +2592,13 @@ abstract class AppLocalizations {
   /// No description provided for @privacyNotEncryptedBody.
   ///
   /// In en, this message translates to:
-  /// **'This is the honest limit of what \"private\" means here. Your data sits in this app\'s own storage, which other apps cannot read on a phone that has not been tampered with, and which Android\'s full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock does not encrypt anything: it covers the screen, not the file.'**
+  /// **'Your data sits in this app\'s own storage. Other apps cannot read it on a phone that has not been tampered with, and Android\'s full-device encryption protects it while the phone is switched off. But it is stored as plain text, so anyone who picks up your unlocked phone, or takes a forensic copy of it, can read it. The app lock hides the screen. It does not encrypt the file underneath.'**
   String get privacyNotEncryptedBody;
 
   /// No description provided for @privacyBackupTitle.
   ///
   /// In en, this message translates to:
-  /// **'It is never backed up to the cloud'**
+  /// **'Nothing is backed up to the cloud'**
   String get privacyBackupTitle;
 
   /// No description provided for @privacyBackupBody.
@@ -2418,7 +2628,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyLogsBody.
   ///
   /// In en, this message translates to:
-  /// **'This app keeps a short log of what it did, such as \"a prediction was computed\" with a count of cycles. It is structurally incapable of recording a date, a flow level or a symptom. You can read it and clear it in Settings.'**
+  /// **'This app keeps a short log of what it did, such as \"a prediction was computed\" with a count of cycles. You can read it and clear it in Settings.'**
   String get privacyLogsBody;
 
   /// No description provided for @privacyExportTitle.
@@ -2442,7 +2652,7 @@ abstract class AppLocalizations {
   /// No description provided for @bootstrapRecoveredBody.
   ///
   /// In en, this message translates to:
-  /// **'The stored file was damaged, so this app started with an empty one. The damaged file has been kept, not deleted. If you have a backup, restoring it now is the best way forward.'**
+  /// **'The stored file was damaged, so this app started with an empty one. The damaged file is still on the device. If you have a backup, restoring it now is the best way forward.'**
   String get bootstrapRecoveredBody;
 
   /// No description provided for @bootstrapRecoveredAction.

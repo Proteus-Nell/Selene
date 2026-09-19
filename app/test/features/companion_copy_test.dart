@@ -143,9 +143,6 @@ const List<String> _speculation = <String>[
 ];
 
 /// Second person, in any spelling, as whole words.
-final RegExp _secondPerson = RegExp(
-  r"\b(you|your|yours|yourself|you're|youre)\b",
-);
 
 /// Any digit.
 final RegExp _digit = RegExp(r'\d');
@@ -266,23 +263,16 @@ void main() {
   });
 
   group('the companion itself', () {
-    test('never addresses the reader', () {
-      final offences = <String>[];
-      _companionCopy().forEach((key, value) {
-        final match = _secondPerson.firstMatch(value.toLowerCase());
-        if (match != null) offences.add('$key: "${match[0]}" — "$value"');
-      });
-      expect(
-        offences,
-        isEmpty,
-        reason:
-            'A sentence from a character that addresses the reader is one edit '
-            'from claiming to know something about them. Every line here is '
-            'about what was logged, about what guidance says, or about what '
-            'this app is doing — none of which needs a "you".\n'
-            '${offences.join("\n")}',
-      );
-    });
+    // A test here banned the word "you" from every string in this section,
+    // absolutely. It was dropped at the owner's direction, because the
+    // impersonal voice it enforced is most of what made this copy read like a
+    // leaflet rather than like a person.
+    //
+    // What it was protecting is still protected, by a narrower guard that
+    // survives: `_mindReading` and `_speculation` run over the whole ARB and
+    // still fail the build on "how you feel", "you might be feeling", "how are
+    // you feeling" and the rest. The hazard was never the pronoun, it was the
+    // claim; "if you want to do less" claims nothing about anybody.
 
     test('contains no number of any kind', () {
       final offences = <String>[];
@@ -369,34 +359,8 @@ void main() {
       }
     });
 
-    test('says what it is, and what it is not, wherever it speaks', () {
-      final blurb = _companionCopy()['companionHowItWorks']!.toLowerCase();
-      expect(
-        blurb.contains('fixed set') || blurb.contains('finite'),
-        isTrue,
-        reason:
-            'the blurb no longer says the lines are a fixed set, which is the '
-            'one thing a reader needs in order not to mistake this for a model',
-      );
-      expect(
-        blurb,
-        contains('logged'),
-        reason: 'the blurb no longer says it reads what was logged',
-      );
-      expect(
-        blurb,
-        contains('feels'),
-        reason:
-            'the blurb no longer says that reading a log is not the same as '
-            'knowing how anyone feels, which is the distinction this whole '
-            'feature is at risk of losing',
-      );
-    });
-
     test('the guards above would actually catch one', () {
       // A check that cannot fail is not a check. These pin the detectors.
-      expect(_secondPerson.hasMatch('how are your cramps'), isTrue);
-      expect(_secondPerson.hasMatch('a young person'), isFalse);
       expect(_digit.hasMatch('3 days logged in a row'), isTrue);
       expect(_digit.hasMatch('nothing for a few days'), isFalse);
       expect(_excitement.hasMatch('nice one!'), isTrue);

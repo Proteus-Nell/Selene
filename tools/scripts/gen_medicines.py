@@ -90,12 +90,14 @@ SECTIONS: tuple[tuple[str, str], ...] = (
 
 # openFDA asks that this notice travel with the data.
 #
-# Marked [VERIFY] because the exact wording has not been read off their terms
-# page — the same convention PLAN.md uses for the priors figures and
-# NUTRITION_SOURCES.md uses for its claims. Clearing the marker means opening
-# https://open.fda.gov/terms/ and confirming this is what it says.
+# [VERIFY] the exact wording against https://open.fda.gov/terms/ before
+# release. The marker lives in this comment and NOT in the string, because the
+# string is rendered at the foot of the lookup screen: it shipped reading
+# "[VERIFY] Data from openFDA..." to every user who opened it, which is a note
+# to a developer showing up in an app. A marker that is visible to the reader
+# is not a marker, it is a defect.
 DISCLAIMER = (
-    "[VERIFY] Data from openFDA. This information comes from US drug "
+    "Data from openFDA. This information comes from US drug "
     "labelling and has not been evaluated for use outside the United States. "
     "It is not a substitute for advice from a doctor or pharmacist."
 )

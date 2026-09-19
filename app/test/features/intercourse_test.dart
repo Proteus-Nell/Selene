@@ -85,6 +85,31 @@ void main() {
       expect(await db.dayLogDao.allLogs(), isEmpty);
     });
 
+    testWidgets('clearing it on a day that records flow as well leaves the '
+        'day and clears the field', (tester) async {
+      // The other clearing test empties the day, so the row is deleted and the
+      // write never has to set the field back to null. This one keeps the row,
+      // which is the ordinary case: someone logs their flow first and records
+      // this afterwards. Both taps go through the UI because that is where it
+      // was reported — the chip would not let go.
+      await pumpLog(tester);
+      final l10n = l10nOf(tester);
+      await tapChip(tester, l10n.logFlowMedium);
+
+      final label = l10n.logIntercourseProtected;
+      await tapChip(tester, label);
+      expect(
+        (await db.dayLogDao.allLogs()).single.intercourse,
+        Intercourse.protected,
+      );
+
+      await tapChip(tester, label);
+      final logs = await db.dayLogDao.allLogs();
+      expect(logs, hasLength(1));
+      expect(logs.single.flow, FlowIntensity.medium);
+      expect(logs.single.intercourse, isNull);
+    });
+
     testWidgets('switching between the two answers replaces rather than adds', (
       tester,
     ) async {
@@ -107,7 +132,7 @@ void main() {
       await pumpLog(tester);
       final hint = l10nOf(tester).logIntercourseHint.toLowerCase();
       expect(hint, contains('optional'));
-      expect(hint, contains('never used for predictions'));
+      expect(hint, contains('not used for predictions'));
     });
 
     testWidgets('offers no third "not recorded" option', (tester) async {

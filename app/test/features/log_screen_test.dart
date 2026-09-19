@@ -182,8 +182,7 @@ void main() {
       // unless it is needed.
       await pumpLog(tester);
       final l10n = l10nOf(tester);
-      await tester.tap(find.text(l10n.logPeriodStartedToday));
-      await tester.pumpAndSettle();
+      await tapReachable(tester, find.text(l10n.logPeriodStartedToday));
       expect(find.text(l10n.commonUndo), findsOneWidget);
 
       await tester.tap(find.text(l10n.commonUndo));
@@ -197,8 +196,7 @@ void main() {
       await pumpLog(tester);
       final l10n = l10nOf(tester);
       expect(find.text(l10n.logPeriodStartedToday), findsOneWidget);
-      await tester.tap(find.text(l10n.logDayYesterday));
-      await tester.pumpAndSettle();
+      await tapReachable(tester, find.text(l10n.logDayYesterday));
       expect(find.text(l10n.logPeriodStartedToday), findsNothing);
       expect(
         find.text(l10n.logPeriodStartedOnDay(l10n.logDayYesterday)),

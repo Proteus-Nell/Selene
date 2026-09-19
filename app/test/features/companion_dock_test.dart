@@ -40,6 +40,7 @@ class _Shell extends StatelessWidget {
     return Scaffold(
       body: const Placeholder(key: ValueKey<String>('body')),
       bottomNavigationBar: CompanionDock(
+        showCompanion: true,
         navigationBar: NavigationBar(
           destinations: <NavigationDestination>[
             NavigationDestination(
@@ -181,30 +182,12 @@ void main() {
       );
     });
 
-    testWidgets('points at the sources only under a claim it has to back', (
-      tester,
-    ) async {
-      await pumpShell(tester, line: CompanionLine.cramps);
-      await tester.tap(find.byType(CompanionButton));
-      await tester.pumpAndSettle();
-      expect(find.text(l10nOf(tester).companionSourcesNote), findsOneWidget);
-    });
-
-    testWidgets('and not under one that claims nothing', (tester) async {
-      // Printing the citation note under "nothing to point at" would suggest
-      // that sentence had a source too. The split is the point.
-      await pumpShell(tester, line: CompanionLine.nothingToPointAt);
-      await tester.tap(find.byType(CompanionButton));
-      await tester.pumpAndSettle();
-      expect(find.text(l10nOf(tester).companionSourcesNote), findsNothing);
-    });
-
-    testWidgets('says what it is every time it speaks', (tester) async {
-      await pumpShell(tester, line: CompanionLine.overdue);
-      await tester.tap(find.byType(CompanionButton));
-      await tester.pumpAndSettle();
-      expect(find.text(l10nOf(tester).companionHowItWorks), findsOneWidget);
-    });
+    // Two tests here checked that the citation note appeared under a line
+    // carrying a health claim and not under one claiming nothing. That note
+    // named a file in the source repository and was removed at the owner's
+    // direction, so there is no longer a note to place or withhold.
+    // `CompanionLine.carriesHealthClaim` still exists and is still asserted
+    // in `companion_sources_test.dart`, which is where the split is now held.
 
     testWidgets('reads the user own state rather than a fixed answer', (
       tester,

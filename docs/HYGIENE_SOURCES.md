@@ -52,15 +52,6 @@ reference reading; that line is the one someone might act on within the hour.
 
 ---
 
-## Tampons
-
-| # | Claim | Source | Status |
-| --- | --- | --- | --- |
-| P1 | Tampons are regulated by the FDA as medical devices rather than as drugs. | FDA, *Tampons and Asbestos, Dioxin, & Toxic Shock Syndrome* | **[VERIFY]** |
-| P2 | Absorbency is standardised and labelled, so the same rating means the same thing across brands. | FDA, *The Facts on Tampons* | **[VERIFY]** |
-
----
-
 ## Menstrual cups
 
 | # | Claim | Source | Status |

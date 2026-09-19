@@ -57,6 +57,7 @@ The `app/` Flutter component of Period-Tracker, split into independently prompta
 | [AND-36](#and-36-pain-and-movement-across-the-cycle) | Pain and movement across the cycle | AND-35 | 1 |
 | [AND-37](#and-37-the-companion) | The companion | AND-34, AND-36 | 1 |
 | [AND-38](#and-38-the-launcher-icon-is-the-supplied-logo) | The launcher icon is the supplied logo | AND-34 | 0.25 |
+| [AND-39](#and-39-the-ui-overhaul-and-six-colour-schemes) | The UI overhaul and six colour schemes | AND-34, AND-37 | 1 |
 | **Tier B (optional, may never be built)** | | | |
 | [AND-20](#and-20-kotlin-executorch-channel) | Kotlin ExecuTorch platform channel | AND-19 | 2-3 |
 | [AND-21](#and-21-on-device-trainer-and-gate) | On-device trainer and the per-user gate | AND-20 | 2-3 |
@@ -2190,6 +2191,90 @@ plain drawable, and 36KB is not worth the argument.
 ten files from the source art, so a palette change or a new density is a script
 run rather than a redraw. The thing in version control is the artwork plus the
 rule for placing it.
+
+### AND-39 The UI overhaul and six colour schemes
+
+**Depends on:** AND-34, AND-37 · **Est:** 1 session
+
+**Goal.** Rebuild the home screen around the cycle itself, and let the user
+choose what the app looks like.
+
+**Scope.** Six measured colour schemes and a light/dark control, both stored as
+settings; a new home screen built from a phase ring, a week strip and the
+prediction; a fifth tab collecting the reference pages. **No schema change, no
+new dependency, no new health claim.**
+
+**Done when.**
+- [x] Six schemes, choosable in Settings, applied on the next frame rather than the next launch
+- [x] `theme_test.dart` recomputes every contrast ratio for all eleven palettes, not only the default
+- [x] A stored scheme name this build does not have opens in the default rather than throwing
+- [x] The home screen leads with the cycle ring, the day of the cycle and the prediction, in that order
+- [x] The countdown is derived from the 80% window and is always a range
+- [x] The ovulation band appears only once the user has opted in, and is a slice of the follicular phase rather than an extra one
+- [x] Cards are reserved for what can be acted on; informational blocks sit flat on the page
+- [x] A Learn tab collects the four reference pages and the conditions record
+- [x] Every tap budget in 2.4.2 still holds at 100%, 150% and 200% text scale
+
+**Eleven palettes are gated, not one.** A scheme picker is the cheapest way to
+ship an accessibility regression: the default gets measured, the other five get
+eyeballed, and one of them fails 4.5:1 for the users who chose it.
+`theme_test.dart` therefore loops over `AppScheme.values` and recomputes every
+pair — text on both grounds, control against surface, each phase mark against
+both — so a colour cannot be added or nudged without the suite recomputing it.
+The numbers themselves live in `lib/core/palette.dart` as plain constants for
+the same reason: a tone generated at runtime is a tone no test can pin.
+
+**Night forces dark, and says so.** It is the one scheme with no light half —
+that is what "designed dark rather than inverted" means — so the theme control
+would be a switch that does nothing. It is disabled with a sentence beside it
+instead. `AppScheme.forcesDark` and the palettes it holds are asserted against
+each other, because the failure mode is a scheme that silently ignores the
+control.
+
+**The countdown is where 6.2 would have eroded.** The middle of the ring is the
+largest and shortest thing on the home screen, which makes it exactly where "in
+3 days" wants to appear. It is derived from `window80` and never from
+`medianStart`, it is always a range, and `today_hero_test.dart` fails if it ever
+renders without one. The prediction underneath is `NextPeriodPanel` verbatim
+rather than a second layout, for the reason that widget already gives: the
+everyday form of overclaiming is a second screen presenting the same thing a
+little more confidently.
+
+**The ring has an ovulation band, which makes it a new way ADR-0007 could
+leak.** It is drawn only when `showOvulationWindow` is set, it defaults to
+absent for the frame before the preference has loaded, and it is subtracted from
+the follicular phase rather than added to the cycle — otherwise turning it on
+would shrink the phases either side to make room for an estimate. All three are
+pinned.
+
+**The phase colours are marks, and one of them proved it.** They are gated at
+3:1 as graphical objects. The ring's phase line was painted in the current
+phase's colour, which made a mark into text: Rose & Plum's follicular pink
+reaches 3.51 against its surface, fine for a ten-pixel arc and not for eleven-
+pixel bold caps. It is painted in `primary` now, which is gated at 4.5 for this
+reason, and the phase colours are documented as never being used for text.
+
+**The ring gives way to its own text above 1.35× scale.** A circle is a fixed
+box and text inside one is not. Rather than shrinking the words to fit, the ring
+is dropped and the lines that were inside it stay — which is the right way round,
+because the ring never carried anything the words did not: the phase and the day
+are written in the middle, the legend names every band, and the prediction is
+stated underneath.
+
+**The home screen builds all of itself.** It was a `ListView`, and a lazy list
+builds only what is near the viewport. With the ring above them the primary
+action and the day editor fell outside it, which means they did not exist until
+somebody scrolled — not for a screen reader and not for the tap-budget tests
+either. It is a `SingleChildScrollView` over a `Column` now. The content is
+bounded, so building all of it costs nothing worth having.
+
+**The reference pages were filed under two screens that were not about them.**
+Hygiene, nutrition and conditions sat behind Settings; body composition and
+movement behind Insights. None of those are settings and none are insights, so
+a user looking for what the app says about iron had to guess. They are one tab
+now. The existing routes into them are left alone: a second way in is not a
+defect, and removing them would be a change to screens this task did not
+otherwise touch.
 
 ---
 

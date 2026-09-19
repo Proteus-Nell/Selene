@@ -77,18 +77,11 @@ void main() {
       expect(find.text(l10nOf(tester).hygieneTamponsTitle), findsOneWidget);
     });
 
-    testWidgets('marks the curated entries as curated', (tester) async {
-      // The provenance distinction, on screen. These are our words; the
-      // medicines are a regulator's.
-      await pump(tester);
-      final note = l10nOf(tester).lookupCuratedNote.toLowerCase();
-      expect(find.text(l10nOf(tester).lookupCuratedNote), findsOneWidget);
-      expect(
-        note,
-        contains("not a regulator's own wording"),
-        reason: 'the screen no longer distinguishes curated from sourced text',
-      );
-    });
+    // A test here used to assert that the hygiene entries were marked as
+    // this app's own words rather than a regulator's. The note carrying that
+    // distinction was removed at the owner's direction, along with the four
+    // others that named a source file, so there is nothing left on screen for
+    // it to check.
   });
 
   group('toxic shock syndrome', () {

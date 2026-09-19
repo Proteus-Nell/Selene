@@ -75,10 +75,10 @@ section is not allowed to be.
 
 | # | Claim | Source | Status |
 | --- | --- | --- | --- |
-| E1 | The hypothalamus releases GnRH in pulses, and that pulsatility is what drives LH and FSH release from the pituitary. | StatPearls, *Physiology, Gonadotropin-Releasing Hormone* | **[VERIFY]** |
-| E2 | Low energy availability suppresses GnRH pulsatility; LH and FSH fall, ovulation stops, and menstruation stops with it. This is functional hypothalamic amenorrhoea. | Endocrine Society, *Functional Hypothalamic Amenorrhea: An Endocrine Society Clinical Practice Guideline* | **[VERIFY]** |
-| E3 | Energy availability is dietary energy intake less the energy expended in exercise, measured against what the body needs; it is not a body weight and it is not a reading from a scale. | Endocrine Society, *Functional Hypothalamic Amenorrhea* clinical practice guideline; ACOG Committee Opinion, *Female Athlete Triad* | **[VERIFY]** |
-| E4 | Functional hypothalamic amenorrhoea occurs in people whose body weight is unremarkable, and heavy training, illness or sustained psychological stress can produce it with no fall in body weight at all. | Endocrine Society, *Functional Hypothalamic Amenorrhea* clinical practice guideline | **[VERIFY]** |
+| E1 | The brain signals the ovaries through a hormone released in regular pulses, and that rhythm is what drives the two pituitary hormones the ovaries answer to. | StatPearls, *Physiology, Gonadotropin-Releasing Hormone* | **[VERIFY]** |
+| E2 | When energy availability is low that rhythm is suppressed, the pituitary hormones fall, ovulation stops and menstruation stops with it. This is functional hypothalamic amenorrhoea. | Endocrine Society, *Functional Hypothalamic Amenorrhea: An Endocrine Society Clinical Practice Guideline* | **[VERIFY]** |
+| E3 | Energy availability is the energy left over from food once exercise has taken its share, set against what the body needs; it is not a body weight and it is not a reading from a scale. | Endocrine Society, *Functional Hypothalamic Amenorrhea* clinical practice guideline; ACOG Committee Opinion, *Female Athlete Triad* | **[VERIFY]** |
+| E4 | This happens to people whose body weight is unremarkable, and heavy training, illness or sustained stress can bring it on with no fall in body weight at all. | Endocrine Society, *Functional Hypothalamic Amenorrhea* clinical practice guideline | **[VERIFY]** |
 
 E3 and E4 are the load-bearing pair. Without them this section reads as a
 statement about a number on a scale, which is both wrong and the single most
@@ -96,17 +96,25 @@ harmful thing this reference could be mistaken for.
 
 ---
 
-## PCOS
+## PMOS
 
 | # | Claim | Source | Status |
 | --- | --- | --- | --- |
-| P1 | Polycystic ovary syndrome is characterised by androgen excess together with irregular or absent ovulation. | ACOG, *Polycystic Ovary Syndrome* (Practice Bulletin); Endocrine Society, *Polycystic Ovary Syndrome* clinical practice guideline | **[VERIFY]** |
-| P2 | Insulin resistance is common in PCOS and contributes to the androgen excess. | Endocrine Society, *Polycystic Ovary Syndrome* clinical practice guideline; MSD Manual (Professional), *Polycystic Ovary Syndrome* | **[VERIFY]** |
-| P3 | PCOS occurs across the whole weight spectrum, in people who are thin as well as in people who are not. | ACOG, *Polycystic Ovary Syndrome* (Practice Bulletin); Endocrine Society, *Polycystic Ovary Syndrome* clinical practice guideline | **[VERIFY]** |
+| P1 | Polyendocrine metabolic ovarian syndrome (PMOS), formerly polycystic ovary syndrome, is characterised by androgen excess together with irregular or absent ovulation. | ACOG, *Polycystic Ovary Syndrome* (Practice Bulletin); Endocrine Society, *Polycystic Ovary Syndrome* clinical practice guideline | **[VERIFY]** |
+| P2 | Insulin resistance is common in PMOS and contributes to the androgen excess. | Endocrine Society, *Polycystic Ovary Syndrome* clinical practice guideline; MSD Manual (Professional), *Polycystic Ovary Syndrome* | **[VERIFY]** |
+| P3 | PMOS occurs across the whole weight spectrum, in people who are thin as well as in people who are not. | ACOG, *Polycystic Ovary Syndrome* (Practice Bulletin); Endocrine Society, *Polycystic Ovary Syndrome* clinical practice guideline | **[VERIFY]** |
+
+The sources cited on P1 to P3 predate the rename and are titled *Polycystic
+Ovary Syndrome*. That is expected rather than a mismatch: the condition was
+renamed to polyendocrine metabolic ovarian syndrome in 2026, by a consensus
+process the Endocrine Society took part in, because most people diagnosed with
+it do not have ovarian cysts. Anyone verifying these claims should expect the
+old name on the page they open, and the app names the old one once so a reader
+who knows it can still find themselves in the text.
 
 P3 must be said, and `weight_copy_test.dart` fails if it stops being said. The
 opposite impression is widespread and it is false; it is one of the reasons the
-condition goes unrecognised, and a reference that named PCOS in a section about
+condition goes unrecognised, and a reference that named PMOS in a section about
 body composition while leaving it out would be actively reinforcing the error.
 
 ---

@@ -37,8 +37,8 @@ const Map<CompanionLine, String> everythingItCanSay = <CompanionLine, String>{
       'logged.',
   CompanionLine.heavyBleeding:
       'Heavy bleeding is recorded on several days. Heavy menstrual bleeding is '
-      'a recognised cause of iron deficiency anaemia, which a blood test '
-      'settles rather than symptoms.',
+      'a recognised cause of iron deficiency anaemia. A blood test is what '
+      'settles it.',
   CompanionLine.cramps:
       'Cramps are recorded for today. Guidance on period pain lists heat, '
       'painkillers and exercise among the measures that may help.',
@@ -53,7 +53,7 @@ const Map<CompanionLine, String> everythingItCanSay = <CompanionLine, String>{
       'guidance behind this app as a reason to stop moving.',
   CompanionLine.overdue:
       'The predicted window has passed with no period logged. That is a data '
-      'state, and nothing here guesses at what is behind it.',
+      'state, and nothing here guesses at the reason.',
   CompanionLine.nothingLoggedRecently:
       'Nothing has been logged for a few days. The log is on the first tab, '
       'whenever there is something to put in it.',

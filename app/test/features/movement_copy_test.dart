@@ -136,9 +136,6 @@ final Map<String, RegExp> _trainingVocabulary = <String, RegExp>{
 /// Applied only to the `movement*` strings, and there it is absolute. Matched
 /// on word boundaries so "young" and "your" are told apart, and so a rename
 /// that buried "you" inside a longer word does not slip through.
-final RegExp _secondPerson = RegExp(
-  r"\b(you|your|yours|yourself|you're|youre)\b",
-);
 
 /// Any digit.
 final RegExp _digit = RegExp(r'\d');
@@ -237,29 +234,16 @@ void main() {
   });
 
   group('the reference itself', () {
-    test('never once addresses the reader', () {
-      // The single most important constraint on this section. There is nothing
-      // on this page that needs a second person: it is reference text about
-      // pain, movement and the state of the evidence, shown to somebody
-      // tracking a cycle. The moment it says "you", it is making a claim about
-      // a body it has never seen — and on this subject the friendliest phrasing
-      // ("listen to your body", "rest when you need to") is exactly the one
-      // that does it.
-      final offences = <String>[];
-      _movementCopy().forEach((key, value) {
-        final match = _secondPerson.firstMatch(value.toLowerCase());
-        if (match != null) offences.add('$key: "${match[0]}" — "$value"');
-      });
-      expect(
-        offences,
-        isEmpty,
-        reason:
-            'A sentence about pain or exertion that addresses the reader is a '
-            'claim about their body, or an instruction to it. This section '
-            'describes a subject and is not allowed to describe '
-            'anyone.\n${offences.join("\n")}',
-      );
-    });
+    // A test here banned the word "you" from every string in this section,
+    // absolutely. It was dropped at the owner's direction, because the
+    // impersonal voice it enforced is most of what made this copy read like a
+    // leaflet rather than like a person.
+    //
+    // What it was protecting is still protected, by a narrower guard that
+    // survives: `_mindReading` and `_speculation` run over the whole ARB and
+    // still fail the build on "how you feel", "you might be feeling", "how are
+    // you feeling" and the rest. The hazard was never the pronoun, it was the
+    // claim; "if you want to do less" claims nothing about anybody.
 
     test('contains no number of any kind', () {
       // A digit here is one of two things and neither is allowed: a training
@@ -303,13 +287,6 @@ void main() {
 
     test('the guards above would actually catch one', () {
       // A check that cannot fail is not a check. These pin the detectors.
-      expect(_secondPerson.hasMatch('listen to your body'), isTrue);
-      expect(_secondPerson.hasMatch('rest when you need to'), isTrue);
-      expect(
-        _secondPerson.hasMatch('exercise may reduce menstrual pain'),
-        isFalse,
-      );
-      expect(_secondPerson.hasMatch('a young person'), isFalse);
       expect(_digit.hasMatch('30 minutes of light cardio'), isTrue);
       expect(_digit.hasMatch('how hard a given effort seems'), isFalse);
       expect(_trainingVocabulary['train']!.hasMatch('train harder'), isTrue);
@@ -342,24 +319,17 @@ void main() {
       );
     });
 
-    test('says up front that there is no plan here', () {
-      // The first thing a reader who came looking for a schedule should learn,
-      // because the popular version of this subject is nothing but schedules.
-      final body = _movementCopy()['movementNothingToFollowBody']!
-          .toLowerCase();
-      expect(
-        body,
-        contains('nothing to enter'),
-        reason: 'the section no longer says there is nothing to fill in',
-      );
-      expect(
-        body.contains('no plan') || body.contains('to follow'),
-        isTrue,
-        reason:
-            'the section no longer says there is no plan on the page, which is '
-            'what separates a reference from a programme',
-      );
-    });
+    // `movementNothingToFollowBody` was removed at the owner's direction, and
+    // the test that pinned it went with it. It was the callout above the first
+    // section saying the app records no exercise and the page holds no plan,
+    // and it was aimed at the reader who arrives expecting to be told what to
+    // do. Nothing now states that claim.
+    //
+    // The guards that remain are the ones that scan the whole ARB: no
+    // prescription vocabulary, no intensity, no figure of any kind in this
+    // section, and the phase-based claims still have to be called weak out
+    // loud. Those still hold. What is gone is the section saying outright that
+    // it is not going to tell anyone what to do.
 
     test('says that a period is not a reason to stop', () {
       // The correction this whole section exists for. It was requested as
@@ -374,30 +344,11 @@ void main() {
             'the section no longer says that no source names menstruation as a '
             'reason to stop, which is the claim it was written to make',
       );
-      expect(
-        body,
-        contains('help'),
-        reason:
-            'the section no longer says guidance lists exercise among the '
-            'things that may help with period pain, so all that is left is an '
-            'absence, which reads as a shrug',
-      );
-    });
-
-    test('the exercise evidence is stated at its real strength', () {
-      // The claim most likely to be strengthened by a well-meaning edit.
-      // "Exercise helps period pain" is a better sentence than "low quality
-      // evidence that exercise may reduce pain", and it is not the true one.
-      final body = _movementCopy()['movementEvidenceBody']!.toLowerCase();
-      expect(body, contains('cochrane'));
-      expect(
-        body.contains('low quality') || body.contains('low-quality'),
-        isTrue,
-        reason:
-            'the evidence paragraph no longer says the reviewers rated the '
-            'evidence low quality, so it now overclaims in the direction it '
-            'happens to prefer',
-      );
+      // The "and guidance says exercise may help" half of this used to be
+      // asserted here too. M1 and M2 were dropped from the sources file at the
+      // owner's direction, so the section makes no positive claim left to
+      // check: what it says now is that no source names menstruation as a
+      // reason to stop, and nothing beyond that.
     });
 
     test('rest is offered as a permission and not as an instruction', () {

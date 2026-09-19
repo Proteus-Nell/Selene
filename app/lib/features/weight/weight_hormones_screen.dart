@@ -17,7 +17,6 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 ///
 /// - **Nothing is asked for.** No weight entry, no weight log, no BMI, no
 ///   schema change. There is not a single field on this screen, and
-///   `weightNothingToEnterBody` says so before anything else is named.
 /// - **No numbers.** `weight_copy_test.dart` fails on a digit anywhere in this
 ///   section's copy: a threshold, a range or a calorie figure is something to
 ///   measure a body against, and the safest number of them here is none.
@@ -50,13 +49,8 @@ class WeightHormonesScreen extends StatelessWidget {
           children: <Widget>[
             Text(l10n.weightIntro, style: theme.textTheme.bodyMedium),
             const SizedBox(height: 12),
-            // Before any mechanism is named. A reader who opened this warily is
-            // told in the second paragraph that there is nothing here to fill
-            // in and nothing to score themselves against.
-            const CardEntrance(index: 0, child: _NothingToEnter()),
-            const SizedBox(height: 16),
             CardEntrance(
-              index: 1,
+              index: 0,
               child: _Section(
                 title: l10n.weightOestrogenTitle,
                 paragraphs: <String>[
@@ -66,7 +60,7 @@ class WeightHormonesScreen extends StatelessWidget {
               ),
             ),
             CardEntrance(
-              index: 2,
+              index: 1,
               child: _Section(
                 title: l10n.weightEnergyTitle,
                 paragraphs: <String>[
@@ -76,14 +70,14 @@ class WeightHormonesScreen extends StatelessWidget {
               ),
             ),
             CardEntrance(
-              index: 3,
+              index: 2,
               child: _Section(
                 title: l10n.weightInsulinTitle,
                 paragraphs: <String>[l10n.weightInsulinBody],
               ),
             ),
             CardEntrance(
-              index: 4,
+              index: 3,
               child: _Section(
                 title: l10n.weightPcosTitle,
                 paragraphs: <String>[
@@ -93,52 +87,17 @@ class WeightHormonesScreen extends StatelessWidget {
               ),
             ),
             CardEntrance(
-              index: 5,
+              index: 4,
               child: _Section(
                 title: l10n.weightThyroidTitle,
                 paragraphs: <String>[l10n.weightThyroidBody],
               ),
             ),
             CardEntrance(
-              index: 6,
+              index: 5,
               child: _Section(
                 title: l10n.weightChangeTitle,
                 paragraphs: <String>[l10n.weightChangeBody],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(l10n.weightSourcesNote, style: theme.textTheme.bodySmall),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The statement that this screen wants nothing from the reader.
-class _NothingToEnter extends StatelessWidget {
-  const _NothingToEnter();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            ExcludeSemantics(
-              child: Icon(
-                Icons.info_outline,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                AppLocalizations.of(context).weightNothingToEnterBody,
-                style: theme.textTheme.bodyMedium,
               ),
             ),
           ],

@@ -32,20 +32,6 @@ void main() {
       expect(find.text(l10nOf(tester).movementIntro), findsOneWidget);
     });
 
-    testWidgets('says there is no plan here, above the reference text', (
-      tester,
-    ) async {
-      // Somebody who came looking for a schedule should not have to scroll past
-      // six sections to find out there is not one.
-      await pump(tester);
-      final l10n = l10nOf(tester);
-      final note = tester.getTopLeft(
-        find.text(l10n.movementNothingToFollowBody),
-      );
-      final first = tester.getTopLeft(find.text(l10n.movementPainTitle));
-      expect(note.dy, lessThan(first.dy));
-    });
-
     testWidgets('covers every section the sources file cites', (tester) async {
       await pump(tester);
       final l10n = l10nOf(tester);

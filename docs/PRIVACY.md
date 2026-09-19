@@ -16,13 +16,13 @@ is only defensible if the user is told about it.
 
 ### Everything stays on this phone
 
-This app has no internet permission — a check on every release refuses to build one that asks for it. No account, no sync, no analytics, no crash reporting. Nothing leaves this device unless you export it.
+This app has no internet permission, and a check on every release refuses to build one that asks for it. There is no account to sign into, no sync, and it collects no analytics or crash reports. What you record stays here until you export it.
 
 ### The database is not encrypted
 
-This is the honest limit of what "private" means here. Your data sits in this app's own storage, which other apps cannot read on a phone that has not been tampered with, and which Android's full-device encryption protects while the phone is switched off. But it is stored as plain text. Anyone who picks up your unlocked phone, or who takes a forensic copy of it, can read it. The app lock does not encrypt anything: it covers the screen, not the file.
+Your data sits in this app's own storage. Other apps cannot read it on a phone that has not been tampered with, and Android's full-device encryption protects it while the phone is switched off. But it is stored as plain text, so anyone who picks up your unlocked phone, or takes a forensic copy of it, can read it. The app lock hides the screen. It does not encrypt the file underneath.
 
-### It is never backed up to the cloud
+### Nothing is backed up to the cloud
 
 Android's automatic backup is switched off for this app, so your cycle history is never copied to a Google account. If you lose the phone, the data is gone unless you exported it.
 
@@ -32,7 +32,7 @@ Deleting a day removes the row. Deleting everything removes every row and then r
 
 ### The activity log holds no cycle content
 
-This app keeps a short log of what it did, such as "a prediction was computed" with a count of cycles. It is structurally incapable of recording a date, a flow level or a symptom. You can read it and clear it in Settings.
+This app keeps a short log of what it did, such as "a prediction was computed" with a count of cycles. You can read it and clear it in Settings.
 
 ### Exports are yours to look after
 

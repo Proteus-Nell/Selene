@@ -204,12 +204,16 @@ void main() {
     // removes because the section reads fine without it. It does not: without
     // them the page is either an instruction to exercise or an instruction to
     // rest, and it is not allowed to be either.
+    //
+    // M1 and M2 were on this list and are not any more. They were the two
+    // positive claims — that guidance lists exercise among the measures that
+    // may help, and the Cochrane review stated at its real strength — and both
+    // were dropped from the sources file at the owner's direction. A row that
+    // no longer exists cannot be guarded, so they come off the list rather
+    // than fail it. What that costs is worth writing down: the page no longer
+    // says exercise helps, only that nothing tells anyone to stop.
     final sources = _sources();
     const why = <String, String>{
-      'M1':
-          'clinical guidance lists exercise among the things that may help '
-          'with period pain — the claim that replaces "avoid exercising"',
-      'M2': 'the Cochrane review, stated at its real strength',
       'M3': 'no source in the register names menstruation as a reason to stop',
       'E1':
           'the evidence behind phase-based schemes is low quality and '
@@ -310,10 +314,10 @@ void main() {
     );
   });
 
-  test('the screen points the reader at the sources file', () {
-    // Otherwise "cited" means "cited somewhere the user cannot get to".
-    final note = _movementCopy()['movementSourcesNote'];
-    expect(note, isNotNull);
-    expect(note!.toUpperCase(), contains('MOVEMENT_SOURCES'));
-  });
+  // The line that used to sit here pointed the reader at a file in the
+  // source repository by name. It was removed at the owner's direction:
+  // a filename is not somewhere a reader can go from a phone, so it
+  // read as provenance without being any. The claims are still listed
+  // with their sources in this file; what is gone is the app telling
+  // the reader so.
 }
