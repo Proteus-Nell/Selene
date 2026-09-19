@@ -114,6 +114,12 @@ class DayLogDao extends DatabaseAccessor<AppDatabase> with _$DayLogDaoMixin {
   /// This is why the whole day goes through one place. A save replaces the
   /// day, so every column has to be named on every write, and a column added
   /// later that is missed here would fail the same silent way.
+  ///
+  /// Args:
+  ///     log (DayLog): The day to describe.
+  ///
+  /// Returns:
+  ///     DayLogsCompanion: Every column of the row, each one present.
   DayLogsCompanion _rowFor(DayLog log) => DayLogsCompanion(
     epochDay: Value<int>(log.date.epochDay),
     flow: Value<FlowIntensity>(log.flow),
