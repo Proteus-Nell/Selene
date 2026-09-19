@@ -9,6 +9,17 @@
 // drifted from the artifact, which is what keeps the two sides of ADR-0002
 // honest.
 
+/// Bundled population priors.
+///
+/// Carries the fitted priors the prediction filter starts from, compiled in as
+/// Dart constants rather than parsed from an asset, plus the checksum of the
+/// artifact they came from.
+///
+/// Includes:
+///     - priorsArtifactSha256: Checksum of the source artifact.
+///     - bundledPriors: The priors themselves.
+library;
+
 import 'package:period_tracker/domain/predict/priors.dart';
 
 /// SHA-256 of the `priors_v1.json` these constants were generated from.

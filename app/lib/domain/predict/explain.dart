@@ -1,3 +1,21 @@
+/// Prediction explanations.
+///
+/// Builds the plain-language rationale that accompanies every prediction, as
+/// four separate lines plus a list of structured notes. The notes are the
+/// model's reasoning and survive translation; the text is a default rendering.
+///
+/// Pipeline:
+///     1. Decide whether the window is too wide to show at all.
+///     2. Write the headline, then the basis, from how much history there is.
+///     3. Describe the spread as an uncertainty line.
+///     4. Add a caution if one recent cycle stands out as surprising.
+///
+/// Includes:
+///     - ExplanationNote: The structured facts behind the text.
+///     - PredictionExplanation: The four lines and their notes.
+///     - Explain: The builder, and the residual diagnostic behind it.
+library;
+
 import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
@@ -6,12 +24,12 @@ import 'package:period_tracker/domain/predict/bayes_filter.dart';
 import 'package:period_tracker/domain/predict/intervals.dart';
 import 'package:period_tracker/domain/predict/priors.dart';
 
-/// A fact about why a prediction looks the way it does.
+/// Explanation note: a fact about why a prediction looks the way it does.
 ///
-/// The structured half of an explanation. Callers should switch on these rather
-/// than matching the English text, because the text is a default rendering that
-/// localisation will replace, while these notes are the model's actual
-/// reasoning and will not change with language.
+/// The structured half of an explanation. Callers should switch on these
+/// rather than matching the English text, because the text is a default
+/// rendering that localisation will replace, while these notes are the model's
+/// actual reasoning and will not change with language.
 enum ExplanationNote {
   /// No completed cycle yet, so the population prior is all there is.
   populationPriorOnly,
@@ -29,14 +47,29 @@ enum ExplanationNote {
   tooIrregular,
 }
 
-/// A plain-language rationale for one prediction.
+/// Prediction explanation: a plain-language rationale for one prediction.
 ///
 /// Four separate fields rather than one paragraph, because the insights screen
 /// shows them at different weights and a screen reader should be able to stop
 /// after the headline.
+///
+/// Attributes:
+///     headline (String): What the model predicts, always as a range.
+///     basis (String): What the prediction was computed from.
+///     uncertainty (String): Why the window is as wide as it is.
+///     cautions (`List<String>`): Things worth checking, in priority order.
+///         Often empty.
+///     notes (`List<ExplanationNote>`): The structured facts behind the text.
 @immutable
 final class PredictionExplanation {
   /// Creates an explanation.
+  ///
+  /// Args:
+  ///     headline (String): What the model predicts, always as a range.
+  ///     basis (String): What the prediction was computed from.
+  ///     uncertainty (String): Why the window is as wide as it is.
+  ///     cautions (`List<String>`): Things worth checking, in priority order.
+  ///     notes (`List<ExplanationNote>`): The structured facts.
   const PredictionExplanation({
     required this.headline,
     required this.basis,
@@ -70,7 +103,7 @@ final class PredictionExplanation {
   String toString() => 'PredictionExplanation($text)';
 }
 
-/// Builds the plain-language rationale that accompanies every prediction.
+/// Explain: builds the rationale that accompanies every prediction.
 ///
 /// The product rule this file exists to serve: a number the user cannot
 /// interrogate is worse than no number. Every prediction the app shows comes
@@ -83,7 +116,23 @@ final class PredictionExplanation {
 /// unusual, the copy names the most likely mundane cause, which is a missed
 /// log.
 abstract final class Explain {
-  /// Explains [prediction], computed from [cycleLengths] under [priors].
+  /// Build the explanation for one prediction.
+  ///
+  /// Steps:
+  ///     1. Note whether the window is too wide to show, which changes both
+  ///        the headline and the uncertainty line.
+  ///     2. Choose the basis line from how much history there is and whether
+  ///        the refit ran.
+  ///     3. Describe the observed spread.
+  ///     4. Add a caution when one of the recent cycles is surprising.
+  ///
+  /// Args:
+  ///     prediction (HistoryPrediction): The run being explained.
+  ///     cycleLengths (`List<int>`): Observed lengths, oldest first.
+  ///     priors (ModelPriors): The shipped priors, for the refit threshold.
+  ///
+  /// Returns:
+  ///     PredictionExplanation: The four lines and the notes behind them.
   static PredictionExplanation forPrediction({
     required HistoryPrediction prediction,
     required List<int> cycleLengths,
@@ -152,13 +201,19 @@ abstract final class Explain {
     );
   }
 
-  /// One-step-ahead standardised residuals, oldest first.
+  /// Score how surprising each cycle was, given only the ones before it.
   ///
   /// A diagnostic, not part of the prediction path: nothing in the golden
-  /// vectors depends on it. It answers "how surprising was each cycle, given
-  /// only the cycles before it", which is what makes the unusual-cycle note
-  /// honest rather than a fixed day threshold that would fire on anyone with
+  /// vectors depends on it. It is what makes the unusual-cycle note honest
+  /// rather than a fixed day threshold that would fire on anyone with
   /// naturally long cycles.
+  ///
+  /// Args:
+  ///     cycleLengths (`List<int>`): Observed lengths, oldest first.
+  ///     priors (FilterPriors): The priors the filter ran with.
+  ///
+  /// Returns:
+  ///     `List<double>`: One standardised residual per cycle, oldest first.
   static List<double> standardisedResiduals(
     List<int> cycleLengths,
     FilterPriors priors,
@@ -179,20 +234,27 @@ abstract final class Explain {
   /// flag asks the user a needless question, which erodes trust faster than a
   /// missed flag costs accuracy, the same reasoning as
   /// `CycleRules.outlierModifiedZThreshold`.
-  static const double unusualResidualThreshold = 3;
+  static const double unusualResidualThreshold = 3; // predictive SDs
 
   /// How many of the most recent cycles the unusual-cycle note looks at.
-  static const int recentCyclesConsidered = 3;
+  static const int recentCyclesConsidered = 3; // cycles, from the newest
 
   /// Cycles required before any cycle can be called unusual.
   ///
   /// With fewer, the model has no baseline to be surprised against: the first
   /// observation of a genuinely long-cycled user is far from the population
   /// prior and is not remotely unusual for them.
-  static const int minCyclesForUnusualNote = 3;
+  static const int minCyclesForUnusualNote = 3; // completed cycles
 
-  /// Index of the most surprising of the recent cycles, or null if none stands
-  /// out.
+  /// Find the most surprising of the recent cycles.
+  ///
+  /// Args:
+  ///     cycleLengths (`List<int>`): Observed lengths, oldest first.
+  ///     priors (FilterPriors): The priors the filter ran with.
+  ///
+  /// Returns:
+  ///     int?: Index into [cycleLengths] of the worst offender, or null when
+  ///     none clears [unusualResidualThreshold] or the history is too short.
   static int? _mostUnusualRecent(List<int> cycleLengths, FilterPriors priors) {
     if (cycleLengths.length < minCyclesForUnusualNote) return null;
     final residuals = standardisedResiduals(cycleLengths, priors);
@@ -209,6 +271,16 @@ abstract final class Explain {
     return worst;
   }
 
+  /// Write the line describing why the window is as wide as it is.
+  ///
+  /// Args:
+  ///     cycleLengths (`List<int>`): Observed lengths, oldest first.
+  ///     windows (PredictionWindows): The day figures being described.
+  ///     tooIrregular (bool): Whether the 80% window is too wide to show.
+  ///
+  /// Returns:
+  ///     String: One sentence. A different one below two cycles, where there
+  ///     is no spread to describe.
   static String _uncertaintyLine({
     required List<int> cycleLengths,
     required PredictionWindows windows,
@@ -237,7 +309,21 @@ abstract final class Explain {
         '${windows.lo50} and day ${windows.hi50}.';
   }
 
+  /// Render a day count with its unit, singular or plural.
+  ///
+  /// Args:
+  ///     count (int): The number of days.
+  ///
+  /// Returns:
+  ///     String: For example `1 day` or `28 days`.
   static String _days(int count) => count == 1 ? '1 day' : '$count days';
 
+  /// Render a cycle count with its unit, singular or plural.
+  ///
+  /// Args:
+  ///     count (int): The number of cycles.
+  ///
+  /// Returns:
+  ///     String: For example `1 cycle` or `6 cycles`.
   static String _cycles(int count) => count == 1 ? '1 cycle' : '$count cycles';
 }

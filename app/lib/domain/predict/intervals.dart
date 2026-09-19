@@ -1,3 +1,23 @@
+/// Predictive intervals.
+///
+/// Turns a predictive distribution into the whole-day windows the app shows,
+/// and classifies how tight those windows are. Lengths, not dates: anchoring
+/// them to a calendar belongs to the repository.
+///
+/// Pipeline:
+///     1. Refit the variances to this user, unless told not to.
+///     2. Run the filter over the history with those variances.
+///     3. Read five quantiles off the resulting forecast, in whole days.
+///     4. Classify the 80% width into a confidence class.
+///
+/// Includes:
+///     - ConfidenceClass: How tight the 80% window is, including the band
+///       where no window may be shown.
+///     - PredictionWindows: The five day figures.
+///     - HistoryPrediction: One whole run of the pipeline.
+///     - Intervals: The pipeline itself.
+library;
+
 import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
@@ -6,7 +26,7 @@ import 'package:period_tracker/domain/predict/bayes_filter.dart';
 import 'package:period_tracker/domain/predict/personalize.dart';
 import 'package:period_tracker/domain/predict/priors.dart';
 
-/// How tightly the model can pin the next cycle length.
+/// Confidence class: how tightly the model can pin the next cycle length.
 ///
 /// Distinct from [Confidence] in `domain/models/prediction.dart`, which has no
 /// `tooIrregular` member on purpose: at that width the app must not show a
@@ -14,6 +34,10 @@ import 'package:period_tracker/domain/predict/priors.dart';
 /// than a confidence label on a prediction. [toConfidence] is the bridge, and
 /// it returns null exactly when the caller must build a
 /// [PredictionResult.tooIrregular] instead.
+///
+/// Attributes:
+///     wireName (String): The name this class carries in the golden
+///         vectors.
 enum ConfidenceClass {
   /// 80% window narrower than [ConfidenceThresholds.highBelowDays].
   high('high'),
@@ -39,7 +63,12 @@ enum ConfidenceClass {
   /// `too_irregular` and a Dart identifier cannot.
   final String wireName;
 
-  /// The equivalent [Confidence], or null when no window may be shown.
+  /// Convert to the [Confidence] the UI carries.
+  ///
+  /// Returns:
+  ///     Confidence?: The equivalent, or null for
+  ///     [ConfidenceClass.tooIrregular], which is exactly when the caller
+  ///     must build a [PredictionResult.tooIrregular] instead.
   Confidence? toConfidence() => switch (this) {
     ConfidenceClass.high => Confidence.high,
     ConfidenceClass.medium => Confidence.medium,
@@ -48,14 +77,29 @@ enum ConfidenceClass {
   };
 }
 
-/// A predicted next cycle length and its windows, all in whole days.
+/// Prediction windows: a predicted cycle length and its windows, in whole
+/// days.
 ///
 /// Lengths, not dates. Anchoring them to a calendar needs the user's last
 /// period start, which lives in the data layer; that conversion belongs to the
 /// repository (AND-09), so this file stays pure model output.
+///
+/// Attributes:
+///     medianDays (int): Cycle length at the predictive median.
+///     lo50 (int): Lower bound of the 50% window.
+///     hi50 (int): Upper bound of the 50% window.
+///     lo80 (int): Lower bound of the 80% window.
+///     hi80 (int): Upper bound of the 80% window.
 @immutable
 final class PredictionWindows {
   /// Creates a window set.
+  ///
+  /// Args:
+  ///     medianDays (int): Cycle length at the predictive median.
+  ///     lo50 (int): Lower bound of the 50% window.
+  ///     hi50 (int): Upper bound of the 50% window.
+  ///     lo80 (int): Lower bound of the 80% window.
+  ///     hi80 (int): Upper bound of the 80% window.
   const PredictionWindows({
     required this.medianDays,
     required this.lo50,
@@ -113,15 +157,29 @@ final class PredictionWindows {
       '80%: $lo80..$hi80)';
 }
 
-/// Everything one run of the prediction pipeline produces.
+/// History prediction: everything one run of the pipeline produces.
 ///
 /// Carries the intermediate results, not just the windows, because the callers
 /// need them: [refit] tells the UI whether the model is tuned to this user,
 /// [state] is what the prediction cache persists (AND-09), and [forecast] is
 /// what `explain.dart` reasons over.
+///
+/// Attributes:
+///     refit (RefitResult): The refit that chose the variances.
+///     state (FilterState): Posterior after the last observation.
+///     forecast (Forecast): One-step-ahead distribution, on the log scale.
+///     windows (PredictionWindows): The day windows shown to the user.
+///     confidence (ConfidenceClass): Implied by the 80% width.
 @immutable
 final class HistoryPrediction {
   /// Creates a pipeline result.
+  ///
+  /// Args:
+  ///     refit (RefitResult): The refit that chose the variances.
+  ///     state (FilterState): Posterior after the last observation.
+  ///     forecast (Forecast): One-step-ahead distribution, on the log scale.
+  ///     windows (PredictionWindows): The day windows shown to the user.
+  ///     confidence (ConfidenceClass): Implied by the 80% width.
   const HistoryPrediction({
     required this.refit,
     required this.state,
@@ -163,7 +221,7 @@ final class HistoryPrediction {
       'personalised: ${refit.personalised})';
 }
 
-/// Turns a predictive distribution into the day windows the app shows.
+/// Intervals: turns a predictive distribution into the windows the app shows.
 ///
 /// Port of the portable half of `research/src/cyclecore/models/intervals.py`.
 /// The half that is not ported is `student_t_quantiles`, which needs SciPy and
@@ -171,7 +229,15 @@ final class HistoryPrediction {
 /// [ModelPriors.quantiles]. That split is the entire reason this file is pure
 /// arithmetic.
 abstract final class Intervals {
-  /// Converts a posterior into day windows.
+  /// Convert a posterior into day windows.
+  ///
+  /// Args:
+  ///     state (FilterState): The posterior to forecast from.
+  ///     priors (FilterPriors): The priors the filter ran with.
+  ///     quantiles (QuantileTable): The shipped Student-t quantiles.
+  ///
+  /// Returns:
+  ///     PredictionWindows: The five day figures.
   static PredictionWindows windowsFromState(
     FilterState state,
     FilterPriors priors,
@@ -181,11 +247,19 @@ abstract final class Intervals {
     return windowsFromForecast(fc, quantiles);
   }
 
-  /// Converts a predictive distribution into day windows.
+  /// Convert a predictive distribution into day windows.
   ///
   /// Split out from [windowsFromState] so a caller that already holds the
   /// forecast, as [forHistory] does, cannot accidentally recompute it from a
   /// different set of priors than the ones the filter ran with.
+  ///
+  /// Args:
+  ///     fc (Forecast): The predictive distribution.
+  ///     quantiles (QuantileTable): The shipped Student-t quantiles.
+  ///
+  /// Returns:
+  ///     PredictionWindows: The five day figures, each rounded through
+  ///     [BayesFilter.daysFromLog].
   static PredictionWindows windowsFromForecast(
     Forecast fc,
     QuantileTable quantiles,
@@ -207,13 +281,23 @@ abstract final class Intervals {
     ),
   );
 
-  /// Runs the full pipeline over [cycleLengths], exactly as the app does.
+  /// Run the full pipeline over a history, exactly as the app does.
   ///
   /// Personalisation comes first, because the refit chooses the variances the
-  /// filter then runs with. Set [personalise] to false only to reproduce the
-  /// pre-personalisation behaviour for comparison in tests; shipping that path
-  /// would make interval width independent of how variable the user actually
-  /// is, which is the defect recorded in `personalize.dart`.
+  /// filter then runs with.
+  ///
+  /// Args:
+  ///     cycleLengths (`List<int>`): Observed lengths, oldest first.
+  ///     priors (ModelPriors): The shipped priors, quantiles and thresholds.
+  ///     personalise (bool, optional): Whether to refit first. Defaults to
+  ///         true. Set false only to reproduce the pre-personalisation
+  ///         behaviour for comparison in tests; shipping that path would make
+  ///         interval width independent of how variable the user actually is,
+  ///         which is the defect recorded in `personalize.dart`.
+  ///
+  /// Returns:
+  ///     HistoryPrediction: The refit, the posterior, the forecast, the
+  ///     windows and the confidence class.
   static HistoryPrediction forHistory(
     List<int> cycleLengths,
     ModelPriors priors, {
@@ -245,11 +329,17 @@ abstract final class Intervals {
     );
   }
 
-  /// Classifies confidence from the width of the 80% window.
+  /// Classify confidence from the width of the 80% window.
   ///
-  /// [ConfidenceClass.tooIrregular] is not a failure: it is the app refusing to
-  /// state a narrow window it cannot support, which is the single most
-  /// important product rule here (`docs/PLAN.md` 6.2).
+  /// Args:
+  ///     width80Days (int): The window width, counted inclusively.
+  ///     thresholds (ConfidenceThresholds): The shipped cut points.
+  ///
+  /// Returns:
+  ///     ConfidenceClass: The band it falls in.
+  ///     [ConfidenceClass.tooIrregular] is not a failure: it is the app
+  ///     refusing to state a narrow window it cannot support, which is the
+  ///     single most important product rule here (`docs/PLAN.md` 6.2).
   static ConfidenceClass confidenceClass(
     int width80Days,
     ConfidenceThresholds thresholds,
