@@ -1,3 +1,14 @@
+/// Settings storage access.
+///
+/// Reads and writes the key-value preferences table, as typed accessors over
+/// a closed set of keys. Defaults live at the call site for most preferences
+/// and on a named accessor for the few read from more than one place.
+///
+/// Includes:
+///     - SettingKey: The closed set of keys, with their stored names.
+///     - SettingsDao: Typed reads, watches and writes over them.
+library;
+
 import 'package:drift/drift.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/db/tables.dart';
@@ -5,11 +16,15 @@ import 'package:period_tracker/data/transfer/export_v1.dart';
 
 part 'settings_dao.g.dart';
 
-/// The preferences the app stores, as a closed set of keys.
+/// Setting key: the preferences the app stores, as a closed set.
 ///
 /// An enum rather than free strings: a typo in a setting key is otherwise a
-/// silent read of a default value, which is the kind of bug that only shows up
-/// as "my setting keeps resetting" months later.
+/// silent read of a default value, which is the kind of bug that only shows
+/// up as "my setting keeps resetting" months later.
+///
+/// Attributes:
+///     wireName (String): The key as stored, spelled out rather than taken
+///         from [name], so renaming a member cannot reset a user's choice.
 enum SettingKey {
   /// Whether the user has completed onboarding and accepted the disclaimer.
   onboardingComplete('onboarding_complete'),
@@ -25,8 +40,8 @@ enum SettingKey {
 
   /// Whether the low-priority logging nudge is enabled.
   ///
-  /// Defaults to **off**, and stays that way unless the user turns it on. It is
-  /// the one notification that is neither a prediction nor actionable, and
+  /// Defaults to **off**, and stays that way unless the user turns it on. It
+  /// is the one notification that is neither a prediction nor actionable, and
   /// docs/PLAN.md 2.4.1 rules out pressure mechanics on this data.
   nudgeEnabled('nudge_enabled'),
 
@@ -141,7 +156,7 @@ enum SettingKey {
 /// Most preferences are read with [readBool] and an explicit `orElse`, which
 /// puts the default at the call site. The three display preferences added in
 /// schema v2 have named accessors instead, because each of them is read from
-/// more than one place — the settings screen and the feature it controls — and
+/// more than one place, the settings screen and the feature it controls, and
 /// two call sites passing different `orElse` values is a bug with no symptom
 /// until someone notices the app disagreeing with its own switch. For
 /// [readShowOvulationWindow] that disagreement would ship the behaviour
@@ -171,33 +186,58 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
     return row?.settingValue;
   }
 
-  /// Watches the raw value stored for [key], re-emitting on every write.
+  /// Watch the raw value stored for a key.
   ///
-  /// Raw rather than parsed because the two settings that use it — the colour
-  /// scheme and the theme mode — are enums declared in `lib/core`, and a DAO
+  /// Raw rather than parsed because the two settings that use it, the colour
+  /// scheme and the theme mode, are enums declared in `lib/core`, and a DAO
   /// that imported them would have the data layer depending on the theme. The
   /// mapping happens in the providers, where both sides are already in scope.
+  ///
+  /// Args:
+  ///     key (SettingKey): Which preference to watch.
+  ///
+  /// Returns:
+  ///     `Stream<String?>`: The stored string, or null when unset.
+  ///     Re-emitted on every write, with repeats collapsed.
   Stream<String?> watchRaw(SettingKey key) {
     final query = select(settings)
       ..where((t) => t.settingKey.equals(key.wireName));
     return query.watchSingleOrNull().map((row) => row?.settingValue).distinct();
   }
 
-  /// Writes a string setting.
+  /// Write a string setting.
+  ///
+  /// Args:
+  ///     key (SettingKey): Which preference to write.
+  ///     value (String): The value to store.
   Future<void> writeString(SettingKey key, String value) =>
       writeRaw(key.wireName, value);
 
-  /// Reads a boolean setting, defaulting to [orElse].
+  /// Read a boolean setting.
+  ///
+  /// Args:
+  ///     key (SettingKey): Which preference to read.
+  ///     orElse (bool): What to return when nothing is stored.
+  ///
+  /// Returns:
+  ///     `Future<bool>`: The stored value, or [orElse].
   Future<bool> readBool(SettingKey key, {required bool orElse}) async =>
       _asBool(await raw(key), orElse: orElse);
 
-  /// Watches a boolean setting, re-emitting whenever it is written.
+  /// Watch a boolean setting, re-emitting whenever it is written.
   ///
   /// A stream rather than a read plus an invalidation, so that a preference
   /// changed in settings reaches the screen it controls without either of them
-  /// knowing the other exists. The alternative — bumping a counter at each
-  /// write site — works until someone adds a write site and forgets, and the
+  /// knowing the other exists. The alternative, bumping a counter at each
+  /// write site, works until someone adds a write site and forgets, and the
   /// symptom is a setting that appears not to take effect until restart.
+  ///
+  /// Args:
+  ///     key (SettingKey): Which preference to watch.
+  ///     orElse (bool): What to emit when nothing is stored.
+  ///
+  /// Returns:
+  ///     `Stream<bool>`: The value, re-emitted on every write.
   Stream<bool> watchBool(SettingKey key, {required bool orElse}) {
     final query = select(settings)
       ..where((t) => t.settingKey.equals(key.wireName));
