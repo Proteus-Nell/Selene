@@ -70,19 +70,35 @@ class DayLogDao extends DatabaseAccessor<AppDatabase> with _$DayLogDaoMixin {
     return rows.map((r) => CivilDate.fromEpochDay(r.epochDay)).toSet();
   }
 
+  /// The row to write for [log], with every column stated.
+  ///
+  /// A companion with an explicit [Value] per column, never the `DayLogRow`
+  /// data class. Drift builds both the inserted values and the `DO UPDATE SET`
+  /// clause of an upsert by calling `toColumns(true)`, and a data class drops
+  /// its null fields under that flag. `intercourse` is the one nullable column
+  /// here, so writing a day whose answer had been cleared produced an update
+  /// that never mentioned the column and left the old answer in place: the
+  /// user tapped the selected chip, the editor did everything right, and the
+  /// answer came straight back.
+  ///
+  /// A companion says `present` instead, so a null is written as a null.
+  ///
+  /// This is why the whole day goes through one place. A save replaces the
+  /// day, so every column has to be named on every write, and a column added
+  /// later that is missed here would fail the same silent way.
+  DayLogsCompanion _rowFor(DayLog log) => DayLogsCompanion(
+    epochDay: Value<int>(log.date.epochDay),
+    flow: Value<FlowIntensity>(log.flow),
+    intercourse: Value<Intercourse?>(log.intercourse),
+  );
+
   /// Writes [log], replacing any existing entry for the same day.
   ///
   /// The whole write is one transaction: a day's flow and its symptoms are one
   /// fact, and a crash between them would leave a day claiming symptoms it no
   /// longer has.
   Future<void> save(DayLog log) => transaction(() async {
-    await into(dayLogs).insertOnConflictUpdate(
-      DayLogRow(
-        epochDay: log.date.epochDay,
-        flow: log.flow,
-        intercourse: log.intercourse,
-      ),
-    );
+    await into(dayLogs).insertOnConflictUpdate(_rowFor(log));
     await (delete(
       symptoms,
     )..where((t) => t.epochDay.equals(log.date.epochDay))).go();
@@ -95,13 +111,7 @@ class DayLogDao extends DatabaseAccessor<AppDatabase> with _$DayLogDaoMixin {
   /// user cannot tell which half landed.
   Future<void> saveAll(Iterable<DayLog> logs) => transaction(() async {
     for (final log in logs) {
-      await into(dayLogs).insertOnConflictUpdate(
-        DayLogRow(
-          epochDay: log.date.epochDay,
-          flow: log.flow,
-          intercourse: log.intercourse,
-        ),
-      );
+      await into(dayLogs).insertOnConflictUpdate(_rowFor(log));
       await (delete(
         symptoms,
       )..where((t) => t.epochDay.equals(log.date.epochDay))).go();

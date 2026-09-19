@@ -131,6 +131,37 @@ void main() {
       expect(stored.severityOf(Symptom.headache), SymptomSeverity.mild);
     });
 
+    test('keeps an intercourse answer already recorded for that day', () async {
+      // The same argument as the symptoms above, on the field the app is most
+      // careful with elsewhere. Tapping "period started" says something about
+      // the flow and nothing about this, so it must not quietly erase it.
+      //
+      // It used to be carried by accident: a null was dropped on its way to
+      // SQL, so the column was never written and the old answer stayed. Now
+      // that a cleared answer really is written as null, the value has to be
+      // read and carried across deliberately.
+      await repo.upsert(
+        DayLog(
+          date: at('2026-06-01'),
+          flow: FlowIntensity.spotting,
+          intercourse: Intercourse.protected,
+        ),
+      );
+
+      expect((await repo.markPeriodStart(at('2026-06-01'))).isOk, isTrue);
+
+      final stored = (await repo.logs()).single;
+      expect(stored.flow, FlowIntensity.medium);
+      expect(stored.intercourse, Intercourse.protected);
+    });
+
+    test('records nothing there when the day had no answer', () async {
+      // The other half: carrying the field across must not turn "not recorded"
+      // into an answer.
+      expect((await repo.markPeriodStart(at('2026-06-03'))).isOk, isTrue);
+      expect((await repo.logs()).single.intercourse, isNull);
+    });
+
     test('creates the day when there is nothing there yet', () async {
       expect((await repo.markPeriodStart(at('2026-06-02'))).isOk, isTrue);
       final stored = (await repo.logs()).single;

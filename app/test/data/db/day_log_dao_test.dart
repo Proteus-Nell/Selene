@@ -104,6 +104,38 @@ void main() {
       await db.dayLogDao.save(logAt(20000));
       expect(await db.dayLogDao.allLogs(), hasLength(1));
     });
+
+    test('an edit that clears the intercourse field writes the null', () async {
+      // A save writes the whole day, so a field the caller left null has to
+      // land as null. It is the only nullable column here, and the only one
+      // where "absent" and "null" could be read as different things.
+      //
+      // The editor reaches this path whenever the day carries anything else:
+      // clearing the answer on a day that is otherwise empty deletes the row,
+      // and that route was already covered, so a dropped null only showed up
+      // on a day that also had flow or a symptom recorded.
+      await db.dayLogDao.save(
+        logAt(20000).copyWith(intercourse: Intercourse.protected),
+      );
+      expect(
+        (await db.dayLogDao.logFor(day(20000)))!.intercourse,
+        Intercourse.protected,
+      );
+
+      await db.dayLogDao.save(logAt(20000));
+      expect((await db.dayLogDao.logFor(day(20000)))!.intercourse, isNull);
+    });
+
+    test('saveAll clears the intercourse field too', () async {
+      // Same write, second call site. Import runs through this one, so a
+      // dropped null here would resurrect an answer the exported file does
+      // not contain.
+      await db.dayLogDao.save(
+        logAt(20000).copyWith(intercourse: Intercourse.unprotected),
+      );
+      await db.dayLogDao.saveAll(<DayLog>[logAt(20000)]);
+      expect((await db.dayLogDao.logFor(day(20000)))!.intercourse, isNull);
+    });
   });
 
   group('deletion', () {
