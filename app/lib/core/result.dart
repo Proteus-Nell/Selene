@@ -1,7 +1,20 @@
+/// Result type for fallible operations.
+///
+/// Carries success and failure as values rather than as thrown exceptions, so
+/// that an expected failure has to be handled at the call site instead of
+/// escaping through a `catch`. Domain code returns these; the storage layer
+/// still throws.
+///
+/// Includes:
+///     - Result: Sealed base type, with the combinators every case shares.
+///     - Ok: The success case, carrying a value.
+///     - Err: The failure case, carrying an error.
+library;
+
 import 'package:meta/meta.dart';
 
-/// The outcome of an operation that can fail: either an [Ok] carrying a value
-/// or an [Err] carrying an error.
+/// Result of an operation that can fail: either an [Ok] carrying a value or an
+/// [Err] carrying an error.
 ///
 /// Domain code returns failures as values rather than throwing. The reason is
 /// specific to this app: several expected outcomes are not exceptional at all.
@@ -35,32 +48,66 @@ sealed class Result<T, E> {
     Err<T, E>(:final error) => error,
   };
 
-  /// The value if this is an [Ok], otherwise [fallback].
+  /// Return the value, or [fallback] if this is an [Err].
+  ///
+  /// Args:
+  ///     fallback (T): What to return in the failure case.
+  ///
+  /// Returns:
+  ///     T: The carried value, or [fallback].
   T valueOr(T fallback) => switch (this) {
     Ok<T, E>(:final value) => value,
     Err<T, E>() => fallback,
   };
 
-  /// Collapses both cases into a single value.
+  /// Collapse both cases into a single value.
+  ///
+  /// Args:
+  ///     onOk (R Function(T)): Applied to the value of an [Ok].
+  ///     onErr (R Function(E)): Applied to the error of an [Err].
+  ///
+  /// Returns:
+  ///     R: Whatever the branch that ran returned.
   R fold<R>(R Function(T value) onOk, R Function(E error) onErr) =>
       switch (this) {
         Ok<T, E>(:final value) => onOk(value),
         Err<T, E>(:final error) => onErr(error),
       };
 
-  /// Applies [transform] to the value, leaving an [Err] untouched.
+  /// Apply [transform] to the value, leaving an [Err] untouched.
+  ///
+  /// Args:
+  ///     transform (R Function(T)): Applied only in the [Ok] case.
+  ///
+  /// Returns:
+  ///     `Result<R, E>`: The transformed success, or the original failure.
   Result<R, E> map<R>(R Function(T value) transform) => switch (this) {
     Ok<T, E>(:final value) => Ok<R, E>(transform(value)),
     Err<T, E>(:final error) => Err<R, E>(error),
   };
 
-  /// Applies [transform] to the error, leaving an [Ok] untouched.
+  /// Apply [transform] to the error, leaving an [Ok] untouched.
+  ///
+  /// Args:
+  ///     transform (F Function(E)): Applied only in the [Err] case.
+  ///
+  /// Returns:
+  ///     `Result<T, F>`: The original success, or the transformed failure.
   Result<T, F> mapError<F>(F Function(E error) transform) => switch (this) {
     Ok<T, E>(:final value) => Ok<T, F>(value),
     Err<T, E>(:final error) => Err<T, F>(transform(error)),
   };
 
-  /// Chains another fallible operation onto a successful result.
+  /// Chain another fallible operation onto a success.
+  ///
+  /// The first [Err] in a chain short-circuits the rest, which is what makes
+  /// a sequence of these readable without nesting.
+  ///
+  /// Args:
+  ///     next (`Result<R, E> Function(T)`): Runs only in the [Ok] case.
+  ///
+  /// Returns:
+  ///     `Result<R, E>`: The result of [next], or the original failure.
   Result<R, E> andThen<R>(Result<R, E> Function(T value) next) =>
       switch (this) {
         Ok<T, E>(:final value) => next(value),
@@ -68,7 +115,10 @@ sealed class Result<T, E> {
       };
 }
 
-/// A successful [Result] carrying a [value].
+/// Successful result, carrying a value.
+///
+/// Attributes:
+///     value (T): The value the operation produced.
 @immutable
 final class Ok<T, E> extends Result<T, E> {
   /// Wraps [value] as a success.
@@ -87,7 +137,10 @@ final class Ok<T, E> extends Result<T, E> {
   String toString() => 'Ok($value)';
 }
 
-/// A failed [Result] carrying an [error].
+/// Failed result, carrying an error.
+///
+/// Attributes:
+///     error (E): What went wrong.
 @immutable
 final class Err<T, E> extends Result<T, E> {
   /// Wraps [error] as a failure.

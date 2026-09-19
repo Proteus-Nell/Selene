@@ -1,15 +1,33 @@
+/// Theme assembly.
+///
+/// Turns an [AppPalette] into the [ThemeData] the app runs on, and carries the
+/// four cycle-phase colours alongside it as a theme extension. Every
+/// interactive default is pushed to the 48dp tap-target floor here rather than
+/// at each call site.
+///
+/// Includes:
+///     - PhaseColors: Theme extension holding the phase colours.
+///     - AppTheme: The light and dark theme builders, and their constants.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:period_tracker/core/palette.dart';
 
-/// The cycle-phase colours, carried on [ThemeData] so a widget can reach them.
+/// Phase colours, carried on [ThemeData] so a widget can reach them.
 ///
 /// A theme extension rather than a global constant, because since AND-39 there
-/// is no single answer: the colours depend on which of the six schemes the user
-/// picked and whether the phone is in dark mode. Reaching for a constant would
-/// have quietly painted every ring in Rose & Plum.
+/// is no single answer: the colours depend on which of the six schemes the
+/// user picked and whether the phone is in dark mode. Reaching for a constant
+/// would have quietly painted every ring in Rose & Plum.
+///
+/// Attributes:
+///     palette (AppPalette): The palette the four colours are read from.
 @immutable
 class PhaseColors extends ThemeExtension<PhaseColors> {
   /// Wraps [palette]'s phase colours.
+  ///
+  /// Args:
+  ///     palette (AppPalette): The palette to read the phase colours from.
   const PhaseColors(this.palette);
 
   /// The palette these came from.
@@ -30,10 +48,17 @@ class PhaseColors extends ThemeExtension<PhaseColors> {
   /// The four, in cycle order.
   List<Color> get inCycleOrder => palette.phaseColors;
 
-  /// The phase colours of the theme in [context].
+  /// Return the phase colours of the theme in [context].
   ///
   /// `Something.of(context)` is the shape every Flutter reader already knows,
   /// and a constructor cannot carry the fallback below.
+  ///
+  /// Args:
+  ///     context (BuildContext): Looked up for a [PhaseColors] extension.
+  ///
+  /// Returns:
+  ///     PhaseColors: The theme's extension, or Rose & Plum light when the
+  ///     theme carries none.
   // ignore: prefer_constructors_over_static_methods
   static PhaseColors of(BuildContext context) =>
       Theme.of(context).extension<PhaseColors>() ??
@@ -50,20 +75,21 @@ class PhaseColors extends ThemeExtension<PhaseColors> {
       : this;
 }
 
-/// Builds the app's [ThemeData].
+/// App theme: the builders for the app's [ThemeData].
 ///
 /// The palette is chosen for contrast first. Every pair used for text clears
 /// 4.5:1 and every pair used for a control clears 3:1, with margin, because
 /// AND-18 turns those into a CI gate and retrofitting a palette that fails is
 /// painful. `theme_test.dart` recomputes every ratio for all eleven palettes
-/// from [AppPalettes], so a colour cannot be nudged without the suite noticing.
+/// from [AppPalettes], so a colour cannot be nudged without the suite
+/// noticing.
 ///
 /// Every scheme is deliberately quiet, and none of them is the pink-for-girls
 /// shorthand: Rose & Plum, the default since AND-39, is a deep rose against a
 /// plum, not a bubblegum. This is a health record, read by people whose
 /// relationship with the subject is not always a cheerful one
 /// (`docs/PLAN.md` 6.3), and the six-way choice exists because that
-/// relationship is not the same for everyone — Ink & Ochre is there for a
+/// relationship is not the same for everyone. Ink & Ochre is there for a
 /// screen someone else can see, and Night for reading at 3am.
 abstract final class AppTheme {
   /// Smallest interactive size, in logical pixels.
@@ -75,20 +101,45 @@ abstract final class AppTheme {
   /// Corner radius for a block the user can act on.
   ///
   /// Cards are for actionable things. Anything the app is merely telling the
-  /// user sits flat on the page instead, with no fill and no border — a box
-  /// drawn round a sentence is a box the eye has to dismiss before it can read
-  /// (AND-39).
+  /// user sits flat on the page instead, with no fill and no border. A box
+  /// drawn round a sentence is a box the eye has to dismiss before it can
+  /// read (AND-39).
   static const double cardRadius = 10;
 
-  /// The light theme for [scheme].
+  /// Build the light theme for a scheme.
+  ///
+  /// Args:
+  ///     scheme (AppScheme, optional): Which of the six schemes to build.
+  ///         Defaults to [AppScheme.fallback].
+  ///
+  /// Returns:
+  ///     ThemeData: The light theme, with [PhaseColors] attached.
   static ThemeData light([AppScheme scheme = AppScheme.fallback]) =>
       _build(scheme.palette(Brightness.light), Brightness.light);
 
-  /// The dark theme for [scheme].
+  /// Build the dark theme for a scheme.
+  ///
+  /// Args:
+  ///     scheme (AppScheme, optional): Which of the six schemes to build.
+  ///         Defaults to [AppScheme.fallback].
+  ///
+  /// Returns:
+  ///     ThemeData: The dark theme, with [PhaseColors] attached.
   static ThemeData dark([AppScheme scheme = AppScheme.fallback]) =>
       _build(scheme.palette(Brightness.dark), Brightness.dark);
 
-  /// The [ColorScheme] for [palette] at [brightness].
+  /// Map a palette onto a Material [ColorScheme].
+  ///
+  /// Public because `theme_test.dart` recomputes every contrast ratio from
+  /// this rather than from a built [ThemeData].
+  ///
+  /// Args:
+  ///     palette (AppPalette): The colours to map.
+  ///     brightness (Brightness): Which half of the scheme is being built.
+  ///
+  /// Returns:
+  ///     ColorScheme: The Material scheme, with `surfaceContainerHighest`
+  ///     deliberately equal to `surfaceContainer`.
   static ColorScheme colorSchemeOf(
     AppPalette palette,
     Brightness brightness,
@@ -108,6 +159,20 @@ abstract final class AppTheme {
     outline: palette.outline,
   );
 
+  /// Assemble the full [ThemeData] for one palette.
+  ///
+  /// Steps:
+  ///     1. Map the palette onto a [ColorScheme].
+  ///     2. Build a base theme carrying the bundled font.
+  ///     3. Copy it with every component default this app pins, so the 48dp
+  ///        floor and the chip contrast rules hold everywhere at once.
+  ///
+  /// Args:
+  ///     palette (AppPalette): The colours to build from.
+  ///     brightness (Brightness): Which half of the scheme is being built.
+  ///
+  /// Returns:
+  ///     ThemeData: The finished theme.
   static ThemeData _build(AppPalette palette, Brightness brightness) {
     final scheme = colorSchemeOf(palette, brightness);
     final base = ThemeData(
@@ -118,7 +183,7 @@ abstract final class AppTheme {
       // differently on someone else's phone is a layout nobody has tested.
       //
       // Google Fonts' **latin subset**, 222 codepoints, which covers every
-      // character in `app_en.arb` — `fonts_test.dart` re-checks that rather
+      // character in `app_en.arb`. `fonts_test.dart` re-checks that rather
       // than trusting it. A non-English locale would need a wider subset, and
       // that is the moment to notice, not after the strings are translated.
       fontFamily: 'Figtree',
@@ -191,7 +256,7 @@ abstract final class AppTheme {
         // means there is only one ratio to get right.
         //
         // The checkmark is still there and is still what carries the state
-        // without colour — it is drawn by `ChipMotion` rather than by Material
+        // without colour. It is drawn by `ChipMotion` rather than by Material
         // (AND-34). Material's own opens a drawer the width of the chip's
         // height when a chip is selected, so the row reflows under the finger,
         // and it rides a fixed 195ms animation that "remove animations" never

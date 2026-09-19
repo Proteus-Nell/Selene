@@ -1,7 +1,18 @@
+/// Calendar date arithmetic.
+///
+/// Defines the timezone-naive date type the whole app counts in, plus the
+/// inclusive range built on it. Every operation is integer arithmetic on a day
+/// number, so there is no hour for a daylight-saving transition to shift.
+///
+/// Includes:
+///     - CivilDate: A year, month and day, stored as one integer.
+///     - CivilDateRange: An inclusive span of those days.
+library;
+
 import 'package:meta/meta.dart';
 
-/// A timezone-naive calendar date: a year, a month and a day, with no time of
-/// day and no timezone.
+/// Civil date: a year, a month and a day, with no time of day and no
+/// timezone.
 ///
 /// This is the canonical date type across the whole app. When someone says "my
 /// period started on the 14th" they mean a calendar day in their own local
@@ -18,14 +29,26 @@ import 'package:meta/meta.dart';
 ///
 /// The conversions are Howard Hinnant's `days_from_civil` and
 /// `civil_from_days`, which are exact for the proleptic Gregorian calendar.
+///
+/// Attributes:
+///     epochDay (int): Days elapsed since 1970-01-01, negative for earlier
+///         dates. The only stored field.
 @immutable
 final class CivilDate implements Comparable<CivilDate> {
-  /// Creates a date from its [year], [month] (1..12) and [day] (1..31).
+  /// Create a date from its calendar components.
   ///
-  /// Throws [ArgumentError] if the components do not form a real date, so
-  /// 2026-02-30 is rejected rather than silently rolling into March the way
-  /// [DateTime] does. Silent rollover is how a mistyped log becomes a wrong
-  /// cycle length that nobody notices.
+  /// Rejects a date that does not exist rather than silently rolling it into
+  /// the next month the way [DateTime] does. Silent rollover is how a mistyped
+  /// log becomes a wrong cycle length that nobody notices.
+  ///
+  /// Args:
+  ///     year (int): The calendar year. May be negative.
+  ///     month (int): The month, 1..12.
+  ///     day (int): The day of the month, 1..31 depending on the month.
+  ///
+  /// Throws:
+  ///     ArgumentError: If the components do not form a real date, so
+  ///         2026-02-30 is refused.
   factory CivilDate(int year, int month, int day) {
     if (month < 1 || month > 12) {
       throw ArgumentError.value(month, 'month', 'must be 1..12');
@@ -41,14 +64,24 @@ final class CivilDate implements Comparable<CivilDate> {
     return CivilDate.fromEpochDay(_daysFromCivil(year, month, day));
   }
 
-  /// Creates a date directly from a count of days since 1970-01-01.
+  /// Create a date directly from a count of days since 1970-01-01.
+  ///
+  /// Args:
+  ///     epochDay (int): Days since 1970-01-01. Negative for earlier dates.
   const CivilDate.fromEpochDay(this.epochDay);
 
-  /// Parses a strict `YYYY-MM-DD` string.
+  /// Parse a strict `YYYY-MM-DD` string.
   ///
   /// Deliberately stricter than [DateTime.parse]: no time component, no
   /// timezone suffix, no leniency. Import and export use this format, so a
   /// permissive parser here would let malformed files through.
+  ///
+  /// Args:
+  ///     value (String): The candidate date string.
+  ///
+  /// Throws:
+  ///     FormatException: If [value] is not exactly `YYYY-MM-DD`.
+  ///     ArgumentError: If it parses but names a date that does not exist.
   factory CivilDate.parseIso8601(String value) {
     final match = RegExp(r'^(-?\d{4,})-(\d{2})-(\d{2})$').firstMatch(value);
     if (match == null) {
@@ -61,11 +94,18 @@ final class CivilDate implements Comparable<CivilDate> {
     );
   }
 
-  /// The local calendar day containing [instant].
+  /// Create the local calendar day containing an instant.
   ///
   /// One of only two boundary points where [DateTime] meets [CivilDate]; the
   /// other is [toLocalMidnight]. Keep those boundaries thin: everything above
   /// them should deal in [CivilDate] only.
+  ///
+  /// Args:
+  ///     instant (DateTime): The instant to place. Converted to local time
+  ///         first if it is in UTC.
+  ///
+  /// Returns:
+  ///     CivilDate: The local calendar day [instant] falls in.
   factory CivilDate.fromDateTime(DateTime instant) {
     final local = instant.isUtc ? instant.toLocal() : instant;
     return CivilDate(local.year, local.month, local.day);
@@ -74,11 +114,28 @@ final class CivilDate implements Comparable<CivilDate> {
   /// Days elapsed since 1970-01-01. Negative for earlier dates.
   final int epochDay;
 
-  /// Whether [year] is a leap year in the proleptic Gregorian calendar.
+  /// Report whether a year is a leap year in the proleptic Gregorian
+  /// calendar.
+  ///
+  /// Args:
+  ///     year (int): The year to test.
+  ///
+  /// Returns:
+  ///     bool: True when the year has a 29 February.
   static bool isLeapYear(int year) =>
       year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
 
-  /// The number of days in [month] of [year], accounting for leap years.
+  /// Return the number of days in a month, accounting for leap years.
+  ///
+  /// Args:
+  ///     year (int): The calendar year, which decides February's length.
+  ///     month (int): The month, 1..12.
+  ///
+  /// Returns:
+  ///     int: Days in that month, 28..31.
+  ///
+  /// Throws:
+  ///     ArgumentError: If [month] is outside 1..12.
   static int daysInMonth(int year, int month) {
     if (month < 1 || month > 12) {
       throw ArgumentError.value(month, 'month', 'must be 1..12');
@@ -102,23 +159,43 @@ final class CivilDate implements Comparable<CivilDate> {
   /// Epoch day 0 (1970-01-01) was a Thursday, hence the offset of 3.
   int get weekday => (epochDay + 3) % 7 + 1;
 
+  /// The components of this date, recomputed from [epochDay] on each read.
   ({int year, int month, int day}) get _civil => _civilFromDays(epochDay);
 
-  /// This date shifted by [days], which may be negative.
+  /// Return this date shifted by a number of days.
   ///
   /// Exact: `d.addDays(n).daysBetween(d) == -n` for every `d` and `n`.
+  ///
+  /// Args:
+  ///     days (int): Days to move. Negative values move backwards.
+  ///
+  /// Returns:
+  ///     CivilDate: The shifted date.
   CivilDate addDays(int days) => CivilDate.fromEpochDay(epochDay + days);
 
-  /// The number of days from this date forward to [other].
+  /// Return the number of days from this date forward to another.
   ///
-  /// Positive when [other] is later, negative when earlier, zero when equal.
   /// The exact inverse of [addDays].
+  ///
+  /// Args:
+  ///     other (CivilDate): The date to count to.
+  ///
+  /// Returns:
+  ///     int: Positive when [other] is later, negative when earlier, zero
+  ///     when equal.
   int daysBetween(CivilDate other) => other.epochDay - epochDay;
 
-  /// This date shifted by [months], clamping the day to the target month.
+  /// Return this date shifted by a number of months, clamping the day.
   ///
   /// 2026-01-31 plus one month is 2026-02-28, not 2026-03-03. Clamping is the
   /// behaviour a calendar UI needs; rolling over surprises people.
+  ///
+  /// Args:
+  ///     months (int): Months to move. Negative values move backwards.
+  ///
+  /// Returns:
+  ///     CivilDate: The shifted date, with the day clamped to the length of
+  ///     the target month.
   CivilDate addMonths(int months) {
     final zeroBased = year * 12 + (month - 1) + months;
     final targetYear = zeroBased >= 0
@@ -131,15 +208,22 @@ final class CivilDate implements Comparable<CivilDate> {
     return CivilDate(targetYear, targetMonth, clampedDay);
   }
 
-  /// Local midnight at the start of this calendar day.
+  /// Return local midnight at the start of this calendar day.
   ///
   /// The second of the two [DateTime] boundary points. Note that on a
   /// spring-forward day in some timezones local midnight may not exist as a
-  /// wall-clock instant; [DateTime] normalises that, which is precisely why the
-  /// rest of the app never round-trips through this method.
+  /// wall-clock instant; [DateTime] normalises that, which is precisely why
+  /// the rest of the app never round-trips through this method.
+  ///
+  /// Returns:
+  ///     DateTime: Local midnight, in the device's current timezone.
   DateTime toLocalMidnight() => DateTime(year, month, day);
 
-  /// Strict `YYYY-MM-DD` representation. The storage and export format.
+  /// Return the strict `YYYY-MM-DD` form. The storage and export format.
+  ///
+  /// Returns:
+  ///     String: The date, zero-padded, with a leading minus for negative
+  ///     years.
   String toIso8601() {
     final y = year.abs().toString().padLeft(4, '0');
     final sign = year < 0 ? '-' : '';
@@ -148,7 +232,14 @@ final class CivilDate implements Comparable<CivilDate> {
     return '$sign$y-$m-$d';
   }
 
-  /// Whether this date falls in the inclusive range [from]..[to].
+  /// Report whether this date falls in an inclusive range.
+  ///
+  /// Args:
+  ///     from (CivilDate): First day of the range, inclusive.
+  ///     to (CivilDate): Last day of the range, inclusive.
+  ///
+  /// Returns:
+  ///     bool: True when this date is within the range at either end.
   bool isBetweenInclusive(CivilDate from, CivilDate to) =>
       epochDay >= from.epochDay && epochDay <= to.epochDay;
 
@@ -178,13 +269,25 @@ final class CivilDate implements Comparable<CivilDate> {
   String toString() => toIso8601();
 }
 
-/// An inclusive span of calendar days, used for predicted windows.
+/// Civil date range: an inclusive span of calendar days.
+///
+/// Used for predicted windows, where both ends are days the prediction covers
+/// rather than a half-open interval.
+///
+/// Attributes:
+///     start (CivilDate): First day of the range, inclusive.
+///     end (CivilDate): Last day of the range, inclusive.
 @immutable
 final class CivilDateRange {
-  /// Creates a range from [start] to [end] inclusive.
+  /// Create a range covering both endpoints.
   ///
-  /// Throws [ArgumentError] if [end] precedes [start]; an inverted window is
-  /// always a bug rather than an empty result.
+  /// Args:
+  ///     start (CivilDate): First day, inclusive.
+  ///     end (CivilDate): Last day, inclusive. Must not precede [start].
+  ///
+  /// Throws:
+  ///     ArgumentError: If [end] precedes [start]. An inverted window is
+  ///         always a bug rather than an empty result.
   CivilDateRange(this.start, this.end) {
     if (end < start) {
       throw ArgumentError('end ($end) precedes start ($start)');
@@ -200,7 +303,13 @@ final class CivilDateRange {
   /// Number of days covered. A single-day range has a length of 1.
   int get lengthInDays => start.daysBetween(end) + 1;
 
-  /// Whether [date] falls within this range.
+  /// Report whether a date falls within this range.
+  ///
+  /// Args:
+  ///     date (CivilDate): The day to test.
+  ///
+  /// Returns:
+  ///     bool: True when [date] is within the range at either end.
   bool contains(CivilDate date) => date.isBetweenInclusive(start, end);
 
   @override
@@ -214,30 +323,50 @@ final class CivilDateRange {
   String toString() => '${start.toIso8601()}..${end.toIso8601()}';
 }
 
-/// Days since 1970-01-01 for a civil date. Exact for all Gregorian dates.
+/// Convert a civil date to days since 1970-01-01.
+///
+/// Howard Hinnant's `days_from_civil`, exact for every proleptic Gregorian
+/// date. The era arithmetic shifts the year so that March starts it, which is
+/// what removes February's leap day from the middle of the calculation.
+///
+/// Args:
+///     year (int): The calendar year.
+///     month (int): The month, 1..12.
+///     day (int): The day of the month.
+///
+/// Returns:
+///     int: Days since 1970-01-01, negative for earlier dates.
 int _daysFromCivil(int year, int month, int day) {
   final y = year - (month <= 2 ? 1 : 0);
   final era = (y >= 0 ? y : y - 399) ~/ 400;
-  final yearOfEra = y - era * 400;
+  final yearOfEra = y - era * 400; // 0..399
   final dayOfYear = (153 * (month + (month > 2 ? -3 : 9)) + 2) ~/ 5 + day - 1;
   final dayOfEra =
       yearOfEra * 365 + yearOfEra ~/ 4 - yearOfEra ~/ 100 + dayOfYear;
-  return era * 146097 + dayOfEra - 719468;
+  return era * 146097 + dayOfEra - 719468; // 146097 days per 400-year era
 }
 
-/// Inverse of [_daysFromCivil].
+/// Convert days since 1970-01-01 back to a civil date.
+///
+/// Inverse of [_daysFromCivil], and exact over the same range.
+///
+/// Args:
+///     epochDay (int): Days since 1970-01-01.
+///
+/// Returns:
+///     ({int year, int month, int day}): The calendar components.
 ({int year, int month, int day}) _civilFromDays(int epochDay) {
-  final z = epochDay + 719468;
+  final z = epochDay + 719468; // shift the epoch to 0000-03-01
   final era = (z >= 0 ? z : z - 146096) ~/ 146097;
-  final dayOfEra = z - era * 146097;
+  final dayOfEra = z - era * 146097; // 0..146096
   final yearOfEra =
       (dayOfEra - dayOfEra ~/ 1460 + dayOfEra ~/ 36524 - dayOfEra ~/ 146096) ~/
-      365;
+      365; // 0..399
   final y = yearOfEra + era * 400;
   final dayOfYear =
       dayOfEra - (365 * yearOfEra + yearOfEra ~/ 4 - yearOfEra ~/ 100);
-  final mp = (5 * dayOfYear + 2) ~/ 153;
+  final mp = (5 * dayOfYear + 2) ~/ 153; // 0..11, March-based
   final d = dayOfYear - (153 * mp + 2) ~/ 5 + 1;
-  final m = mp + (mp < 10 ? 3 : -9);
+  final m = mp + (mp < 10 ? 3 : -9); // back to a January-based month
   return (year: y + (m <= 2 ? 1 : 0), month: m, day: d);
 }
