@@ -1,3 +1,20 @@
+/// Riverpod providers for the data layer.
+///
+/// Wires the database, the repositories and the stored preferences into the
+/// widget tree, so a screen reads what it needs without knowing how any of it
+/// is constructed. Preferences are exposed as streams, so changing one in
+/// settings reaches the screen it controls on the next frame.
+///
+/// [appDatabaseProvider] deliberately has no default: the bootstrap opens the
+/// database, handles the failure outcomes, and overrides it.
+///
+/// Includes:
+///     - appDatabaseProvider and the three repository providers.
+///     - The day-log, cycle, prediction and condition read providers.
+///     - One provider per stored preference.
+///     - themeModeFromWireName: Resolves a stored theme mode.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/clock.dart';
@@ -21,11 +38,14 @@ import 'package:period_tracker/security/lock_controller.dart';
 /// The open database.
 ///
 /// Deliberately has no default. Opening the database is asynchronous and can
-/// fail in ways the app must render rather than swallow, so the bootstrap opens
-/// it, handles the corrupt and newer-schema outcomes, and overrides this
-/// provider with the result. A default here would be a second construction site
-/// for the executor, which ADR-0004 rules out, and would let a widget silently
-/// open a second connection to the same file.
+/// fail in ways the app must render rather than swallow, so the bootstrap
+/// opens it, handles the corrupt and newer-schema outcomes, and overrides this
+/// provider with the result. A default here would be a second construction
+/// site for the executor, which ADR-0004 rules out, and would let a widget
+/// silently open a second connection to the same file.
+///
+/// Throws:
+///     UnimplementedError: If read without the bootstrap's override.
 final Provider<AppDatabase> appDatabaseProvider = Provider<AppDatabase>((ref) {
   throw UnimplementedError(
     'appDatabaseProvider must be overridden with the database opened by '
@@ -92,8 +112,8 @@ final StreamProvider<List<ConditionRecord>> conditionsProvider =
 
 /// How many cycles were logged while each condition was recorded.
 ///
-/// Presented and nothing more. This is the sentence a flag could not produce —
-/// "these six cycles were logged while you were on hormonal contraception" —
+/// Presented and nothing more. This is the sentence a flag could not produce,
+/// "these six cycles were logged while you were on hormonal contraception",
 /// and it is context for reading the user's own numbers, never an input to
 /// them. See ADR-0010.
 final FutureProvider<List<ConditionOverlap>> conditionOverlapsProvider =
@@ -109,18 +129,19 @@ final FutureProvider<List<ConditionOverlap>> conditionOverlapsProvider =
 /// Whether the flow control is collapsed to bleeding yes/no (AND-24).
 ///
 /// A stream, so that turning the toggle on in settings changes the day editor
-/// on the next frame rather than the next launch. The default while it loads is
-/// the stored default, which is the fuller control: a screen that flickers from
-/// simplified to graded on startup would look like it had discarded something.
+/// on the next frame rather than the next launch. The default while it loads
+/// is the stored default, which is the fuller control: a screen that flickers
+/// from simplified to graded on startup would look like it had discarded
+/// something.
 final StreamProvider<bool> flowSimplifiedProvider = StreamProvider<bool>(
   (ref) => ref.watch(appDatabaseProvider).settingsDao.watchFlowSimplified(),
 );
 
 /// Asks the device to prove who is holding it (AND-29).
 ///
-/// Overridden in tests with a fake, so the gate's behaviour — the sixty-second
-/// grace period, the refusal path, the credential-removed path — is exercised
-/// headless rather than only on a device.
+/// Overridden in tests with a fake, so the gate's behaviour is exercised
+/// headless rather than only on a device: the sixty-second grace period, the
+/// refusal path, and the credential-removed path.
 final Provider<AppLockService> appLockServiceProvider =
     Provider<AppLockService>(
       (ref) => const LocalAuthService(),
@@ -151,9 +172,9 @@ final StreamProvider<bool> appLockEnabledProvider = StreamProvider<bool>(
 /// Whether the user still needs telling that their old backups will not
 /// restore (AND-28, ADR-0011).
 ///
-/// A stream, so that exporting or dismissing takes the banner away on the next
-/// frame rather than the next launch — a warning that survives the action it
-/// asked for reads as the app not having noticed.
+/// A stream, so that exporting or dismissing takes the banner away on the
+/// next frame rather than the next launch. A warning that survives the action
+/// it asked for reads as the app not having noticed.
 final StreamProvider<bool> needsReExportPromptProvider = StreamProvider<bool>(
   (ref) =>
       ref.watch(appDatabaseProvider).settingsDao.watchNeedsReExportPrompt(),
@@ -232,7 +253,17 @@ final StreamProvider<ThemeMode> themeModeProvider = StreamProvider<ThemeMode>(
       .map(themeModeFromWireName),
 );
 
-/// The [ThemeMode] stored as [wireName], or [ThemeMode.light].
+/// Resolve a stored theme mode name back to a [ThemeMode].
+///
+/// Falls back rather than throwing, because the value comes off disk and a
+/// database written by a build with a mode this one lacks must still open.
+///
+/// Args:
+///     wireName (String?): The stored name, or null when nothing is stored.
+///
+/// Returns:
+///     ThemeMode: The matching mode, or [ThemeMode.light] when the name is
+///     absent or unknown. Light is the default the app ships with.
 ThemeMode themeModeFromWireName(String? wireName) {
   for (final mode in ThemeMode.values) {
     if (mode.name == wireName) return mode;
