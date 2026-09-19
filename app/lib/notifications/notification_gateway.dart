@@ -1,3 +1,16 @@
+/// Notification delivery.
+///
+/// The platform surface notifications go out through, behind an interface so
+/// the scheduling rules can be tested without a device. The real
+/// implementation is the only place `flutter_local_notifications` is touched.
+///
+/// Includes:
+///     - NotificationCopy: The words a notification is delivered with.
+///     - NotificationGateway: The interface the scheduler depends on.
+///     - logPeriodActionId: The one-tap action's identifier.
+///     - LocalNotificationGateway: The real implementation.
+library;
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:meta/meta.dart';
 import 'package:period_tracker/core/clock.dart';
@@ -5,7 +18,7 @@ import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/notifications/notification_plan.dart';
 import 'package:timezone/timezone.dart' as tz;
 
-/// The words a notification is delivered with.
+/// Notification copy: the words a notification is delivered with.
 ///
 /// Resolved from the localisations by the caller and passed in, so nothing
 /// below this line needs a build context. It also means the copy rules are
@@ -76,7 +89,15 @@ final class NotificationCopy {
   /// Label on the one-tap log action.
   final String logAction;
 
-  /// The title for [kind], or the generic one when [detailed] is false.
+  /// Return the title for one kind of notification.
+  ///
+  /// Args:
+  ///     kind (NotificationKind): Which notification is going out.
+  ///     detailed (bool): Whether the user has opted into detail. False gives
+  ///         the generic title, which says nothing about a cycle.
+  ///
+  /// Returns:
+  ///     String: The title to deliver.
   String titleFor(NotificationKind kind, {required bool detailed}) {
     if (!detailed) return genericTitle;
     return switch (kind) {
@@ -87,7 +108,15 @@ final class NotificationCopy {
     };
   }
 
-  /// The body for [kind], or the generic one when [detailed] is false.
+  /// Return the body for one kind of notification.
+  ///
+  /// Args:
+  ///     kind (NotificationKind): Which notification is going out.
+  ///     detailed (bool): Whether the user has opted into detail. False gives
+  ///         the generic body.
+  ///
+  /// Returns:
+  ///     String: The body to deliver.
   String bodyFor(NotificationKind kind, {required bool detailed}) {
     if (!detailed) return genericBody;
     return switch (kind) {
@@ -99,39 +128,54 @@ final class NotificationCopy {
   }
 }
 
-/// The platform surface notifications are delivered through.
+/// Notification gateway: the platform surface notifications go through.
 ///
 /// An interface so the scheduling rules can be tested without a device. The
 /// real implementation is the only place `flutter_local_notifications` is
 /// touched, which also keeps the plugin out of every other file's imports.
 abstract interface class NotificationGateway {
-  /// Prepares the platform and creates the channels.
+  /// Prepare the platform and create the channels.
+  ///
+  /// Args:
+  ///     copy (NotificationCopy): Supplies the channel names and
+  ///         descriptions, which the system settings screen shows.
   Future<void> initialize(NotificationCopy copy);
 
-  /// Asks for permission to post notifications.
+  /// Ask for permission to post notifications.
   ///
-  /// Returns whether it was granted. Called in context, never at launch.
+  /// Called in context, never at launch.
+  ///
+  /// Returns:
+  ///     `Future<bool>`: Whether it was granted.
   Future<bool> requestPermission();
 
-  /// Removes everything currently scheduled.
+  /// Remove everything currently scheduled.
   Future<void> cancelAll();
 
-  /// Schedules [notification].
+  /// Schedule one notification.
+  ///
+  /// Args:
+  ///     notification (PlannedNotification): What to deliver, and when.
+  ///     copy (NotificationCopy): Supplies the title and body.
+  ///     detailed (bool): Whether the user has opted into detail.
   Future<void> schedule(
     PlannedNotification notification, {
     required NotificationCopy copy,
     required bool detailed,
   });
 
-  /// The ids currently scheduled, for tests and diagnostics.
+  /// Read the ids currently scheduled, for tests and diagnostics.
+  ///
+  /// Returns:
+  ///     `Future<List<int>>`: Every pending id, in platform order.
   Future<List<int>> pendingIds();
 }
 
 /// The identifier the one-tap log action reports back with.
 ///
 /// The highest-leverage item in the whole notification section: it collapses
-/// the most common logging event to a single tap, from the lock screen, without
-/// launching the app.
+/// the most common logging event to a single tap, from the lock screen,
+/// without launching the app.
 const String logPeriodActionId = 'log_period_started';
 
 /// A [NotificationGateway] backed by `flutter_local_notifications`.
@@ -185,7 +229,7 @@ final class LocalNotificationGateway implements NotificationGateway {
       // isolate, and the plugin can only start one if a dispatcher handle was
       // stored here at initialize time. Without this the tap is received by the
       // platform, finds no callback, logs "Callback information could not be
-      // retrieved", and does nothing — and the app is almost never running at
+      // retrieved", and does nothing. The app is almost never running at
       // 09:00, so that is the normal case rather than the edge case.
       onDidReceiveBackgroundNotificationResponse: onBackgroundResponse,
     );
@@ -215,19 +259,25 @@ final class LocalNotificationGateway implements NotificationGateway {
   /// The exact instant [date] at [fireHour] falls on, for the platform.
   ///
   /// Built as an instant, in UTC, rather than as a wall-clock time in
-  /// `tz.local`. `initializeTimeZones()` leaves `tz.local` set to UTC — that is
-  /// what the timezone package does until `setLocalLocation` is called with a
-  /// zone name only a platform plugin can supply — and the Android half of the
-  /// plugin schedules by combining the wall-clock string with the zone name it
-  /// is handed. A 09:00 built in `tz.local` therefore means 09:00 UTC: 01:00 in
-  /// Los Angeles, 20:00 in Sydney, and the wrong day in Honolulu.
+  /// `tz.local`. `initializeTimeZones()` leaves `tz.local` set to UTC, which
+  /// is what the timezone package does until `setLocalLocation` is called with
+  /// a zone name only a platform plugin can supply, and the Android half of
+  /// the plugin schedules by combining the wall-clock string with the zone
+  /// name it is handed. A 09:00 built in `tz.local` therefore means 09:00 UTC:
+  /// 01:00 in Los Angeles, 20:00 in Sydney, and the wrong day in Honolulu.
   ///
   /// Dart's own [DateTime] already applies the device's zone rules, DST
   /// included, for the date in question. Converting that instant to UTC keeps
   /// the right moment and needs no zone database and no extra dependency.
   ///
-  /// Static and public so the arithmetic can be asserted directly: a test that
-  /// recomputed it would agree with itself no matter what this shipped.
+  /// Static and public so the arithmetic can be asserted directly: a test
+  /// that recomputed it would agree with itself no matter what this shipped.
+  ///
+  /// Args:
+  ///     date (CivilDate): The day the notification is for.
+  ///
+  /// Returns:
+  ///     tz.TZDateTime: The firing instant, in UTC, at [fireHour] local.
   static tz.TZDateTime fireInstantFor(CivilDate date) => tz.TZDateTime.from(
     DateTime(date.year, date.month, date.day, fireHour),
     tz.UTC,
@@ -265,6 +315,16 @@ final class LocalNotificationGateway implements NotificationGateway {
     return pending.map((request) => request.id).toList();
   }
 
+  /// Build the platform details for one kind of notification.
+  ///
+  /// Args:
+  ///     kind (NotificationKind): Which notification is going out.
+  ///     copy (NotificationCopy): Supplies the action label.
+  ///     detailed (bool): Whether the user has opted into detail.
+  ///
+  /// Returns:
+  ///     NotificationDetails: The channel, importance and actions. The
+  ///     logging nudge carries no action and the low-priority channel.
   NotificationDetails _detailsFor(
     NotificationKind kind, {
     required NotificationCopy copy,
@@ -308,6 +368,15 @@ final class LocalNotificationGateway implements NotificationGateway {
     );
   }
 
+  /// Build the Android channels this app posts to.
+  ///
+  /// Args:
+  ///     copy (NotificationCopy): Supplies each channel's name and
+  ///         description, which the system settings screen shows.
+  ///
+  /// Returns:
+  ///     `List<AndroidNotificationChannel>`: One per
+  ///     [NotificationChannelId].
   List<AndroidNotificationChannel> _channels(NotificationCopy copy) =>
       <AndroidNotificationChannel>[
         AndroidNotificationChannel(

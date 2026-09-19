@@ -1,15 +1,29 @@
+/// Notification scheduling rules.
+///
+/// Decides which notifications a prediction earns, and on which days. Pure
+/// arithmetic over the result and the preferences, so the rules are testable
+/// without a platform.
+///
+/// Includes:
+///     - NotificationChannelId: The two delivery channels.
+///     - NotificationKind: What each notification is about.
+///     - NotificationPreferences: What the user has turned on.
+///     - PlannedNotification: One scheduled item.
+///     - NotificationPlanner: The rules themselves.
+library;
+
 import 'package:meta/meta.dart';
 import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/domain/cycles/cycle_rules.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 
-/// The two channels notifications are delivered on.
+/// Notification channel: the two channels notifications go out on.
 ///
 /// Two, not one, and this is the whole reason the enum exists. Android lets a
-/// user mute a channel; if predictions and the logging nudge shared one, a user
-/// annoyed by the nudge would mute the predictions along with it. Channel
-/// granularity is the difference between "I turned off one thing" and "I turned
-/// off the app" (`docs/PLAN.md` 2.4.3, risk R15).
+/// user mute a channel; if predictions and the logging nudge shared one, a
+/// user annoyed by the nudge would mute the predictions along with it. Channel
+/// granularity is the difference between "I turned off one thing" and "I
+/// turned off the app" (`docs/PLAN.md` 2.4.3, risk R15).
 enum NotificationChannelId {
   /// Everything about a predicted window. On by default.
   predictions('predictions'),
@@ -118,12 +132,22 @@ abstract final class NotificationPlanner {
   /// Days after the window opens before "likely started" fires.
   static const int likelyStartedAfterDays = 1;
 
-  /// Builds the schedule for [result] as of [today].
+  /// Build the schedule a prediction earns.
   ///
-  /// Returns an empty list whenever there is no window to talk about. That
-  /// covers [NoData], [TooIrregular], [LostTrack] and [DataInconsistent]: each
-  /// is a state where the app has just said it cannot support a window, and a
-  /// notification about one would contradict that.
+  /// Args:
+  ///     result (PredictionResult): What the model currently says.
+  ///     today (CivilDate): The day to schedule from.
+  ///     preferences (NotificationPreferences): What the user turned on.
+  ///     lastLoggedDay (CivilDate?, optional): The newest logged day, which
+  ///         the nudge measures silence from. Defaults to null.
+  ///
+  /// Returns:
+  ///     `List<PlannedNotification>`: What to schedule, every date strictly
+  ///     after [today]. Empty whenever there is no window to talk about,
+  ///     which covers [NoData], [TooIrregular], [LostTrack] and
+  ///     [DataInconsistent]: each is a state where the app has just said it
+  ///     cannot support a window, and a notification about one would
+  ///     contradict that.
   static List<PlannedNotification> plan({
     required PredictionResult result,
     required CivilDate today,
@@ -186,6 +210,16 @@ abstract final class NotificationPlanner {
     return planned;
   }
 
+  /// Decide whether the low-priority logging nudge is earned.
+  ///
+  /// Args:
+  ///     today (CivilDate): The day to schedule from.
+  ///     preferences (NotificationPreferences): What the user turned on.
+  ///     lastLoggedDay (CivilDate?): The newest logged day, or null.
+  ///
+  /// Returns:
+  ///     PlannedNotification?: The nudge, or null when it is switched off,
+  ///     nothing has been logged, or one fired too recently.
   static PlannedNotification? _planNudge({
     required CivilDate today,
     required NotificationPreferences preferences,
@@ -228,6 +262,14 @@ abstract final class NotificationPlanner {
   /// freshly built plan can never satisfy the `<= today` half of this and the
   /// answer would always be no, whatever the user's phone had done to the
   /// alarms.
+  /// Args:
+  ///     fireDates (`List<CivilDate>`): Dates from the *stored* schedule.
+  ///     lastOpened (CivilDate?): When the app was last opened, or null.
+  ///     today (CivilDate): The current day.
+  ///
+  /// Returns:
+  ///     bool: True when a scheduled date fell between the last visit and
+  ///     today. False when the app has never been opened.
   static bool missedWhileClosed({
     required List<CivilDate> fireDates,
     required CivilDate? lastOpened,
