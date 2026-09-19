@@ -1,3 +1,16 @@
+/// Export format v3.
+///
+/// Writes the user's data out as a versioned JSON envelope. This is the only
+/// backup mechanism in the app: there is no cloud sync, so if this is wrong
+/// the user loses everything with no recovery (risk R8).
+///
+/// Includes:
+///     - exportSchemaVersion, exportSchemaFingerprint: What this build
+///       writes, and the shape it promises.
+///     - ExportEnvelope: The envelope itself.
+///     - ExportV1: Building, encoding and writing one.
+library;
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -14,12 +27,12 @@ import 'package:period_tracker/domain/models/day_log.dart';
 /// The importer refuses anything it does not recognise rather than guessing, so
 /// this number is the promise that a file's fields mean what they used to.
 ///
-/// **v3 adds the intercourse field; v2 and earlier are refused** (ADR-0011). That decision
-/// was taken knowing its cost: this app has no cloud and no Play Store restore,
-/// so the export *is* the recovery path (risk R8), and refusing v1 makes every
-/// backup taken before this release unrestorable. A few lines of import
-/// branching would have avoided it and were declined. The mitigation is the
-/// one-time re-export prompt — see `SettingKey.exportFormatAcknowledged` — so
+/// **v3 adds the intercourse field; v2 and earlier are refused** (ADR-0011).
+/// That decision was taken knowing its cost: this app has no cloud and no Play
+/// Store restore, so the export *is* the recovery path (risk R8), and refusing
+/// v1 makes every backup taken before this release unrestorable. A few lines
+/// of import branching would have avoided it and were declined. The mitigation
+/// is the one-time re-export prompt, `SettingKey.exportFormatAcknowledged`, so
 /// that nobody discovers the loss after losing a phone.
 ///
 /// If you are reading this because you are about to "fix" the refusal: it is
@@ -29,8 +42,8 @@ import 'package:period_tracker/domain/models/day_log.dart';
 /// it; v3 strands every backup taken between the two. That is the second time
 /// in one release cycle, and it is worth saying out loud, because the argument
 /// for refusing is weakest here: v3 adds a *nullable* field, so a v2 file has
-/// nothing missing — absence genuinely means "not recorded". Reading one would
-/// have cost no guesswork at all. The policy was chosen deliberately and is
+/// nothing missing, and absence genuinely means "not recorded". Reading one
+/// would have cost no guesswork. The policy was chosen deliberately and is
 /// being followed deliberately; if it is ever revisited, this is the case to
 /// revisit it on.
 const int exportSchemaVersion = 3;
@@ -111,11 +124,15 @@ final class ExportEnvelope {
   /// The identity of a condition record is its condition and its dates.
   final List<ConditionRecord> conditions;
 
-  /// The JSON form written to disk.
+  /// Render this envelope as the JSON written to disk.
   ///
-  /// Key order is fixed and the encoder is pretty-printed, because this file is
-  /// the user's own backup and the only recovery path the app has (risk R8). It
-  /// should be readable, and diffable, by a person with a text editor.
+  /// Key order is fixed and the encoder is pretty-printed, because this file
+  /// is the user's own backup and the only recovery path the app has (risk
+  /// R8). It should be readable, and diffable, by a person with a text editor.
+  ///
+  /// Returns:
+  ///     `Map<String, Object?>`: The envelope, with its keys in a fixed
+  ///     order.
   Map<String, Object?> toJson() => <String, Object?>{
     'app_version': appVersion,
     'conditions': <Map<String, Object?>>[
@@ -159,6 +176,14 @@ final class ExportEnvelope {
       'ExportEnvelope(v$schemaVersion, app $appVersion, '
       '${dayLogs.length} logs, ${settings.length} settings)';
 
+  /// Compare two log lists element by element, in order.
+  ///
+  /// Args:
+  ///     a (`List<DayLog>`): First list.
+  ///     b (`List<DayLog>`): Second list.
+  ///
+  /// Returns:
+  ///     bool: True when both hold the same days in the same order.
   static bool _sameLogs(List<DayLog> a, List<DayLog> b) {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {
@@ -167,6 +192,15 @@ final class ExportEnvelope {
     return true;
   }
 
+  /// Compare two condition lists, ignoring row identity.
+  ///
+  /// Args:
+  ///     a (`List<ConditionRecord>`): First list.
+  ///     b (`List<ConditionRecord>`): Second list.
+  ///
+  /// Returns:
+  ///     bool: True when both hold the same conditions over the same spans,
+  ///     in the same order.
   static bool _sameConditions(
     List<ConditionRecord> a,
     List<ConditionRecord> b,
@@ -185,6 +219,14 @@ final class ExportEnvelope {
     return true;
   }
 
+  /// Compare two settings maps by key and value.
+  ///
+  /// Args:
+  ///     a (`Map<String, String>`): First map.
+  ///     b (`Map<String, String>`): Second map.
+  ///
+  /// Returns:
+  ///     bool: True when both hold the same keys with the same values.
   static bool _sameSettings(Map<String, String> a, Map<String, String> b) {
     if (a.length != b.length) return false;
     for (final entry in a.entries) {
@@ -209,7 +251,14 @@ final class ExportEnvelope {
 /// belongs to the Settings screen (AND-16); putting it here would drag a
 /// platform plugin into the data layer and make this untestable off-device.
 abstract final class ExportV1 {
-  /// Reads everything exportable out of [database].
+  /// Read everything exportable out of the database.
+  ///
+  /// Args:
+  ///     database (AppDatabase): Where the data lives.
+  ///     clock (Clock): Stamps the envelope with the export time.
+  ///
+  /// Returns:
+  ///     `Future<ExportEnvelope>`: The envelope, not yet written anywhere.
   static Future<ExportEnvelope> build({
     required AppDatabase database,
     required Clock clock,
@@ -224,14 +273,29 @@ abstract final class ExportV1 {
     conditions: await database.conditionDao.all(),
   );
 
-  /// Encodes [envelope] as the text written to a file.
+  /// Encode an envelope as the text written to a file.
+  ///
+  /// Args:
+  ///     envelope (ExportEnvelope): What to encode.
+  ///
+  /// Returns:
+  ///     String: Pretty-printed JSON, two-space indented.
   static String encode(ExportEnvelope envelope) =>
       const JsonEncoder.withIndent('  ').convert(envelope.toJson());
 
-  /// Exports [database] to [destination], which the user must have chosen.
+  /// Export the database to a destination the user chose.
   ///
-  /// Returns the envelope that was written, so the caller can report how much
-  /// was saved without re-reading the file.
+  /// Args:
+  ///     destination (File): Where to write. Supplied by the system file
+  ///         picker, never chosen here.
+  ///     database (AppDatabase): Where the data lives.
+  ///     clock (Clock): Stamps the envelope with the export time.
+  ///     logger (RingLogger?, optional): Records counts, never content.
+  ///         Defaults to null.
+  ///
+  /// Returns:
+  ///     `Future<ExportEnvelope>`: The envelope that was written, so the
+  ///     caller can report how much was saved without re-reading the file.
   static Future<ExportEnvelope> writeTo(
     File destination, {
     required AppDatabase database,
@@ -250,12 +314,18 @@ abstract final class ExportV1 {
     return envelope;
   }
 
-  /// A filename carrying the export date, for the picker to offer as a default.
+  /// Suggest a filename for the picker to offer as a default.
   ///
-  /// Deliberately bland. A file called `period-tracker-...` sitting in a shared
-  /// downloads folder tells anyone who sees it something the user may not have
-  /// chosen to share, so the name says what the file is for the person who made
-  /// it and nothing about what is in it.
+  /// Deliberately bland. A file called `period-tracker-...` sitting in a
+  /// shared downloads folder tells anyone who sees it something the user may
+  /// not have chosen to share, so the name says what the file is for the
+  /// person who made it and nothing about what is in it.
+  ///
+  /// Args:
+  ///     clock (Clock): Supplies the date the name carries.
+  ///
+  /// Returns:
+  ///     String: A name of the form `period-tracker-export-YYYY-MM-DD.json`.
   static String suggestedFileName(Clock clock) =>
       'period-tracker-export-${clock.today().toIso8601()}.json';
 }
