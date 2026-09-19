@@ -1,3 +1,13 @@
+/// Companion providers.
+///
+/// Assembles what the companion knows from providers that already exist, so
+/// it reads the app's state rather than becoming a second opinion about it.
+///
+/// Includes:
+///     - companionStateProvider: What the companion currently knows.
+///     - companionLineProvider: The single line it would say right now.
+library;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/features/companion/companion_lines.dart';
@@ -13,7 +23,7 @@ import 'package:period_tracker/features/companion/companion_rules.dart';
 /// [CompanionState.notReady] while any of the three streams is still loading,
 /// rather than defaulting to empty. Defaulting would have the companion say
 /// "nothing is recorded yet" for a frame to a user with two years of history,
-/// which is a small lie told confidently — the failure mode this project cares
+/// which is a small lie told confidently, the failure mode this project cares
 /// about most.
 final Provider<CompanionState> companionStateProvider =
     Provider<CompanionState>((ref) {
