@@ -1,3 +1,21 @@
+/// Companion dock.
+///
+/// The bottom bar with the companion sitting at the end of it, the sheet its
+/// suggestion arrives in, and the crescent that breathes on the button. It
+/// takes width from the navigation bar rather than floating over the screen,
+/// so "covers nothing" is a property of the layout rather than a hope.
+///
+/// Includes:
+///     - CompanionDock: The row: navigation bar, then companion.
+///     - CompanionButton: The control that offers the line.
+///     - showCompanionSuggestion: The sheet the line arrives in.
+///     - CompanionBreath: How long a breath lasts, and how big it is.
+///     - CompanionMark: The crescent, and the ticker behind it.
+///     - _CompanionMarkState: When that ticker runs, and when it must not.
+///     - _CrescentPainter: The crescent and its halo, at one point of a
+///       breath.
+library;
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -7,7 +25,7 @@ import 'package:period_tracker/features/companion/companion_lines.dart';
 import 'package:period_tracker/features/companion/companion_providers.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// The bottom bar, with the companion sitting at the end of it (AND-37).
+/// Companion dock: the bottom bar, with the companion at the end (AND-37).
 ///
 /// **Why it is in the bar rather than floating over the screen.** The brief for
 /// this feature was a persistent presence that does not block content and does
@@ -16,7 +34,7 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// the last line of every scrolled list and the extended action button on the
 /// conditions screen. Giving the companion its own slot in the bar is the only
 /// arrangement where "covers nothing" is a property of the layout instead of a
-/// hope about the screens — and `companion_dock_test.dart` asserts the two
+/// hope about the screens, and `companion_dock_test.dart` asserts the two
 /// rectangles do not meet, so a later change back to floating fails.
 ///
 /// It costs no vertical space: the navigation bar is already tall enough for a
@@ -27,11 +45,21 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// all four tabs and on every screen pushed within them. It is **outside** the
 /// onboarding route, which is deliberate: the first thing a new user reads is
 /// the disclaimer, and nothing should be sitting beside it offering advice.
+///
+/// Attributes:
+///     navigationBar (Widget): The app's navigation bar.
+///     showCompanion (bool): Whether the companion is offered at all.
 class CompanionDock extends StatelessWidget {
   /// Wraps [navigationBar] and puts the companion at the end of the same row.
   ///
-  /// With [showCompanion] false the row is the navigation bar alone, and the
-  /// width the companion was taking goes back to the destinations.
+  /// Args:
+  ///     navigationBar (Widget): The app's navigation bar, laid out in the
+  ///         space the companion leaves.
+  ///     showCompanion (bool, optional): Whether the companion is offered.
+  ///         Defaults to false, so a caller that has not been taught about
+  ///         the preference gets the bar without it. With it false the row is
+  ///         the navigation bar alone and the width goes back to the
+  ///         destinations.
   const CompanionDock({
     required this.navigationBar,
     this.showCompanion = false,
@@ -80,11 +108,11 @@ class CompanionDock extends StatelessWidget {
   }
 }
 
-/// The companion itself: a labelled control that offers one line (AND-37).
+/// Companion button: a labelled control that offers one line (AND-37).
 ///
 /// A control, not an ornament, so it is named for a screen reader and meets the
 /// 48dp target the theme sets for every icon button. Its suggestion is not
-/// painted next to it — it arrives on tap, in a sheet a screen reader reads and
+/// painted next to it. It arrives on tap, in a sheet a screen reader reads and
 /// anyone can dismiss.
 class CompanionButton extends ConsumerWidget {
   /// Creates the companion control.
@@ -108,13 +136,22 @@ class CompanionButton extends ConsumerWidget {
   }
 }
 
-/// Shows the current suggestion, dismissibly.
+/// Show the current suggestion, dismissibly.
 ///
 /// A sheet rather than a bubble drawn beside the dock. It takes focus, so a
 /// screen reader reads the line without being driven to it; it can be left by
 /// the dismiss button, by the drag handle, by the back gesture or by tapping
 /// away; and it is a route, so it is torn down with everything else when the
 /// app locks.
+///
+/// Args:
+///     context (BuildContext): What to show the sheet over.
+///     line (CompanionLine): The line to say. Already chosen by the rules in
+///         `companion_rules.dart` rather than picked here.
+///
+/// Returns:
+///     `Future<void>`: Completes when the sheet is closed, however it was
+///     closed. Nothing is recorded about which way that was.
 Future<void> showCompanionSuggestion(
   BuildContext context,
   CompanionLine line,
@@ -168,7 +205,7 @@ Future<void> showCompanionSuggestion(
 /// Derived from [Motion.standard] rather than added to [Motion] as a sixth
 /// token, for two reasons. A token added there has to be added to `Motion.all`
 /// and to the list `motion_test.dart` pins, and this is not a new kind of
-/// movement — it is the app's one transition duration, held long enough to read
+/// movement. It is the app's one transition duration, held long enough to read
 /// as breathing rather than as a control answering a finger. And multiplying
 /// keeps the accessibility guarantee for free: zero times anything is zero, so
 /// "remove animations" collapses this the same way it collapses everything
@@ -178,7 +215,15 @@ abstract final class CompanionBreath {
   /// How many [Motion.standard]s one half-breath lasts.
   static const int standards = 6;
 
-  /// One half-breath in [context], or [Duration.zero] with animations off.
+  /// Return how long one half-breath lasts.
+  ///
+  /// Args:
+  ///     context (BuildContext): Read for the device's animation setting.
+  ///
+  /// Returns:
+  ///     Duration: [standards] times [Motion.standard], or [Duration.zero]
+  ///     with animations off, which is what makes [CompanionMark] start no
+  ///     ticker at all.
   static Duration of(BuildContext context) =>
       Motion.standard(context) * standards;
 
@@ -197,12 +242,12 @@ abstract final class CompanionBreath {
 /// The companion's art: a crescent that breathes (AND-37).
 ///
 /// Drawn rather than iconised, because the charm of this feature has to come
-/// from the art and the motion — `docs/PLAN.md` 6.3 rules out the shortcut of
+/// from the art and the motion. `docs/PLAN.md` 6.3 rules out the shortcut of
 /// getting it from the words instead.
 ///
 /// **The idle animation stops in two situations, and neither is optional.**
-/// With `MediaQuery.disableAnimationsOf` set — Android's "remove animations",
-/// iOS's reduce motion — [CompanionBreath.of] is zero, no ticker is created,
+/// With `MediaQuery.disableAnimationsOf` set (Android's "remove animations",
+/// iOS's reduce motion) [CompanionBreath.of] is zero, no ticker is created,
 /// and the mark is simply drawn at rest. And when the app leaves the
 /// foreground the controller is stopped rather than left ticking against a
 /// surface nobody can see.
@@ -214,10 +259,22 @@ class CompanionMark extends StatefulWidget {
   State<CompanionMark> createState() => _CompanionMarkState();
 }
 
+/// State for [CompanionMark]: when the breath runs, and when it must not.
+///
+/// Observes the app lifecycle as well as the media query, because the two
+/// reasons to stop are independent: the device may have animations on while
+/// the app is behind the recent-apps switcher.
+///
+/// Attributes:
+///     _controller (AnimationController): One half-breath, repeated in
+///         reverse.
+///     _foreground (bool): Whether the app is resumed.
 class _CompanionMarkState extends State<CompanionMark>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  /// One half-breath, repeated in reverse for as long as it should run.
   late final AnimationController _controller = AnimationController(vsync: this);
 
+  /// Whether the app is resumed. Anything else stops the breath.
   bool _foreground = true;
 
   @override
@@ -244,6 +301,13 @@ class _CompanionMarkState extends State<CompanionMark>
     _sync();
   }
 
+  /// Start, stop or retime the breath to match the current conditions.
+  ///
+  /// Called from both triggers rather than duplicated at each, so there is one
+  /// place that decides whether the ticker should be running. Stopping also
+  /// resets the value to 0, which is the resting frame: a mark frozen
+  /// mid-breath would be drawn slightly swollen for as long as it stayed
+  /// there.
   void _sync() {
     final breath = CompanionBreath.of(context);
     if (breath == Duration.zero || !_foreground) {
@@ -282,7 +346,19 @@ class _CompanionMarkState extends State<CompanionMark>
 }
 
 /// Paints the crescent and its halo at a point in the breath.
+///
+/// Attributes:
+///     breath (double): 0 at rest, 1 at the top of a breath.
+///     ink (Color): The colour of the mark.
 class _CrescentPainter extends CustomPainter {
+  /// Creates the painter.
+  ///
+  /// Args:
+  ///     breath (double): 0 at rest, 1 at the top of a breath. Already eased
+  ///         by the caller, so this is a position and not a time.
+  ///     ink (Color): The colour of the mark. The halo is the same colour at
+  ///         [CompanionBreath.haloAlpha] times [breath], so it is invisible
+  ///         at rest.
   const _CrescentPainter({required this.breath, required this.ink});
 
   /// 0 at rest, 1 at the top of a breath.
