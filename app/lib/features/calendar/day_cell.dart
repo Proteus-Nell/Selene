@@ -1,3 +1,17 @@
+/// Day cell and its markers.
+///
+/// One square of the month grid, and the three markers that can appear under
+/// its number. Every marker is a different shape rather than a different
+/// colour, so the grid still reads in greyscale (`docs/PLAN.md` 2.4.4), and
+/// the cell's screen-reader label is assembled to read as a sentence.
+///
+/// Includes:
+///     - PeriodMarker: Filled. This day was logged as bleeding.
+///     - PredictedMarker: Hollow. This day is inside the predicted window.
+///     - IntercourseMarker: An open ring. Something was logged, not what.
+///     - DayCell: The square itself, and its semantics.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/features/common/formatting.dart';
@@ -45,7 +59,7 @@ class PredictedMarker extends StatelessWidget {
 /// A small open ring: intercourse was logged on this day (AND-30).
 ///
 /// A different *shape* from the other two markers rather than a third colour,
-/// like everything else in this grid — the states have to be told apart in
+/// like everything else in this grid: the states have to be told apart in
 /// greyscale (`docs/PLAN.md` 2.4.4).
 ///
 /// It says only that something was logged, never which answer. A calendar is
@@ -69,8 +83,32 @@ class IntercourseMarker extends StatelessWidget {
 /// grid without it gets a list of bare numbers, which is worse than useless on
 /// the screen the app is built around. The label is assembled to read as a
 /// sentence: "14 March, period day 2, inside predicted window, today".
+///
+/// Attributes:
+///     date (CivilDate): The day this cell shows.
+///     height (double): How tall the cell should be.
+///     isToday (bool): Whether this is the current day.
+///     periodDayNumber (int?): Which day of a bleeding run this is.
+///     isPredicted (bool): Whether the day is inside the predicted window.
+///     hasSymptoms (bool): Whether any symptom was recorded.
+///     hasIntercourse (bool): Whether intercourse was recorded.
+///     onLongPress (VoidCallback): Opens the editor for this day.
 class DayCell extends StatelessWidget {
   /// Creates a cell for [date].
+  ///
+  /// Args:
+  ///     date (CivilDate): The day this cell shows.
+  ///     height (double): How tall the cell should be, measured by the grid
+  ///         from the current text scale rather than fixed here.
+  ///     isToday (bool): Whether this is the current day.
+  ///     periodDayNumber (int?): Which day of a bleeding run this is, or null
+  ///         if it is not one.
+  ///     isPredicted (bool): Whether the day is inside the predicted window.
+  ///     hasSymptoms (bool): Whether any symptom was recorded.
+  ///     hasIntercourse (bool): Whether intercourse was recorded. Not which
+  ///         answer, which the cell is never told.
+  ///     onLongPress (VoidCallback): Opens the editor for this day. Bound to
+  ///         the tap as well, for the reason given in the build method.
   const DayCell({
     required this.date,
     required this.height,
@@ -101,7 +139,7 @@ class DayCell extends StatelessWidget {
   /// Whether any symptom was recorded.
   final bool hasSymptoms;
 
-  /// Whether intercourse was recorded — not which answer.
+  /// Whether intercourse was recorded. Not which answer.
   final bool hasIntercourse;
 
   /// Opens the editor for this day.
@@ -121,7 +159,7 @@ class DayCell extends StatelessWidget {
       excludeSemantics: true,
       // Both actions, deliberately. `excludeSemantics` drops the InkWell's own
       // semantics, so whatever is not re-declared here does not exist to a
-      // screen reader — and a node marked `button: true` with no tap action is
+      // screen reader, and a node marked `button: true` with no tap action is
       // one TalkBack's double-tap gesture cannot activate at all. The cell
       // would be readable and unusable.
       onTap: onLongPress,
@@ -197,6 +235,20 @@ class DayCell extends StatelessWidget {
     );
   }
 
+  /// Assemble the sentence a screen reader reads for this cell.
+  ///
+  /// Built by suffixing rather than by composing a format string, so a cell
+  /// with four things true reads as one sentence in every language rather than
+  /// as four fragments in the order this method happens to test them.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     context (BuildContext): For the locale the date is formatted in.
+  ///
+  /// Returns:
+  ///     String: The date, then whatever is true of the day, then "today" if
+  ///     it is. Never which answer was recorded for intercourse: a screen
+  ///     reader is audible to whoever else is in the room.
   String _semanticLabel(AppLocalizations l10n, BuildContext context) {
     final readable = date.dayAndMonth(context);
     final periodDay = periodDayNumber;
