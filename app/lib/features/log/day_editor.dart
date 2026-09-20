@@ -1,3 +1,17 @@
+/// Day editor.
+///
+/// Edits one day's flow, symptoms and intercourse, in the same shape wherever
+/// it is opened from. Every change writes immediately: a save button would add
+/// a tap to every correction and create a state where the user believes they
+/// have recorded something and have not.
+///
+/// Includes:
+///     - DayEditor: The editor, and the write every control makes.
+///     - _IntercourseChips: Two chips, and a way back to having said nothing.
+///     - _BleedingToggle: Flow as a yes/no question, and what "yes" records.
+///     - _SymptomChip: One symptom, with its severity behind a long press.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/date_utils.dart';
@@ -6,7 +20,7 @@ import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/features/common/chip_motion.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// Edits one day's flow and symptoms.
+/// Day editor: one day's flow, symptoms and intercourse.
 ///
 /// Used inline on the log screen for today, and in a sheet from the calendar
 /// for any other day, so that "correct a wrong entry" is the same interaction
@@ -15,8 +29,18 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// Every change writes immediately. A save button would add a tap to every
 /// correction and, worse, would create a state where the user believes they
 /// have recorded something and have not.
+///
+/// Attributes:
+///     date (CivilDate): The day being edited.
+///     existing (DayLog?): What is currently stored for it.
 class DayEditor extends ConsumerWidget {
   /// Edits [date], whose current entry is [existing].
+  ///
+  /// Args:
+  ///     date (CivilDate): The day being edited.
+  ///     existing (DayLog?): What is currently stored for that day, or null.
+  ///         Null and an empty log are treated alike, so an unlogged day and
+  ///         a day logged as nothing open the same editor.
   const DayEditor({required this.date, required this.existing, super.key});
 
   /// The day being edited.
@@ -25,6 +49,14 @@ class DayEditor extends ConsumerWidget {
   /// What is currently stored for that day, if anything.
   final DayLog? existing;
 
+  /// Write a day, or delete it when there is nothing left to record.
+  ///
+  /// Args:
+  ///     ref (WidgetRef): For the cycle repository.
+  ///     next (DayLog): What the day should become.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once the write or the delete is done.
   Future<void> _write(WidgetRef ref, DayLog next) async {
     final repository = ref.read(cycleRepositoryProvider);
     if (next.isEmpty) {
@@ -83,7 +115,7 @@ class DayEditor extends ConsumerWidget {
         Text(l10n.logIntercourseTitle, style: theme.textTheme.titleSmall),
         const SizedBox(height: 4),
         // Both facts a user needs before touching this, stated before they do:
-        // it is optional, and it is not used for predictions — which they would
+        // it is optional, and it is not used for predictions, which they would
         // otherwise reasonably assume, since everything else here is.
         Text(l10n.logIntercourseHint, style: theme.textTheme.bodySmall),
         const SizedBox(height: 8),
@@ -137,6 +169,14 @@ class DayEditor extends ConsumerWidget {
     );
   }
 
+  /// Return the heading for one symptom section.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     section (SymptomSection): The section to name.
+  ///
+  /// Returns:
+  ///     String: Its heading, in the user's language.
   static String _sectionLabel(AppLocalizations l10n, SymptomSection section) =>
       switch (section) {
         SymptomSection.physical => l10n.logSectionPhysical,
@@ -144,6 +184,14 @@ class DayEditor extends ConsumerWidget {
         SymptomSection.emotional => l10n.logSectionEmotional,
       };
 
+  /// Return the label for one flow intensity.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     flow (FlowIntensity): The intensity to name.
+  ///
+  /// Returns:
+  ///     String: Its name, in the user's language.
   static String _flowLabel(AppLocalizations l10n, FlowIntensity flow) =>
       switch (flow) {
         FlowIntensity.none => l10n.logFlowNone,
@@ -159,14 +207,25 @@ class DayEditor extends ConsumerWidget {
 /// Two chips and no third "none" option, because [Intercourse] has no such
 /// value: null means *not recorded*, and that has to stay a different statement
 /// from either answer. Tapping the selected chip clears it, which is how a user
-/// takes something back — the alternative would be an app that, once told,
+/// takes something back. The alternative would be an app that, once told,
 /// cannot be untold.
+///
+/// Attributes:
+///     value (Intercourse?): What is recorded, or null for nothing.
+///     onChanged (`ValueChanged<Intercourse?>`): Reports a new answer.
 class _IntercourseChips extends StatelessWidget {
+  /// Creates the control.
+  ///
+  /// Args:
+  ///     value (Intercourse?): What is recorded, or null for nothing.
+  ///     onChanged (`ValueChanged<Intercourse?>`): Reports a new answer, and
+  ///         is passed null when the selected chip is tapped again.
   const _IntercourseChips({required this.value, required this.onChanged});
 
   /// What is recorded, or null for nothing.
   final Intercourse? value;
 
+  /// Reports a new answer, or null to clear it.
   final ValueChanged<Intercourse?> onChanged;
 
   @override
@@ -192,6 +251,14 @@ class _IntercourseChips extends StatelessWidget {
     );
   }
 
+  /// Return the label for one answer.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     value (Intercourse): The answer to name.
+  ///
+  /// Returns:
+  ///     String: Its name, in the user's language.
   static String _label(AppLocalizations l10n, Intercourse value) =>
       switch (value) {
         Intercourse.protected => l10n.logIntercourseProtected,
@@ -205,8 +272,8 @@ class _IntercourseChips extends StatelessWidget {
 /// nothing but [DayLog.isBleedingDay], and [FlowIntensity.spotting] is
 /// deliberately *not* a bleeding day: mid-cycle spotting must not open a cycle,
 /// because a spurious short cycle is an outlier the filter then has to widen
-/// its intervals to absorb. So "yes" writes [FlowIntensity.medium] — a real
-/// bleeding intensity, in the middle of the range, which is the least wrong
+/// its intervals to absorb. So "yes" writes [FlowIntensity.medium], a real
+/// bleeding intensity in the middle of the range, which is the least wrong
 /// thing to record when the user has declined to say. Writing spotting here
 /// would silently stop cycles being detected at all for every user who turned
 /// this on, and nothing on screen would say so.
@@ -219,12 +286,25 @@ class _IntercourseChips extends StatelessWidget {
 /// Reads back through the same predicate rather than through equality: a day
 /// recorded as heavy before the toggle was turned on answers "yes", and stays
 /// heavy.
+///
+/// Attributes:
+///     flow (FlowIntensity): What is currently recorded.
+///     onChanged (`ValueChanged<FlowIntensity>`): Reports a new answer.
 class _BleedingToggle extends StatelessWidget {
+  /// Creates the toggle.
+  ///
+  /// Args:
+  ///     flow (FlowIntensity): What is currently recorded, at whatever
+  ///         intensity. Read through `isBleeding` rather than by equality.
+  ///     onChanged (`ValueChanged<FlowIntensity>`): Reports a new answer. Not
+  ///         called when the current answer is tapped again, which is what
+  ///         keeps a heavy day heavy.
   const _BleedingToggle({required this.flow, required this.onChanged});
 
   /// What is currently recorded, at whatever intensity.
   final FlowIntensity flow;
 
+  /// Reports a new answer.
   final ValueChanged<FlowIntensity> onChanged;
 
   /// What "yes" records. See the class comment: never [FlowIntensity.spotting].
@@ -271,15 +351,33 @@ class _BleedingToggle extends StatelessWidget {
 /// picker, because the budget for logging symptoms is four taps for the whole
 /// interaction and most days the exact severity is not the point. The severity
 /// is still reachable, just not on the critical path.
+///
+/// Attributes:
+///     symptom (Symptom): The symptom this chip records.
+///     severity (SymptomSeverity): How strong it currently is.
+///     onChanged (`ValueChanged<SymptomSeverity>`): Reports a new severity.
 class _SymptomChip extends StatelessWidget {
+  /// Creates a symptom chip.
+  ///
+  /// Args:
+  ///     symptom (Symptom): The symptom this chip records.
+  ///     severity (SymptomSeverity): How strong it currently is.
+  ///         [SymptomSeverity.none] means it is not recorded at all.
+  ///     onChanged (`ValueChanged<SymptomSeverity>`): Reports a new severity,
+  ///         including `none` when the chip is deselected.
   const _SymptomChip({
     required this.symptom,
     required this.severity,
     required this.onChanged,
   });
 
+  /// The symptom this chip records.
   final Symptom symptom;
+
+  /// How strong it currently is, or none if it is not recorded.
   final SymptomSeverity severity;
+
+  /// Reports a new severity.
   final ValueChanged<SymptomSeverity> onChanged;
 
   @override
@@ -321,6 +419,15 @@ class _SymptomChip extends StatelessWidget {
     );
   }
 
+  /// Offer the severities in a sheet, and report the chosen one.
+  ///
+  /// Args:
+  ///     context (BuildContext): What to show the sheet over.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once the sheet is closed. Nothing is
+  ///     reported when it is dismissed, so backing out leaves the chip as it
+  ///     was rather than clearing it.
   Future<void> _chooseSeverity(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final chosen = await showModalBottomSheet<SymptomSeverity>(
@@ -351,6 +458,15 @@ class _SymptomChip extends StatelessWidget {
     if (chosen != null) onChanged(chosen);
   }
 
+  /// Return the label for one symptom.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     symptom (Symptom): The symptom to name.
+  ///
+  /// Returns:
+  ///     String: Its name, in the user's language. Exhaustive over the enum,
+  ///     so a symptom added later fails to compile until it has a name.
   static String _symptomLabel(AppLocalizations l10n, Symptom symptom) =>
       switch (symptom) {
         Symptom.cramps => l10n.logSymptomCramps,
@@ -371,6 +487,14 @@ class _SymptomChip extends StatelessWidget {
         Symptom.lowMood => l10n.logSymptomLowMood,
       };
 
+  /// Return the label for one severity.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     severity (SymptomSeverity): The severity to name.
+  ///
+  /// Returns:
+  ///     String: Its name, in the user's language.
   static String _severityLabel(
     AppLocalizations l10n,
     SymptomSeverity severity,

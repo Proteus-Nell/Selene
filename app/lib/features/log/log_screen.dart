@@ -1,3 +1,18 @@
+/// Log screen.
+///
+/// The app's home: today's state, one primary action, and the day editor
+/// beneath it. The tap budgets in `docs/PLAN.md` 2.4.2 are this screen's
+/// specification, because sparse logs degrade prediction quality directly.
+///
+/// Includes:
+///     - LogScreen: The screen itself.
+///     - _LogScreenState: The chosen day, and the write the button makes.
+///     - _TodayState: Today's state, in a sentence.
+///     - _DaySelector: The inline day choices beside the action.
+///     - _ReExportBanner: The one-time warning about pre-AND-28 backups.
+///     - _RecoveryBanner: The notice that a damaged database was quarantined.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/date_utils.dart';
@@ -14,7 +29,7 @@ import 'package:period_tracker/features/today/today_hero.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/main.dart';
 
-/// The app's home: today's state and one action.
+/// Log screen: today's state, and one action.
 ///
 /// The tap budgets in `docs/PLAN.md` 2.4.2 are the specification for this
 /// screen, and `log_screen_test.dart` counts the taps rather than trusting the
@@ -38,6 +53,10 @@ class LogScreen extends ConsumerStatefulWidget {
   ConsumerState<LogScreen> createState() => _LogScreenState();
 }
 
+/// State for [LogScreen]: which day the button will write, and the write.
+///
+/// Attributes:
+///     _daysBack (int): How many days back the primary action will write.
 class _LogScreenState extends ConsumerState<LogScreen> {
   /// How many days back the primary action will write. 0 is today.
   int _daysBack = 0;
@@ -50,6 +69,23 @@ class _LogScreenState extends ConsumerState<LogScreen> {
   /// day range in two.
   static const List<int> _offsets = <int>[0, 1, 2, 3];
 
+  /// Record a period start, and offer to undo it.
+  ///
+  /// Steps:
+  ///     1. Read whatever is already logged for the day.
+  ///     2. Write the start, or report why it was refused.
+  ///     3. Offer an undo that restores exactly step 1's state.
+  ///
+  /// The undo restores the previous log rather than deleting the day, because
+  /// the day may have carried symptoms that had nothing to do with the flow.
+  /// Deleting would take those with it.
+  ///
+  /// Args:
+  ///     date (CivilDate): The day to mark as a period start.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once the write has been reported, whether
+  ///     it succeeded or was refused. The undo itself runs later, if at all.
   Future<void> _logStart(CivilDate date) async {
     final repository = ref.read(cycleRepositoryProvider);
     final previous = await repository.logFor(date);
@@ -79,6 +115,17 @@ class _LogScreenState extends ConsumerState<LogScreen> {
     );
   }
 
+  /// Return what to tell the user about a refused write.
+  ///
+  /// Args:
+  ///     rejection (WriteRejection): Why the repository refused.
+  ///     l10n (AppLocalizations): The translations.
+  ///
+  /// Returns:
+  ///     String: A sentence naming the reason where the user can act on it,
+  ///     and the generic error where they cannot: `duplicateInBatch` and
+  ///     `dayNotLogged` are unreachable from this button, so a specific
+  ///     message for either would be a sentence about the app's own bug.
   String _messageFor(WriteRejection rejection, AppLocalizations l10n) =>
       switch (rejection) {
         WriteRejection.dateInFuture => l10n.errorWriteRefusedFuture,
@@ -104,7 +151,7 @@ class _LogScreenState extends ConsumerState<LogScreen> {
         // A scroll view over a Column rather than a ListView, since the hero
         // arrived above the controls (AND-39). A ListView builds only what is
         // near the viewport, and the ring is tall enough to push the primary
-        // action past it — which means the button does not exist until the
+        // action past it, which means the button does not exist until the
         // user scrolls, and neither does anything a screen reader or a test
         // would go looking for. The content here is bounded, so building all
         // of it costs nothing worth having.
@@ -165,6 +212,14 @@ class _LogScreenState extends ConsumerState<LogScreen> {
     );
   }
 
+  /// Return the wording for one of the day offsets.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     daysBack (int): How many days back, 0 for today.
+  ///
+  /// Returns:
+  ///     String: "Today", "Yesterday", or a count of days.
   static String _offsetLabel(AppLocalizations l10n, int daysBack) =>
       switch (daysBack) {
         0 => l10n.logDayToday,
@@ -174,10 +229,27 @@ class _LogScreenState extends ConsumerState<LogScreen> {
 }
 
 /// Today's state in a sentence, above the action.
+///
+/// One of three sentences: nothing logged yet, a welcome back after a long
+/// silence, or which day of the current period this is. None of them counts
+/// the silence or asks for anything (`docs/PLAN.md` 2.4.1).
+///
+/// Attributes:
+///     entries (`List<DayLog>`): Every day the user has logged, oldest first.
+///     today (CivilDate): The current day.
 class _TodayState extends StatelessWidget {
+  /// Creates the state line.
+  ///
+  /// Args:
+  ///     entries (`List<DayLog>`): Every day the user has logged, oldest
+  ///         first. The order matters: the newest entry is read off the end.
+  ///     today (CivilDate): The current day.
   const _TodayState({required this.entries, required this.today});
 
+  /// Every day the user has logged, oldest first.
   final List<DayLog> entries;
+
+  /// The current day.
   final CivilDate today;
 
   @override
@@ -210,7 +282,19 @@ class _TodayState extends StatelessWidget {
     );
   }
 
-  /// The start of the most recent run of bleeding days.
+  /// Return the start of the most recent run of bleeding days.
+  ///
+  /// Walks backwards from the newest bleeding day and stops at the first gap
+  /// wider than [CycleRules.maxGapWithinEpisodeDays], so a one-day pause in
+  /// the middle of a period does not split it into two.
+  ///
+  /// Args:
+  ///     entries (`List<DayLog>`): Every day the user has logged, oldest
+  ///         first.
+  ///
+  /// Returns:
+  ///     CivilDate?: The first day of that run, or null if nothing has been
+  ///     logged as bleeding.
   static CivilDate? _mostRecentStart(List<DayLog> entries) {
     final bleeding = entries.where((e) => e.isBleedingDay).toList();
     if (bleeding.isEmpty) return null;
@@ -225,7 +309,22 @@ class _TodayState extends StatelessWidget {
 }
 
 /// The inline day choices beside the primary action.
+///
+/// Attributes:
+///     today (CivilDate): The day the offsets count back from.
+///     selected (int): Which offset is chosen.
+///     onSelected (`ValueChanged<int>`): Reports a new choice.
+///     offsets (`List<int>`): The offsets to offer, in days back.
 class _DaySelector extends StatelessWidget {
+  /// Creates the day selector.
+  ///
+  /// Args:
+  ///     today (CivilDate): The day the offsets count back from.
+  ///     selected (int): Which offset is chosen, in days back.
+  ///     onSelected (`ValueChanged<int>`): Reports a new choice.
+  ///     offsets (`List<int>`): The offsets to offer, in days back. Fixed
+  ///         choices rather than a stepper, for the arithmetic reason at
+  ///         [_LogScreenState._offsets].
   const _DaySelector({
     required this.today,
     required this.selected,
@@ -233,9 +332,16 @@ class _DaySelector extends StatelessWidget {
     required this.offsets,
   });
 
+  /// The day the offsets count back from.
   final CivilDate today;
+
+  /// Which offset is chosen, in days back.
   final int selected;
+
+  /// Reports a new choice.
   final ValueChanged<int> onSelected;
+
+  /// The offsets to offer, in days back.
   final List<int> offsets;
 
   @override
@@ -270,15 +376,14 @@ class _DaySelector extends StatelessWidget {
   }
 }
 
-/// Tells the user their data was quarantined, rather than looking empty.
 /// Tells the user, once, that backups taken before this release will not
 /// restore (AND-28).
 ///
 /// This banner is the whole mitigation for ADR-0011. The decision to refuse v1
 /// files was taken knowing that this app has no cloud and no Play Store
-/// restore, so the export *is* the recovery path (risk R8) — which means every
-/// file a user saved before updating is now unrestorable. That is defensible
-/// only if they are told while they still have a working phone to export from.
+/// restore, so the export *is* the recovery path (risk R8). Every file a user
+/// saved before updating is now unrestorable, and that is defensible only if
+/// they are told while they still have a working phone to export from.
 /// Discovering it after losing the phone is not a trade-off anyone agreed to.
 ///
 /// Shown on the log screen rather than in settings, because it has to reach
@@ -290,6 +395,7 @@ class _DaySelector extends StatelessWidget {
 /// launch is one people learn to tap past without reading, which would cost it
 /// the one audience it has.
 class _ReExportBanner extends ConsumerWidget {
+  /// Creates the banner.
   const _ReExportBanner();
 
   @override
@@ -342,7 +448,14 @@ class _ReExportBanner extends ConsumerWidget {
   }
 }
 
+/// Tells the user their data was quarantined, rather than looking empty.
+///
+/// A database this build could not open is moved aside rather than deleted,
+/// and the app starts on an empty one. Without this banner that reads as
+/// every entry having vanished, which is the same thing happening for a
+/// reason nobody has been given.
 class _RecoveryBanner extends ConsumerWidget {
+  /// Creates the banner.
   const _RecoveryBanner();
 
   @override
