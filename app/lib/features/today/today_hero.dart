@@ -1,3 +1,23 @@
+/// Today hero.
+///
+/// The top of the home screen: a greeting, the week, the ring, and how far off
+/// the next period is. Everything here restates something the app already
+/// knows in words somewhere else on the screen, and the countdown in the
+/// middle of the ring is always a range.
+///
+/// Includes:
+///     - TodayHero: The whole block, in order down the screen.
+///     - _bandsFor: The bands the ring and the legend are both drawn from.
+///     - _typicalBleedDays: How long the user's periods usually run.
+///     - _Greeting: The time of day, and today's date.
+///     - _WeekStrip: The seven days around today.
+///     - _WeekDay: One of those days.
+///     - _Ring: The ring, and the two lines inside it.
+///     - _Countdown: Those two lines.
+///     - _countdown: How far off the next period is.
+///     - _PhaseNote: The current phase, in one sentence, behind a tap.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/date_utils.dart';
@@ -11,9 +31,9 @@ import 'package:period_tracker/features/common/next_period_panel.dart';
 import 'package:period_tracker/features/today/cycle_ring.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// The top of the home screen: where you are, and when the next one is due.
+/// Today hero: where you are, and when the next one is due.
 ///
-/// Everything here restates something the app already knows — the ring is the
+/// Everything here restates something the app already knows. The ring is the
 /// phase lengths, the middle is the day of the cycle, the panel beneath is the
 /// prediction in the one shape `docs/PLAN.md` 6.2 allows it. Nothing on this
 /// screen is a claim that is not made in words somewhere on it.
@@ -104,6 +124,18 @@ class TodayHero extends ConsumerWidget {
 /// enough of them and from the model's median otherwise; the luteal length is
 /// the fixed figure [CyclePhases.lutealPhaseDays], which is what the phase
 /// boundary is defined by in the first place.
+///
+/// Args:
+///     context (BuildContext): For the translations and the phase colours.
+///     logs (`List<DayLog>`): Every day the user has logged.
+///     prediction (PredictionResult?): The model's current belief, read for
+///         the median cycle length. Null falls back to 28 days.
+///     showOvulation (bool): Whether the user has opted into the estimate.
+///
+/// Returns:
+///     `List<RingBand>`: Four bands in cycle order: period, follicular,
+///     ovular, luteal. The ovular band is zero days when the estimate is off,
+///     which the ring and the legend both read as "do not draw, do not name".
 List<RingBand> _bandsFor({
   required BuildContext context,
   required List<DayLog> logs,
@@ -134,7 +166,7 @@ List<RingBand> _bandsFor({
   // cycle with a 7-day period leaves nothing between a period and a 14-day
   // luteal phase, and a fixed five-day band would have been five days the
   // cycle does not contain. The ring normalises by its own total, so the
-  // symptom would not have been an error — it would have been every other
+  // symptom would not have been an error. It would have been every other
   // band silently shrinking the moment the estimate was switched on.
   final ovular = showOvulation
       ? (CyclePhases.ovulationSpreadDays * 2 + 1).toDouble().clamp(
@@ -171,10 +203,16 @@ List<RingBand> _bandsFor({
 /// How many days the user's periods usually run, from their own logs.
 ///
 /// The median of the completed runs rather than the mean, so one long month
-/// does not stretch the band. Falls back to five, which is the middle of the
-/// usual range, when there is nothing to go on — the ring has to be drawn from
-/// something, and a wrong-looking band is better than no ring at all on a
-/// screen where the numbers beside it are the real answer.
+/// does not stretch the band.
+///
+/// Args:
+///     logs (`List<DayLog>`): Every day the user has logged.
+///
+/// Returns:
+///     double: The median run length, clamped to 1 to 12 days. Five when
+///     there is nothing to go on: the ring has to be drawn from something,
+///     and a wrong-looking band is better than no ring at all on a screen
+///     where the numbers beside it are the real answer.
 double _typicalBleedDays(List<DayLog> logs) {
   final bleeding = logs.where((log) => log.isBleedingDay).toList();
   if (bleeding.isEmpty) return 5;
@@ -196,9 +234,19 @@ double _typicalBleedDays(List<DayLog> logs) {
 }
 
 /// "Good morning", and today's date under it.
+///
+/// Attributes:
+///     today (CivilDate): The day to print.
 class _Greeting extends ConsumerWidget {
+  /// Creates the greeting.
+  ///
+  /// Args:
+  ///     today (CivilDate): The day to print. The greeting itself is chosen
+  ///         from the hour, which is read from the clock provider rather than
+  ///         passed in, so it is frozen under test with everything else.
   const _Greeting({required this.today});
 
+  /// The day to print.
   final CivilDate today;
 
   @override
@@ -235,13 +283,27 @@ class _Greeting extends ConsumerWidget {
 /// The seven days around today, with a mark under the ones logged as bleeding.
 ///
 /// Not interactive: tapping a day would be a second, worse calendar, and the
-/// calendar is one tab away. What it earns its place with is the marks — a
+/// calendar is one tab away. What it earns its place with is the marks: a
 /// glance says whether this week has been logged, which is the question the
 /// screen is otherwise silent about.
+///
+/// Attributes:
+///     today (CivilDate): The day the week is built around.
+///     logs (`List<DayLog>`): Every day the user has logged.
 class _WeekStrip extends StatelessWidget {
+  /// Creates the strip.
+  ///
+  /// Args:
+  ///     today (CivilDate): The day the week is built around. The strip runs
+  ///         from the Sunday of that week, not from today.
+  ///     logs (`List<DayLog>`): Every day the user has logged. Only the
+  ///         bleeding days reach the marks.
   const _WeekStrip({required this.today, required this.logs});
 
+  /// The day the week is built around.
   final CivilDate today;
+
+  /// Every day the user has logged.
   final List<DayLog> logs;
 
   @override
@@ -272,7 +334,26 @@ class _WeekStrip extends StatelessWidget {
   }
 }
 
+/// One day of the week strip: an initial, a number, and a mark under it.
+///
+/// Attributes:
+///     date (CivilDate): The day this cell shows.
+///     isToday (bool): Whether it is the current day.
+///     bleeding (bool): Whether it was logged as a bleeding day.
+///     accent (Color): The colour of the mark.
+///     theme (ThemeData): The theme, resolved once by the strip.
 class _WeekDay extends StatelessWidget {
+  /// Creates one day of the strip.
+  ///
+  /// Args:
+  ///     date (CivilDate): The day this cell shows.
+  ///     isToday (bool): Whether it is the current day, which fills the
+  ///         number's circle.
+  ///     bleeding (bool): Whether it was logged as a bleeding day, which
+  ///         fills the mark beneath.
+  ///     accent (Color): The colour of that mark.
+  ///     theme (ThemeData): The theme. Resolved once by the strip and passed
+  ///         down rather than read seven times.
   const _WeekDay({
     required this.date,
     required this.isToday,
@@ -281,10 +362,19 @@ class _WeekDay extends StatelessWidget {
     required this.theme,
   });
 
+  /// The day this cell shows.
   final CivilDate date;
+
+  /// Whether it is the current day.
   final bool isToday;
+
+  /// Whether it was logged as a bleeding day.
   final bool bleeding;
+
+  /// The colour of the mark beneath the number.
   final Color accent;
+
+  /// The theme, resolved once by the strip.
   final ThemeData theme;
 
   @override
@@ -299,7 +389,7 @@ class _WeekDay extends StatelessWidget {
     return Semantics(
       // One label for the whole cell, on every cell rather than only on
       // today's. Without it a screen reader reads the letter, the number and
-      // the mark under them as three unrelated fragments — and it read them
+      // the mark under them as three unrelated fragments, and it read them
       // that way on six of the seven cells, because the label used to be
       // conditional and the exclusion with it.
       label: label,
@@ -352,7 +442,25 @@ class _WeekDay extends StatelessWidget {
 }
 
 /// The ring, and what sits in the middle of it.
+///
+/// Attributes:
+///     position (CyclePosition): Where today falls in the cycle.
+///     prediction (PredictionResult?): The model's current belief.
+///     logs (`List<DayLog>`): Every day the user has logged.
+///     showOvulation (bool): Whether the estimate was opted into.
+///     namePhases (bool): Whether the phase may be named.
 class _Ring extends StatelessWidget {
+  /// Creates the ring and its middle.
+  ///
+  /// Args:
+  ///     position (CyclePosition): Where today falls in the cycle.
+  ///     prediction (PredictionResult?): The model's current belief, used for
+  ///         the band lengths and the countdown.
+  ///     logs (`List<DayLog>`): Every day the user has logged.
+  ///     showOvulation (bool): Whether the user opted into the estimate. It
+  ///         reaches the bands only, never the countdown.
+  ///     namePhases (bool): Whether the phase may be named in the middle.
+  ///         False leaves the day of the cycle there on its own.
   const _Ring({
     required this.position,
     required this.prediction,
@@ -361,10 +469,19 @@ class _Ring extends StatelessWidget {
     required this.namePhases,
   });
 
+  /// Where today falls in the cycle.
   final CyclePosition position;
+
+  /// The model's current belief.
   final PredictionResult? prediction;
+
+  /// Every day the user has logged.
   final List<DayLog> logs;
+
+  /// Whether the ovulation estimate was opted into.
   final bool showOvulation;
+
+  /// Whether the phase may be named in the middle.
   final bool namePhases;
 
   @override
@@ -391,8 +508,8 @@ class _Ring extends StatelessWidget {
     // Deliberately *not* the phase colour. The phase colours are graphical
     // marks and are gated at 3:1; this is small bold text and needs 4.5, and
     // Rose & Plum's follicular pink lands at 3.51 against its surface. The
-    // colour was never carrying the phase anyway — the word is right there,
-    // the arc is behind it and the legend is under it — so it costs nothing to
+    // colour was never carrying the phase anyway. The word is right there,
+    // the arc is behind it and the legend is under it, so it costs nothing to
     // paint this in a colour that is gated for text everywhere.
     final labelColor = theme.colorScheme.primary;
 
@@ -407,8 +524,8 @@ class _Ring extends StatelessWidget {
         ].join('. '),
       ),
       // Only two short lines sit inside the circle. The sentence that explains
-      // them is below it, where it has the width of the screen to wrap in —
-      // text in a circle has a fixed box and a caption that grows is exactly
+      // them is below it, where it has the width of the screen to wrap in.
+      // Text in a circle has a fixed box, and a caption that grows is exactly
       // what makes one overflow.
       child: ExcludeSemantics(
         child: Column(
@@ -440,6 +557,14 @@ class _Ring extends StatelessWidget {
     );
   }
 
+  /// Return the name of a phase.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     phase (CyclePhase): The phase to name.
+  ///
+  /// Returns:
+  ///     String: The phase's name, in the user's language.
   static String _phaseLabel(AppLocalizations l10n, CyclePhase phase) =>
       switch (phase) {
         CyclePhase.period => l10n.calendarPhasePeriod,
@@ -448,7 +573,7 @@ class _Ring extends StatelessWidget {
       };
 }
 
-/// The two lines in the middle of the ring.
+/// The two lines in the middle of the ring: a headline and its caption.
 typedef _Countdown = ({String headline, String caption});
 
 /// How far off the next period is, **always as a range**.
@@ -457,6 +582,14 @@ typedef _Countdown = ({String headline, String caption});
 /// is the same claim the panel underneath makes, said in fewer words. A single
 /// number here would be a bare date in disguise, which is the one presentation
 /// `docs/PLAN.md` 6.2 rules out.
+///
+/// Args:
+///     context (BuildContext): For the translations and the clock.
+///     result (PredictionResult?): The model's current belief.
+///
+/// Returns:
+///     _Countdown: The two lines. "Nothing yet" when no window exists, "now"
+///     once the window has opened, and a range of days otherwise.
 _Countdown _countdown(BuildContext context, PredictionResult? result) {
   final l10n = AppLocalizations.of(context);
   final window = switch (result) {
@@ -489,9 +622,18 @@ _Countdown _countdown(BuildContext context, PredictionResult? result) {
 }
 
 /// What the current phase is, in one sentence, flat on the page.
+///
+/// Attributes:
+///     phase (CyclePhase): The phase to name and explain.
 class _PhaseNote extends StatelessWidget {
+  /// Creates the note.
+  ///
+  /// Args:
+  ///     phase (CyclePhase): The phase to name. Its explanation is one tap
+  ///         away rather than printed here.
   const _PhaseNote({required this.phase});
 
+  /// The phase to name and explain.
   final CyclePhase phase;
 
   @override
@@ -551,13 +693,20 @@ class _PhaseNote extends StatelessWidget {
     );
   }
 
-  /// Opens the one-sentence explanation.
+  /// Open the one-sentence explanation.
   ///
   /// Behind a tap rather than printed under the name, because the sentence is
   /// the same on every visit and the screen underneath it is the one somebody
   /// opened the app to use. The calendar already explains a phase this way, so
   /// this is the second place the gesture means the same thing rather than a
   /// second way of saying it.
+  ///
+  /// Args:
+  ///     context (BuildContext): What to show the dialog over.
+  ///     phase (CyclePhase): The phase to explain.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes when the dialog is closed.
   Future<void> _explain(BuildContext context, CyclePhase phase) {
     final l10n = AppLocalizations.of(context);
     return showDialog<void>(
@@ -582,6 +731,14 @@ class _PhaseNote extends StatelessWidget {
     );
   }
 
+  /// Return the name of a phase.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     phase (CyclePhase): The phase to name.
+  ///
+  /// Returns:
+  ///     String: The phase's name, in the user's language.
   static String _label(AppLocalizations l10n, CyclePhase phase) =>
       switch (phase) {
         CyclePhase.period => l10n.calendarPhasePeriod,

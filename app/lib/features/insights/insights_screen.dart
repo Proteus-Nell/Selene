@@ -1,3 +1,22 @@
+/// Insights screen.
+///
+/// What the model believes, what the user's own cycles look like, and how
+/// often the app has been right. The screen where overclaiming would do the
+/// most damage, so no state on it is a dead end: every one shows the user
+/// their own data even when no prediction can be made.
+///
+/// Includes:
+///     - cyclesProvider: The cycles the screen draws.
+///     - trackRecordProvider: The model's accuracy on this user's history.
+///     - InsightsScreen: The screen itself, in order down the page.
+///     - PermanentDisclaimer: The line that is always on it.
+///     - _StatisticsCard: The user's own cycles, in figures.
+///     - _TrackRecordCard: How often the app has been right.
+///     - _LoggingCompleteness: How much of this cycle has been logged.
+///     - _WeightReferenceLink: The way in to the body-composition reference.
+///     - _MovementReferenceLink: The way in to the movement reference.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
@@ -32,7 +51,7 @@ final FutureProvider<TrackRecord?> trackRecordProvider =
       );
     });
 
-/// What the model currently believes, said honestly.
+/// Insights screen: what the model believes, said honestly.
 ///
 /// The screen where overclaiming would do the most damage, and where risk R17
 /// lives: a user with PCOS or in perimenopause who is told "we cannot predict
@@ -99,6 +118,10 @@ class InsightsScreen extends ConsumerWidget {
 }
 
 /// The one-line disclaimer that is always on this screen.
+///
+/// On the screen itself rather than behind an "about" link, and above the
+/// prediction rather than under it. A caveat the reader has to go and find is
+/// a caveat that does not qualify anything.
 class PermanentDisclaimer extends StatelessWidget {
   /// Creates the disclaimer.
   const PermanentDisclaimer({super.key});
@@ -130,9 +153,24 @@ class PermanentDisclaimer extends StatelessWidget {
   }
 }
 
+/// The user's own cycles, in figures.
+///
+/// Each line is arithmetic over what the user logged and none of it is a
+/// prediction. Lines whose figure cannot be computed are absent rather than
+/// rendered with a dash, and with fewer than two cycles the card says so
+/// instead of printing a median of one.
+///
+/// Attributes:
+///     statistics (CycleStatistics): The summary to print.
 class _StatisticsCard extends StatelessWidget {
+  /// Creates the statistics card.
+  ///
+  /// Args:
+  ///     statistics (CycleStatistics): The summary to print, already computed
+  ///         by [CycleFeatures.summarise].
   const _StatisticsCard({required this.statistics});
 
+  /// The summary to print.
   final CycleStatistics statistics;
 
   @override
@@ -167,7 +205,15 @@ class _StatisticsCard extends StatelessWidget {
   }
 }
 
+/// How often the app has been right, on this user's own history.
+///
+/// The app's accuracy rather than the user's regularity, and the distinction
+/// is the point: a number that reads as a score for the person would be an
+/// engagement mechanic on data that must not carry one (`docs/PLAN.md`
+/// 2.4.1). Until there is enough history it says so rather than printing a
+/// figure computed from two cycles.
 class _TrackRecordCard extends ConsumerWidget {
+  /// Creates the track record card.
   const _TrackRecordCard();
 
   @override
@@ -214,7 +260,13 @@ class _TrackRecordCard extends ConsumerWidget {
   }
 }
 
+/// How much of the current cycle has been logged.
+///
+/// A count of days out of days, never a streak and never a percentage with a
+/// target beside it. It is there so the reader can weigh the figures above it,
+/// not so the app can ask them for more (`docs/PLAN.md` 2.4.1).
 class _LoggingCompleteness extends ConsumerWidget {
+  /// Creates the completeness line.
   const _LoggingCompleteness();
 
   @override
@@ -249,6 +301,7 @@ class _LoggingCompleteness extends ConsumerWidget {
 /// someone for whom this subject is not neutral can decide before opening it,
 /// rather than finding out on the other side of a tap.
 class _WeightReferenceLink extends StatelessWidget {
+  /// Creates the row.
   const _WeightReferenceLink();
 
   @override
@@ -275,9 +328,10 @@ class _WeightReferenceLink extends StatelessWidget {
 /// Same shape as the row above it, and the subtitle does the same job: it says
 /// what the page argues before anyone taps it. That matters more here than
 /// usual, because the popular version of this subject is a plan and this page
-/// is the opposite of one — somebody arriving hoping to be told which days to
+/// is the opposite of one. Somebody arriving hoping to be told which days to
 /// exercise on should be able to see that they will not be.
 class _MovementReferenceLink extends StatelessWidget {
+  /// Creates the row.
   const _MovementReferenceLink();
 
   @override

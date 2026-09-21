@@ -1,18 +1,52 @@
+/// Per-user refit of the filter variances.
+///
+/// Searches a fixed grid for the observation and drift variances that best
+/// explain one user's own history, so that interval width tracks how erratic
+/// that person's cycles actually are rather than converging on a population
+/// average.
+///
+/// Pipeline:
+///     1. Refuse the search below the minimum history and hand back the
+///        population values unchanged.
+///     2. Otherwise score every grid point by out-of-sample log-likelihood.
+///     3. Keep the first strictly-best point, so ties resolve to the tightest.
+///
+/// Includes:
+///     - RefitResult: What the refit chose, and whether it ran at all.
+///     - Personalize: The objective and the grid search.
+library;
+
 import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
 import 'package:period_tracker/domain/predict/bayes_filter.dart';
 import 'package:period_tracker/domain/predict/priors.dart';
 
-/// The outcome of a per-user refit.
+/// Refit result: the outcome of a per-user refit.
 ///
 /// Always usable, including when personalisation was skipped: [priors] then
 /// holds the population constants unchanged and [personalised] is false, which
 /// is the state the UI must label as "not yet tuned to you" rather than pass
 /// off as a prediction about this person.
+///
+/// Attributes:
+///     priors (FilterPriors): The priors to run the filter with.
+///     obsSd (double): Selected observation SD, on the log scale.
+///     driftSd (double): Selected drift SD, on the log scale.
+///     score (double): Partial log-likelihood at the selected point.
+///     personalised (bool): Whether the grid search actually ran.
+///     nCycles (int): How many observations were available.
 @immutable
 final class RefitResult {
   /// Creates a refit result.
+  ///
+  /// Args:
+  ///     priors (FilterPriors): The priors to run the filter with.
+  ///     obsSd (double): Selected observation SD, on the log scale.
+  ///     driftSd (double): Selected drift SD, on the log scale.
+  ///     score (double): Partial log-likelihood at the selected point.
+  ///     personalised (bool): Whether the grid search actually ran.
+  ///     nCycles (int): How many observations were available.
   const RefitResult({
     required this.priors,
     required this.obsSd,
@@ -33,8 +67,9 @@ final class RefitResult {
 
   /// Partial log-likelihood at the selected grid point.
   ///
-  /// Negative infinity when the refit did not run. Comparable across candidates
-  /// that share the same degrees of freedom, and meaningless in absolute terms.
+  /// Negative infinity when the refit did not run. Comparable across
+  /// candidates that share the same degrees of freedom, and meaningless in
+  /// absolute terms.
   final double score;
 
   /// Whether the grid search actually ran.
@@ -63,7 +98,7 @@ final class RefitResult {
       'personalised: $personalised, nCycles: $nCycles)';
 }
 
-/// On-device refit of the per-user observation and drift variances.
+/// Personalize: on-device refit of the observation and drift variances.
 ///
 /// Port of `research/src/cyclecore/models/personalize.py`.
 ///
@@ -90,18 +125,26 @@ final class RefitResult {
 /// log f(y) = C(v) - log(s) - ((v+1)/2) * log(1 + r^2 / v)
 /// ```
 ///
-/// `C(v)` holds the `lgamma` terms and is identical at every grid point because
-/// `v` is fixed, so omitting it cannot change which point wins. What remains is
-/// arithmetic and `log`. The search is a fixed grid rather than an optimiser
-/// for the same reason: a grid is a loop with no convergence behaviour, so the
-/// two runtimes cannot disagree about where it stopped.
+/// `C(v)` holds the `lgamma` terms and is identical at every grid point
+/// because `v` is fixed, so omitting it cannot change which point wins. What
+/// remains is arithmetic and `log`. The search is a fixed grid rather than an
+/// optimiser for the same reason: a grid is a loop with no convergence
+/// behaviour, so the two runtimes cannot disagree about where it stopped.
 abstract final class Personalize {
-  /// One-step-ahead predictive log-likelihood of [cycleLengths], up to a
-  /// constant.
+  /// Score a history by one-step-ahead predictive log-likelihood.
   ///
-  /// Every term is genuinely out of sample: cycle `i` is scored under the state
-  /// that has seen only the cycles before it. That is what stops the search
-  /// collapsing the variances towards zero, which an in-sample fit would do.
+  /// Every term is genuinely out of sample: cycle `i` is scored under the
+  /// state that has seen only the cycles before it. That is what stops the
+  /// search collapsing the variances towards zero, which an in-sample fit
+  /// would do.
+  ///
+  /// Args:
+  ///     cycleLengths (`List<int>`): Observed lengths, oldest first.
+  ///     priors (FilterPriors): The candidate priors being scored.
+  ///
+  /// Returns:
+  ///     double: The log-likelihood, up to a constant that is identical at
+  ///     every grid point. Comparable between candidates, meaningless alone.
   static double partialLogLikelihood(
     List<int> cycleLengths,
     FilterPriors priors,
@@ -121,18 +164,25 @@ abstract final class Personalize {
     return total;
   }
 
-  /// Picks the grid point that best explains this user's own history.
+  /// Pick the grid point that best explains this user's own history.
   ///
-  /// Below [Personalisation.minCycles] observations the population values in
-  /// [base] are kept and [RefitResult.personalised] is false, because with a
-  /// shorter history the estimate is dominated by noise and the interval width
-  /// would swing between cycles.
+  /// The grids are iterated in the order they ship in, observation SD
+  /// outermost, and the comparison is strictly greater, so ties resolve to the
+  /// first and therefore tightest candidate. Both runtimes must make the same
+  /// choice on a tie, and a tie is not hypothetical: two adjacent grid points
+  /// can score identically on a short, perfectly regular history.
   ///
-  /// The grids are iterated in the order they ship in, observation SD outermost,
-  /// and the comparison is strictly greater, so ties resolve to the first and
-  /// therefore tightest candidate. Both runtimes must make the same choice on a
-  /// tie, and a tie is not hypothetical: two adjacent grid points can score
-  /// identically on a short, perfectly regular history.
+  /// Args:
+  ///     cycleLengths (`List<int>`): Observed lengths, oldest first.
+  ///     base (FilterPriors): The population priors to vary from.
+  ///     config (Personalisation): The grids, and the minimum history.
+  ///
+  /// Returns:
+  ///     RefitResult: The chosen point. Below [Personalisation.minCycles]
+  ///     observations the population values in [base] are kept and
+  ///     `personalised` is false, because with a shorter history the estimate
+  ///     is dominated by noise and the interval width would swing between
+  ///     cycles.
   static RefitResult refitUser(
     List<int> cycleLengths,
     FilterPriors base,

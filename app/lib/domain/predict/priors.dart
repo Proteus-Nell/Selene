@@ -1,9 +1,27 @@
+/// Model priors and their artifact format.
+///
+/// Defines everything the prediction pipeline reads out of `priors_v1.json`,
+/// and the validating parser that refuses a file it cannot trust. The app
+/// normally runs from the compiled-in copy in `priors_bundled.dart`; this file
+/// is what both that copy and a runtime parse land in, so there is one
+/// definition of what a valid priors file is.
+///
+/// Includes:
+///     - QuantileLevel: The five predictive levels the app needs.
+///     - FilterPriors: Population constants the filter starts from.
+///     - QuantileTable: Shipped Student-t quantiles for a fixed df.
+///     - Personalisation: The on-device refit grids.
+///     - ConfidenceThresholds: Where the confidence classes fall.
+///     - PriorsLoadError, PriorsLoadFailure: Why a load was refused.
+///     - ModelPriors: All of the above, plus the parser.
+library;
+
 import 'dart:convert';
 
 import 'package:meta/meta.dart';
 import 'package:period_tracker/core/result.dart';
 
-/// One of the five predictive quantile levels the app needs.
+/// Quantile level: one of the five predictive levels the app needs.
 ///
 /// The set is deliberately small and fixed. Because the observation model's
 /// degrees of freedom are a constant, the Student-t quantiles at these levels
@@ -35,7 +53,7 @@ enum QuantileLevel {
   final String wireName;
 }
 
-/// Population-level constants the filter starts from.
+/// Filter priors: the population constants the filter starts from.
 ///
 /// Fitted offline in Python and shipped as `priors_v1.json`. Every field is a
 /// plain double, so the Dart port holds exactly the values the reference
@@ -77,11 +95,18 @@ final class FilterPriors {
   /// Stops a run of identical cycles collapsing the interval to zero width.
   final double minObsVar;
 
-  /// This set of priors with the two per-user variances replaced.
+  /// Copy this set with the two per-user variances replaced.
   ///
   /// The only fields personalisation ever changes, which is why the copy is
   /// narrowed to them rather than being a general `copyWith`. Mirrors the
   /// `dataclasses.replace` call in `personalize.py`.
+  ///
+  /// Args:
+  ///     obsVar (double): New within-user observation variance.
+  ///     driftVar (double): New random-walk variance of the level.
+  ///
+  /// Returns:
+  ///     FilterPriors: A copy with every other field unchanged.
   FilterPriors withVariances({
     required double obsVar,
     required double driftVar,
@@ -121,7 +146,7 @@ final class FilterPriors {
       'minObsVar: $minObsVar)';
 }
 
-/// The shipped table of Student-t quantiles for a fixed [df].
+/// Quantile table: the shipped Student-t quantiles for a fixed [df].
 ///
 /// This table is the whole reason the prediction path needs no special
 /// functions on device: SciPy computes it once, offline, and the app reads it
@@ -140,9 +165,9 @@ final class QuantileTable {
 
   /// Degrees of freedom these quantiles were computed for.
   ///
-  /// Checked against [FilterPriors.studentTDf] on load. A table computed for a
-  /// different `df` would mis-scale every interval the app ever shows, without
-  /// any other symptom.
+  /// Checked against [FilterPriors.studentTDf] on load. A table computed for
+  /// a different `df` would mis-scale every interval the app ever shows,
+  /// without any other symptom.
   final double df;
 
   /// 10th percentile of the standard Student-t.
@@ -160,7 +185,13 @@ final class QuantileTable {
   /// 90th percentile of the standard Student-t.
   final double p90;
 
-  /// The quantile at [level].
+  /// Read the quantile at one level.
+  ///
+  /// Args:
+  ///     level (QuantileLevel): Which percentile to read.
+  ///
+  /// Returns:
+  ///     double: The standard Student-t quantile at that level.
   double operator [](QuantileLevel level) => switch (level) {
     QuantileLevel.p10 => p10,
     QuantileLevel.p25 => p25,
@@ -188,12 +219,18 @@ final class QuantileTable {
       'p90: $p90)';
 }
 
-/// The on-device personalisation search, as shipped.
+/// Personalisation: the on-device refit search, as shipped.
 ///
-/// The grids are explicit values rather than a computed range, so Dart iterates
-/// exactly the points Python did. Recomputing a log-spaced range in two
-/// languages is a reliable way to end up one rounding step apart on a grid
+/// The grids are explicit values rather than a computed range, so Dart
+/// iterates exactly the points Python did. Recomputing a log-spaced range in
+/// two languages is a reliable way to end up one rounding step apart on a grid
 /// point, and the winning point would then differ between runtimes.
+///
+/// Attributes:
+///     minCycles (int): Completed cycles required before the refit runs.
+///     obsSdGrid (`List<double>`): Candidate observation SDs, in search
+///         order.
+///     driftSdGrid (`List<double>`): Candidate drift SDs, in search order.
 @immutable
 final class Personalisation {
   /// Creates a personalisation configuration.
@@ -205,8 +242,8 @@ final class Personalisation {
 
   /// Completed cycles required before the refit runs at all.
   ///
-  /// Below this the estimate is dominated by noise and the interval width would
-  /// swing around alarmingly between cycles.
+  /// Below this the estimate is dominated by noise and the interval width
+  /// would swing around alarmingly between cycles.
   final int minCycles;
 
   /// Candidate within-user observation standard deviations, in search order.
@@ -235,7 +272,7 @@ final class Personalisation {
       'driftSdGrid: $driftSdGrid)';
 }
 
-/// Widths, in days, at which the 80% window changes confidence class.
+/// Confidence thresholds: the widths at which the 80% window changes class.
 ///
 /// Thresholds rather than an inequality buried in code, because these are
 /// product judgements about how wide a window may be before calling it
@@ -274,7 +311,7 @@ final class ConfidenceThresholds {
       'mediumBelowDays: $mediumBelowDays, lowBelowDays: $lowBelowDays)';
 }
 
-/// Why a priors artifact could not be loaded.
+/// Priors load error: why an artifact could not be loaded.
 enum PriorsLoadError {
   /// The `schema_version` is one this build does not know.
   ///
@@ -296,7 +333,12 @@ enum PriorsLoadError {
   invalidValue,
 }
 
-/// A refusal to load a priors artifact, with enough detail to act on.
+/// Priors load failure: a refusal, with enough detail to act on.
+///
+/// Attributes:
+///     error (PriorsLoadError): What kind of problem this is.
+///     field (String): Dotted path of the offending field, or `<root>`.
+///     message (String): Human-readable detail, for logs and tests.
 @immutable
 final class PriorsLoadFailure {
   /// Creates a failure for [field] with [message].
@@ -325,12 +367,12 @@ final class PriorsLoadFailure {
   String toString() => 'PriorsLoadFailure(${error.name}, $field: $message)';
 }
 
-/// Everything the prediction pipeline reads out of `priors_v1.json`.
+/// Model priors: everything read out of `priors_v1.json`.
 ///
 /// The app ships a compiled-in copy (`bundledPriors` in `priors_bundled.dart`,
-/// generated from the artifact) and can also parse the artifact at runtime with
-/// [ModelPriors.parse]. Both paths land in this one type, so there is a single
-/// definition of what a valid priors file is.
+/// generated from the artifact) and can also parse the artifact at runtime
+/// with [ModelPriors.parse]. Both paths land in this one type, so there is a
+/// single definition of what a valid priors file is.
 @immutable
 final class ModelPriors {
   /// Creates a priors set.
@@ -342,10 +384,16 @@ final class ModelPriors {
     required this.confidenceThresholds,
   });
 
-  /// Parses [jsonText] as a priors artifact.
+  /// Parse text as a priors artifact.
   ///
-  /// Returns an [Err] rather than throwing: a priors file the app cannot read
-  /// is a state the app must handle, not a crash (`docs/PLAN.md` 5.5).
+  /// Args:
+  ///     jsonText (String): The artifact's contents.
+  ///
+  /// Returns:
+  ///     `Result<ModelPriors, PriorsLoadFailure>`: The priors, or a refusal.
+  ///     An [Err] rather than a throw, because a priors file the app cannot
+  ///     read is a state the app must handle, not a crash (`docs/PLAN.md`
+  ///     5.5).
   static Result<ModelPriors, PriorsLoadFailure> parse(String jsonText) {
     final Object? decoded;
     try {
@@ -367,12 +415,19 @@ final class ModelPriors {
     return fromJson(decoded);
   }
 
-  /// Validates an already-decoded priors document.
+  /// Validate an already-decoded priors document.
   ///
   /// Every check here is a guard against shipping a file that would produce
   /// silently wrong predictions: an unknown schema, a quantile table computed
-  /// for the wrong degrees of freedom, a non-positive variance, an empty search
-  /// grid, or thresholds that do not increase.
+  /// for the wrong degrees of freedom, a non-positive variance, an empty
+  /// search grid, or thresholds that do not increase.
+  ///
+  /// Args:
+  ///     json (`Map<String, Object?>`): The decoded document.
+  ///
+  /// Returns:
+  ///     `Result<ModelPriors, PriorsLoadFailure>`: The priors, or the first
+  ///     refusal encountered.
   static Result<ModelPriors, PriorsLoadFailure> fromJson(
     Map<String, Object?> json,
   ) {
@@ -473,8 +528,8 @@ final class ModelPriors {
 
   /// Schema versions this build knows how to read.
   ///
-  /// Anything else is refused by [fromJson]. Widening this set is a deliberate
-  /// act that must come with code that understands the new shape.
+  /// Anything else is refused by [fromJson]. Widening this set is a
+  /// deliberate act that must come with code that understands the new shape.
   static const Set<int> supportedSchemaVersions = <int>{1};
 
   /// Version of the artifact this was read from.
@@ -518,7 +573,14 @@ final class ModelPriors {
       'confidenceThresholds: $confidenceThresholds)';
 }
 
-/// Whether two lists of doubles hold the same values in the same order.
+/// Report whether two lists of doubles hold the same values in order.
+///
+/// Args:
+///     a (`List<double>`): First list.
+///     b (`List<double>`): Second list.
+///
+/// Returns:
+///     bool: True when both hold the same values in the same order.
 bool _doublesEqual(List<double> a, List<double> b) {
   if (identical(a, b)) return true;
   if (a.length != b.length) return false;
@@ -528,21 +590,47 @@ bool _doublesEqual(List<double> a, List<double> b) {
   return true;
 }
 
-/// Internal signal that parsing failed, converted to a [PriorsLoadFailure] at
-/// the boundary.
+/// Priors format exception: the parser's internal failure signal.
 ///
-/// Exceptions are used inside the parser and never escape it: unwinding a
-/// dozen nested field reads through [Result] would bury the actual validation
-/// rules in plumbing.
+/// Converted to a [PriorsLoadFailure] at the boundary and never allowed to
+/// escape: unwinding a dozen nested field reads through [Result] would bury
+/// the actual validation rules in plumbing.
+///
+/// Attributes:
+///     error (PriorsLoadError): What kind of problem this is.
+///     field (String): Dotted path of the offending field.
+///     message (String): Human-readable detail.
 @immutable
 final class _PriorsFormatException implements Exception {
+  /// Creates a parse failure for [field].
+  ///
+  /// Args:
+  ///     error (PriorsLoadError): What kind of problem this is.
+  ///     field (String): Dotted path of the offending field.
+  ///     message (String): Human-readable detail.
   const _PriorsFormatException(this.error, this.field, this.message);
 
+  /// What kind of problem this is.
   final PriorsLoadError error;
+
+  /// Dotted path of the offending field.
   final String field;
+
+  /// Human-readable detail.
   final String message;
 }
 
+/// Read a field, requiring it to be present.
+///
+/// Args:
+///     json (`Map<String, Object?>`): The object to read from.
+///     field (String): The key to read.
+///
+/// Returns:
+///     Object?: The raw value, which may itself be null.
+///
+/// Throws:
+///     _PriorsFormatException: If the key is absent.
 Object? _require(Map<String, Object?> json, String field) {
   if (!json.containsKey(field)) {
     throw _PriorsFormatException(
@@ -554,6 +642,17 @@ Object? _require(Map<String, Object?> json, String field) {
   return json[field];
 }
 
+/// Read a field, requiring it to be a JSON object.
+///
+/// Args:
+///     json (`Map<String, Object?>`): The object to read from.
+///     field (String): The key to read.
+///
+/// Returns:
+///     `Map<String, Object?>`: The nested object.
+///
+/// Throws:
+///     _PriorsFormatException: If the key is absent or not an object.
 Map<String, Object?> _requireMap(Map<String, Object?> json, String field) {
   final value = _require(json, field);
   if (value is! Map<String, Object?>) {
@@ -566,6 +665,17 @@ Map<String, Object?> _requireMap(Map<String, Object?> json, String field) {
   return value;
 }
 
+/// Read a field, requiring it to be an integer.
+///
+/// Args:
+///     json (`Map<String, Object?>`): The object to read from.
+///     field (String): The key to read.
+///
+/// Returns:
+///     int: The value.
+///
+/// Throws:
+///     _PriorsFormatException: If the key is absent or not an integer.
 int _requireInt(Map<String, Object?> json, String field) {
   final value = _require(json, field);
   if (value is! int) {
@@ -578,6 +688,18 @@ int _requireInt(Map<String, Object?> json, String field) {
   return value;
 }
 
+/// Read a field, requiring it to be a finite number.
+///
+/// Args:
+///     json (`Map<String, Object?>`): The object to read from.
+///     field (String): The key to read.
+///
+/// Returns:
+///     double: The value, widened from int if necessary.
+///
+/// Throws:
+///     _PriorsFormatException: If the key is absent, not a number, or not
+///         finite.
 double _requireFinite(Map<String, Object?> json, String field) {
   final value = _require(json, field);
   if (value is! num) {
@@ -598,6 +720,18 @@ double _requireFinite(Map<String, Object?> json, String field) {
   return asDouble;
 }
 
+/// Read a field, requiring it to be a positive finite number.
+///
+/// Args:
+///     json (`Map<String, Object?>`): The object to read from.
+///     field (String): The key to read.
+///
+/// Returns:
+///     double: The value.
+///
+/// Throws:
+///     _PriorsFormatException: If the value is absent, not a number, not
+///         finite, or not greater than zero.
 double _requirePositive(Map<String, Object?> json, String field) {
   final value = _requireFinite(json, field);
   if (value <= 0) {
@@ -610,6 +744,19 @@ double _requirePositive(Map<String, Object?> json, String field) {
   return value;
 }
 
+/// Read a field, requiring it to be a non-empty grid of positive SDs.
+///
+/// Args:
+///     json (`Map<String, Object?>`): The object to read from.
+///     field (String): The key to read.
+///
+/// Returns:
+///     `List<double>`: The grid, unmodifiable, in the order it shipped in.
+///
+/// Throws:
+///     _PriorsFormatException: If the value is absent, not an array, empty,
+///         or holds anything that is not a positive finite number. Empty is
+///         refused because the refit iterates the grid directly.
 List<double> _requirePositiveGrid(Map<String, Object?> json, String field) {
   final value = _require(json, field);
   if (value is! List<Object?>) {

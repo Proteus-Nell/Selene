@@ -1,3 +1,16 @@
+/// Learn screen.
+///
+/// Collects every reference page the app ships into one list, under headings
+/// that separate the pages that explain from the one row that records
+/// something. Built for AND-39, which took these pages out of Settings and
+/// Insights, where neither of them belonged.
+///
+/// Includes:
+///     - LearnScreen: The list itself.
+///     - _LearnTile: One row, and the screen it pushes.
+///     - _Heading: A section label above a group of rows.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:period_tracker/features/conditions/conditions_screen.dart';
 import 'package:period_tracker/features/lookup/lookup_screen.dart';
@@ -6,11 +19,11 @@ import 'package:period_tracker/features/nutrition/nutrition_screen.dart';
 import 'package:period_tracker/features/weight/weight_hormones_screen.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// Everything the app has written down, in one place (AND-39).
+/// Learn screen: everything the app has written down, in one place (AND-39).
 ///
 /// Before this the reference pages were scattered: hygiene, nutrition and
 /// conditions behind Settings, body composition and movement behind Insights.
-/// None of those are settings and none of them are insights — they are reading,
+/// None of those are settings and none of them are insights. They are reading,
 /// and a user looking for what the app says about iron had to guess which of
 /// two unrelated screens somebody had filed it under.
 ///
@@ -87,7 +100,27 @@ class LearnScreen extends StatelessWidget {
   }
 }
 
+/// One row of the list: an icon, a label, what the page argues, and where it
+/// goes.
+///
+/// The destination is a builder rather than a widget so the screen behind the
+/// row is constructed when somebody taps it, not when the list is laid out.
+/// Seven screens built eagerly to render seven rows would be seven screens'
+/// worth of work for the one a user wanted.
+///
+/// Attributes:
+///     icon (IconData): The leading icon.
+///     title (String): The row's label.
+///     subtitle (String): What the page it opens argues.
+///     destination (`Widget Function()`): Builds the screen to push.
 class _LearnTile extends StatelessWidget {
+  /// Creates a row that pushes what [destination] builds.
+  ///
+  /// Args:
+  ///     icon (IconData): The leading icon.
+  ///     title (String): The row's label.
+  ///     subtitle (String): What the page it opens argues.
+  ///     destination (`Widget Function()`): Builds the screen to push.
   const _LearnTile({
     required this.icon,
     required this.title,
@@ -95,9 +128,16 @@ class _LearnTile extends StatelessWidget {
     required this.destination,
   });
 
+  /// The leading icon.
   final IconData icon;
+
+  /// The row's label.
   final String title;
+
+  /// What the page it opens argues, said before anyone taps it.
   final String subtitle;
+
+  /// Builds the screen this row pushes, at the moment it is pushed.
   final Widget Function() destination;
 
   @override
@@ -112,9 +152,19 @@ class _LearnTile extends StatelessWidget {
   );
 }
 
+/// A section label above a group of rows.
+///
+/// Attributes:
+///     label (String): The text, upper-cased for display.
 class _Heading extends StatelessWidget {
+  /// Creates a section label.
+  ///
+  /// Args:
+  ///     label (String): The text. Upper-cased for display, so it is written
+  ///         in the ARB in ordinary sentence case.
   const _Heading(this.label);
 
+  /// The text of the label. Upper-cased for display.
   final String label;
 
   @override

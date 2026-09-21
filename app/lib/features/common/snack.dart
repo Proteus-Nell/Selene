@@ -1,3 +1,13 @@
+/// Snack bar presentation.
+///
+/// The one place a pop-up confirmation is shown. Exists because Flutter's
+/// `SnackBar` never times out when it carries an action, which is the wrong
+/// default for a confirmation of a tap the user just made.
+///
+/// Includes:
+///     - showAppSnackBar: The only way this app shows one.
+library;
+
 import 'package:flutter/material.dart';
 
 /// How long a plain confirmation stays on screen.
@@ -10,8 +20,9 @@ const Duration _plainSnackDuration = Duration(seconds: 4);
 /// read a sentence and not enough to change your mind about it.
 const Duration _actionableSnackDuration = Duration(seconds: 7);
 
-/// Shows [message] as a pop-up that goes away by itself, unless a screen
-/// reader is running and there is an [action] to reach for.
+/// Show a message as a pop-up that goes away by itself.
+///
+/// The exception is a screen reader with an action to reach for; see below.
 ///
 /// Every pop-up in the app goes through here rather than calling
 /// `showSnackBar` directly, because of one line in Flutter's `SnackBar`
@@ -21,20 +32,28 @@ const Duration _actionableSnackDuration = Duration(seconds: 7);
 /// persist = persist ?? action != null;
 /// ```
 ///
-/// Any snack bar carrying an action therefore defaults to **never timing out**.
-/// The timer still fires, looks at `persist`, and returns without hiding
-/// anything. That is a defensible default for a library — an action the user
-/// never saw is an action they never had — and the wrong one here: these
-/// pop-ups confirm a tap that was just made, and a confirmation that has to be
-/// swiped away by hand costs more attention than it conveys. Logging a period
-/// left one on screen indefinitely.
+/// Any snack bar carrying an action therefore defaults to **never timing
+/// out**. The timer still fires, looks at `persist`, and returns without
+/// hiding anything. That is a defensible default for a library, since an
+/// action the user never saw is an action they never had, and the wrong one
+/// here: these pop-ups confirm a tap that was just made, and a confirmation
+/// that has to be swiped away by hand costs more attention than it conveys.
+/// Logging a period left one on screen indefinitely.
 ///
 /// The exception is a screen reader. [action] is reachable only after the
-/// message has been announced and navigated to, and seven seconds is not enough
-/// for that, so the timeout is dropped exactly when `accessibleNavigation` says
-/// someone is using one — which is the behaviour Flutter's own documentation
-/// describes for an actioned snack bar. Those get a close button, so there is
-/// always a deliberate way out of a pop-up that will not leave on its own.
+/// message has been announced and navigated to, and seven seconds is not
+/// enough for that, so the timeout is dropped exactly when
+/// `accessibleNavigation` says someone is using one, which is the behaviour
+/// Flutter's own documentation describes for an actioned snack bar. Those get
+/// a close button, so there is always a deliberate way out of a pop-up that
+/// will not leave on its own.
+///
+/// Args:
+///     context (BuildContext): Where the messenger is looked up, and where
+///         `accessibleNavigation` is read.
+///     message (String): What to show.
+///     action (SnackBarAction?, optional): Something to do about it, such as
+///         Undo. Defaults to null.
 void showAppSnackBar(
   BuildContext context,
   String message, {

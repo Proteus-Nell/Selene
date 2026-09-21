@@ -1,3 +1,15 @@
+/// Iron and magnesium reference (AND-27).
+///
+/// States what is known about the nutrients a heavy period draws on, and never
+/// states anything about the reader. One card on the screen responds to what
+/// the user logged, and it points at a clinician rather than a supplement.
+///
+/// Includes:
+///     - NutritionScreen: The reference page, and the hint above it.
+///     - _Hint: The one card that responds to logged data.
+///     - _Section: One heading and its paragraphs.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
@@ -6,7 +18,7 @@ import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/features/common/card_entrance.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// Reference notes on iron and magnesium (AND-27).
+/// Nutrition screen: what is known about iron and magnesium (AND-27).
 ///
 /// The whole feature turns on one distinction, and every piece of copy here was
 /// written against it. *"Heavy menstrual bleeding is a recognised cause of iron
@@ -22,7 +34,7 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// health app is exactly what that test exists to make impossible.
 ///
 /// The claims are marked `[VERIFY]` in the sources file until someone has
-/// opened each source and checked it — the same convention `PLAN.md` uses for
+/// opened each source and checked it, the same convention `PLAN.md` uses for
 /// the priors figures. That is a release blocker, not a formality.
 class NutritionScreen extends ConsumerWidget {
   /// Creates the nutrition reference screen.
@@ -47,7 +59,7 @@ class NutritionScreen extends ConsumerWidget {
             // Above the reference text when it applies, because a reader who
             // came here because of the hint should not have to scroll past
             // three nutrients to find it. It is one card and it appears at most
-            // once — see NutritionHints for why the threshold is three days.
+            // once: see NutritionHints for why the threshold is three days.
             if (showHint) ...<Widget>[
               const CardEntrance(index: 0, child: _Hint()),
               const SizedBox(height: 16),
@@ -96,8 +108,14 @@ class NutritionScreen extends ConsumerWidget {
   }
 }
 
-/// The one thing the app says about a pattern the user logged.
+/// The one thing this screen says about a pattern the user logged.
+///
+/// Shown when fatigue and a heavy flow have been logged together often enough
+/// (see [NutritionHints.fatigueWithHeavyFlow]). It observes the two things and
+/// points at a human. It names no nutrient, no deficiency and no supplement,
+/// because from two logged fields none of those is knowable.
 class _Hint extends StatelessWidget {
+  /// Creates the hint card.
   const _Hint();
 
   @override
@@ -144,10 +162,23 @@ class _Hint extends StatelessWidget {
   }
 }
 
+/// One section of the reference: a heading and its paragraphs.
+///
+/// Attributes:
+///     title (String): The heading.
+///     paragraphs (`List<String>`): The body, one paragraph per entry.
 class _Section extends StatelessWidget {
+  /// Creates a section.
+  ///
+  /// Args:
+  ///     title (String): The heading.
+  ///     paragraphs (`List<String>`): The body, one paragraph per entry.
   const _Section({required this.title, required this.paragraphs});
 
+  /// The heading.
   final String title;
+
+  /// The body, rendered as one paragraph per entry.
   final List<String> paragraphs;
 
   @override

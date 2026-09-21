@@ -1,10 +1,21 @@
+/// Phase strip.
+///
+/// The one line at the top of the calendar saying where the user is in their
+/// cycle. It carries two claims of very different weight, and most of what is
+/// here exists to keep them apart: the day and the phase restate logged dates,
+/// while the ovulation estimate is an inference and is gated as one.
+///
+/// Includes:
+///     - PhaseStrip: The strip, its chip, and the estimate beneath it.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:period_tracker/core/motion.dart';
 import 'package:period_tracker/domain/cycles/cycle_phase.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// Where the user is in their cycle, in one line (AND-25, ADR-0007).
+/// Phase strip: where the user is in their cycle, in one line (AND-25).
 ///
 /// Two claims of very different weight sit next to each other here, and keeping
 /// them distinguishable is the point of the widget.
@@ -16,13 +27,22 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// careful.
 ///
 /// The **ovulation estimate** is an inference, and it is the one `docs/PLAN.md`
-/// 6.2 gates. It appears only when the user has switched it on, it is always a
-/// range, and the sentence saying what it is not travels with it on the screen
-/// rather than behind a link. The strip never names ovulation otherwise, never
-/// calls a day safe, and never uses the word fertile — `copy_test.dart` fails
-/// the build on all three rather than trusting review to catch them.
+/// 6.2 gates (ADR-0007). It appears only when the user has switched it on, it
+/// is always a range, and the sentence saying what it is not travels with it
+/// on the screen rather than behind a link. The strip never names ovulation
+/// otherwise, never calls a day safe, and never uses the word fertile;
+/// `copy_test.dart` fails the build on all three rather than trusting review
+/// to catch them.
+///
+/// Attributes:
+///     position (CyclePosition): Where the user is, and what may be said.
 class PhaseStrip extends StatelessWidget {
   /// Shows [position], as far as it is willing to say anything.
+  ///
+  /// Args:
+  ///     position (CyclePosition): Where the user is, per [CyclePhases.on].
+  ///         Its `ovulationEstimate` is null unless the user has opted in,
+  ///         which is the gate rather than a check made here.
   const PhaseStrip({required this.position, super.key});
 
   /// Where the user is, per [CyclePhases.on].
@@ -50,6 +70,14 @@ class PhaseStrip extends StatelessWidget {
     );
   }
 
+  /// Build the strip itself, without the switcher around it.
+  ///
+  /// Args:
+  ///     context (BuildContext): For the theme and the localisations.
+  ///
+  /// Returns:
+  ///     Widget: The day, the phase chip and the estimate, or a single line
+  ///     saying nothing is known when no cycle day can be worked out.
   Widget _content(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
@@ -92,8 +120,8 @@ class PhaseStrip extends StatelessWidget {
                 label: Text(_phaseLabel(l10n, phase)),
                 // No compact density here, unlike the chips elsewhere in the
                 // app. Compact renders this at 40dp tall, four short of the
-                // 48dp minimum tap target, and a11y_test.dart failed on it —
-                // the chips it is modelled on are not tap targets in the same
+                // 48dp minimum tap target, and a11y_test.dart failed on it.
+                // The chips it is modelled on are not tap targets in the same
                 // way, and copying their density copied the wrong property.
                 materialTapTargetSize: MaterialTapTargetSize.padded,
               ),
@@ -127,6 +155,14 @@ class PhaseStrip extends StatelessWidget {
     );
   }
 
+  /// Open the dialog explaining what a phase is.
+  ///
+  /// Args:
+  ///     context (BuildContext): What to show the dialog over.
+  ///     phase (CyclePhase): The phase to explain.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes when the dialog is closed.
   Future<void> _explain(BuildContext context, CyclePhase phase) {
     final l10n = AppLocalizations.of(context);
     return showDialog<void>(
@@ -144,6 +180,14 @@ class PhaseStrip extends StatelessWidget {
     );
   }
 
+  /// Return the chip's label for a phase.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     phase (CyclePhase): The phase to name.
+  ///
+  /// Returns:
+  ///     String: The phase's name, in the user's language.
   static String _phaseLabel(AppLocalizations l10n, CyclePhase phase) =>
       switch (phase) {
         CyclePhase.period => l10n.calendarPhasePeriod,
@@ -151,6 +195,16 @@ class PhaseStrip extends StatelessWidget {
         CyclePhase.luteal => l10n.calendarPhaseLuteal,
       };
 
+  /// Return the plain sentence explaining a phase.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     phase (CyclePhase): The phase to explain.
+  ///
+  /// Returns:
+  ///     String: One sentence, in the user's language. "Luteal" is a word most
+  ///     people have never been given a definition for, which is why every
+  ///     phase has one rather than only the obscure ones.
   static String _phaseExplanation(AppLocalizations l10n, CyclePhase phase) =>
       switch (phase) {
         CyclePhase.period => l10n.calendarPhasePeriodExplained,

@@ -1,3 +1,17 @@
+/// Conditions screen.
+///
+/// Records long-term conditions and medication over the spans of days they
+/// applied to, and says plainly that none of it reaches the prediction
+/// (ADR-0010). What it does give back is the number of cycles each one
+/// overlapped, which is context for reading the user's own figures.
+///
+/// Includes:
+///     - ConditionsScreen: The list, and the flow that adds to it.
+///     - _ConditionTile: One record, its dates, and what it overlapped.
+///     - conditionLabel: The user-facing name of a condition.
+///     - _pickDate: The date picker both flows use.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/date_utils.dart';
@@ -8,7 +22,7 @@ import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// Long-term conditions and medication, with the dates they applied over.
+/// Conditions screen: what was recorded, and over which days.
 ///
 /// The screen exists because the prediction model structurally cannot know any
 /// of this (`docs/PLAN.md` 1081): hormonal contraception, pregnancy, PCOS,
@@ -24,7 +38,7 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// numbers, which is what the overlap count under each entry is for.
 ///
 /// The single exception is an active pregnancy, which withholds the prediction
-/// rather than changing it — a refusal to claim, not a different claim.
+/// rather than changing it: a refusal to claim, not a different claim.
 class ConditionsScreen extends ConsumerWidget {
   /// Creates the conditions screen.
   const ConditionsScreen({super.key});
@@ -69,6 +83,24 @@ class ConditionsScreen extends ConsumerWidget {
     );
   }
 
+  /// Record a new condition, in two steps.
+  ///
+  /// Steps:
+  ///     1. Offer the closed list of conditions in a sheet.
+  ///     2. Ask when it started, no later than today.
+  ///     3. Write it, and confirm by name.
+  ///
+  /// Either step can be abandoned and nothing is written. The `mounted` check
+  /// after each await is what stops a write landing on a screen the user has
+  /// already left.
+  ///
+  /// Args:
+  ///     context (BuildContext): What to show the sheet and picker over.
+  ///     ref (WidgetRef): For the clock and the condition repository.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once the record is written, or as soon as
+  ///     the user backs out of either step.
   Future<void> _add(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context);
     final chosen = await showModalBottomSheet<Condition>(
@@ -76,7 +108,7 @@ class ConditionsScreen extends ConsumerWidget {
       isScrollControlled: true,
       // Both of these, and neither is optional here. `isScrollControlled` lets
       // the sheet grow to fit fourteen conditions, which means it reaches the
-      // top of the screen — and there the title lands under the status bar and
+      // top of the screen, and there the title lands under the status bar and
       // the camera cutout, unreadable. `useSafeArea` is what keeps the route
       // itself inside the display cutout; a SafeArea *inside* the sheet does
       // not, because the route has already claimed the full height by then.
@@ -147,10 +179,26 @@ class ConditionsScreen extends ConsumerWidget {
 }
 
 /// One recorded condition, its dates, and what it overlapped.
+///
+/// Attributes:
+///     record (ConditionRecord): The condition and its span.
+///     cyclesOverlapped (int?): How many cycles fell inside that span.
 class _ConditionTile extends ConsumerWidget {
+  /// Creates a tile for one record.
+  ///
+  /// Args:
+  ///     record (ConditionRecord): The condition and its span. An open span
+  ///         is shown as ongoing and offers an end date rather than a reopen.
+  ///     cyclesOverlapped (int?): How many cycles fell inside that span, or
+  ///         null when the overlaps have not been read yet. Zero and null
+  ///         both render nothing, because "overlapped no cycles" is not a
+  ///         finding worth a line.
   const _ConditionTile({required this.record, required this.cyclesOverlapped});
 
+  /// The condition and its span.
   final ConditionRecord record;
+
+  /// How many cycles fell inside that span.
   final int? cyclesOverlapped;
 
   @override
@@ -228,6 +276,15 @@ class _ConditionTile extends ConsumerWidget {
     );
   }
 
+  /// Close an open record, at a date the user picks.
+  ///
+  /// Args:
+  ///     context (BuildContext): What to show the picker over.
+  ///     ref (WidgetRef): For the clock and the condition repository.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once the record is closed, or at once if
+  ///     the user dismissed the picker.
   Future<void> _end(BuildContext context, WidgetRef ref) async {
     final today = ref.read(clockProvider).today();
     final chosen = await _pickDate(
@@ -243,11 +300,19 @@ class _ConditionTile extends ConsumerWidget {
   }
 }
 
-/// The user-facing name of [condition].
+/// Return the user-facing name of a condition.
 ///
 /// Clinical names, deliberately. Softening "PCOS" into something vaguer would
 /// leave the user unable to look it up anywhere else, which is its own kind of
 /// unhelpful.
+///
+/// Args:
+///     l10n (AppLocalizations): The translations.
+///     condition (Condition): The condition to name.
+///
+/// Returns:
+///     String: Its name, in the user's language. Exhaustive over the enum, so
+///     a condition added later fails to compile until it is given a name.
 String conditionLabel(AppLocalizations l10n, Condition condition) =>
     switch (condition) {
       Condition.hormonalContraceptionCombined =>
@@ -268,6 +333,19 @@ String conditionLabel(AppLocalizations l10n, Condition condition) =>
       Condition.other => l10n.conditionOther,
     };
 
+/// Ask the user for a date.
+///
+/// Args:
+///     context (BuildContext): What to show the picker over.
+///     initial (CivilDate): The day the picker opens on.
+///     last (CivilDate): The latest selectable day. Always today or earlier:
+///         nothing in this app accepts a future date.
+///     first (CivilDate?, optional): The earliest selectable day. Defaults to
+///         null, which allows ten years back.
+///
+/// Returns:
+///     `Future<CivilDate?>`: The chosen day, or null if the picker was
+///     dismissed. Null means "no change", never "today".
 Future<CivilDate?> _pickDate(
   BuildContext context, {
   required CivilDate initial,

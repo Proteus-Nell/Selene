@@ -1,3 +1,18 @@
+/// Notification scheduling.
+///
+/// Keeps what the platform has queued in step with the current prediction, and
+/// owns the permission request. Everything the platform knows about is
+/// replaced on every reschedule, so there is no partial state to reconcile.
+///
+/// Includes:
+///     - NotificationScheduler: Rescheduling, permission and the missed
+///       reminder fallback.
+///     - NoopNotificationGateway: The default, so no test can schedule a real
+///       notification by forgetting an override.
+///     - notificationPreferencesRevisionProvider: Forces a reschedule when a
+///       preference changes rather than the prediction.
+library;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/clock.dart';
 import 'package:period_tracker/core/date_utils.dart';
@@ -39,13 +54,26 @@ class NotificationScheduler {
        // ignore: prefer_initializing_formals, same reason as above
        _logger = logger;
 
+  /// Where notifications are delivered.
   final NotificationGateway _gateway;
+
+  /// Where the preferences are stored.
   final AppDatabase _database;
+
+  /// Supplies the logs the permission and nudge rules read.
   final CycleRepository _cycles;
+
+  /// The app's one clock.
   final Clock _clock;
+
+  /// Records what was scheduled, never what was logged.
   final RingLogger? _logger;
 
-  /// Reads the user's current preferences.
+  /// Read the user's current notification preferences.
+  ///
+  /// Returns:
+  ///     `Future<NotificationPreferences>`: Every stored preference, with
+  ///     the last nudge day defaulted to -1 when none has fired.
   Future<NotificationPreferences> preferences() async {
     final settings = _database.settingsDao;
     final lastNudge = await settings.readInt(
@@ -70,10 +98,17 @@ class NotificationScheduler {
     );
   }
 
-  /// Rebuilds the schedule for [result], using [copy] for the wording.
+  /// Rebuild the whole schedule for a prediction.
   ///
-  /// Called on every prediction change and every edit. Returns what was
-  /// scheduled, so a test can assert the schedule rather than the side effect.
+  /// Called on every prediction change and every edit.
+  ///
+  /// Args:
+  ///     result (PredictionResult): What the model currently says.
+  ///     copy (NotificationCopy): The wording to deliver with.
+  ///
+  /// Returns:
+  ///     `Future<List<PlannedNotification>>`: What was scheduled, so a test
+  ///     can assert the schedule rather than the side effect.
   Future<List<PlannedNotification>> reschedule(
     PredictionResult result, {
     required NotificationCopy copy,
@@ -105,25 +140,36 @@ class NotificationScheduler {
     return planned;
   }
 
-  /// Creates the channels and prepares the platform.
+  /// Create the channels and prepare the platform.
   ///
   /// Takes the copy rather than holding it, because the body of a window
-  /// notification names the predicted range, so the words change every time the
-  /// prediction does. A cached copy would quietly announce last month's window.
+  /// notification names the predicted range, so the words change every time
+  /// the prediction does. A cached copy would quietly announce last month's
+  /// window.
+  ///
+  /// Args:
+  ///     copy (NotificationCopy): Supplies the channel names.
   Future<void> prepare(NotificationCopy copy) => _gateway.initialize(copy);
 
-  /// Whether the app should ask for notification permission yet.
+  /// Report whether the app should ask for notification permission yet.
   ///
-  /// True only once a cycle has actually been logged. Asking at first launch
-  /// gets denied by reflex, and on Android 13+ re-asking after a denial is
-  /// deliberately hard, so the one request this app gets is spent at the moment
-  /// the value is visible (`docs/PLAN.md` 2.4.3).
+  /// Asking at first launch gets denied by reflex, and on Android 13+
+  /// re-asking after a denial is deliberately hard, so the one request this
+  /// app gets is spent at the moment the value is visible (`docs/PLAN.md`
+  /// 2.4.3).
+  ///
+  /// Returns:
+  ///     `Future<bool>`: True only once a cycle has actually been logged.
   Future<bool> shouldRequestPermission() async {
     final logs = await _cycles.logs();
     return logs.any((log) => log.isBleedingDay);
   }
 
-  /// Asks for permission, if it is the right moment to.
+  /// Ask for permission, if it is the right moment to.
+  ///
+  /// Returns:
+  ///     `Future<bool>`: Whether permission is now granted. False without
+  ///     asking when it has not been earned yet.
   Future<bool> requestPermissionIfEarned() async {
     if (!await shouldRequestPermission()) return false;
     final granted = await _gateway.requestPermission();
@@ -141,6 +187,13 @@ class NotificationScheduler {
   /// alarms on several manufacturers, so the app cannot assume what it
   /// scheduled arrived. When this returns true the UI shows the reminder in
   /// app instead.
+  /// Args:
+  ///     planned (`List<PlannedNotification>`): The current schedule, used
+  ///         only to record the stored fire dates for next time.
+  ///
+  /// Returns:
+  ///     `Future<bool>`: True when a stored fire date fell between the last
+  ///     visit and today, so the UI should show the reminder in app instead.
   Future<bool> checkForMissedReminder(
     List<PlannedNotification> planned,
   ) async {
@@ -176,6 +229,9 @@ class NotificationScheduler {
   /// Tolerant of anything it cannot parse: a preference that cannot be read is
   /// worth defaulting, and the cost of getting this wrong is one missing
   /// banner, not a broken launch.
+  /// Returns:
+  ///     `Future<List<CivilDate>>`: The stored schedule, or an empty list
+  ///     when nothing is stored or the value cannot be parsed.
   Future<List<CivilDate>> _storedFireDates() async {
     final raw = await _database.settingsDao.raw(SettingKey.scheduledFireDays);
     if (raw == null || raw.isEmpty) return const <CivilDate>[];
@@ -193,10 +249,14 @@ class NotificationScheduler {
     _clock.today().epochDay,
   );
 
-  /// Handles the one-tap action from a delivered notification.
+  /// Handle the one-tap action from a delivered notification.
   ///
   /// Writes the log without the app being opened, which is what makes the
   /// action worth having at all.
+  ///
+  /// Args:
+  ///     actionId (String): What the platform reported. Anything other than
+  ///         [logPeriodActionId] is ignored.
   Future<void> handleAction(String actionId) async {
     if (actionId != logPeriodActionId) return;
     await _cycles.markPeriodStart(_clock.today());
@@ -238,7 +298,7 @@ final class NoopNotificationGateway implements NotificationGateway {
 /// Bumped whenever a notification preference changes.
 ///
 /// `NotificationSync` reschedules when the *prediction* changes, which is the
-/// right trigger for almost everything — but turning reminders off, or moving
+/// right trigger for almost everything. But turning reminders off, or moving
 /// the lead days, changes nothing about the prediction. Without this, the
 /// notification the user just switched off stays queued on the platform until
 /// something unrelated happens to trigger a reschedule, and then arrives.

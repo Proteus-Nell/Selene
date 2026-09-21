@@ -1,7 +1,20 @@
+/// Chip selection motion.
+///
+/// Wraps every selectable chip in the app so that selecting one settles rather
+/// than snaps, and so that the checkmark appearing never changes the chip's
+/// width. Both halves are here because separating them is how the second one
+/// gets forgotten.
+///
+/// Includes:
+///     - ChipMotion: The wrapper, its scale and its reserved slot.
+///     - _ChipMotionState: The one controller behind both.
+///     - _CheckSlot: The slot itself, and the checkmark that fades in it.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:period_tracker/core/motion.dart';
 
-/// Makes selecting a chip feel like an answer rather than a repaint (AND-34).
+/// Chip motion: makes selecting a chip an answer, not a repaint (AND-34).
 ///
 /// Every selectable chip in the app is built through this, and the builder
 /// hands back the avatar the chip has to carry, so the two halves cannot come
@@ -21,8 +34,8 @@ import 'package:period_tracker/core/motion.dart';
 ///
 /// **The scale** runs [Motion.quick] on every selection change and takes the
 /// chip from 0.96 back to 1, so it settles under the finger instead of
-/// snapping. At rest the scale is exactly 1 in *both* states — never 0.96 for
-/// an unselected chip — because a chip painted at 96% is a tap target painted
+/// snapping. At rest the scale is exactly 1 in *both* states, never 0.96 for
+/// an unselected chip, because a chip painted at 96% is a tap target painted
 /// at 96%, and `a11y_test.dart` measures the rendered rect against the 48dp
 /// floor.
 ///
@@ -40,14 +53,27 @@ import 'package:period_tracker/core/motion.dart';
 /// has asked for no animation.
 ///
 /// One caveat, on the symptom chips only: their *label* grows when a severity
-/// is recorded ("Cramps · Moderate"), which is a deliberate never-colour-alone
-/// requirement from `docs/PLAN.md` 2.4.4 and moves the row regardless. The slot
-/// removes the checkmark's contribution to that, not the label's.
+/// is recorded, gaining a separator and a word after the symptom's name. That
+/// is a deliberate never-colour-alone requirement from `docs/PLAN.md` 2.4.4
+/// and moves the row regardless. The slot removes the checkmark's
+/// contribution to the reflow, not the label's.
 ///
 /// With animations off the controller lands on its end value on the frame it
 /// was started, so the chip is simply selected, with its checkmark, at once.
+///
+/// Attributes:
+///     selected (bool): Whether the chip is currently selected.
+///     builder (`Widget Function(BuildContext, Widget)`): Builds the chip,
+///         given the avatar it must carry.
 class ChipMotion extends StatefulWidget {
   /// Builds a chip that is [selected], passing it the avatar it must carry.
+  ///
+  /// Args:
+  ///     selected (bool): Whether the chip is currently selected.
+  ///     builder (`Widget Function(BuildContext, Widget)`): Builds the chip.
+  ///         Its second argument is the avatar the chip must use, and a
+  ///         builder that drops it reintroduces the reflow this widget exists
+  ///         to remove.
   const ChipMotion({required this.selected, required this.builder, super.key});
 
   /// Whether the chip is currently selected.
@@ -72,6 +98,11 @@ class ChipMotion extends StatefulWidget {
   State<ChipMotion> createState() => _ChipMotionState();
 }
 
+/// State for [ChipMotion]: the one controller both halves run off.
+///
+/// Attributes:
+///     _controller (AnimationController): The selection animation, driving
+///         both the scale and the checkmark's opacity.
 class _ChipMotionState extends State<ChipMotion>
     with SingleTickerProviderStateMixin {
   /// Runs 0 to 1 on every selection change, and rests at 1.
@@ -124,7 +155,22 @@ class _ChipMotionState extends State<ChipMotion>
 }
 
 /// The avatar slot: reserved space, with a checkmark that fades in it.
+///
+/// A fixed [ChipMotion.slotSize] square whether or not the checkmark is
+/// showing, which is the whole reason the slot exists: the space is held open
+/// so nothing beside the chip moves when it is selected.
+///
+/// Attributes:
+///     progress (`Animation<double>`): The parent's selection animation.
+///     selected (bool): Which way the checkmark is going.
 class _CheckSlot extends StatelessWidget {
+  /// Creates the slot.
+  ///
+  /// Args:
+  ///     progress (`Animation<double>`): The parent's 0-to-1 selection
+  ///         animation.
+  ///     selected (bool): Which way the checkmark is going. True fades it in,
+  ///         false fades it out, over the same run.
   const _CheckSlot({required this.progress, required this.selected});
 
   /// The parent's 0-to-1 selection animation.

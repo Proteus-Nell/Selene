@@ -1,3 +1,18 @@
+/// Calendar screen.
+///
+/// The month grid: what was logged, when the next period is expected, and the
+/// legend that makes the encoding readable without colour vision. The app's
+/// primary surface, and the one most likely to be unusable, so every state is
+/// carried by shape and by a written label as well as by colour.
+///
+/// Includes:
+///     - CalendarScreen: The screen, its month stepping and its editor sheet.
+///     - _CalendarScreenState: Which month is shown, and which way it moved.
+///     - _MonthGrid: One month of cells, sized from the current text scale.
+///     - CalendarLegend: What each marker means.
+///     - _LegendEntry: One marker and its name.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/date_utils.dart';
@@ -13,7 +28,7 @@ import 'package:period_tracker/features/common/next_period_panel.dart';
 import 'package:period_tracker/features/log/day_editor.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// The month grid: what was logged, and when the next period is expected.
+/// Calendar screen: what was logged, and when the next period is expected.
 ///
 /// The app's primary surface, and the one most likely to be unusable. Two
 /// requirements shape every decision here, both from `docs/PLAN.md` 2.4.4 and
@@ -36,7 +51,16 @@ class CalendarScreen extends ConsumerStatefulWidget {
   ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
 }
 
+/// State for [CalendarScreen]: which month is shown, and how it got there.
+///
+/// Attributes:
+///     _monthOffset (int): Months away from the current one.
+///     _direction (int): Which way the last change went.
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
+  /// How many months away from the current one the grid is showing.
+  ///
+  /// Not a date: an offset survives the day rolling over while the screen is
+  /// open, where a stored month would leave the user a month behind.
   int _monthOffset = 0;
 
   /// Which way the last month change went: 1 forward, -1 back.
@@ -46,11 +70,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   /// user is travelling, which is the only thing it is there to say.
   int _direction = 1;
 
+  /// Move the grid by whole months.
+  ///
+  /// Args:
+  ///     by (int): How many months, positive forward. The sign is kept as
+  ///         [_direction] so the transition leaves the way it was pushed.
   void _stepMonth(int by) => setState(() {
     _direction = by;
     _monthOffset += by;
   });
 
+  /// Open the day editor for one date, in a sheet.
+  ///
+  /// Args:
+  ///     date (CivilDate): The day to edit.
+  ///     existing (DayLog?): What is currently logged for it, or null. Read
+  ///         again inside the sheet from the provider, so an edit made while
+  ///         the sheet is open is not overwritten by a stale copy.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes when the sheet is closed. The editor writes
+  ///     as it goes, so there is nothing to collect here.
   Future<void> _edit(CivilDate date, DayLog? existing) async {
     await showModalBottomSheet<void>(
       context: context,
@@ -232,9 +272,24 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
+  /// Return the first day of a date's month.
+  ///
+  /// Args:
+  ///     date (CivilDate): Any day in the month.
+  ///
+  /// Returns:
+  ///     CivilDate: The first of that month.
   static CivilDate _monthStart(CivilDate date) =>
       CivilDate(date.year, date.month, 1);
 
+  /// Find the log for one day.
+  ///
+  /// Args:
+  ///     logs (`List<DayLog>`): Every day the user has logged.
+  ///     date (CivilDate): The day to look for.
+  ///
+  /// Returns:
+  ///     DayLog?: That day's log, or null if there is none.
   static DayLog? _entryFor(List<DayLog> logs, CivilDate date) {
     for (final log in logs) {
       if (log.date == date) return log;
@@ -242,12 +297,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     return null;
   }
 
-  /// The single most likely start date, or null when none may be claimed.
+  /// Return the single most likely start date, if one may be claimed.
   ///
-  /// Only used to anchor the follicular-luteal boundary, and it returns null in
-  /// exactly the states [_predictedWindow] does. A phase named from a
-  /// prediction the app has just declined to draw would be that same claim
-  /// wearing a different word.
+  /// Only used to anchor the follicular-luteal boundary. It is never drawn on
+  /// the grid: marking one day would imply a precision the model does not
+  /// have.
+  ///
+  /// Args:
+  ///     result (PredictionResult?): The model's current belief.
+  ///
+  /// Returns:
+  ///     CivilDate?: The median start, or null in exactly the states
+  ///     [_predictedWindow] returns null in. A phase named from a prediction
+  ///     the app has just declined to draw would be that same claim wearing a
+  ///     different word.
   static CivilDate? _predictedStart(PredictionResult? result) =>
       switch (result) {
         Predicted(:final prediction) => prediction.medianStart,
@@ -260,11 +323,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         null => null,
       };
 
-  /// The 80% window, or null when no window may be shown.
+  /// Return the 80% window, if one may be shown.
   ///
-  /// [TooIrregular], [LostTrack], [NoData] and [DataInconsistent] all return
-  /// null on purpose: each is a state where drawing a window would be the app
-  /// asserting something it has just said it cannot support.
+  /// Args:
+  ///     result (PredictionResult?): The model's current belief.
+  ///
+  /// Returns:
+  ///     CivilDateRange?: The window, or null. [TooIrregular], [LostTrack],
+  ///     [NoData] and [DataInconsistent] all return null on purpose: each is
+  ///     a state where drawing a window would be the app asserting something
+  ///     it has just said it cannot support.
   static CivilDateRange? _predictedWindow(PredictionResult? result) =>
       switch (result) {
         Predicted(:final prediction) => prediction.window80,
@@ -282,7 +350,32 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       };
 }
 
+/// One month of cells, plus the weekday initials above them.
+///
+/// The grid grows with the text rather than clipping it: the cell height is
+/// measured from what the device is actually asked to render, which is what
+/// keeps it usable at a 200% text scale (`docs/PLAN.md` 2.4.4).
+///
+/// Attributes:
+///     month (CivilDate): Any day in the month being drawn.
+///     today (CivilDate): The current day, which gets a ring.
+///     logs (`List<DayLog>`): Every day the user has logged.
+///     predicted (CivilDateRange?): The window to outline, if any.
+///     onEdit (`void Function(CivilDate, DayLog?)`): Opens the editor.
 class _MonthGrid extends StatelessWidget {
+  /// Creates the grid for one month.
+  ///
+  /// Args:
+  ///     month (CivilDate): Any day in the month being drawn. Only its year
+  ///         and month are read.
+  ///     today (CivilDate): The current day. It may be outside [month], in
+  ///         which case no cell is ringed.
+  ///     logs (`List<DayLog>`): Every day the user has logged, not only this
+  ///         month's: a bleeding run is counted backwards across the boundary.
+  ///     predicted (CivilDateRange?): The window to outline, or null when the
+  ///         app has declined to show one.
+  ///     onEdit (`void Function(CivilDate, DayLog?)`): Opens the editor for a
+  ///         day, given the day and whatever is logged for it.
   const _MonthGrid({
     required this.month,
     required this.today,
@@ -292,10 +385,19 @@ class _MonthGrid extends StatelessWidget {
     super.key,
   });
 
+  /// Any day in the month being drawn.
   final CivilDate month;
+
+  /// The current day, which gets a ring.
   final CivilDate today;
+
+  /// Every day the user has logged.
   final List<DayLog> logs;
+
+  /// The window to outline, or null when none may be shown.
   final CivilDateRange? predicted;
+
+  /// Opens the editor for a day.
   final void Function(CivilDate date, DayLog? existing) onEdit;
 
   @override
@@ -368,7 +470,18 @@ class _MonthGrid extends StatelessWidget {
     );
   }
 
-  /// Which day of a bleeding run [date] is, or null if it is not one.
+  /// Return which day of a bleeding run a date is.
+  ///
+  /// Counts backwards until a day that is not a bleeding day, so a run that
+  /// began in the previous month numbers correctly rather than restarting at
+  /// the 1st.
+  ///
+  /// Args:
+  ///     date (CivilDate): The day to number.
+  ///
+  /// Returns:
+  ///     int?: Its position in the run, counting from 1, or null if it is not
+  ///     a bleeding day.
   int? _periodDayNumber(CivilDate date) {
     final entry = _entryFor(logs, date);
     if (entry == null || !entry.isBleedingDay) return null;
@@ -381,6 +494,14 @@ class _MonthGrid extends StatelessWidget {
     return number;
   }
 
+  /// Find the log for one day.
+  ///
+  /// Args:
+  ///     entries (`List<DayLog>`): The logs to search.
+  ///     date (CivilDate): The day to look for.
+  ///
+  /// Returns:
+  ///     DayLog?: That day's log, or null if there is none.
   DayLog? _entryFor(List<DayLog> entries, CivilDate date) {
     for (final log in entries) {
       if (log.date == date) return log;
@@ -388,6 +509,16 @@ class _MonthGrid extends StatelessWidget {
     return null;
   }
 
+  /// Return the initial letter for a weekday, in the user's language.
+  ///
+  /// Args:
+  ///     context (BuildContext): For the locale.
+  ///     weekday (int): ISO weekday, 1 for Monday.
+  ///
+  /// Returns:
+  ///     String: The first character of that weekday's name. Taken from
+  ///     `characters` rather than by index, so a letter made of more than one
+  ///     code unit is not cut in half.
   static String _weekdayInitial(BuildContext context, int weekday) {
     // 2026-06-01 was a Monday, so this walks Monday to Sunday whatever the
     // locale's first day happens to be.
@@ -437,10 +568,25 @@ class CalendarLegend extends StatelessWidget {
   }
 }
 
+/// One marker and its name.
+///
+/// Attributes:
+///     marker (Widget): The marker, drawn as it is on the grid.
+///     label (String): What it means.
 class _LegendEntry extends StatelessWidget {
+  /// Creates a legend entry.
+  ///
+  /// Args:
+  ///     marker (Widget): The marker, drawn exactly as it is on the grid, so
+  ///         the legend cannot drift from what it explains.
+  ///     label (String): What it means. The marker is excluded from
+  ///         semantics, so this is the whole announcement.
   const _LegendEntry({required this.marker, required this.label});
 
+  /// The marker, drawn as it is on the grid.
   final Widget marker;
+
+  /// What it means.
   final String label;
 
   @override

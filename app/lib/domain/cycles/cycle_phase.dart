@@ -1,12 +1,25 @@
+/// Cycle phase naming.
+///
+/// Works out where a day falls in the cycle, from logged days plus optionally
+/// the predicted next start. Pure arithmetic: it reads nothing and writes
+/// nothing, which is what lets the tests state the rules as examples rather
+/// than as fixtures. Nothing here is stored.
+///
+/// Includes:
+///     - CyclePhase: The three named phases.
+///     - CyclePosition: One day's day-count, phase, and optional estimate.
+///     - CyclePhases: The arithmetic that produces a position.
+library;
+
 import 'package:meta/meta.dart';
 import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/domain/cycles/cycle_rules.dart';
 import 'package:period_tracker/domain/cycles/segmentation.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 
-/// Where in the cycle a day falls, by clinical name.
+/// Cycle phase: where in the cycle a day falls, by clinical name.
 ///
-/// Derived, never stored — no column holds one of these, so widening this enum
+/// Derived, never stored. No column holds one of these, so widening this enum
 /// is not a schema change and `enum_widening_test.dart` correctly ignores it.
 ///
 /// The names are the clinical ones because they are what the user will meet
@@ -26,17 +39,31 @@ enum CyclePhase {
   luteal,
 }
 
-/// Where [CyclePosition.date] sits in the cycle, as far as the app can honestly
-/// say.
+/// Cycle position: where one day sits, as far as the app can honestly say.
 ///
 /// Both fields are nullable, and separately. The app can very often say what
-/// day of the cycle it is — that is arithmetic on a date the user logged — while
-/// having no basis at all for a phase name, which needs a prediction to anchor
-/// the luteal boundary to. Collapsing the two into one nullable object would
-/// force the day count to be withheld along with the phase.
+/// day of the cycle it is, which is arithmetic on a date the user logged,
+/// while having no basis at all for a phase name, which needs a prediction to
+/// anchor the luteal boundary to. Collapsing the two into one nullable object
+/// would force the day count to be withheld along with the phase.
+///
+/// Attributes:
+///     date (CivilDate): The day this describes.
+///     dayOfCycle (int?): Days since the cycle began, first day as 1. Null
+///         when unknown.
+///     phase (CyclePhase?): The named phase, or null with no basis for one.
+///     ovulationEstimate (CivilDateRange?): An estimated range, present only
+///         when explicitly asked for.
 @immutable
 final class CyclePosition {
   /// Creates a position.
+  ///
+  /// Args:
+  ///     date (CivilDate): The day this describes.
+  ///     dayOfCycle (int?): Days since the cycle began, first day as 1.
+  ///     phase (CyclePhase?): The named phase, or null for none.
+  ///     ovulationEstimate (CivilDateRange?, optional): The estimated range.
+  ///         Defaults to null, which is the safe answer.
   const CyclePosition({
     required this.date,
     required this.dayOfCycle,
@@ -44,7 +71,12 @@ final class CyclePosition {
     this.ovulationEstimate,
   });
 
-  /// Nothing known: no bleeding has been logged, or the trail has gone cold.
+  /// Creates a position with nothing known.
+  ///
+  /// Used when no bleeding has been logged, or the trail has gone cold.
+  ///
+  /// Args:
+  ///     date (CivilDate): The day this describes.
   const CyclePosition.unknown(this.date)
     : dayOfCycle = null,
       phase = null,
@@ -66,7 +98,7 @@ final class CyclePosition {
 
   /// An estimated ovulation range, present only when explicitly asked for.
   ///
-  /// **Off by default and never computed unless requested** — `docs/PLAN.md`
+  /// **Off by default and never computed unless requested**: `docs/PLAN.md`
   /// 6.2, preserved by ADR-0007. It is a separate field rather than a variant
   /// of [phase] so that no rendering path can produce it by accident: a screen
   /// that does not ask for it cannot receive it.
@@ -88,42 +120,61 @@ final class CyclePosition {
       'CyclePosition(${date.toIso8601()}, day $dayOfCycle, ${phase?.name})';
 }
 
-/// Works out where a day falls in the cycle.
+/// Cycle phases: works out where a day falls in the cycle.
 ///
-/// Pure arithmetic over logged days plus, optionally, the predicted next start.
-/// It reads nothing and writes nothing, which is what lets the tests state the
-/// rules as examples rather than as fixtures.
+/// Pure arithmetic over logged days plus, optionally, the predicted next
+/// start. It reads nothing and writes nothing, which is what lets the tests
+/// state the rules as examples rather than as fixtures.
 abstract final class CyclePhases {
   /// How long the luteal phase is taken to be, in days.
   ///
   /// Fourteen is the conventional figure, and it is used here for the one
-  /// property that makes it defensible: the luteal phase is the most consistent
-  /// part of the cycle across people and across cycles, typically twelve to
-  /// sixteen days, which is why almost all of the variation in cycle length
-  /// sits in the follicular phase. So counting *backwards* from the next
-  /// expected period is a far better-behaved estimate than counting forwards
-  /// from the last one.
+  /// property that makes it defensible: the luteal phase is the most
+  /// consistent part of the cycle across people and across cycles, typically
+  /// twelve to sixteen days, which is why almost all of the variation in cycle
+  /// length sits in the follicular phase. So counting *backwards* from the
+  /// next expected period is a far better-behaved estimate than counting
+  /// forwards from the last one.
   ///
   /// This is a boundary between two named phases and nothing else. It is not
   /// published as a date, it is not called ovulation, and no day is described
   /// by it. ADR-0007 accepted precisely this: the phase name is permitted, the
   /// inference dressed as a fertile window is not.
-  static const int lutealPhaseDays = 14;
+  static const int lutealPhaseDays = 14; // days, counted back from next start
 
   /// Half-width of the estimated ovulation range, in days.
   ///
-  /// The range is deliberately five days wide rather than a single day. A point
-  /// estimate would be read as a fact, and this is a population average applied
-  /// to a person whose actual ovulation this app has no way to observe — no
-  /// temperature, no LH, no ultrasound. Widening it is not hedging; it is the
-  /// honest shape of what is known.
-  static const int ovulationSpreadDays = 2;
+  /// The range is deliberately five days wide rather than a single day. A
+  /// point estimate would be read as a fact, and this is a population average
+  /// applied to a person whose actual ovulation this app has no way to
+  /// observe: no temperature, no LH, no ultrasound. Widening it is not
+  /// hedging; it is the honest shape of what is known.
+  static const int ovulationSpreadDays = 2; // days either side, so 5 wide
 
-  /// Where [date] falls, given [logs] and optionally [predictedStart].
+  /// Work out where one day falls in the cycle.
   ///
-  /// Pass [withOvulationEstimate] only from a call site that has checked the
-  /// user's opt-in. It defaults to false so that forgetting to ask is the safe
-  /// outcome rather than the leaky one.
+  /// Steps:
+  ///     1. Find the most recent bleeding episode that had started by [date].
+  ///     2. Count the days since it began.
+  ///     3. Give up and return unknown if that count has run past
+  ///        [CycleRules.lostTrackAfterDays].
+  ///     4. Name the phase: period while the episode is still running,
+  ///        otherwise follicular or luteal against the predicted start.
+  ///
+  /// Args:
+  ///     date (CivilDate): The day to place.
+  ///     logs (`List<DayLog>`): Every logged day, in any order.
+  ///     predictedStart (CivilDate?, optional): The next predicted period
+  ///         start, which anchors the luteal boundary. Defaults to null, and
+  ///         no phase is named without it.
+  ///     withOvulationEstimate (bool, optional): Whether to compute the
+  ///         estimated range. Defaults to false, so that forgetting to ask is
+  ///         the safe outcome rather than the leaky one. Pass true only from
+  ///         a call site that has checked the user's opt-in.
+  ///
+  /// Returns:
+  ///     CyclePosition: The day's position, with whatever the app can
+  ///     honestly say about it.
   static CyclePosition on({
     required CivilDate date,
     required List<DayLog> logs,
@@ -154,8 +205,8 @@ abstract final class CyclePhases {
     }
 
     if (date <= current.end) {
-      // Read straight off what was logged, so it needs no prediction and is the
-      // one phase the app can always name.
+      // Read straight off what was logged, so it needs no prediction and is
+      // the one phase the app can always name.
       return CyclePosition(
         date: date,
         dayOfCycle: dayOfCycle,
@@ -164,11 +215,12 @@ abstract final class CyclePhases {
     }
 
     if (predictedStart == null || predictedStart <= date) {
-      // No anchor for the luteal boundary, so no phase is named. The day count
-      // still stands: it is arithmetic on a logged date and does not depend on
-      // the prediction. A prediction already in the past is no anchor either —
-      // it means the period is overdue, and calling those days luteal would be
-      // asserting something about a cycle that has already outrun the model.
+      // No anchor for the luteal boundary, so no phase is named. The day
+      // count still stands: it is arithmetic on a logged date and does not
+      // depend on the prediction. A prediction already in the past is no
+      // anchor either. It means the period is overdue, and calling those days
+      // luteal would be asserting something about a cycle that has already
+      // outrun the model.
       return CyclePosition(
         date: date,
         dayOfCycle: dayOfCycle,
@@ -191,6 +243,14 @@ abstract final class CyclePhases {
     );
   }
 
+  /// Build the estimated ovulation range around the luteal boundary.
+  ///
+  /// Args:
+  ///     lutealStart (CivilDate): The boundary, already computed by [on].
+  ///
+  /// Returns:
+  ///     CivilDateRange: [ovulationSpreadDays] either side of the boundary,
+  ///     inclusive, so five days in total.
   static CivilDateRange _ovulationAround(CivilDate lutealStart) =>
       CivilDateRange(
         lutealStart.addDays(-ovulationSpreadDays),

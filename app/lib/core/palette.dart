@@ -1,13 +1,43 @@
+/// Colour palettes.
+///
+/// Holds every colour the app can paint, as opaque constants rather than
+/// runtime-derived tones, so the contrast gate can recompute each ratio from
+/// the numbers themselves. Six schemes, each with a light and a dark half,
+/// except Night, which has only the one.
+///
+/// Includes:
+///     - AppPalette: One scheme's colours at one brightness.
+///     - AppScheme: The six schemes the user chooses between.
+///     - AppPalettes: The colour numbers themselves.
+library;
+
 import 'package:flutter/material.dart';
 
-/// One scheme's colours at one brightness.
+/// App palette: one scheme's colours at one brightness.
 ///
 /// Every field is opaque and stated outright rather than derived, because the
-/// contrast gate in `theme_test.dart` recomputes each ratio from these numbers.
-/// A tone generated at runtime is a tone no test can pin.
+/// contrast gate in `theme_test.dart` recomputes each ratio from these
+/// numbers. A tone generated at runtime is a tone no test can pin.
+///
+/// Attributes:
+///     surface (Color): Background behind everything.
+///     onSurface (Color): Body text and icons on [surface].
+///     surfaceContainer (Color): Raised surfaces such as cards.
+///     onSurfaceVariant (Color): Secondary text.
+///     primary (Color): Primary action colour.
+///     onPrimary (Color): Text on [primary].
+///     secondary (Color): Secondary accent.
+///     onSecondary (Color): Text on [secondary].
+///     error (Color): Error colour.
+///     onError (Color): Text on [error].
+///     outline (Color): Borders and dividers.
+///     menstrual (Color): The bleeding days, as logged.
+///     follicular (Color): Between bleeding and the luteal phase.
+///     ovular (Color): The estimated ovulation range, opt-in only.
+///     luteal (Color): The run of days before a period is due.
 @immutable
 final class AppPalette {
-  /// Creates a palette.
+  /// Creates a palette. Every colour is required; none is derived.
   const AppPalette({
     required this.surface,
     required this.onSurface,
@@ -85,7 +115,17 @@ final class AppPalette {
     luteal,
   ];
 
-  /// Interpolates towards [other], for [ThemeExtension.lerp].
+  /// Interpolate every colour towards another palette.
+  ///
+  /// Drives [ThemeExtension.lerp], so a scheme change crossfades rather than
+  /// snapping.
+  ///
+  /// Args:
+  ///     other (AppPalette): The palette being moved towards.
+  ///     t (double): Progress, 0 for this palette and 1 for [other].
+  ///
+  /// Returns:
+  ///     AppPalette: A palette with every field interpolated.
   AppPalette lerpTo(AppPalette other, double t) => AppPalette(
     surface: Color.lerp(surface, other.surface, t)!,
     onSurface: Color.lerp(onSurface, other.onSurface, t)!,
@@ -113,13 +153,13 @@ final class AppPalette {
   );
 }
 
-/// The colour schemes the user can choose between (AND-39).
+/// App scheme: the colour schemes the user can choose between (AND-39).
 ///
 /// Six of them, each measured against the same gates before it was offered.
 /// The choice is a preference and nothing more: no scheme unlocks a feature,
-/// hides a warning, or changes a number. What it does change is whether someone
-/// can stand to open the app, which for a health record read on bad days is not
-/// a small thing.
+/// hides a warning, or changes a number. What it does change is whether
+/// someone can stand to open the app, which for a health record read on bad
+/// days is not a small thing.
 ///
 /// The palettes themselves are on [AppPalettes]. The labels are not here, they
 /// are in `app_en.arb`, because a label is a user-facing string and this is a
@@ -164,21 +204,35 @@ enum AppScheme {
   /// Whether choosing this scheme also means choosing dark.
   ///
   /// True for [night] alone. It is described as designed dark rather than
-  /// inverted, and that is the literal truth: it has no light half to fall back
-  /// to. Rather than quietly ignoring the theme control — a setting that does
-  /// nothing is worse than one that is visibly unavailable — the appearance
-  /// screen disables it and says why.
+  /// inverted, and that is the literal truth: it has no light half to fall
+  /// back to. A setting that does nothing is worse than one that is visibly
+  /// unavailable, so rather than quietly ignoring the theme control, the
+  /// appearance screen disables it and says why.
   bool get forcesDark => this == AppScheme.night;
 
-  /// The palette for [brightness].
+  /// Return this scheme's palette at one brightness.
+  ///
+  /// Args:
+  ///     brightness (Brightness): Which half to read.
+  ///
+  /// Returns:
+  ///     AppPalette: The matching half. The same palette either way when
+  ///     [forcesDark].
   AppPalette palette(Brightness brightness) =>
       brightness == Brightness.dark ? dark : light;
 
-  /// The scheme stored as [wireName], or [fallback] if it is absent or unknown.
+  /// Resolve a stored wire name back to a scheme.
   ///
-  /// Unknown rather than throwing, because the value can come off disk: a
-  /// database written by a build that had a scheme this one does not must open,
-  /// and opening in the default is the only sane answer.
+  /// Falls back rather than throwing, because the value can come off disk: a
+  /// database written by a build that had a scheme this one does not must
+  /// open, and opening in the default is the only sane answer.
+  ///
+  /// Args:
+  ///     wireName (String?): The stored key, or null when nothing is stored.
+  ///
+  /// Returns:
+  ///     AppScheme: The matching scheme, or [fallback] when the name is
+  ///     absent or unknown.
   static AppScheme fromWireName(String? wireName) {
     for (final scheme in AppScheme.values) {
       if (scheme.wireName == wireName) return scheme;
@@ -187,11 +241,12 @@ enum AppScheme {
   }
 }
 
-/// The colour numbers themselves.
+/// App palettes: the colour numbers themselves.
 ///
 /// Every one of these was checked before it shipped, and `theme_test.dart`
-/// re-checks all of them on every run. The light halves of the five light-first
-/// schemes are the ones approved on the design canvas and are copied verbatim.
+/// re-checks all of them on every run. The light halves of the five
+/// light-first schemes are the ones approved on the design canvas and are
+/// copied verbatim.
 abstract final class AppPalettes {
   static const AppPalette roseLight = AppPalette(
     surface: Color(0xFFFCF5F5),

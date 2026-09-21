@@ -1,7 +1,21 @@
+/// App lock service.
+///
+/// Delegates to the device's own credential to gate the interface. Encrypts
+/// nothing: the database is unencrypted in app-private storage (ADR-0004), and
+/// this only decides whether the contents are shown.
+///
+/// Includes:
+///     - LockUnavailableReason: Why the lock cannot be turned on.
+///     - UnlockOutcome: What an unlock attempt produced.
+///     - unlockOutcomeFor: The failure-code mapping, exposed for its test.
+///     - AppLockService: The interface the gate depends on.
+///     - LocalAuthService: The real implementation, over `local_auth`.
+library;
+
 import 'package:local_auth/local_auth.dart';
 import 'package:meta/meta.dart';
 
-/// Why the app lock cannot be turned on.
+/// Lock unavailable reason: why the app lock cannot be turned on.
 enum LockUnavailableReason {
   /// The device has no PIN, pattern, passcode or enrolled biometric.
   ///
@@ -16,7 +30,7 @@ enum LockUnavailableReason {
   notSupported,
 }
 
-/// The outcome of an unlock attempt.
+/// Unlock outcome: what an unlock attempt produced.
 enum UnlockOutcome {
   /// The user proved who they are.
   granted,
@@ -26,32 +40,40 @@ enum UnlockOutcome {
 
   /// The device stopped being able to authenticate.
   ///
-  /// Reached when a credential is removed while the lock is on. Treated as a
-  /// [granted]-equivalent by the gate, deliberately — see [AppLockService].
+  /// Reached when a credential is removed while the lock is on. Deliberately
+  /// treated as equivalent to [granted] by the gate; see [AppLockService].
   unavailable,
 }
 
-/// Maps a `local_auth` failure code to what the gate should do about it.
+/// Map a `local_auth` failure code to what the gate should do about it.
 ///
 /// Lifted out of [LocalAuthService.unlock] so it can be asserted directly:
 /// every branch here is a decision about whether someone gets into their own
 /// diary, and the alternative is a test that has to fake a platform channel to
 /// reach a `switch`. `app_lock_test.dart` walks the whole enum.
+///
+/// Args:
+///     code (LocalAuthExceptionCode): What the plugin reported.
+///
+/// Returns:
+///     UnlockOutcome: [UnlockOutcome.unavailable] for anything that would
+///     otherwise strand the user outside their own diary, and
+///     [UnlockOutcome.refused] for an ordinary failed attempt.
 @visibleForTesting
 UnlockOutcome unlockOutcomeFor(LocalAuthExceptionCode code) =>
     // Listed exhaustively rather than with a `_` wildcard, deliberately. A new
     // code added by the plugin would fall into the wildcard silently, and
     // "silently" here means either sealing the user out of their own diary or
-    // letting anyone in — the two failure modes this feature has. Breaking the
-    // build is the correct response to an unlock outcome nobody has classified
-    // yet.
+    // letting anyone in, which are the two failure modes this feature has.
+    // Breaking the build is the correct response to an unlock outcome nobody
+    // has classified yet.
     switch (code) {
       // The credential was removed while the lock was on. Reported as
       // unavailable so the gate can let the user in rather than sealing them
       // out of their own diary with no way to prove anything.
       LocalAuthExceptionCode.noCredentialsSet ||
       // The platform cannot show a prompt at all. On Android this is either a
-      // transient no-Activity state, or — the case that actually bit — a
+      // transient no-Activity state, or the case that actually bit: a
       // MainActivity that is not a FragmentActivity, which BiometricPrompt
       // needs. That second one is permanent for the whole build.
       //
@@ -91,18 +113,24 @@ UnlockOutcome unlockOutcomeFor(LocalAuthExceptionCode code) =>
 /// in `flutter test`, and a lock that could only be exercised on a device is a
 /// lock whose failure modes are never exercised at all.
 abstract interface class AppLockService {
-  /// Whether the device can authenticate, and if not, why.
+  /// Report whether the device can authenticate, and if not, why.
   ///
-  /// Returns null when the lock can be used.
+  /// Returns:
+  ///     `Future<LockUnavailableReason?>`: The reason the lock cannot be
+  ///     used, or null when it can.
   Future<LockUnavailableReason?> unavailableReason();
 
-  /// Prompts for the device credential.
+  /// Prompt for the device credential.
   ///
-  /// [reason] is shown by the system prompt and must not be empty.
+  /// Args:
+  ///     reason (String): Shown by the system prompt. Must not be empty.
+  ///
+  /// Returns:
+  ///     `Future<UnlockOutcome>`: What the attempt produced.
   Future<UnlockOutcome> unlock(String reason);
 }
 
-/// The real thing, over `local_auth`.
+/// Local auth service: the real lock, over `local_auth`.
 ///
 /// **This gates the interface. It does not encrypt anything.** The database is
 /// unencrypted in app-private storage (ADR-0004), and anyone with physical
@@ -137,9 +165,10 @@ final class LocalAuthService implements AppLockService {
       if (!supported) return LockUnavailableReason.noCredentialEnrolled;
       return null;
     } on Object {
-      // A platform that throws here cannot authenticate, and the honest report
-      // is that the feature is unavailable rather than that the device has no
-      // credential — the user would go and set one and it still would not work.
+      // A platform that throws here cannot authenticate, and the honest
+      // report is that the feature is unavailable rather than that the device
+      // has no credential. The user would go and set one and it still would
+      // not work.
       return LockUnavailableReason.notSupported;
     }
   }

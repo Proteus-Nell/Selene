@@ -1,3 +1,17 @@
+/// Appearance screen.
+///
+/// Two independent choices: which of the six colour schemes, and whether to
+/// follow the device or pin light or dark. Both apply on the next frame, and
+/// each scheme row previews the four colours a cycle is actually drawn in.
+///
+/// Includes:
+///     - AppearanceScreen: The screen, and the two writes it makes.
+///     - _SchemeRow: One scheme, its description and its swatches.
+///     - _SelectionDot: The ring that marks the chosen row.
+///     - _ThemeModeRow: Follow the device, or pin light or dark.
+///     - _SectionHeading: A small caps heading over a group of rows.
+library;
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -9,7 +23,7 @@ import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// Where the user chooses what the app looks like (AND-39).
+/// Appearance screen: what the app looks like (AND-39).
 ///
 /// Two independent choices: which of the six schemes, and whether to follow the
 /// device or pin light or dark. Both apply on the next frame rather than the
@@ -17,8 +31,8 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// colour nobody can actually judge.
 ///
 /// Each row carries its four phase colours as swatches. That is the part of a
-/// scheme this app is actually judged on — the ring on the home screen is the
-/// first thing anyone sees — and a row showing only the primary would be
+/// scheme this app is actually judged on, since the ring on the home screen is
+/// the first thing anyone sees, and a row showing only the primary would be
 /// choosing on the wrong evidence.
 class AppearanceScreen extends ConsumerWidget {
   /// Creates the appearance screen.
@@ -55,7 +69,7 @@ class AppearanceScreen extends ConsumerWidget {
       body: SafeArea(
         // A scroll view over a Column rather than a ListView: the content is
         // six rows and a segmented button, and a lazy list would leave the
-        // note under the theme control unbuilt on a short screen — which
+        // note under the theme control unbuilt on a short screen, which
         // means unreachable by a screen reader as well as by a test.
         child: SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 24),
@@ -106,15 +120,34 @@ class AppearanceScreen extends ConsumerWidget {
 }
 
 /// One scheme, its description, and the four colours it paints a cycle in.
+///
+/// Attributes:
+///     scheme (AppScheme): The scheme this row offers.
+///     selected (bool): Whether it is the one currently in use.
+///     onSelected (VoidCallback): Chooses it.
 class _SchemeRow extends StatelessWidget {
+  /// Creates a scheme row.
+  ///
+  /// Args:
+  ///     scheme (AppScheme): The scheme this row offers. Its swatches are
+  ///         drawn in its own palette, not the one the app is wearing.
+  ///     selected (bool): Whether it is the one currently in use, which fills
+  ///         the dot and bolds the name.
+  ///     onSelected (VoidCallback): Chooses it. Called even when the row is
+  ///         already selected, which writes the same value and is harmless.
   const _SchemeRow({
     required this.scheme,
     required this.selected,
     required this.onSelected,
   });
 
+  /// The scheme this row offers.
   final AppScheme scheme;
+
+  /// Whether it is the one currently in use.
   final bool selected;
+
+  /// Chooses it.
   final VoidCallback onSelected;
 
   @override
@@ -200,6 +233,14 @@ class _SchemeRow extends StatelessWidget {
     );
   }
 
+  /// Return a scheme's name.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     scheme (AppScheme): The scheme to name.
+  ///
+  /// Returns:
+  ///     String: Its name, in the user's language.
   static String _label(AppLocalizations l10n, AppScheme scheme) =>
       switch (scheme) {
         AppScheme.rose => l10n.appearanceSchemeRose,
@@ -210,6 +251,14 @@ class _SchemeRow extends StatelessWidget {
         AppScheme.night => l10n.appearanceSchemeNight,
       };
 
+  /// Return a scheme's one-line description.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     scheme (AppScheme): The scheme to describe.
+  ///
+  /// Returns:
+  ///     String: Its description, in the user's language.
   static String _subtitle(AppLocalizations l10n, AppScheme scheme) =>
       switch (scheme) {
         AppScheme.rose => l10n.appearanceSchemeRoseSubtitle,
@@ -222,9 +271,19 @@ class _SchemeRow extends StatelessWidget {
 }
 
 /// The filled ring that marks the chosen row.
+///
+/// Attributes:
+///     selected (bool): Whether this row is the chosen one.
 class _SelectionDot extends StatelessWidget {
+  /// Creates the dot.
+  ///
+  /// Args:
+  ///     selected (bool): Whether this row is the chosen one. The inner disc
+  ///         grows and shrinks rather than appearing, so the row does not
+  ///         reflow when the selection moves.
   const _SelectionDot({required this.selected});
 
+  /// Whether this row is the chosen one.
   final bool selected;
 
   @override
@@ -243,7 +302,7 @@ class _SelectionDot extends StatelessWidget {
         ),
         child: Center(
           // Sized rather than swapped, so the row does not reflow when the
-          // selection moves, and it grows over `Motion.quick` — which is zero
+          // selection moves, and it grows over `Motion.quick`, which is zero
           // when the user has asked for no animations.
           child: AnimatedContainer(
             duration: Motion.quick(context),
@@ -262,15 +321,34 @@ class _SelectionDot extends StatelessWidget {
 }
 
 /// Follow the device, or pin light or dark.
+///
+/// Attributes:
+///     mode (ThemeMode): The mode currently in use.
+///     enabled (bool): Whether the choice is available at all.
+///     onSelected (`ValueChanged<ThemeMode>`): Chooses a mode.
 class _ThemeModeRow extends StatelessWidget {
+  /// Creates the theme mode control.
+  ///
+  /// Args:
+  ///     mode (ThemeMode): The mode currently in use.
+  ///     enabled (bool): Whether the choice is available. False for a scheme
+  ///         with no light half, where the control would be a switch that
+  ///         does nothing; the screen explains it in a line beneath rather
+  ///         than leaving a dead control.
+  ///     onSelected (`ValueChanged<ThemeMode>`): Chooses a mode.
   const _ThemeModeRow({
     required this.mode,
     required this.enabled,
     required this.onSelected,
   });
 
+  /// The mode currently in use.
   final ThemeMode mode;
+
+  /// Whether the choice is available at all.
   final bool enabled;
+
+  /// Chooses a mode.
   final ValueChanged<ThemeMode> onSelected;
 
   @override
@@ -307,9 +385,18 @@ class _ThemeModeRow extends StatelessWidget {
 }
 
 /// A small caps heading over a group of rows.
+///
+/// Attributes:
+///     label (String): The text, upper-cased for display.
 class _SectionHeading extends StatelessWidget {
+  /// Creates a heading.
+  ///
+  /// Args:
+  ///     label (String): The text. Upper-cased for display, so it is written
+  ///         in the ARB in ordinary sentence case.
   const _SectionHeading(this.label);
 
+  /// The text of the heading. Upper-cased for display.
   final String label;
 
   @override

@@ -1,18 +1,40 @@
+/// Next period panel.
+///
+/// The single presentation of what the model believes, shared by every screen
+/// that shows it. `docs/PLAN.md` 6.2 fixes the shape: the range is the
+/// headline and the most likely day is a line beneath it. One widget means one
+/// shape, which is the point.
+///
+/// Includes:
+///     - NextPeriodPanel: The panel, and the switch over prediction states.
+///     - _Window: A predicted range, never a bare date.
+///     - _Message: A state with no window, saying something useful anyway.
+///     - _Flat: The hairline block both are drawn in.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// What the model believes about the next period, in the one presentation the
-/// app is allowed to give it.
+/// Next period panel: the one presentation the app gives its own prediction.
 ///
 /// Shared by the insights screen and the calendar rather than written twice.
-/// `docs/PLAN.md` 6.2 is specific about the shape — the range is the headline
-/// and the single most likely day is a supporting line beneath it — and the
+/// `docs/PLAN.md` 6.2 is specific about the shape. The range is the headline,
+/// the single most likely day is a supporting line beneath it, and the
 /// everyday way that rule erodes is a second screen rendering "the same thing"
 /// a little more confidently. There is one widget, so there is one shape.
+///
+/// Attributes:
+///     result (PredictionResult): What the model currently believes.
+///     dense (bool): Whether to render the shortened form.
 class NextPeriodPanel extends StatelessWidget {
   /// Renders [result], densely when [dense] is set.
+  ///
+  /// Args:
+  ///     result (PredictionResult): What the model currently believes.
+  ///     dense (bool, optional): Whether to render the shortened form used
+  ///         beside the calendar. Defaults to false.
   const NextPeriodPanel({required this.result, this.dense = false, super.key});
 
   /// What the model currently believes.
@@ -20,9 +42,9 @@ class NextPeriodPanel extends StatelessWidget {
 
   /// Whether to render the shortened form used beside the calendar.
   ///
-  /// Drops the confidence chip, the 50% window and the basis line — the calendar
-  /// has the month itself to carry, and the insights screen is where the
-  /// working is shown. What it does **not** drop is the range headline or the
+  /// Drops the confidence chip, the 50% window and the basis line. The
+  /// calendar has the month itself to carry, and the insights screen is where
+  /// the working is shown. What it does **not** drop is the range headline or the
   /// "four in five cycles" line beneath it, because those are the two things
   /// 6.2 requires and a "compact" variant is exactly where they would be lost.
   final bool dense;
@@ -87,15 +109,32 @@ class NextPeriodPanel extends StatelessWidget {
 }
 
 /// A predicted window. Never a bare date: the range is the headline.
+///
+/// Attributes:
+///     prediction (Prediction): The windows and the most likely day.
+///     subtitle (String): What the prediction rests on, shown when not dense.
+///     dense (bool): Whether to drop everything below the most likely day.
 class _Window extends StatelessWidget {
+  /// Creates the window block.
+  ///
+  /// Args:
+  ///     prediction (Prediction): The windows and the most likely day.
+  ///     subtitle (String): What the prediction rests on.
+  ///     dense (bool): Whether to drop the 50% window, the confidence chip
+  ///         and the subtitle. Never the range or the line under it.
   const _Window({
     required this.prediction,
     required this.subtitle,
     required this.dense,
   });
 
+  /// The windows and the most likely day.
   final Prediction prediction;
+
+  /// What the prediction rests on, shown only in the full form.
   final String subtitle;
+
+  /// Whether to render the shortened form.
   final bool dense;
 
   @override
@@ -164,6 +203,14 @@ class _Window extends StatelessWidget {
     );
   }
 
+  /// Return the label for a confidence level.
+  ///
+  /// Args:
+  ///     l10n (AppLocalizations): The translations.
+  ///     confidence (Confidence): The level to name.
+  ///
+  /// Returns:
+  ///     String: The level's name, in the user's language.
   static String _confidenceLabel(
     AppLocalizations l10n,
     Confidence confidence,
@@ -175,7 +222,28 @@ class _Window extends StatelessWidget {
 }
 
 /// A state with no window, which still has to say something useful.
+///
+/// Every one of these says what is missing and what would fix it. A state the
+/// user has no way out of reads as a broken app rather than as a refusal to
+/// guess.
+///
+/// Attributes:
+///     title (String): What the state is.
+///     body (String): What to do about it, shown when not dense.
+///     icon (IconData): The icon beside the title.
+///     dense (bool): Whether to drop the body.
+///     emphasis (Color?): Overrides the icon's colour.
 class _Message extends StatelessWidget {
+  /// Creates the message block.
+  ///
+  /// Args:
+  ///     title (String): What the state is.
+  ///     body (String): What to do about it.
+  ///     icon (IconData): The icon beside the title.
+  ///     dense (bool): Whether to drop the body and show the title alone.
+  ///     emphasis (Color?, optional): The icon's colour. Defaults to null,
+  ///         which uses the scheme's primary; the inconsistent-data state
+  ///         passes the error colour instead.
   const _Message({
     required this.title,
     required this.body,
@@ -184,10 +252,19 @@ class _Message extends StatelessWidget {
     this.emphasis,
   });
 
+  /// What the state is.
   final String title;
+
+  /// What to do about it, shown only in the full form.
   final String body;
+
+  /// The icon beside the title.
   final IconData icon;
+
+  /// Whether to render the shortened form.
   final bool dense;
+
+  /// The icon's colour, or null for the scheme's primary.
   final Color? emphasis;
 
   @override
@@ -231,9 +308,17 @@ class _Message extends StatelessWidget {
 /// it can be acted on. Everything here is the app stating what it believes, and
 /// a filled rounded box round a paragraph is one more edge the eye has to get
 /// past before it reaches the sentence (AND-39).
+///
+/// Attributes:
+///     child (Widget): What the hairline sits above.
 class _Flat extends StatelessWidget {
+  /// Draws a hairline above [child].
+  ///
+  /// Args:
+  ///     child (Widget): What the hairline sits above.
   const _Flat({required this.child});
 
+  /// What the hairline sits above.
   final Widget child;
 
   @override

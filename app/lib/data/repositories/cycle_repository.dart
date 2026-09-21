@@ -1,3 +1,15 @@
+/// Cycle repository.
+///
+/// The boundary where "what the user typed" becomes "what the database
+/// holds". The only place a write is rejected, and the place the derived
+/// cycles are read from.
+///
+/// Includes:
+///     - WriteRejection: Why a write was refused.
+///     - WriteRefused: One refusal, with the offending dates.
+///     - CycleRepository: Reads, writes and the rules over them.
+library;
+
 import 'package:meta/meta.dart';
 import 'package:period_tracker/core/clock.dart';
 import 'package:period_tracker/core/date_utils.dart';
@@ -11,7 +23,7 @@ import 'package:period_tracker/domain/models/cycle_record.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 
-/// Why a write was refused.
+/// Write rejection: why a write was refused.
 enum WriteRejection {
   /// A day already has a log and the caller asked to create, not replace.
   ///
@@ -37,15 +49,25 @@ enum WriteRejection {
   dayNotLogged,
 }
 
-/// A refused write, with a message specific enough to show the user.
+/// Write refused: one refusal, specific enough to show the user.
 ///
 /// `docs/PLAN.md` 5.5 requires overlapping or duplicate entries to be rejected
 /// "with a specific message". A generic failure would leave the UI saying
-/// something went wrong while the user stares at a calendar that looks fine, so
-/// the offending dates travel with the refusal.
+/// something went wrong while the user stares at a calendar that looks fine,
+/// so the offending dates travel with the refusal.
+///
+/// Attributes:
+///     rejection (WriteRejection): Why the write was refused.
+///     dates (`List<CivilDate>`): The dates that caused it, oldest first.
+///     message (String): A message naming those dates.
 @immutable
 final class WriteRefused {
   /// Creates a refusal.
+  ///
+  /// Args:
+  ///     rejection (WriteRejection): Why the write was refused.
+  ///     dates (`List<CivilDate>`): The dates that caused it.
+  ///     message (String): A message naming those dates.
   const WriteRefused(this.rejection, this.dates, this.message);
 
   /// Why the write was refused.
@@ -72,15 +94,25 @@ final class WriteRefused {
   String toString() => 'WriteRefused(${rejection.name}: $message)';
 }
 
-/// Reads and writes day logs, and exposes the cycles derived from them.
+/// Cycle repository: reads and writes day logs, and derives the cycles.
 ///
-/// The repository is the boundary where "what the user typed" becomes "what the
-/// database holds", and it is deliberately the only place that rejects a write.
-/// Segmentation downstream assumes it will never see two logs for one day, and
-/// it returns [DataInconsistency.duplicateDate] rather than guessing if it
-/// does; keeping that promise is this class's job.
+/// The boundary where "what the user typed" becomes "what the database
+/// holds", and deliberately the only place that rejects a write. Segmentation
+/// downstream assumes it will never see two logs for one day, and returns
+/// [DataInconsistency.duplicateDate] rather than guessing if it does; keeping
+/// that promise is this class's job.
+///
+/// Attributes:
+///     _db (AppDatabase): Where the logs are stored.
+///     _clock (Clock): The app's one clock, which bounds every write.
+///     _logger (RingLogger?): Records what happened, never what was logged.
 class CycleRepository {
   /// Creates a repository over [database].
+  ///
+  /// Args:
+  ///     database (AppDatabase): Where the logs are stored.
+  ///     clock (Clock): The app's one clock.
+  ///     logger (RingLogger?, optional): Records events. Defaults to null.
   CycleRepository({
     required AppDatabase database,
     required Clock clock,
@@ -94,43 +126,72 @@ class CycleRepository {
        // ignore: prefer_initializing_formals, same reason as above
        _logger = logger;
 
+  /// Where the logs are stored.
   final AppDatabase _db;
+
+  /// The app's one clock, which bounds every write.
   final Clock _clock;
+
+  /// Records what happened, never what was logged.
   final RingLogger? _logger;
 
-  /// Every logged day, oldest first.
+  /// Read every logged day, oldest first.
+  ///
+  /// Returns:
+  ///     `Future<List<DayLog>>`: Every day, oldest first.
   Future<List<DayLog>> logs() => _db.dayLogDao.allLogs();
 
-  /// Every logged day, re-emitted on any change.
+  /// Watch every logged day.
+  ///
+  /// Returns:
+  ///     `Stream<List<DayLog>>`: Re-emitted on any change.
   Stream<List<DayLog>> watchLogs() => _db.dayLogDao.watchAllLogs();
 
-  /// Today, according to the app's one clock.
+  /// Return today, according to the app's one clock.
   ///
   /// Exposed so that callers which need "now" do not acquire a second clock.
   /// `docs/PLAN.md` risk R7 is about dates disagreeing across layers, and two
   /// clocks in the data layer is the shape that produces it.
+  ///
+  /// Returns:
+  ///     CivilDate: The local calendar day.
   CivilDate today() => _clock.today();
 
-  /// Conditions the user has recorded as active on [date].
+  /// Read the conditions recorded as active on one day.
   ///
-  /// Reads only. Nothing here is passed to the prediction model — see
-  /// ADR-0010, and the test that enforces it. The one thing this is used for is
-  /// deciding whether to *withhold* a prediction, which changes what is shown
-  /// and never what is computed.
+  /// Reads only. Nothing here is passed to the prediction model; see
+  /// ADR-0010, and the test that enforces it. The one thing this is used for
+  /// is deciding whether to *withhold* a prediction, which changes what is
+  /// shown and never what is computed.
+  ///
+  /// Args:
+  ///     date (CivilDate): The day to test each span against.
+  ///
+  /// Returns:
+  ///     `Future<List<ConditionRecord>>`: Those covering [date].
   Future<List<ConditionRecord>> activeConditionsOn(CivilDate date) async {
     final records = await _db.conditionDao.all();
     return records.where((record) => record.isActiveOn(date)).toList();
   }
 
-  /// The log for [date], or null.
+  /// Read one day's log.
+  ///
+  /// Args:
+  ///     date (CivilDate): The day to read.
+  ///
+  /// Returns:
+  ///     `Future<DayLog?>`: The entry, or null if never logged.
   Future<DayLog?> logFor(CivilDate date) => _db.dayLogDao.logFor(date);
 
-  /// The user's cycles, oldest first, with validity already assigned.
+  /// Derive the user's cycles, oldest first, with validity assigned.
   ///
-  /// Returns [Err] only when the stored data contradicts itself, which should
-  /// be impossible given the write path above. It is surfaced rather than
-  /// swallowed because if it ever does happen, the honest response is to ask
-  /// the user to fix it, not to predict from data the app knows is wrong.
+  /// Returns:
+  ///     `Future<Result<List<CycleRecord>, DataInconsistency>>`: The cycles,
+  ///     or an [Err] when the stored data contradicts itself. That should be
+  ///     impossible given the write path above; it is surfaced rather than
+  ///     swallowed because if it ever does happen, the honest response is to
+  ///     ask the user to fix it, not to predict from data the app knows is
+  ///     wrong.
   Future<Result<List<CycleRecord>, DataInconsistency>> cycles() async {
     final stored = await logs();
     return Segmentation.segment(stored).map(Validation.assign);
@@ -143,6 +204,9 @@ class CycleRepository {
   /// length is a difference between dates, so a clock that jumped would
   /// otherwise silently produce negative or absurd lengths (`docs/PLAN.md`
   /// 5.5).
+  /// Returns:
+  ///     `Future<bool>`: True when the newest stored log is dated after
+  ///     today. False for an empty history.
   Future<bool> clockWentBackwards() async {
     final stored = await logs();
     if (stored.isEmpty) return false;
@@ -150,18 +214,29 @@ class CycleRepository {
     return newest > _clock.today();
   }
 
-  /// Days since the most recent log, or null when nothing is logged.
+  /// Count the days since the most recent log.
+  ///
+  /// Returns:
+  ///     `Future<int?>`: Days since the newest entry, or null when nothing
+  ///     is logged.
   Future<int?> daysSinceLastLog() async {
     final stored = await logs();
     if (stored.isEmpty) return null;
     return stored.last.date.daysBetween(_clock.today());
   }
 
-  /// Creates a log for a day that has none.
+  /// Create a log for a day that has none.
   ///
   /// Refuses rather than overwriting. Use [replace] to change an existing day,
   /// so that "add" and "edit" are different intentions in the code as well as
   /// in the UI.
+  ///
+  /// Args:
+  ///     log (DayLog): The day to create.
+  ///
+  /// Returns:
+  ///     `Future<Result<void, WriteRefused>>`: Ok, or a refusal naming the
+  ///     date when it is in the future or already logged.
   Future<Result<void, WriteRefused>> add(DayLog log) async {
     final future = _rejectFutureDates(<CivilDate>[log.date]);
     if (future != null) return Err<void, WriteRefused>(future);
@@ -182,7 +257,14 @@ class CycleRepository {
     return const Ok<void, WriteRefused>(null);
   }
 
-  /// Replaces the log for a day that already has one.
+  /// Replace the log for a day that already has one.
+  ///
+  /// Args:
+  ///     log (DayLog): The day to write, replacing what is stored.
+  ///
+  /// Returns:
+  ///     `Future<Result<void, WriteRefused>>`: Ok, or a refusal naming the
+  ///     date when it is in the future or has no entry to edit.
   Future<Result<void, WriteRefused>> replace(DayLog log) async {
     final future = _rejectFutureDates(<CivilDate>[log.date]);
     if (future != null) return Err<void, WriteRefused>(future);
@@ -202,10 +284,17 @@ class CycleRepository {
     return const Ok<void, WriteRefused>(null);
   }
 
-  /// Creates or replaces the log for its own date, whichever applies.
+  /// Create or replace the log for its own date, whichever applies.
   ///
   /// The one-tap path from the log screen, where the user has expressed an
   /// intention about a day and does not care whether a row already existed.
+  ///
+  /// Args:
+  ///     log (DayLog): The day to write, replacing the stored day entirely.
+  ///
+  /// Returns:
+  ///     `Future<Result<void, WriteRefused>>`: Ok, or a refusal when the date
+  ///     is in the future.
   Future<Result<void, WriteRefused>> upsert(DayLog log) async {
     final future = _rejectFutureDates(<CivilDate>[log.date]);
     if (future != null) return Err<void, WriteRefused>(future);
@@ -216,8 +305,8 @@ class CycleRepository {
 
   /// Records [date] as a bleeding day, keeping whatever else is on that day.
   ///
-  /// The one-tap paths — the log screen's primary button and the notification
-  /// action — know the flow and nothing else. Handing [upsert] a bare [DayLog]
+  /// The one-tap paths, the log screen's primary button and the notification
+  /// action, know the flow and nothing else. Handing [upsert] a bare [DayLog]
   /// for that silently erases the rest of the day, because a save replaces the
   /// whole day: everything recorded against a date is stored as one fact, so
   /// writing one field without the others deletes the others. Someone who
@@ -226,6 +315,15 @@ class CycleRepository {
   ///
   /// So the day is read first and rebuilt from what was there, changing the
   /// flow and nothing else. Every field [DayLog] gains has to be carried here.
+  ///
+  /// Args:
+  ///     date (CivilDate): The day to mark.
+  ///     flow (FlowIntensity, optional): What to record. Defaults to
+  ///         [FlowIntensity.medium], which is what the one-tap paths mean.
+  ///
+  /// Returns:
+  ///     `Future<Result<void, WriteRefused>>`: Ok, or a refusal when the date
+  ///     is in the future.
   Future<Result<void, WriteRefused>> markPeriodStart(
     CivilDate date, {
     FlowIntensity flow = FlowIntensity.medium,
@@ -236,10 +334,19 @@ class CycleRepository {
     );
   }
 
-  /// Writes a whole batch, refusing if any day in it is already logged.
+  /// Write a whole batch, refusing if any day in it is already logged.
   ///
   /// All or nothing. A batch that half-applied would leave the user with a
   /// calendar they did not ask for and no way to tell which half is theirs.
+  ///
+  /// Args:
+  ///     batch (`Iterable<DayLog>`): The days to create. An empty batch is
+  ///         accepted and writes nothing.
+  ///
+  /// Returns:
+  ///     `Future<Result<void, WriteRefused>>`: Ok, or the first refusal:
+  ///     a duplicate within the batch, a future date, or a collision with a
+  ///     day already logged.
   Future<Result<void, WriteRefused>> addAll(Iterable<DayLog> batch) async {
     final entries = batch.toList();
     if (entries.isEmpty) return const Ok<void, WriteRefused>(null);
@@ -283,10 +390,18 @@ class CycleRepository {
     return const Ok<void, WriteRefused>(null);
   }
 
-  /// Logs a run of bleeding days from [range], at [flow].
+  /// Log a run of bleeding days.
   ///
   /// The "my period lasted five days" gesture. Refuses if any day in the range
   /// is already logged, rather than merging over the user's existing entries.
+  ///
+  /// Args:
+  ///     range (CivilDateRange): The days to log, inclusive at both ends.
+  ///     flow (FlowIntensity, optional): What to record on each day.
+  ///         Defaults to [FlowIntensity.medium].
+  ///
+  /// Returns:
+  ///     `Future<Result<void, WriteRefused>>`: Whatever [addAll] returns.
   Future<Result<void, WriteRefused>> logPeriod(
     CivilDateRange range, {
     FlowIntensity flow = FlowIntensity.medium,
@@ -295,7 +410,13 @@ class CycleRepository {
       DayLog(date: range.start.addDays(i), flow: flow),
   ]);
 
-  /// Deletes the log for [date]. Returns whether anything was removed.
+  /// Delete one day's log.
+  ///
+  /// Args:
+  ///     date (CivilDate): The day to delete.
+  ///
+  /// Returns:
+  ///     `Future<bool>`: Whether anything was actually removed.
   Future<bool> deleteDay(CivilDate date) async {
     final removed = await _db.dayLogDao.deleteDay(date);
     if (removed) _logger?.info(LogEvent.logEntryDeleted);
@@ -308,9 +429,9 @@ class CycleRepository {
     // The ring is cleared before the deletion is recorded, so exactly one line
     // survives: that everything was deleted.
     //
-    // Without this, "delete everything" left the whole trail behind — when
-    // days were logged, when they were edited, when an export was taken — on a
-    // screen reachable from settings. The records carry counts rather than
+    // Without this, "delete everything" left the whole trail behind: when
+    // days were logged, when they were edited, when an export was taken, all
+    // on a screen reachable from settings. The records carry counts rather
     // content, but the timestamps alone say when someone was using a period
     // tracker, which is the kind of thing this app spends the rest of its
     // design being careful about. A user who has just wiped their diary has
@@ -324,6 +445,14 @@ class CycleRepository {
     _logger?.warn(LogEvent.allDataDeleted);
   }
 
+  /// Refuse any date that has not happened yet.
+  ///
+  /// Args:
+  ///     dates (`Iterable<CivilDate>`): The dates a write is about to touch.
+  ///
+  /// Returns:
+  ///     WriteRefused?: A refusal naming every future date, or null when they
+  ///     are all today or earlier.
   WriteRefused? _rejectFutureDates(Iterable<CivilDate> dates) {
     final today = _clock.today();
     final future = dates.where((d) => d > today).toList();
@@ -336,9 +465,23 @@ class CycleRepository {
     );
   }
 
+  /// Sort dates oldest first, so a refusal reads in calendar order.
+  ///
+  /// Args:
+  ///     dates (`Iterable<CivilDate>`): The dates to sort.
+  ///
+  /// Returns:
+  ///     `List<CivilDate>`: A new sorted list.
   static List<CivilDate> _sorted(Iterable<CivilDate> dates) =>
       dates.toList()..sort();
 
+  /// Render dates as a comma-separated list for a refusal message.
+  ///
+  /// Args:
+  ///     dates (`Iterable<CivilDate>`): The dates to name.
+  ///
+  /// Returns:
+  ///     String: The dates in `YYYY-MM-DD` form, oldest first.
   static String _listDates(Iterable<CivilDate> dates) =>
       _sorted(dates).map((d) => d.toIso8601()).join(', ');
 }

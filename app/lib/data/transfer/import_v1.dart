@@ -1,3 +1,22 @@
+/// Import of the v3 export format.
+///
+/// Reads a backup envelope and replaces the stored data with it. Every refusal
+/// happens before the database is touched, and the replacement itself runs in
+/// one transaction, so there is no partial import to leave the user unable to
+/// tell which half is theirs.
+///
+/// Pipeline:
+///     1. Decode the text and check the envelope's version and shape.
+///     2. Parse the conditions, the days and the settings, refusing on the
+///        first thing that cannot be read.
+///     3. Replace everything, in one transaction.
+///
+/// Includes:
+///     - ImportRejection, ImportRefused: Why an import was refused.
+///     - ImportSummary: What a successful import restored.
+///     - ImportV1: Inspecting and restoring.
+library;
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -126,10 +145,17 @@ abstract final class ImportV1 {
   /// why it is here. Read the ADR first.
   static const Set<int> supportedVersions = <int>{3};
 
-  /// Parses and validates [text] without touching the database.
+  /// Parse and validate a backup without touching the database.
   ///
   /// Exposed separately so the UI can show what a file contains, and when it
   /// was taken, before the user commits to replacing what they have.
+  ///
+  /// Args:
+  ///     text (String): The file's contents.
+  ///
+  /// Returns:
+  ///     `Result<ExportEnvelope, ImportRefused>`: The parsed envelope, or the
+  ///     first refusal, with a message naming what could not be read.
   static Result<ExportEnvelope, ImportRefused> inspect(String text) {
     final Object? decoded;
     try {
@@ -229,8 +255,19 @@ abstract final class ImportV1 {
   /// way to express a day the user had deleted. The caller is expected to have
   /// confirmed that with the user first.
   ///
-  /// All of it happens in one transaction, so a failure part way through leaves
-  /// the previous data intact.
+  /// All of it happens in one transaction, so a failure part way through
+  /// leaves the previous data intact.
+  ///
+  /// Args:
+  ///     file (File): The backup to read. Chosen by the user.
+  ///     database (AppDatabase): What to replace.
+  ///     logger (RingLogger?, optional): Records counts, never content.
+  ///         Defaults to null.
+  ///
+  /// Returns:
+  ///     `Future<Result<ImportSummary, ImportRefused>>`: What was restored,
+  ///     or a refusal. An unreadable file is refused as
+  ///     [ImportRejection.notJson].
   static Future<Result<ImportSummary, ImportRefused>> restoreFile(
     File file, {
     required AppDatabase database,
@@ -250,7 +287,17 @@ abstract final class ImportV1 {
     return restore(text, database: database, logger: logger);
   }
 
-  /// Restores from already-read [text]. See [restoreFile].
+  /// Restore from already-read text. See [restoreFile].
+  ///
+  /// Args:
+  ///     text (String): The backup's contents.
+  ///     database (AppDatabase): What to replace.
+  ///     logger (RingLogger?, optional): Records counts, never content.
+  ///         Defaults to null.
+  ///
+  /// Returns:
+  ///     `Future<Result<ImportSummary, ImportRefused>>`: What was restored,
+  ///     or the first refusal.
   static Future<Result<ImportSummary, ImportRefused>> restore(
     String text, {
     required AppDatabase database,
@@ -304,6 +351,17 @@ abstract final class ImportV1 {
     );
   }
 
+  /// Parse the conditions list out of an envelope.
+  ///
+  /// Args:
+  ///     json (`Map<String, Object?>`): The decoded envelope.
+  ///
+  /// Returns:
+  ///     `List<ConditionRecord>`: The records, in file order, each with a
+  ///     zero id.
+  ///
+  /// Throws:
+  ///     _Refusal: If the list is missing, or any entry is unreadable.
   static List<ConditionRecord> _parseConditions(Map<String, Object?> json) {
     final raw = json['conditions'];
     if (raw is! List<Object?>) {
@@ -345,6 +403,18 @@ abstract final class ImportV1 {
     return records;
   }
 
+  /// Parse the day logs out of an envelope.
+  ///
+  /// Args:
+  ///     json (`Map<String, Object?>`): The decoded envelope.
+  ///
+  /// Returns:
+  ///     `List<DayLog>`: The days, sorted oldest first whatever order the
+  ///     file happened to be in.
+  ///
+  /// Throws:
+  ///     _Refusal: If the list is missing, an entry is unreadable, or a date
+  ///         appears more than once.
   static List<DayLog> _parseDayLogs(Map<String, Object?> json) {
     final raw = json['day_logs'];
     if (raw is! List<Object?>) {
@@ -378,6 +448,19 @@ abstract final class ImportV1 {
     return logs;
   }
 
+  /// Parse one logged day.
+  ///
+  /// Args:
+  ///     json (`Map<String, Object?>`): The entry to read.
+  ///     index (int): Its position in the file, for the refusal message.
+  ///
+  /// Returns:
+  ///     DayLog: The day. An absent or null intercourse key means not
+  ///     recorded, which is a different statement from either answer.
+  ///
+  /// Throws:
+  ///     _Refusal: If the date is missing or unparseable, or any enum names
+  ///         a value this build does not know.
   static DayLog _parseDayLog(Map<String, Object?> json, int index) {
     final rawDate = json['date'];
     if (rawDate is! String) {
@@ -444,8 +527,8 @@ abstract final class ImportV1 {
     // Nullable, and an absent or explicitly-null key means not recorded. Both
     // spellings are accepted because both are what a real file contains: the
     // exporter writes an explicit null, and a hand-edited file may simply omit
-    // the key. Neither is an error, and neither may become a recorded answer —
-    // "not recorded" is a different statement from either one, and inventing
+    // the key. Neither is an error, and neither may become a recorded answer.
+    // "Not recorded" is a different statement from either one, and inventing
     // one would put words in the user's mouth about their private life.
     final rawIntercourse = json['intercourse'];
     final intercourse = rawIntercourse == null
@@ -465,6 +548,19 @@ abstract final class ImportV1 {
     );
   }
 
+  /// Decode an enum member from a raw JSON value.
+  ///
+  /// Args:
+  ///     raw (Object?): The value read from the file.
+  ///     values (`List<T>`): The enum's members.
+  ///     field (String): The field's name, for the refusal message.
+  ///     date (CivilDate): The day it was recorded for, for the message.
+  ///
+  /// Returns:
+  ///     T: The matching member.
+  ///
+  /// Throws:
+  ///     _Refusal: If the value is not text, or names no known member.
   static T _decodeEnum<T extends Enum>(
     Object? raw,
     List<T> values, {
@@ -480,6 +576,21 @@ abstract final class ImportV1 {
     return _decodeEnumName(raw, values, field: field, date: date);
   }
 
+  /// Match an enum member by name.
+  ///
+  /// Args:
+  ///     raw (String): The stored name.
+  ///     values (`List<T>`): The enum's members.
+  ///     field (String): The field's name, for the refusal message.
+  ///     date (CivilDate): The day it was recorded for, for the message.
+  ///
+  /// Returns:
+  ///     T: The matching member.
+  ///
+  /// Throws:
+  ///     _Refusal: If no member has that name. Almost always a backup from a
+  ///         build that added a value this one does not have, so the message
+  ///         says which value and that updating fixes it.
   static T _decodeEnumName<T extends Enum>(
     String raw,
     List<T> values, {
@@ -500,6 +611,18 @@ abstract final class ImportV1 {
     );
   }
 
+  /// Parse the settings map out of an envelope.
+  ///
+  /// Args:
+  ///     json (`Map<String, Object?>`): The decoded envelope.
+  ///
+  /// Returns:
+  ///     `Map<String, String>`: Every stored key and value, including keys
+  ///     this build does not know. Empty when the file has no settings at
+  ///     all, which is not an error.
+  ///
+  /// Throws:
+  ///     _Refusal: If the settings are present but not an object of strings.
   static Map<String, String> _parseSettings(Map<String, Object?> json) {
     final raw = json['settings'];
     if (raw == null) return const <String, String>{};
@@ -523,6 +646,17 @@ abstract final class ImportV1 {
     return settings;
   }
 
+  /// Read an envelope field, requiring it to be an integer.
+  ///
+  /// Args:
+  ///     json (`Map<String, Object?>`): The decoded envelope.
+  ///     field (String): The key to read.
+  ///
+  /// Returns:
+  ///     int: The value.
+  ///
+  /// Throws:
+  ///     _Refusal: If the key is absent or not an integer.
   static int _requireInt(Map<String, Object?> json, String field) {
     final value = json[field];
     if (value is! int) {
@@ -534,6 +668,17 @@ abstract final class ImportV1 {
     return value;
   }
 
+  /// Read an envelope field, requiring it to be text.
+  ///
+  /// Args:
+  ///     json (`Map<String, Object?>`): The decoded envelope.
+  ///     field (String): The key to read.
+  ///
+  /// Returns:
+  ///     String: The value.
+  ///
+  /// Throws:
+  ///     _Refusal: If the key is absent or not text.
   static String _requireString(Map<String, Object?> json, String field) {
     final value = json[field];
     if (value is! String) {

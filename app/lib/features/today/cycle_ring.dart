@@ -1,12 +1,37 @@
+/// Cycle ring.
+///
+/// The cycle drawn as a ring of coloured bands, proportional to the days each
+/// phase covers, with the legend that names them. Decoration over text that is
+/// already on the screen: nothing here is the only way to learn anything, and
+/// above a text scale the ring gives way to the words in its middle.
+///
+/// Includes:
+///     - RingBand: One band, its colour and how many days it covers.
+///     - CycleRing: The ring, and what sits inside it.
+///     - _RingPainter: The arcs and the gaps between them.
+///     - RingLegend: The band names and their swatches.
+library;
+
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// One band of the ring: a colour and how many days it covers.
+///
+/// Attributes:
+///     days (double): How many days the band covers.
+///     color (Color): The colour to paint it.
+///     label (String): What it is, for the legend and the ring's label.
 @immutable
 class RingBand {
   /// Creates a band of [days] days painted in [color].
+  ///
+  /// Args:
+  ///     days (double): How many days the band covers. Zero means the band is
+  ///         neither drawn nor named.
+  ///     color (Color): The colour to paint it.
+  ///     label (String): What it is, in the user's language.
   const RingBand({
     required this.days,
     required this.color,
@@ -38,7 +63,7 @@ class RingBand {
   int get hashCode => Object.hash(days, color, label);
 }
 
-/// The cycle as a ring of coloured bands (AND-39).
+/// Cycle ring: the cycle as a ring of coloured bands (AND-39).
 ///
 /// Proportional to the days each phase actually covers, drawn clockwise from
 /// the top. The bands are separated by a gap rather than butted together, and
@@ -49,12 +74,27 @@ class RingBand {
 /// The ring is **decoration over text that is already on the screen**. The
 /// phase and the day of the cycle are written in the middle of it, the legend
 /// names every band, and the prediction beneath states the window in words. A
-/// four-colour ring cannot be read on hue alone — follicular and ovular sit
-/// around 1.04:1 apart in greyscale in the default scheme — so nothing here is
+/// four-colour ring cannot be read on hue alone. Follicular and ovular sit
+/// around 1.04:1 apart in greyscale in the default scheme, so nothing here is
 /// the only way to learn anything, and `semanticsLabel` gives a screen reader
 /// the same sentence a sighted reader gets from the middle.
+///
+/// Attributes:
+///     bands (`List<RingBand>`): The bands, in cycle order.
+///     semanticsLabel (String): What the ring says, in words.
+///     child (Widget): What sits in the middle.
+///     diameter (double): Outer size of the ring, in logical pixels.
 class CycleRing extends StatelessWidget {
   /// Draws [bands] around [child].
+  ///
+  /// Args:
+  ///     bands (`List<RingBand>`): The bands, in cycle order. Zero-day bands
+  ///         are dropped rather than drawn as a wider gap.
+  ///     semanticsLabel (String): What the ring says, for a reader who cannot
+  ///         see it. The same sentence the middle gives a sighted reader.
+  ///     child (Widget): What sits in the middle.
+  ///     diameter (double, optional): Outer size of the ring, in logical
+  ///         pixels. Defaults to 252.
   const CycleRing({
     required this.bands,
     required this.semanticsLabel,
@@ -85,7 +125,7 @@ class CycleRing extends StatelessWidget {
   ///
   /// A circle is a fixed box and text inside one is not: at a large scale the
   /// two lines in the middle stop fitting, and the honest answer is to keep the
-  /// words. Nothing is lost by it — the ring is decoration over text that is
+  /// words. Nothing is lost by it. The ring is decoration over text that is
   /// already on the screen, and the legend beneath still names every phase.
   static const double maxScaleWithRing = 1.35;
 
@@ -132,9 +172,24 @@ class CycleRing extends StatelessWidget {
   }
 }
 
+/// The arcs, and the gaps between them.
+///
+/// The gaps are taken out of the circumference before the arcs are laid out,
+/// evenly and from every band, so they stay the same width however lopsided
+/// the phases are. With enough bands to eat the circle the gaps shrink rather
+/// than the arcs going negative.
+///
+/// Attributes:
+///     bands (`List<RingBand>`): The bands to draw, in cycle order.
 class _RingPainter extends CustomPainter {
+  /// Creates the painter.
+  ///
+  /// Args:
+  ///     bands (`List<RingBand>`): The bands to draw, in cycle order. The
+  ///         zero-day ones are filtered out during the paint.
   const _RingPainter({required this.bands});
 
+  /// The bands to draw, in cycle order.
   final List<RingBand> bands;
 
   @override
@@ -183,13 +238,21 @@ class _RingPainter extends CustomPainter {
       !listEquals(oldDelegate.bands, bands);
 }
 
-/// The names of the bands, with their colours, under the ring.
+/// Ring legend: the names of the bands, with their colours, under the ring.
 ///
 /// The swatch and the word travel together and always in the same order, so
 /// the legend is what makes the ring legible rather than the hues being
 /// distinguishable on their own.
+///
+/// Attributes:
+///     bands (`List<RingBand>`): The same bands the ring was drawn from.
 class RingLegend extends StatelessWidget {
   /// Names [bands].
+  ///
+  /// Args:
+  ///     bands (`List<RingBand>`): The same bands the ring was drawn from,
+  ///         in the same order. Passing a different list would name the
+  ///         colours in an order the ring does not use them in.
   const RingLegend({required this.bands, super.key});
 
   /// The same bands the ring was drawn from.

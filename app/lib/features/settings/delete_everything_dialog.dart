@@ -1,7 +1,20 @@
+/// Delete-everything confirmation.
+///
+/// Asks the user to type a word before the one action in the app that has no
+/// undo and no copy anywhere else. There is no cloud backup by design, so a
+/// user who has not exported loses everything the app holds for them.
+///
+/// Includes:
+///     - showDeleteEverythingDialog: Opens the dialog, reports the answer.
+///     - _DeleteEverythingDialog: The dialog itself.
+///     - _DeleteEverythingDialogState: What has been typed, and whether it
+///       matches.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// Asks the user to type a word before deleting everything.
+/// Ask the user to type a word before deleting everything.
 ///
 /// A typed confirmation rather than a second "are you sure", because this is
 /// the one action in the app with no undo and no copy anywhere else: there is
@@ -9,7 +22,15 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// simply gone. Making the confirmation cost a deliberate act is proportionate
 /// to that.
 ///
-/// Returns true only if the user typed the word and confirmed.
+/// Args:
+///     context (BuildContext): What to open the dialog over.
+///     loggedDays (int): How many days are about to go, quoted back to the
+///         user so the size of it is in front of them while they decide.
+///
+/// Returns:
+///     `Future<bool?>`: True only if the user typed the word and confirmed.
+///     False on cancel, and null if the dialog was dismissed by tapping away
+///     or by the back gesture, both of which must be read as "no".
 Future<bool?> showDeleteEverythingDialog(
   BuildContext context, {
   required int loggedDays,
@@ -18,9 +39,18 @@ Future<bool?> showDeleteEverythingDialog(
   builder: (dialogContext) => _DeleteEverythingDialog(loggedDays: loggedDays),
 );
 
+/// The dialog: what is about to go, a word to type, and the delete button.
+///
+/// Attributes:
+///     loggedDays (int): How many days are about to go.
 class _DeleteEverythingDialog extends StatefulWidget {
+  /// Creates the dialog.
+  ///
+  /// Args:
+  ///     loggedDays (int): How many days are about to go.
   const _DeleteEverythingDialog({required this.loggedDays});
 
+  /// How many days are about to go.
   final int loggedDays;
 
   @override
@@ -28,8 +58,17 @@ class _DeleteEverythingDialog extends StatefulWidget {
       _DeleteEverythingDialogState();
 }
 
+/// State for [_DeleteEverythingDialog]: what has been typed so far.
+///
+/// Attributes:
+///     _controller (TextEditingController): The typed text.
+///     _matches (bool): Whether it matches the required word, which is the
+///         only thing that enables the delete button.
 class _DeleteEverythingDialogState extends State<_DeleteEverythingDialog> {
+  /// The typed text.
   final TextEditingController _controller = TextEditingController();
+
+  /// Whether the typed text matches the required word, trimmed.
   bool _matches = false;
 
   @override
@@ -51,8 +90,8 @@ class _DeleteEverythingDialogState extends State<_DeleteEverythingDialog> {
     //
     // What actually put this dialog under the cutout is below: it carries a
     // text field, so the keyboard opens under it and the space left over is
-    // shorter than the dialog. An unscrollable dialog does not shrink to fit —
-    // it overflows its box in both directions and paints straight through the
+    // shorter than the dialog. An unscrollable dialog does not shrink to fit.
+    // It overflows its box in both directions and paints straight through the
     // safe area, which is why the title appeared behind the camera.
     return AlertDialog(
       // AlertDialog's own `scrollable`, not a SingleChildScrollView inside the

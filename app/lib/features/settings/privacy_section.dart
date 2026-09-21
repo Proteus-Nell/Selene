@@ -1,7 +1,19 @@
+/// The privacy statement section.
+///
+/// Renders the whole privacy text inside Settings rather than behind a link,
+/// because the paragraph that matters most is the one saying the database is
+/// not encrypted, and a promise the user has to go looking for is not a
+/// promise.
+///
+/// Includes:
+///     - PrivacySection: The expandable section.
+///     - _Paragraph: One heading and its body.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// The privacy statement, shown in full inside the app.
+/// Privacy section: the privacy statement, shown in full inside the app.
 ///
 /// The same text as `docs/PRIVACY.md`, and `privacy_text_test.dart` fails if
 /// the two drift apart. It is here rather than behind a link because the
@@ -32,10 +44,23 @@ class PrivacySection extends StatelessWidget {
   }
 }
 
+/// One paragraph of the privacy statement: a heading and its body.
+///
+/// Attributes:
+///     title (String): The heading.
+///     body (String): The paragraph beneath it.
 class _Paragraph extends StatelessWidget {
+  /// Creates a paragraph.
+  ///
+  /// Args:
+  ///     title (String): The heading.
+  ///     body (String): The paragraph beneath it.
   const _Paragraph(this.title, this.body);
 
+  /// The heading.
   final String title;
+
+  /// The paragraph beneath it.
   final String body;
 
   @override

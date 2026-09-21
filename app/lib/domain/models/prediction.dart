@@ -1,3 +1,20 @@
+/// Prediction model.
+///
+/// Holds what the app is willing to say about the next period, and every state
+/// in which it is willing to say less. A prediction cannot be constructed
+/// without its uncertainty, and "show the user nothing" is not representable in
+/// [PredictionResult] at all.
+///
+/// Includes:
+///     - Confidence: How tightly the next start can be pinned.
+///     - DataInconsistency: Ways the stored logs can contradict themselves.
+///     - CycleStatistics: Summary statistics over a user's own history.
+///     - PredictionBasis: What a prediction was based on, for the
+///       explanation.
+///     - Prediction: A predicted start, always with both windows.
+///     - PredictionResult: The sealed union of every possible outcome.
+library;
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/domain/models/condition.dart';
@@ -6,10 +23,10 @@ import 'package:period_tracker/domain/models/converters.dart';
 part 'prediction.freezed.dart';
 part 'prediction.g.dart';
 
-/// How tightly the model can pin the next start date.
+/// Confidence: how tightly the model can pin the next start date.
 ///
-/// Derived from predictive interval width and history length, never asserted by
-/// hand. See `docs/PLAN.md` section 8.
+/// Derived from predictive interval width and history length, never asserted
+/// by hand. See `docs/PLAN.md` section 8.
 enum Confidence {
   /// 80% window under 4 days wide.
   high,
@@ -21,7 +38,7 @@ enum Confidence {
   low,
 }
 
-/// Ways the stored logs can contradict themselves.
+/// Data inconsistency: ways the stored logs can contradict themselves.
 enum DataInconsistency {
   /// Two cycles claim overlapping day ranges.
   overlappingCycles,
@@ -36,15 +53,29 @@ enum DataInconsistency {
   clockWentBackwards,
 }
 
-/// Summary statistics over a user's own cycle history.
+/// Cycle statistics: summary figures over a user's own history.
 ///
 /// Always shown, including when no prediction is possible. This type is what
 /// stops the [TooIrregular] state from being a dead end: a user whose cycles
 /// cannot be predicted narrowly still gets their own range and variability
 /// back, which is genuinely useful information (risk R17).
+///
+/// Attributes:
+///     completedCycles (int): How many usable observations there are.
+///     medianLengthDays (double?): Median cycle length, or null with none.
+///     medianAbsoluteDeviationDays (double?): Spread, or null with none.
+///     shortestLengthDays (int?): Shortest observed length, or null.
+///     longestLengthDays (int?): Longest observed length, or null.
 @freezed
 abstract class CycleStatistics with _$CycleStatistics {
   /// Creates a statistics summary.
+  ///
+  /// Args:
+  ///     completedCycles (int): How many usable observations there are.
+  ///     medianLengthDays (double?, optional): Median cycle length.
+  ///     medianAbsoluteDeviationDays (double?, optional): Spread.
+  ///     shortestLengthDays (int?, optional): Shortest observed length.
+  ///     longestLengthDays (int?, optional): Longest observed length.
   const factory CycleStatistics({
     required int completedCycles,
     double? medianLengthDays,
@@ -55,7 +86,13 @@ abstract class CycleStatistics with _$CycleStatistics {
 
   const CycleStatistics._();
 
-  /// Rebuilds a statistics summary from its JSON form.
+  /// Rebuild a statistics summary from its JSON form.
+  ///
+  /// Args:
+  ///     json (`Map<String, dynamic>`): The encoded summary.
+  ///
+  /// Returns:
+  ///     CycleStatistics: The decoded summary.
   factory CycleStatistics.fromJson(Map<String, dynamic> json) =>
       _$CycleStatisticsFromJson(json);
 
@@ -74,13 +111,30 @@ abstract class CycleStatistics with _$CycleStatistics {
   }
 }
 
-/// What a prediction was based on, for the plain-language explanation.
+/// Prediction basis: what a prediction was based on.
 ///
-/// Exists so the UI can say "based on your last 6 cycles, which varied by about
-/// 5 days" rather than presenting a number from nowhere (`docs/PLAN.md` 6.4).
+/// Exists so the UI can say "based on your last 6 cycles, which varied by
+/// about 5 days" rather than presenting a number from nowhere
+/// (`docs/PLAN.md` 6.4).
+///
+/// Attributes:
+///     cyclesUsed (int): How many observations fed the prediction.
+///     medianLengthDays (double): The median those observations gave.
+///     variabilityDays (double): The spread those observations gave.
+///     usedPopulationPrior (bool): Whether the shipped prior did the work.
+///         Defaults to false.
+///     personalizedHyperparameters (bool): Whether the refit had run.
+///         Defaults to false.
 @freezed
 abstract class PredictionBasis with _$PredictionBasis {
   /// Creates a basis record.
+  ///
+  /// Args:
+  ///     cyclesUsed (int): How many observations fed the prediction.
+  ///     medianLengthDays (double): The median those observations gave.
+  ///     variabilityDays (double): The spread those observations gave.
+  ///     usedPopulationPrior (bool, optional): Defaults to false.
+  ///     personalizedHyperparameters (bool, optional): Defaults to false.
   const factory PredictionBasis({
     required int cyclesUsed,
     required double medianLengthDays,
@@ -90,28 +144,62 @@ abstract class PredictionBasis with _$PredictionBasis {
   }) = _PredictionBasis;
 
   // The private constructor is required, not decorative: without it freezed
-  // does not surface toJson() on the abstract type, and json_serializable then
-  // emits `instance.basis` instead of `instance.basis.toJson()` in the enclosing
-  // Prediction, which fails at runtime on the way back in.
+  // does not surface toJson() on the abstract type, and json_serializable
+  // then emits `instance.basis` instead of `instance.basis.toJson()` in the
+  // enclosing Prediction, which fails at runtime on the way back in.
   const PredictionBasis._();
 
-  /// Rebuilds a basis record from its JSON form.
+  /// Rebuild a basis record from its JSON form.
+  ///
+  /// Args:
+  ///     json (`Map<String, dynamic>`): The encoded basis.
+  ///
+  /// Returns:
+  ///     PredictionBasis: The decoded basis.
   factory PredictionBasis.fromJson(Map<String, dynamic> json) =>
       _$PredictionBasisFromJson(json);
 }
 
-/// Serialises a nested [PredictionBasis]. See the note on [Prediction.basis].
+/// Serialise a nested [PredictionBasis].
+///
+/// A free function because a tear-off is what `@JsonKey(toJson:)` takes. See
+/// the note on [Prediction.basis] for why it has to be spelled out at all.
+///
+/// Args:
+///     basis (PredictionBasis): The nested model to encode.
+///
+/// Returns:
+///     `Map<String, dynamic>`: Its JSON form.
 Map<String, dynamic> _basisToJson(PredictionBasis basis) => basis.toJson();
 
-/// A predicted next period start, always with its uncertainty attached.
+/// Prediction: a predicted next start, always with its uncertainty attached.
 ///
-/// There is deliberately no way to construct a prediction without both windows.
-/// The product rule is that a bare date is never shown, because it implies a
-/// precision the model does not have, and that rule is enforced here in the type
-/// rather than in review. See `docs/PLAN.md` 6.2.
+/// There is deliberately no way to construct a prediction without both
+/// windows. The product rule is that a bare date is never shown, because it
+/// implies a precision the model does not have, and that rule is enforced here
+/// in the type rather than in review. See `docs/PLAN.md` 6.2.
+///
+/// Attributes:
+///     medianStart (CivilDate): The single most likely start date.
+///     window50 (CivilDateRange): The 50% predictive interval.
+///     window80 (CivilDateRange): The 80% interval. Never narrower than
+///         [window50], which an assertion enforces.
+///     confidence (Confidence): The band [window80] falls in.
+///     basis (PredictionBasis): What the prediction was computed from.
 @freezed
 abstract class Prediction with _$Prediction {
   /// Creates a prediction.
+  ///
+  /// Args:
+  ///     medianStart (CivilDate): The single most likely start date.
+  ///     window50 (CivilDateRange): The 50% predictive interval.
+  ///     window80 (CivilDateRange): The 80% interval.
+  ///     confidence (Confidence): The band [window80] falls in.
+  ///     basis (PredictionBasis): What the prediction was computed from.
+  ///
+  /// Throws:
+  ///     AssertionError: In debug builds, if [window80] is narrower than
+  ///         [window50].
   // Deliberately NOT const: the assertion calls getters on CivilDateRange, and
   // a const constructor may only assert over constant expressions. Enforcing
   // the invariant is worth more here than const-constructibility, since a
@@ -135,7 +223,13 @@ abstract class Prediction with _$Prediction {
 
   const Prediction._();
 
-  /// Rebuilds a prediction from its JSON form.
+  /// Rebuild a prediction from its JSON form.
+  ///
+  /// Args:
+  ///     json (`Map<String, dynamic>`): The encoded prediction.
+  ///
+  /// Returns:
+  ///     Prediction: The decoded prediction.
   factory Prediction.fromJson(Map<String, dynamic> json) =>
       _$PredictionFromJson(json);
 
@@ -150,7 +244,7 @@ abstract class Prediction with _$Prediction {
       window80.end >= window50.end;
 }
 
-/// The outcome of asking the model for a prediction.
+/// Prediction result: the outcome of asking the model for a prediction.
 ///
 /// A sealed union, so every consumer must handle every case and the analyzer
 /// rejects a non-exhaustive switch. Most of the cases are load-bearing product
@@ -159,8 +253,8 @@ abstract class Prediction with _$Prediction {
 /// * [InsufficientData] still carries a [Prediction], the population prior, so
 ///   a user with one logged period sees something honest rather than an empty
 ///   screen.
-/// * [TooIrregular] still carries [CycleStatistics], so a user with PCOS or in
-///   perimenopause is never told only "we cannot predict this" (risk R17).
+/// * [TooIrregular] still carries [CycleStatistics], so a user with PCOS or
+///   in perimenopause is never told only "we cannot predict this" (risk R17).
 /// * [LostTrack] exists so that a long silence produces an admission rather
 ///   than an extrapolation. Predicting from data two months stale gives a
 ///   confident wrong answer, which is the failure mode this project is most
@@ -208,8 +302,8 @@ sealed class PredictionResult with _$PredictionResult {
 
   /// Cycle variability is too high for a useful window.
   ///
-  /// [statistics] is required, not optional: this state must still give the user
-  /// their own observed range and variability.
+  /// [statistics] is required, not optional: this state must still give the
+  /// user their own observed range and variability.
   const factory PredictionResult.tooIrregular({
     required CycleStatistics statistics,
   }) = TooIrregular;
@@ -221,19 +315,20 @@ sealed class PredictionResult with _$PredictionResult {
 
   /// A recorded condition makes a prediction the wrong thing to give.
   ///
-  /// Distinct from every other state here, and the distinction is the reason it
-  /// exists. The rest describe what the model *could not* work out — too little
-  /// data, too much variance, too long a silence. This one describes a case
-  /// where the model would work perfectly well and its answer would still be
-  /// wrong to show: forecasting a period for someone who has recorded an active
-  /// pregnancy is not an uninformed guess, it is a confidently incorrect claim
-  /// about something the user has already told the app.
+  /// Distinct from every other state here, and the distinction is the reason
+  /// it exists. The rest describe what the model *could not* work out: too
+  /// little data, too much variance, too long a silence. This one describes a
+  /// case where the model would work perfectly well and its answer would still
+  /// be wrong to show. Forecasting a period for someone who has recorded an
+  /// active pregnancy is not an uninformed guess, it is a confidently
+  /// incorrect claim about something the user has already told the app.
   ///
-  /// **Only [Condition.pregnancy] produces this.** Hormonal contraception often
-  /// removes true cycles entirely and is the obvious next candidate; it was
-  /// considered and deliberately not chosen (ADR-0010), so it must not be added
-  /// here without revisiting that decision. See [Condition.suppressesPrediction],
-  /// which is the single place the rule lives.
+  /// **Only [Condition.pregnancy] produces this.** Hormonal contraception
+  /// often removes true cycles entirely and is the obvious next candidate; it
+  /// was considered and deliberately not chosen (ADR-0010), so it must not be
+  /// added here without revisiting that decision. See
+  /// [Condition.suppressesPrediction], which is the single place the rule
+  /// lives.
   ///
   /// [statistics] is carried for the same reason [TooIrregular] carries it:
   /// withholding a prediction must never also withhold the user's own history.
@@ -246,10 +341,11 @@ sealed class PredictionResult with _$PredictionResult {
 
 // Note: PredictionResult deliberately has no toJson/fromJson.
 //
-// It is ephemeral derived state, recomputed from the day logs on every read, so
-// it never needs persisting. Serialising it would actively invite a bug: a
-// restored-from-export prediction could be shown as current when the underlying
-// logs had changed. Export and import deal in DayLog only (ADR-0002).
+// It is ephemeral derived state, recomputed from the day logs on every read,
+// so it never needs persisting. Serialising it would actively invite a bug: a
+// restored-from-export prediction could be shown as current when the
+// underlying logs had changed. Export and import deal in DayLog only
+// (ADR-0002).
 //
 // This also sidesteps a freezed 3.2.5 codegen defect, which emits an invalid
 // `final String? $type` named parameter into the const constructors of a sealed

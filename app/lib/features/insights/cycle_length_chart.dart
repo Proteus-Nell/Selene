@@ -1,10 +1,24 @@
+/// Cycle length chart.
+///
+/// Draws the recent cycle lengths as bars, and offers the identical numbers as
+/// a table. Painted by hand rather than through a charting package, because a
+/// dozen bars is not worth a dependency and the greyscale and text-scaling
+/// requirements are easier to meet than to fight.
+///
+/// Includes:
+///     - CycleLengthChart: The chart, its summary and the table toggle.
+///     - _CycleLengthChartState: Which of the two views is showing.
+///     - _LengthTable: The same numbers, as rows.
+///     - _BarPainter: The bars themselves.
+library;
+
 import 'package:flutter/material.dart';
 import 'package:period_tracker/domain/cycles/features.dart';
 import 'package:period_tracker/domain/models/cycle_record.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
-/// A bar chart of recent cycle lengths, and the same numbers as a table.
+/// Cycle length chart: recent cycle lengths as bars, and as a table.
 ///
 /// Anything that paints to a canvas is **invisible** to a screen reader: there
 /// are no semantics under a [CustomPaint] unless someone writes them. So the
@@ -16,8 +30,16 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// Drawn by hand rather than with a charting package. A dozen bars is not worth
 /// a dependency, and painting it directly is what makes the greyscale and
 /// text-scaling requirements straightforward to meet rather than fought for.
+///
+/// Attributes:
+///     cycles (`List<CycleRecord>`): The user's cycles, oldest first.
 class CycleLengthChart extends StatefulWidget {
   /// Charts the completed cycles in [cycles].
+  ///
+  /// Args:
+  ///     cycles (`List<CycleRecord>`): The user's cycles, oldest first. The
+  ///         incomplete ones are filtered out here rather than by the caller,
+  ///         and the last [maxBars] of what remains are drawn.
   const CycleLengthChart({required this.cycles, super.key});
 
   /// The user's cycles, oldest first.
@@ -30,7 +52,12 @@ class CycleLengthChart extends StatefulWidget {
   State<CycleLengthChart> createState() => _CycleLengthChartState();
 }
 
+/// State for [CycleLengthChart]: which of the two views is showing.
+///
+/// Attributes:
+///     _showTable (bool): Whether the table has replaced the bars.
 class _CycleLengthChartState extends State<CycleLengthChart> {
+  /// Whether the table has replaced the bars.
   bool _showTable = false;
 
   @override
@@ -112,9 +139,24 @@ class _CycleLengthChartState extends State<CycleLengthChart> {
   }
 }
 
+/// The same numbers as the chart, as rows.
+///
+/// Not a lesser fallback. For several cycles it is the more precise view, and
+/// it is offered to everyone rather than hidden behind an accessibility
+/// setting (`docs/PLAN.md` 2.4.4).
+///
+/// Attributes:
+///     cycles (`List<CycleRecord>`): The cycles being shown, oldest first.
 class _LengthTable extends StatelessWidget {
+  /// Creates the table.
+  ///
+  /// Args:
+  ///     cycles (`List<CycleRecord>`): The cycles being shown, oldest first.
+  ///         Already filtered to the completed ones the chart draws, so every
+  ///         row has a length.
   const _LengthTable({required this.cycles});
 
+  /// The cycles being shown, oldest first.
   final List<CycleRecord> cycles;
 
   @override
@@ -145,21 +187,45 @@ class _LengthTable extends StatelessWidget {
   }
 }
 
+/// The bars themselves.
+///
+/// Carries no semantics, and cannot: nothing under a [CustomPaint] reaches a
+/// screen reader unless it is written by hand. The announcement is the summary
+/// the chart puts above it, which is why that summary is the whole sentence
+/// rather than a supplement to the picture.
+///
+/// Attributes:
+///     lengths (`List<int>`): The cycle lengths to draw, oldest first.
+///     barColor (Color): The most recent bar's colour.
+///     axisColor (Color): The baseline's colour.
 class _BarPainter extends CustomPainter {
+  /// Creates the painter.
+  ///
+  /// Args:
+  ///     lengths (`List<int>`): The cycle lengths to draw, oldest first. The
+  ///         last entry is the one drawn at full strength.
+  ///     barColor (Color): The most recent bar's colour. The rest are drawn
+  ///         from the same colour at [_historyAlpha].
+  ///     axisColor (Color): The baseline's colour.
   _BarPainter({
     required this.lengths,
     required this.barColor,
     required this.axisColor,
   });
 
+  /// The cycle lengths to draw, oldest first.
   final List<int> lengths;
+
+  /// The most recent bar's colour.
   final Color barColor;
+
+  /// The baseline's colour.
   final Color axisColor;
 
   /// How strongly the cycles behind the most recent one are drawn.
   ///
   /// The last bar is the one the reader came for; the rest are the shape it
-  /// sits in. Holding them back is a drawing decision and nothing else — the
+  /// sits in. Holding them back is a drawing decision and nothing else. The
   /// summary underneath, and the table behind the toggle, carry every figure at
   /// full strength, so nothing here is the only way to reach a number.
   static const double _historyAlpha = 0.35;
@@ -209,6 +275,17 @@ class _BarPainter extends CustomPainter {
       oldDelegate.axisColor != axisColor ||
       !_sameLengths(oldDelegate.lengths, lengths);
 
+  /// Report whether two length lists hold the same numbers in the same order.
+  ///
+  /// Element by element rather than by identity, because the chart rebuilds
+  /// its list on every build and an identity check would repaint every frame.
+  ///
+  /// Args:
+  ///     a (`List<int>`): One list.
+  ///     b (`List<int>`): The other.
+  ///
+  /// Returns:
+  ///     bool: True when they are the same length and equal at every index.
   static bool _sameLengths(List<int> a, List<int> b) {
     if (a.length != b.length) return false;
     for (var i = 0; i < a.length; i++) {

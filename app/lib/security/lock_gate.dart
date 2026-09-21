@@ -1,3 +1,13 @@
+/// The lock gate widget.
+///
+/// Wraps the whole app shell and hides it until the device credential has been
+/// offered. Encrypts nothing; it decides what is on screen.
+///
+/// Includes:
+///     - LockGate: The wrapper, which owns the controller's lifecycle.
+///     - _LockScreen: What is shown while locked, deliberately anonymous.
+library;
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -6,22 +16,28 @@ import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/security/lock_controller.dart';
 
-/// Hides the app until the device credential has been offered (AND-29).
+/// Lock gate: hides the app until the device credential is offered (AND-29).
 ///
-/// Wraps the whole shell rather than individual screens, which is the answer to
-/// the only question this feature really has: what counts as protected? Gating
-/// a screen at a time leaves the answer to whoever adds the next screen, and
-/// they will forget one — probably the calendar, which shows a month of period
-/// dates at a glance.
+/// Wraps the whole shell rather than individual screens, which is the answer
+/// to the only question this feature really has: what counts as protected?
+/// Gating a screen at a time leaves the answer to whoever adds the next
+/// screen, and they will forget one, probably the calendar, which shows a
+/// month of period dates at a glance.
 ///
-/// **It hides the interface and encrypts nothing.** The database is unencrypted
-/// in app-private storage (ADR-0004), so anyone with physical access, root or a
-/// debug bridge reads it whether this is on or off. `PRIVACY.md` says exactly
-/// that, and so does the line under the settings toggle, because a lock a user
-/// mistakes for encryption is worse than no lock at all: it buys a false sense
-/// of safety for a few taps.
+/// **It hides the interface and encrypts nothing.** The database is
+/// unencrypted in app-private storage (ADR-0004), so anyone with physical
+/// access, root or a debug bridge reads it whether this is on or off.
+/// `PRIVACY.md` says exactly that, and so does the line under the settings
+/// toggle, because a lock a user mistakes for encryption is worse than no lock
+/// at all: it buys a false sense of safety for a few taps.
+///
+/// Attributes:
+///     child (Widget): The app shell, shown once unlocked.
 class LockGate extends ConsumerStatefulWidget {
   /// Wraps [child] behind the lock.
+  ///
+  /// Args:
+  ///     child (Widget): The app shell.
   const LockGate({required this.child, super.key});
 
   /// The app shell.
@@ -31,6 +47,7 @@ class LockGate extends ConsumerStatefulWidget {
   ConsumerState<LockGate> createState() => _LockGateState();
 }
 
+/// State for [LockGate]. Starts the controller after the first frame.
 class _LockGateState extends ConsumerState<LockGate> {
   @override
   void initState() {
@@ -63,12 +80,24 @@ class _LockGateState extends ConsumerState<LockGate> {
 /// What is shown instead of the app.
 ///
 /// Deliberately says nothing about what the app is for. This is what a person
-/// looking over a shoulder sees, and a lock screen reading "Period Tracker —
+/// looking over a shoulder sees, and a lock screen reading "Period Tracker,
 /// unlock to see your cycle" would leak the one fact the lock exists to keep.
+///
+/// Attributes:
+///     busy (bool): Whether a prompt is already up.
+///     onUnlock (`Future<void> Function()`): Asks for the credential.
 class _LockScreen extends StatelessWidget {
+  /// Creates the lock screen.
+  ///
+  /// Args:
+  ///     busy (bool): Whether a prompt is already up.
+  ///     onUnlock (`Future<void> Function()`): Asks for the credential.
   const _LockScreen({required this.busy, required this.onUnlock});
 
+  /// Whether a prompt is already up, which disables the button.
   final bool busy;
+
+  /// Asks for the credential.
   final Future<void> Function() onUnlock;
 
   @override

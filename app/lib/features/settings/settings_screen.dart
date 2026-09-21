@@ -1,3 +1,22 @@
+/// Settings screen.
+///
+/// The data controls, the privacy statement, and the activity log. The screen
+/// where the promises in `docs/PRIVACY.md` are either kept or not: deleting is
+/// a real delete, exporting goes only where the user points it, and the
+/// activity log is readable so the claim about what it holds can be checked.
+///
+/// Includes:
+///     - SettingsScreen: The screen itself.
+///     - _SettingsScreenState: The export, import and delete flows.
+///     - _AppLockSetting: The lock toggle, and why it may be unavailable.
+///     - _AppLockSettingState: What the device said when it was asked.
+///     - _DisplaySettings: Preferences that change what is shown.
+///     - _SectionHeading: A heading over a group of rows.
+///     - _ReminderSettings: The notification preferences.
+///     - _ReminderSettingsState: Those preferences, and the resync after one
+///       changes.
+library;
+
 import 'dart:async';
 import 'dart:io';
 
@@ -25,7 +44,7 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/notifications/scheduler.dart';
 import 'package:period_tracker/security/app_lock.dart';
 
-/// Data controls, the privacy statement, and the activity log.
+/// Settings screen: data controls, the privacy statement, and the log.
 ///
 /// The screen where the promises in `docs/PRIVACY.md` are either kept or not.
 /// Three of them are enforced here rather than described: deleting is a real
@@ -40,14 +59,34 @@ class SettingsScreen extends ConsumerStatefulWidget {
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
+/// State for [SettingsScreen]: the three flows that touch the whole database.
+///
+/// Attributes:
+///     _busy (bool): Whether a long operation is running.
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  /// Whether an export or an import is running, which disables both buttons.
   bool _busy = false;
 
+  /// Tell the user how an operation went, if the screen is still there.
+  ///
+  /// Args:
+  ///     message (String): What to say, already translated.
   void _report(String message) {
     if (!mounted) return;
     showAppSnackBar(context, message);
   }
 
+  /// Write the whole database to a file the user chooses.
+  ///
+  /// Steps:
+  ///     1. Ask the user where it goes. There is no default and no fallback.
+  ///     2. Write the envelope there.
+  ///     3. Acknowledge the export format, which clears the re-export banner.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once the file is written and reported, or
+  ///     as soon as the user dismisses the directory picker. A failed write
+  ///     reports and does not acknowledge, so the banner stays up.
   Future<void> _export() async {
     final l10n = AppLocalizations.of(context);
     final clock = ref.read(clockProvider);
@@ -76,6 +115,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  /// Replace the whole database from a file the user chooses.
+  ///
+  /// Steps:
+  ///     1. Read and inspect the file, without writing anything.
+  ///     2. Say what is in it, and what it would replace, and ask.
+  ///     3. Restore it only on an explicit confirmation.
+  ///
+  /// The inspection comes first so the confirmation can quote the file's own
+  /// contents rather than asking the user to take it on trust, and so a file
+  /// that cannot be read is refused before anything is at stake.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once the restore has been reported, or as
+  ///     soon as the user backs out of the picker or the confirmation.
   Future<void> _import() async {
     final l10n = AppLocalizations.of(context);
     final file = await openFile(
@@ -140,6 +193,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  /// Delete everything, after a typed confirmation.
+  ///
+  /// The count of logged days is read first so the dialog can say how much is
+  /// about to go. This is the one action in the app with no undo and no copy
+  /// anywhere else.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once the delete is done and reported, or
+  ///     at once if the user did not confirm.
   Future<void> _deleteEverything() async {
     final l10n = AppLocalizations.of(context);
     final logs = await ref.read(cycleRepositoryProvider).logs();
@@ -314,7 +376,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 /// **It hides the interface and encrypts nothing.** That line sits under the
 /// switch whether it is on or off, not behind a link, because a user who
 /// believes this encrypts their diary has been given a false sense of safety
-/// for the price of a few taps — which is worse than no lock. ADR-0004 keeps
+/// for the price of a few taps, which is worse than no lock. ADR-0004 keeps
 /// the database unencrypted in app-private storage, and ADR-0008 records that
 /// this feature does not change that.
 ///
@@ -324,14 +386,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 /// settings, and a greyed-out toggle would leave the user concluding the app
 /// is broken instead of going there.
 class _AppLockSetting extends ConsumerStatefulWidget {
+  /// Creates the app lock row.
   const _AppLockSetting();
 
   @override
   ConsumerState<_AppLockSetting> createState() => _AppLockSettingState();
 }
 
+/// State for [_AppLockSetting]: what the device said when it was asked.
+///
+/// The device is asked once, in `initState`, and nothing at all is rendered
+/// until it has answered. A switch that appeared enabled and then disabled
+/// itself a frame later would invite a tap that fails.
+///
+/// Attributes:
+///     _reason (LockUnavailableReason?): Why the lock cannot be used.
+///     _checked (bool): Whether the device has been asked yet.
 class _AppLockSettingState extends ConsumerState<_AppLockSetting> {
+  /// Why the lock cannot be used, or null when it can.
   LockUnavailableReason? _reason;
+
+  /// Whether the device has been asked yet. Distinct from `_reason == null`,
+  /// which is also true before the question has been put.
   bool _checked = false;
 
   @override
@@ -340,6 +416,11 @@ class _AppLockSettingState extends ConsumerState<_AppLockSetting> {
     unawaited(_check());
   }
 
+  /// Ask the device whether the lock can be used at all.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once the answer is in state, or at once if
+  ///     the row has been disposed in the meantime.
   Future<void> _check() async {
     final reason = await ref.read(appLockServiceProvider).unavailableReason();
     if (!mounted) return;
@@ -408,9 +489,10 @@ class _AppLockSettingState extends ConsumerState<_AppLockSetting> {
 /// Kept apart from the reminder settings for a reason worth stating: everything
 /// here is reversible by definition. Turning one on and off again leaves the
 /// database exactly as it was, which is what lets the subtitles promise that
-/// nothing is lost — a promise `flow_simplified_test.dart` checks rather than
+/// nothing is lost: a promise `flow_simplified_test.dart` checks rather than
 /// takes on trust.
 class _DisplaySettings extends ConsumerWidget {
+  /// Creates the display preferences.
   const _DisplaySettings();
 
   @override
@@ -474,9 +556,19 @@ class _DisplaySettings extends ConsumerWidget {
   }
 }
 
+/// A heading over a group of rows.
+///
+/// Attributes:
+///     text (String): The heading, already translated.
 class _SectionHeading extends StatelessWidget {
+  /// Creates a heading.
+  ///
+  /// Args:
+  ///     text (String): The heading, already translated. Printed as written,
+  ///         unlike the appearance screen's, which upper-cases its own.
   const _SectionHeading(this.text);
 
+  /// The heading, already translated.
   final String text;
 
   @override
@@ -494,17 +586,42 @@ class _SectionHeading extends StatelessWidget {
   }
 }
 
+/// The notification preferences.
+///
+/// Four of them, and two default to off for reasons worth keeping: the nudge
+/// is the only notification that is neither a prediction nor actionable, and
+/// lock-screen detail is the one place this project's privacy story would
+/// otherwise leak by default (risk R16).
 class _ReminderSettings extends ConsumerStatefulWidget {
+  /// Creates the reminder preferences.
   const _ReminderSettings();
 
   @override
   ConsumerState<_ReminderSettings> createState() => _ReminderSettingsState();
 }
 
+/// State for [_ReminderSettings]: the preferences, read once and held.
+///
+/// Held in state rather than watched, unlike the display preferences, because
+/// changing one has to be followed by a resync: writing the setting is only
+/// half of switching a reminder off.
+///
+/// Attributes:
+///     _enabled (bool?): Whether reminders are on. Null until read.
+///     _leadDays (int?): How many days ahead to remind. Null until read.
+///     _nudge (bool): Whether the logging nudge is on.
+///     _detailed (bool): Whether notifications may carry detail.
 class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
+  /// Whether reminders are on, or null until the preference has been read.
   bool? _enabled;
+
+  /// How many days ahead to remind, or null until the preference is read.
   int? _leadDays;
+
+  /// Whether the logging nudge is on.
   bool _nudge = false;
+
+  /// Whether notifications may carry detail on the lock screen.
   bool _detailed = false;
 
   @override
@@ -513,7 +630,7 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
     unawaited(_load());
   }
 
-  /// Asks for the platform schedule to be rebuilt from the new preferences.
+  /// Ask for the platform schedule to be rebuilt from the new preferences.
   ///
   /// Writing the setting is only half of switching a reminder off: whatever was
   /// already handed to the platform stays queued until something reschedules,
@@ -523,7 +640,12 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
     ref.read(notificationPreferencesRevisionProvider.notifier).state++;
   }
 
-  /// Reads the stored preferences once, defaulting rather than failing.
+  /// Read the stored preferences once, defaulting rather than failing.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once all four are in state. A preference
+  ///     that was never written falls back to its default rather than
+  ///     leaving the row blank.
   Future<void> _load() async {
     final settings = ref.read(appDatabaseProvider).settingsDao;
     final enabled = await settings.readBool(

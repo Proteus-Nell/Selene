@@ -1,6 +1,19 @@
+/// Curated hygiene reference entries.
+///
+/// The menstrual hygiene entries the lookup screen shows, hand-written rather
+/// than fetched: tampons, cups and pads are FDA devices rather than drugs, so
+/// the openFDA generator cannot reach them. The text itself lives in the ARB
+/// file, keyed by each entry's key.
+///
+/// Includes:
+///     - HygieneUrgency: How urgently an entry should be read.
+///     - HygieneEntry: One entry and the words that find it.
+///     - bundledHygieneEntries: The entries, in screen order.
+library;
+
 import 'package:meta/meta.dart';
 
-/// How urgently an entry's content should be read.
+/// Hygiene urgency: how urgently an entry's content should be read.
 enum HygieneUrgency {
   /// Ordinary reference reading.
   reference,
@@ -13,7 +26,7 @@ enum HygieneUrgency {
   urgent,
 }
 
-/// A curated entry about a menstrual hygiene product.
+/// Hygiene entry: one curated entry about a menstrual hygiene product.
 ///
 /// **Hand-written, not fetched.** Tampons, cups and pads are FDA *devices*
 /// rather than drugs, so they are not in `/drug/label` and the openFDA
@@ -23,11 +36,23 @@ enum HygieneUrgency {
 /// are ours.
 ///
 /// Every claim here is recorded with its source in `docs/HYGIENE_SOURCES.md`,
-/// and `hygiene_copy_test.dart` fails the build if this file makes a claim that
-/// file does not cover.
+/// and `hygiene_copy_test.dart` fails the build if this file makes a claim
+/// that file does not cover.
+///
+/// Attributes:
+///     key (String): Stable identifier, and the l10n key stem. Never shown.
+///     urgency (HygieneUrgency): How the entry should be rendered.
+///     searchTerms (`List<String>`): Extra words that match it in the lookup.
+///         Defaults to empty.
 @immutable
 final class HygieneEntry {
   /// Creates an entry.
+  ///
+  /// Args:
+  ///     key (String): Stable identifier, and the l10n key stem.
+  ///     urgency (HygieneUrgency): How the entry should be rendered.
+  ///     searchTerms (`List<String>`, optional): Extra matching words.
+  ///         Defaults to empty.
   const HygieneEntry({
     required this.key,
     required this.urgency,
