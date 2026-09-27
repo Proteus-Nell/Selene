@@ -256,16 +256,29 @@ class _NotificationSyncState extends ConsumerState<NotificationSync> {
         // The fallback for a reminder that never arrived: several manufacturers
         // silently kill scheduled alarms to save battery (risk R12), so the app
         // says so in place rather than pretending it reminded them.
-        MaterialBanner(
-          content: Text(l10n.logMissedReminder),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => setState(() => _missedReminder = false),
-              child: Text(l10n.commonClose),
-            ),
-          ],
+        //
+        // A MaterialBanner insets itself only when ScaffoldMessenger shows it,
+        // and the shell has no app bar, so the cutout is cleared here.
+        SafeArea(
+          bottom: false,
+          child: MaterialBanner(
+            content: Text(l10n.logMissedReminder),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => setState(() => _missedReminder = false),
+                child: Text(l10n.commonClose),
+              ),
+            ],
+          ),
         ),
-        Expanded(child: widget.child),
+        Expanded(
+          // Taken by the banner, so the screen below must not pad for it again.
+          child: MediaQuery.removePadding(
+            context: context,
+            removeTop: true,
+            child: widget.child,
+          ),
+        ),
       ],
     );
   }
