@@ -145,7 +145,7 @@ Checklist, in the order the failures actually happen:
 - [ ] Keystore backups still exist and still open
 - [ ] **Release notes carry the re-export warning** — see below
 - [ ] No claim in `docs/NUTRITION_SOURCES.md` is still marked `[VERIFY]`
-- [ ] The medicines artifact has actually been fetched — see below
+- [ ] The medicines bundle comes from a recent openFDA export — see below
 - [ ] No claim in `docs/HYGIENE_SOURCES.md` is still marked `[VERIFY]`
 - [ ] No claim in `docs/WEIGHT_SOURCES.md` is still marked `[VERIFY]`
 - [ ] No claim in `docs/MOVEMENT_SOURCES.md` is still marked `[VERIFY]` —
@@ -158,15 +158,13 @@ Checklist, in the order the failures actually happen:
       clear the marker in every file that carries them, or the three copies
       start disagreeing
 
-### The medicines artifact (export format aside)
+### The medicines bundle
 
-`artifacts/medicines/medicines_v1.json` is what the app reads, and it is
-committed **unpopulated** until the A-Z bundle lands (ADR-0012). In that state
-the reference screen explains itself rather than showing an empty list, which
-is honest but is not the feature.
-
-What exists now is the selection: one openFDA label, chosen by rule, for each
-drug the A-Z will cover. Refresh it before a release:
+The medicines reference is every drug in openFDA's label export, one label each
+(ADR-0012), packed into `app/assets/medicines` (ADR-0013). The bundle and the
+selection it was built from, `artifacts/medicines/selection_v1.json`, are
+committed, and the lookup shows the export's date. Refresh both before a
+release:
 
 ```bash
 python3 tools/scripts/gen_medicines.py --fetch   # downloads ~1.8 GB into data/
@@ -175,8 +173,13 @@ python3 tools/scripts/gen_medicines.py --check   # should pass
 
 That needs network, on purpose: it is the one part of this project that talks to
 anything, and it runs on a developer machine or in CI, never on the phone. The
-download is cached under `data/`, which is never committed. Commit only
-`artifacts/medicines/selection_v1.json`.
+download is cached under `data/`, which is never committed. Commit
+`artifacts/medicines/selection_v1.json`, `app/assets/medicines/` and
+`app/lib/data/reference/medicines_bundled.dart` together; `--check` fails when
+they disagree.
+
+A refresh rewrites most of the bundle, and each one adds up to 12 MB to the
+repository's history. Refresh for a release, not on every change.
 
 Two things to check by eye after fetching, because no test can:
 

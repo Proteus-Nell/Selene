@@ -16,6 +16,10 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
         args: ["--maxkb=2048"]
+        # Generated text, about 4 MB by design: one drug per line, so that a
+        # refresh from openFDA diffs per drug (ADR-0012). The bundle built from
+        # it is binary, and every file of it is well under the limit.
+        exclude: ^artifacts/medicines/selection_v1\.json$
       - id: check-merge-conflict
       - id: no-commit-to-branch
         args: ["--branch", "main"]

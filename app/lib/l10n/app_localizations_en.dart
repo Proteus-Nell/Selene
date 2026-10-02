@@ -854,6 +854,67 @@ class AppLocalizationsEn extends AppLocalizations {
       'The medicines reference is not built into this version. The other sections still work.';
 
   @override
+  String get lookupMedicinesLoading => 'Opening the medicines reference';
+
+  @override
+  String get lookupMedicinesFailed =>
+      'The medicines reference could not be opened. The other sections still work.';
+
+  @override
+  String lookupMedicinesPrompt(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Type the name of a medicine, a brand or an ingredient to search $countString medicines.';
+  }
+
+  @override
+  String lookupMedicinesShowing(int shown, int total) {
+    final intl.NumberFormat totalNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Showing the closest $shown of $totalString. Type more of the name to narrow it down.';
+  }
+
+  @override
+  String get lookupMedicinesShowMore => 'Show more';
+
+  @override
+  String get lookupMedicinePrescription => 'Prescription';
+
+  @override
+  String get lookupMedicineOverTheCounter => 'Over the counter';
+
+  @override
+  String lookupMedicineOtherNames(String names, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count other names',
+      one: '1 other name',
+    );
+    return '$names and $_temp0';
+  }
+
+  @override
+  String lookupMedicineLabel(String manufacturer, String date) {
+    return 'From the label filed by $manufacturer, dated $date.';
+  }
+
+  @override
+  String get lookupMedicineOneLabel =>
+      'Each maker files its own label for a medicine. One is shown here, chosen by a fixed rule, and the label on your packet may differ.';
+
+  @override
+  String get lookupMedicineLoading => 'Opening this medicine\'s label';
+
+  @override
+  String get lookupMedicineFailed =>
+      'This medicine\'s label could not be opened.';
+
+  @override
   String get lookupSectionPurpose => 'What it is for';
 
   @override
@@ -870,6 +931,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lookupSectionPregnancy => 'If pregnant or breastfeeding';
+
+  @override
+  String get lookupSectionBoxedWarning => 'Boxed warning';
+
+  @override
+  String get lookupSectionUses => 'Uses';
+
+  @override
+  String get lookupSectionContraindications => 'Contraindications';
+
+  @override
+  String get lookupSectionWarningsAndPrecautions => 'Warnings and precautions';
+
+  @override
+  String get lookupSectionPrecautions => 'Precautions';
+
+  @override
+  String get lookupSectionInteractions => 'Drug interactions';
+
+  @override
+  String get lookupSectionSpecificPopulations => 'Use in specific populations';
+
+  @override
+  String get lookupSectionPregnancyLabel => 'Pregnancy';
+
+  @override
+  String get lookupSectionNursingMothers => 'Nursing mothers';
+
+  @override
+  String get lookupSectionAskDoctorOrPharmacist => 'Ask a doctor or pharmacist';
+
+  @override
+  String get lookupSectionWhenUsing => 'When using this product';
 
   @override
   String get lookupSearchOnlineTitle => 'Not here?';

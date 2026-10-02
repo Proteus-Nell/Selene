@@ -126,6 +126,11 @@ flutter:
   # non-compliant, which is why `fonts_test.dart` fails if it goes missing.
   assets:
     - assets/fonts/OFL.txt
+    # The medicines reference, built by tools/scripts/gen_medicines.py from
+    # openFDA's label export: a compressed index and about sixty compressed
+    # chunks of label text, 12 MB in all (ADR-0012, ADR-0013). Read off the
+    # assets, never fetched: the app has no INTERNET permission (ADR-0004).
+    - assets/medicines/
 
   fonts:
     - family: Figtree

@@ -3,47 +3,57 @@
 // Regenerate with:
 //     python3 tools/scripts/gen_medicines.py --fetch
 //
-// The app compiles this in rather than parsing an asset, so a lookup never
-// depends on file IO and a corrupt asset cannot leave the screen empty with no
-// explanation. The phone makes no request for any of it: the fetch happens in
-// the generator, and the app has no INTERNET permission at all (ADR-0004).
+// The label text is in app/assets/medicines, compressed. This file carries only
+// what the app needs before it opens that bundle. The phone makes no request
+// for any of it: the fetch happens in the generator, and the app has no
+// INTERNET permission at all (ADR-0004).
 
-/// Bundled medicine reference entries.
+/// Bundled medicines reference: what is known before the bundle is opened.
 ///
-/// Carries the openFDA label extracts the lookup screen renders, compiled in
-/// as Dart constants, plus the checksum and date of the artifact they came
-/// from. Nothing here is fetched on the phone.
+/// The bundle in `app/assets/medicines` holds every drug's label sections and
+/// the index the lookup searches. This file carries its checksum, its size and
+/// the date of the export it was built from, so that a screen can say what it
+/// is showing without loading any of it.
 ///
 /// Includes:
-///     - medicinesArtifactSha256: Checksum of the source artifact.
-///     - medicinesFetchedOn: When the snapshot was taken.
+///     - medicinesBundleSha256: Checksum of the bundle's files.
+///     - medicinesFetched: Whether a bundle has been built at all.
+///     - medicinesSnapshotDate: The date of the openFDA export.
+///     - medicinesCount: How many drugs the bundle holds.
+///     - medicinesChunkCount: How many compressed text chunks it has.
+///     - medicinesJurisdiction: Where the labelling applies.
 ///     - medicinesDisclaimer: What the screen says about the source.
-///     - bundledMedicines: The entries themselves.
 library;
 
-import 'package:period_tracker/data/reference/medicine.dart';
-
-/// SHA-256 of the `medicines_v1.json` these constants were generated from.
+/// SHA-256 over the files in `app/assets/medicines`: names, lengths, contents.
 ///
-/// A drift guard, not a security boundary: the artifact is committed to the
-/// repository and never fetched at runtime. `gen_medicines.py --check` fails
-/// CI if the two stop matching.
-const String medicinesArtifactSha256 =
-    '84044155e0e45cf4ec5d19cc6bdffafccbe206020ce381f1c18017419411893d';
+/// A drift guard, not a security boundary: `gen_medicines.py --check` fails CI
+/// if the bundle and this file stop matching.
+const String medicinesBundleSha256 =
+    '779acf7cd6473920834ede66585630b45f9011b272ce23a4d54c19b02f7f3415';
 
-/// Whether the artifact has actually been populated from openFDA.
+/// Whether a bundle has been built from openFDA at all.
 ///
 /// False in a repository where nobody has run `--fetch` yet. The app renders
 /// an explanation rather than an empty screen in that case, and a release-gate
 /// test reports it. Shipping an empty reference section silently would be
 /// worse than not having one.
-const bool medicinesFetched = false;
+const bool medicinesFetched = true;
 
-/// The day the data was pulled from openFDA, or null if it never was.
+/// The date of the openFDA export the bundle came from, or null if none did.
 ///
 /// Displayed on the screen. Drug labelling changes, and a reference with no
 /// date on it invites the reader to assume it is current.
-const String? medicinesSnapshotDate = null;
+// Nullable whichever state this file is generated in, so that the code reading
+// it compiles in both.
+// ignore: unnecessary_nullable_for_final_variable_declarations
+const String? medicinesSnapshotDate = '2026-10-02';
+
+/// How many drugs the bundle holds.
+const int medicinesCount = 5843;
+
+/// How many compressed text chunks the label sections are split into.
+const int medicinesChunkCount = 60;
 
 /// The jurisdiction this labelling comes from.
 ///
@@ -55,6 +65,3 @@ const String medicinesJurisdiction = 'US';
 /// The notice openFDA asks to travel with the data.
 const String medicinesDisclaimer =
     'Data from openFDA. This information comes from US drug labelling and has not been evaluated for use outside the United States. It is not a substitute for advice from a doctor or pharmacist.';
-
-/// Every medicine compiled into the app.
-const List<Medicine> bundledMedicines = <Medicine>[];

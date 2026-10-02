@@ -3,19 +3,14 @@
 The generator is the only thing in this project that touches the network, and
 it does so on a developer machine or in CI — never on the phone. What is tested
 here is everything except the download: which label is chosen to stand for each
-drug, the artifacts' shape, the determinism the `--check` gate depends on, and
-the rendering of a populated snapshot.
+drug, how its text is packed into the bundle the app reads, the determinism the
+`--check` gate depends on, and the rendering of the generated Dart.
 
 The selection rules are tested on labels built here, one rule at a time, and the
 committed selection is tested for the exact drugs the first version of the
 generator got wrong: a text search found "levonorgestrel" inside a combined
 pill's name, answered "zinc" with a diaper cream, and picked an injection label
 for tranexamic acid tablets.
-
-The last one matters more than it looks. The committed artifact is currently
-unpopulated, so nothing else in the repository exercises the code path that
-renders a real entry. A generator whose only tested case is the empty one is a
-generator that will break the first time someone runs `--fetch`.
 """
 
 from __future__ import annotations
@@ -34,8 +29,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 # did before this constant existed.
 DIGEST = "49cad45aaa0c88b3c020425afcaa77bbd496411f932e4bef1a770c0fa771e8f1"
 SCRIPT = REPO_ROOT / "tools" / "scripts" / "gen_medicines.py"
-ARTIFACT = REPO_ROOT / "artifacts" / "medicines" / "medicines_v1.json"
 SELECTION = REPO_ROOT / "artifacts" / "medicines" / "selection_v1.json"
+BUNDLE = REPO_ROOT / "app" / "assets" / "medicines"
+GENERATED = REPO_ROOT / "app" / "lib" / "data" / "reference" / "medicines_bundled.dart"
 
 
 def load_generator():
@@ -52,111 +48,57 @@ def gen():
     return load_generator()
 
 
-@pytest.fixture(scope="module")
-def artifact() -> dict:
-    return json.loads(ARTIFACT.read_text(encoding="utf-8"))
-
-
-class TestTheCommittedArtifact:
-    def test_exists_and_is_readable(self, artifact: dict) -> None:
-        assert artifact["schema_version"] == 1
-
-    def test_declares_its_jurisdiction(self, artifact: dict) -> None:
-        # US labelling. Strengths, brand names and warnings differ everywhere
-        # else, and a reader applying US warnings to a box bought elsewhere is
-        # being quietly misinformed. The screen says so; this is what it reads.
-        assert artifact["jurisdiction"] == "US"
-
-    def test_carries_the_openfda_disclaimer(self, artifact: dict) -> None:
-        assert "openFDA" in artifact["disclaimer"]
-
-    def test_says_whether_it_has_actually_been_fetched(
-        self, artifact: dict
-    ) -> None:
-        # The unpopulated state is visible in the repository rather than being
-        # a missing file someone might mistake for an oversight.
-        assert artifact["snapshot_status"] in {"fetched", "not_fetched"}
-        if artifact["snapshot_status"] == "not_fetched":
-            assert artifact["snapshot_date"] is None
-            assert artifact["entries"] == []
-        else:
-            assert artifact["snapshot_date"]
-            assert artifact["entries"]
+def index_for(count: int = 3) -> dict:
+    """Build an index shaped like the bundle's, for rendering."""
+    return {
+        "chunks": 1,
+        "disclaimer": "Data from openFDA. " * 12,
+        "entries": [{"key": f"drug-{i}.oral.rx"} for i in range(count)],
+        "export_date": "2026-10-02",
+        "jurisdiction": "US",
+        "schema_version": 1,
+    }
 
 
 class TestRendering:
-    def test_renders_a_populated_snapshot(self, gen) -> None:
-        # The path nothing else exercises while the artifact is empty.
-        payload = {
-            "schema_version": 1,
-            "source": "openFDA /drug/label",
-            "jurisdiction": "US",
-            "snapshot_status": "fetched",
-            "snapshot_date": "2026-08-21",
-            "disclaimer": "Data from openFDA.",
-            "entries": [
-                {
-                    "key": "ibuprofen",
-                    "generic_name": "ibuprofen",
-                    "brand_names": ["Advil", "Motrin"],
-                    "sections": {
-                        "purpose": "Pain reliever.",
-                        "warnings": "Ask a doctor before use if...",
-                    },
-                }
-            ],
-        }
-        dart = gen.render(payload, DIGEST)
+    def test_renders_a_built_bundle(self, gen) -> None:
+        dart = gen.render(index_for(), DIGEST)
 
         assert "const bool medicinesFetched = true;" in dart
-        assert "const String? medicinesSnapshotDate = '2026-08-21';" in dart
-        assert "key: 'ibuprofen'" in dart
-        assert "'Advil'" in dart
-        assert "'purpose': 'Pain reliever.'" in dart
+        assert "const String? medicinesSnapshotDate = '2026-10-02';" in dart
+        assert "const int medicinesCount = 3;" in dart
+        assert "const int medicinesChunkCount = 1;" in dart
+        assert DIGEST in dart
+
+    def test_renders_the_absence_of_one(self, gen) -> None:
+        # The unbuilt state is visible rather than looking like an empty result.
+        dart = gen.render(None, gen.bundle_digest([]))
+
+        assert "const bool medicinesFetched = false;" in dart
+        assert "const String? medicinesSnapshotDate = null;" in dart
+        assert "const int medicinesCount = 0;" in dart
 
     def test_escapes_what_dart_would_otherwise_choke_on(self, gen) -> None:
-        # Label text is prose written by someone else. It contains apostrophes
-        # constantly, and a dollar sign in a Dart single-quoted string is string
-        # interpolation — an unescaped one is either a compile error or, worse,
-        # a silently different string.
-        payload = {
-            "schema_version": 1,
-            "source": "openFDA /drug/label",
-            "jurisdiction": "US",
-            "snapshot_status": "fetched",
-            "snapshot_date": "2026-08-21",
-            "disclaimer": "d",
-            "entries": [
-                {
-                    "key": "k",
-                    "generic_name": "g",
-                    "brand_names": [],
-                    "sections": {
-                        "warnings": "doctor's advice, $5, back\\slash\nnewline"
-                    },
-                }
-            ],
-        }
-        dart = gen.render(payload, DIGEST)
+        # A dollar sign in a Dart single-quoted string is interpolation: an
+        # unescaped one is either a compile error or a silently different string.
+        index = index_for()
+        index["disclaimer"] = "doctor's advice, $5, back\\slash\nnewline"
+        dart = gen.render(index, DIGEST)
 
         assert "doctor\\'s advice" in dart
         assert "\\$5" in dart
         assert "back\\\\slash" in dart
         assert "\\n" in dart
-        # And no raw newline escaped into the middle of a literal.
-        assert "newline'" in dart
 
     def test_refuses_a_schema_version_it_does_not_know(self, gen) -> None:
+        index = index_for()
+        index["schema_version"] = 99
         with pytest.raises(SystemExit):
-            gen.render({"schema_version": 99, "entries": []}, DIGEST)
+            gen.render(index, DIGEST)
 
-    def test_is_deterministic(self, gen, artifact: dict) -> None:
-        # The whole --check gate rests on this. A generator that reordered a
-        # map between runs would fail CI on an unchanged artifact, and the
-        # first fix anyone reaches for is deleting the gate.
-        first = gen.render(artifact, "digest")
-        second = gen.render(artifact, "digest")
-        assert first == second
+    def test_is_deterministic(self, gen) -> None:
+        # The whole --check gate rests on this.
+        assert gen.render(index_for(), DIGEST) == gen.render(index_for(), DIGEST)
 
 
 class TestFormatting:
@@ -168,10 +110,8 @@ class TestFormatting:
     the file and `--check` fails, regenerate and format fails — and the first
     thing anyone reaches for is deleting one of them.
 
-    The empty case is covered by the committed artifact. The **populated** case
-    is covered here and nowhere else, because until someone runs `--fetch` there
-    is no populated file in the repository to format. That is exactly the shape
-    of bug that waits until the day it is least welcome.
+    Both states are covered here, because the committed file only ever shows
+    one of them.
     """
 
     @staticmethod
@@ -205,34 +145,8 @@ class TestFormatting:
             )
             return result.returncode == 0
 
-    def test_a_populated_render_is_already_formatted(self, gen) -> None:
-        payload = {
-            "schema_version": 1,
-            "source": "openFDA /drug/label",
-            "jurisdiction": "US",
-            "snapshot_status": "fetched",
-            "snapshot_date": "2026-08-21",
-            "disclaimer": "Data from openFDA. " * 12,
-            "entries": [
-                {
-                    "key": key,
-                    "generic_name": generic,
-                    "brand_names": ["Brand One", "Brand Two"],
-                    "sections": {
-                        "purpose": "A purpose sentence that runs on for a "
-                        "while, the way real label text does.",
-                        "warnings": "A warnings paragraph. " * 8,
-                    },
-                }
-                for key, generic in (
-                    ("ibuprofen.oral.otc", "IBUPROFEN"),
-                    ("tranexamic-acid.oral.rx", "TRANEXAMIC ACID"),
-                    ("levonorgestrel.oral.otc", "LEVONORGESTREL"),
-                    ("ferrous-sulfate.oral.otc", "FERROUS SULFATE"),
-                )
-            ],
-        }
-        clean = self._dart_format_clean(gen.render(payload, DIGEST))
+    def test_a_built_bundle_renders_formatted(self, gen) -> None:
+        clean = self._dart_format_clean(gen.render(index_for(), DIGEST))
         if clean is None:
             pytest.skip("dart is not on PATH")
         assert clean, (
@@ -240,8 +154,8 @@ class TestFormatting:
             "repository's format gate will fight the moment someone runs --fetch"
         )
 
-    def test_the_empty_render_is_too(self, gen, artifact: dict) -> None:
-        clean = self._dart_format_clean(gen.render(artifact, DIGEST))
+    def test_no_bundle_renders_formatted_too(self, gen) -> None:
+        clean = self._dart_format_clean(gen.render(None, gen.bundle_digest([])))
         if clean is None:
             pytest.skip("dart is not on PATH")
         assert clean
@@ -657,3 +571,168 @@ class TestTheCommittedSelection:
         assert found["norethindrone.oral.rx"]["substances"] == ["NORETHINDRONE"]
         # And the combined pill is one drug, not one per pack design.
         assert found["ethinyl-estradiol+levonorgestrel.oral.rx"]["labels"] > 10
+
+
+def bundle_of(gen, labels_and_sections: list[tuple[dict, list[list[str]]]]):
+    """Select from labels and pack the given sections, as `--fetch` would."""
+    records = [gen.summarise(label)[1] for label, _ in labels_and_sections]
+    entries, _ = gen.select(records)
+    by_set = {label["set_id"]: text for label, text in labels_and_sections}
+    sections = {entry["key"]: by_set[entry["label"]["set_id"]] for entry in entries}
+    meta = {"export_date": "2026-10-02", "jurisdiction": "US"}
+    index, chunks = gen.build_bundle(meta, entries, sections)
+    return entries, index, chunks
+
+
+def unpacked(gen, index: bytes, chunks: list[bytes]) -> tuple[dict, list[list[str]]]:
+    """Decompress an index and its chunks into lines."""
+    zlib = gen.zlib
+    lines = [zlib.decompress(chunk).decode().split("\n") for chunk in chunks]
+    return json.loads(zlib.decompress(index)), lines
+
+
+THREE_DRUGS = [
+    (raw_label(set_id="a"), [["purpose", "Pain reliever."], ["warnings", "Allergy alert."]]),
+    (
+        raw_label(generic="NAPROXEN", substances=("NAPROXEN",), set_id="b"),
+        [["warnings", "Stomach bleeding warning."]],
+    ),
+    (
+        raw_label(
+            generic="TRANEXAMIC ACID",
+            substances=("TRANEXAMIC ACID",),
+            product_type=RX,
+            sections=RX_SAFETY,
+            set_id="c",
+        ),
+        [["warnings_and_cautions", "Risk of thrombosis."], ["drug_interactions", "7 DRUG..."]],
+    ),
+]
+
+
+class TestTheBundle:
+    def test_every_drug_points_at_its_own_text(self, gen) -> None:
+        _, index, chunks = bundle_of(gen, THREE_DRUGS)
+        parsed, lines = unpacked(gen, index, chunks)
+        for row in parsed["entries"]:
+            assert json.loads(lines[row["chunk"]][row["line"]])["key"] == row["key"]
+
+    def test_sections_keep_their_order_and_their_words(self, gen) -> None:
+        # Nothing is reworded, reordered or cut on the way into the app.
+        _, index, chunks = bundle_of(gen, THREE_DRUGS)
+        parsed, lines = unpacked(gen, index, chunks)
+        row = next(r for r in parsed["entries"] if r["key"] == "tranexamic-acid.oral.rx")
+        record = json.loads(lines[row["chunk"]][row["line"]])
+        assert record["sections"] == THREE_DRUGS[2][1]
+
+    def test_a_chunk_ends_once_it_is_full(self, gen, monkeypatch) -> None:
+        monkeypatch.setattr(gen, "CHUNK_TARGET", 1)
+        _, index, chunks = bundle_of(gen, THREE_DRUGS)
+        parsed, _ = unpacked(gen, index, chunks)
+        assert len(chunks) == 3
+        assert parsed["chunks"] == 3
+        assert [row["line"] for row in parsed["entries"]] == [0, 0, 0]
+
+    def test_the_index_says_where_the_text_came_from(self, gen) -> None:
+        _, index, chunks = bundle_of(gen, THREE_DRUGS)
+        parsed, _ = unpacked(gen, index, chunks)
+        assert parsed["export_date"] == "2026-10-02"
+        assert parsed["jurisdiction"] == "US"
+        assert all(row["label"]["set_id"] for row in parsed["entries"])
+
+    def test_the_index_carries_how_many_labels_each_drug_had(self, gen) -> None:
+        # The app ranks search ties by it, so that the form most widely sold
+        # comes first.
+        entries, index, chunks = bundle_of(gen, THREE_DRUGS)
+        parsed, _ = unpacked(gen, index, chunks)
+        labels = {row["key"]: row["labels"] for row in parsed["entries"]}
+        assert labels == {entry["key"]: entry["labels"] for entry in entries}
+
+    def test_is_byte_for_byte_repeatable(self, gen) -> None:
+        # --check compares checksums, so a rebuild from the same export must
+        # produce the same bytes or every refresh looks like a change.
+        assert bundle_of(gen, THREE_DRUGS)[1:] == bundle_of(gen, THREE_DRUGS)[1:]
+
+    def test_a_smaller_bundle_leaves_no_stale_chunks(self, gen, tmp_path: Path) -> None:
+        gen.write_bundle(tmp_path, b"index", [b"one", b"two", b"three"])
+        gen.write_bundle(tmp_path, b"index", [b"one"])
+        assert [p.name for p in gen.bundle_files(tmp_path)] == [
+            "index.json.zlib",
+            "labels-000.jsonl.zlib",
+        ]
+
+    def test_the_digest_covers_every_file(self, gen, tmp_path: Path) -> None:
+        gen.write_bundle(tmp_path, b"index", [b"one", b"two"])
+        before = gen.bundle_digest(gen.bundle_files(tmp_path))
+        (tmp_path / "labels-001.jsonl.zlib").write_bytes(b"TWO")
+        assert gen.bundle_digest(gen.bundle_files(tmp_path)) != before
+
+    def test_a_line_out_of_place_is_found(self, gen, tmp_path: Path) -> None:
+        _, index, chunks = bundle_of(gen, THREE_DRUGS)
+        lines = gen.zlib.decompress(chunks[0]).decode().split("\n")
+        swapped = gen.zlib.compress("\n".join(reversed(lines)).encode())
+        gen.write_bundle(tmp_path, index, [swapped])
+        assert gen.bundle_problems(gen.bundle_files(tmp_path), None)
+
+    def test_a_bundle_from_another_selection_is_found(self, gen, tmp_path: Path) -> None:
+        entries, index, chunks = bundle_of(gen, THREE_DRUGS)
+        gen.write_bundle(tmp_path, index, chunks)
+        files = gen.bundle_files(tmp_path)
+        same = {"meta": {"export_date": "2026-10-02"}, "entries": entries}
+        assert gen.bundle_problems(files, same) == []
+        other = {"meta": {"export_date": "2026-10-02"}, "entries": entries[:2]}
+        assert gen.bundle_problems(files, other)
+
+
+class TestExtractingSections:
+    def test_paragraphs_are_kept_as_published(self, gen) -> None:
+        label = {"warnings": ["  First paragraph. ", "", "Second paragraph."]}
+        assert gen.section_text(label, "warnings") == "First paragraph.\n\nSecond paragraph."
+
+    def test_only_the_chosen_label_is_read(self, gen, tmp_path: Path) -> None:
+        import zipfile
+
+        chosen = raw_label(set_id="chosen", label_id="id-chosen", purpose=["Chosen."])
+        other = raw_label(set_id="other", label_id="id-other", purpose=["Not chosen."])
+        path = tmp_path / "part.json.zip"
+        with zipfile.ZipFile(path, "w") as archive:
+            archive.writestr("part.json", json.dumps({"results": [chosen, other]}))
+        entries, _ = gen.select([gen.summarise(chosen)[1]])
+
+        sections = gen.extract_sections([(path, 2)], entries)
+        assert ["purpose", "Chosen."] in sections["ibuprofen.oral.otc"]
+
+    def test_a_chosen_label_missing_from_the_export_is_refused(self, gen, tmp_path: Path) -> None:
+        import zipfile
+
+        path = tmp_path / "part.json.zip"
+        with zipfile.ZipFile(path, "w") as archive:
+            archive.writestr("part.json", json.dumps({"results": []}))
+        entries, _ = gen.select([gen.summarise(raw_label())[1]])
+        with pytest.raises(SystemExit):
+            gen.extract_sections([(path, 0)], entries)
+
+
+class TestTheCommittedBundle:
+    @pytest.fixture(scope="class")
+    def files(self, gen) -> list[Path]:
+        files = gen.bundle_files(BUNDLE)
+        if not files:
+            pytest.skip("no bundle has been built yet")
+        return files
+
+    def test_agrees_with_the_selection(self, gen, files: list[Path]) -> None:
+        selection = json.loads(SELECTION.read_text(encoding="utf-8"))
+        assert gen.bundle_problems(files, selection) == []
+
+    def test_is_what_the_generated_dart_describes(self, gen, files: list[Path]) -> None:
+        expected = gen.render(gen.read_index(files[0]), gen.bundle_digest(files))
+        assert GENERATED.read_text(encoding="utf-8") == expected
+
+    def test_carries_safety_sections_and_nothing_else(self, gen, files: list[Path]) -> None:
+        # No dosing reaches the phone: not shipped and hidden, not shipped at all.
+        allowed = set(gen.RX_SECTIONS) | set(gen.OTC_SECTIONS)
+        for path in files[1:]:
+            for line in gen.zlib.decompress(path.read_bytes()).decode().split("\n"):
+                names = {name for name, _ in json.loads(line)["sections"]}
+                assert names <= allowed, names - allowed

@@ -1503,11 +1503,83 @@ abstract class AppLocalizations {
   /// **'This is United States labelling. Strengths, brand names and warnings can differ where you are, so check the packet in front of you.'**
   String get lookupMedicinesUsOnly;
 
-  /// Shown when the openFDA artifact has not been fetched. Says so plainly rather than rendering an empty list, which reads as a broken screen.
+  /// Shown when no medicines bundle has been built from openFDA. Says so plainly rather than rendering an empty list, which reads as a broken screen.
   ///
   /// In en, this message translates to:
   /// **'The medicines reference is not built into this version. The other sections still work.'**
   String get lookupMedicinesUnavailable;
+
+  /// The progress bar's label for a screen reader, while the index of every medicine loads. A bar alone says nothing to someone who cannot see it.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening the medicines reference'**
+  String get lookupMedicinesLoading;
+
+  /// No description provided for @lookupMedicinesFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The medicines reference could not be opened. The other sections still work.'**
+  String get lookupMedicinesFailed;
+
+  /// Under the medicines heading before anything is typed. Listing several thousand medicines unasked would bury the hygiene entries above it.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the name of a medicine, a brand or an ingredient to search {count} medicines.'**
+  String lookupMedicinesPrompt(int count);
+
+  /// No description provided for @lookupMedicinesShowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the closest {shown} of {total}. Type more of the name to narrow it down.'**
+  String lookupMedicinesShowing(int shown, int total);
+
+  /// No description provided for @lookupMedicinesShowMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more'**
+  String get lookupMedicinesShowMore;
+
+  /// No description provided for @lookupMedicinePrescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Prescription'**
+  String get lookupMedicinePrescription;
+
+  /// No description provided for @lookupMedicineOverTheCounter.
+  ///
+  /// In en, this message translates to:
+  /// **'Over the counter'**
+  String get lookupMedicineOverTheCounter;
+
+  /// Brand names, cut short. One medicine can be sold under two thousand.
+  ///
+  /// In en, this message translates to:
+  /// **'{names} and {count, plural, =1{1 other name} other{{count} other names}}'**
+  String lookupMedicineOtherNames(String names, int count);
+
+  /// No description provided for @lookupMedicineLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'From the label filed by {manufacturer}, dated {date}.'**
+  String lookupMedicineLabel(String manufacturer, String date);
+
+  /// Under the label's source. One label stands for every product with the same ingredients, route and prescription status (ADR-0012), and a reader comparing it with their own box needs to know that.
+  ///
+  /// In en, this message translates to:
+  /// **'Each maker files its own label for a medicine. One is shown here, chosen by a fixed rule, and the label on your packet may differ.'**
+  String get lookupMedicineOneLabel;
+
+  /// The progress bar's label for a screen reader, while one medicine's label loads.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening this medicine\'s label'**
+  String get lookupMedicineLoading;
+
+  /// No description provided for @lookupMedicineFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This medicine\'s label could not be opened.'**
+  String get lookupMedicineFailed;
 
   /// No description provided for @lookupSectionPurpose.
   ///
@@ -1544,6 +1616,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'If pregnant or breastfeeding'**
   String get lookupSectionPregnancy;
+
+  /// The FDA's name for the most serious warning a label can carry. Kept as the label calls it, because the label's own text refers to it by this name.
+  ///
+  /// In en, this message translates to:
+  /// **'Boxed warning'**
+  String get lookupSectionBoxedWarning;
+
+  /// No description provided for @lookupSectionUses.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses'**
+  String get lookupSectionUses;
+
+  /// Section headings on a prescription label are the label's own, because its text refers to them by name: "see Warnings and Precautions (5.1)".
+  ///
+  /// In en, this message translates to:
+  /// **'Contraindications'**
+  String get lookupSectionContraindications;
+
+  /// No description provided for @lookupSectionWarningsAndPrecautions.
+  ///
+  /// In en, this message translates to:
+  /// **'Warnings and precautions'**
+  String get lookupSectionWarningsAndPrecautions;
+
+  /// No description provided for @lookupSectionPrecautions.
+  ///
+  /// In en, this message translates to:
+  /// **'Precautions'**
+  String get lookupSectionPrecautions;
+
+  /// No description provided for @lookupSectionInteractions.
+  ///
+  /// In en, this message translates to:
+  /// **'Drug interactions'**
+  String get lookupSectionInteractions;
+
+  /// No description provided for @lookupSectionSpecificPopulations.
+  ///
+  /// In en, this message translates to:
+  /// **'Use in specific populations'**
+  String get lookupSectionSpecificPopulations;
+
+  /// No description provided for @lookupSectionPregnancyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pregnancy'**
+  String get lookupSectionPregnancyLabel;
+
+  /// No description provided for @lookupSectionNursingMothers.
+  ///
+  /// In en, this message translates to:
+  /// **'Nursing mothers'**
+  String get lookupSectionNursingMothers;
+
+  /// No description provided for @lookupSectionAskDoctorOrPharmacist.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask a doctor or pharmacist'**
+  String get lookupSectionAskDoctorOrPharmacist;
+
+  /// No description provided for @lookupSectionWhenUsing.
+  ///
+  /// In en, this message translates to:
+  /// **'When using this product'**
+  String get lookupSectionWhenUsing;
 
   /// No description provided for @lookupSearchOnlineTitle.
   ///

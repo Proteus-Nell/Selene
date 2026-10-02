@@ -21,6 +21,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0010](#adr-0010-long-term-conditions-are-recorded-not-modelled) | Long-term conditions are recorded, not modelled | Accepted | 2026-08-20 |
 | [0011](#adr-0011-export-v2-refuses-v1-files) | Export v2 refuses v1 files | Accepted | 2026-08-20 |
 | [0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) | The medicines reference covers every drug, one label each, chosen by rule | Accepted | 2026-10-02 |
+| [0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone) | The medicines bundle is compressed chunks and an index, searched on the phone | Accepted | 2026-10-02 |
 
 ---
 
@@ -465,7 +466,7 @@ import is a small change and the right one.
 
 ## ADR-0012: The medicines reference covers every drug, one label each, chosen by rule
 
-**Status:** Accepted, 2026-10-02. Supersedes the allowlist in [ADR-0009](#adr-0009-medicines-reference-data-is-generated-at-build-time-from-openfda); its build-time generation, and ADR-0004's zero network permission, stand.
+**Status:** Accepted, 2026-10-02. Supersedes the allowlist in [ADR-0009](#adr-0009-medicines-reference-data-is-generated-at-build-time-from-openfda); its build-time generation, and ADR-0004's zero network permission, stand. The bundle it leaves as the next step is [ADR-0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone).
 **Deciders:** Project owner
 
 ### Context
@@ -530,6 +531,73 @@ gives.
   edited value from a real one; only a fresh `--fetch` can.
 - Flags for conflicting medications recorded in Conditions are planned on top
   of this, and will need their own ADR, since they extend ADR-0010.
+
+---
+
+## ADR-0013: The medicines bundle is compressed chunks and an index, searched on the phone
+
+**Status:** Accepted, 2026-10-02. Builds the bundle [ADR-0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) left as its next step.
+**Deciders:** Project owner
+
+### Context
+
+ADR-0012 chose one label for each of 5,843 drugs. Their safety sections are
+60 MB of text, which has to reach a phone that has no network permission
+(ADR-0004), so it ships inside the app. The A-Z was taken on one condition:
+that searching all of it stays quick. Compiled into Dart the way ADR-0009's
+thirteen medicines were, it would be a 60 MB source file, held in memory for as
+long as the app runs.
+
+### Decision
+
+1. **Assets, not code.** `app/assets/medicines/index.json.zlib` describes every
+   drug: its names, brands, substances and routes, the label that stands for
+   it, how many labels were filed for it, and where its text is. The text is
+   in `labels-NNN.jsonl.zlib`, one drug per line in key order, starting a new
+   chunk after each megabyte of text. Opening a drug decompresses one
+   megabyte, not sixty. `medicines_bundled.dart` keeps only the bundle's
+   checksum, its counts and the export date.
+2. **zlib**, through `dart:io`'s codec, which is the platform's own. No new
+   dependency.
+3. **Loaded when needed.** The index is decoded in a background isolate when
+   the lookup opens, and dropped when it closes. A drug's text is read when its
+   page opens, and the last chunk read is kept.
+4. **Searched on the phone, on every keystroke**, in one pass over a buffer
+   holding every name a drug can be found by. A name that is, or starts with,
+   the query ranks first. The drug's own name comes before a substance, and a
+   substance before a brand. Then more labels first, which puts the form most
+   widely sold first. On the machine this was built on, one word takes 3 to 8
+   ms and two words about 10. A test fails the search at 40 ms.
+5. **Every line names its drug.** The app refuses text that names another
+   drug, rather than showing one drug's warnings under another's name.
+   `gen_medicines.py --check` confirms in CI that every line is where the
+   index says, and that the bundle and the generated Dart agree.
+
+### Runner-up and why rejected
+
+**xz instead of zlib.** In the same one-megabyte chunks, 7.3 MB rather than
+12, but it needs `package:archive`, whose decoder is pure Dart where zlib's is
+native.
+
+**A prebuilt SQLite database with full-text search**, through the drift the app
+already uses. Indexed search, but SQLite keeps text uncompressed: 60 MB copied
+out of the APK onto the phone, beside the user's own records, while the APK
+still carries it too.
+
+**Dart constants**, as ADR-0009 shipped. A 60 MB source file, compiled in and
+resident in memory whenever the app runs.
+
+### Consequences
+
+- The APK grows by the size of the bundle, about 12 MB. Its files are already
+  compressed, so the APK's own compression saves nothing on them.
+- The index is 3 MB of JSON and takes 0.3 to 0.5 seconds to decode on a
+  development machine, so longer on a phone. The screen shows a progress bar
+  until it is ready, and the hygiene entries work meanwhile.
+- A refresh from openFDA rewrites most of the bundle, adding up to 12 MB to the
+  repository's history each time. Refresh for a release, not routinely. If the
+  history grows to matter, move `app/assets/medicines` to Git LFS.
+- The A-Z browse and the interaction checker build on this index.
 
 ---
 

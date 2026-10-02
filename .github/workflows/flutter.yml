@@ -38,13 +38,14 @@ jobs:
         # from, which is the drift ADR-0002 exists to prevent.
         run: python3 tools/scripts/gen_priors_dart.py --check
 
-      - name: Verify the generated medicines match the committed artifact
-        # Same drift guard as the priors above, for the same reason: the app
-        # compiles the artifact in rather than parsing it, so a re-fetched
-        # snapshot that nobody regenerated the Dart from would ship a
-        # reference screen showing the previous snapshot with the new
-        # snapshot's date on it. This step needs no network — the fetch
-        # happens in `--fetch`, on a developer machine.
+      - name: Verify the medicines bundle, its selection and its Dart agree
+        # Same drift guard as the priors above. The generated Dart carries the
+        # bundle's checksum, count and export date, and the lookup shows the
+        # date, so a rebuilt bundle that nobody regenerated the Dart from would
+        # show the previous export's date over the new export's text. It also
+        # checks that every drug's line in the bundle is the one its index
+        # names. This step needs no network — the fetch happens in `--fetch`,
+        # on a developer machine.
         run: python3 tools/scripts/gen_medicines.py --check
 
       - uses: actions/setup-java@v4

@@ -1,9 +1,0 @@
-{
-  "disclaimer": "Data from openFDA. This information comes from US drug labelling and has not been evaluated for use outside the United States. It is not a substitute for advice from a doctor or pharmacist.",
-  "entries": [],
-  "jurisdiction": "US",
-  "schema_version": 1,
-  "snapshot_date": null,
-  "snapshot_status": "not_fetched",
-  "source": "openFDA /drug/label"
-}

@@ -59,6 +59,13 @@ Widget harness(
   );
   addTearDown(container.dispose);
   return UncontrolledProviderScope(
+    // Keyed by its container, so that pumping a second harness in one test
+    // builds a second scope rather than handing the first one a new container.
+    // flutter_riverpod registers a scope with its container only when the
+    // scope mounts: a reused one leaves the new container to dispose its
+    // auto-dispose providers on a timer, which is still pending when the test
+    // ends.
+    key: ObjectKey(container),
     container: container,
     child: MaterialApp(
       theme: brightness == Brightness.dark ? AppTheme.dark() : AppTheme.light(),

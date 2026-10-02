@@ -24,6 +24,9 @@ Pipeline:
     3. Group the rest by active substances, route, and prescription status.
     4. Take one label per group, best first by `rank`, and write the
        selection with one drug per line so that a refresh diffs per drug.
+    5. Read the chosen labels again, and pack their safety sections into
+       compressed chunks under app/assets/medicines, with an index the app
+       searches.
 
 Two things openFDA cannot give us, both of which the app has to say out loud:
 
@@ -36,7 +39,7 @@ Two things openFDA cannot give us, both of which the app has to say out loud:
 
 Usage:
     python3 tools/scripts/gen_medicines.py --fetch   # needs network, ~1.8 GB
-    python3 tools/scripts/gen_medicines.py           # regenerate Dart only
+    python3 tools/scripts/gen_medicines.py           # regenerate the Dart only
     python3 tools/scripts/gen_medicines.py --check   # CI gate, writes nothing
 """
 
@@ -51,23 +54,30 @@ import sys
 import urllib.error
 import urllib.request
 import zipfile
+import zlib
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import pairwise
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-ARTIFACT = REPO_ROOT / "artifacts" / "medicines" / "medicines_v1.json"
 SELECTION = REPO_ROOT / "artifacts" / "medicines" / "selection_v1.json"
 OUTPUT = (
     REPO_ROOT / "app" / "lib" / "data" / "reference" / "medicines_bundled.dart"
 )
+BUNDLE = REPO_ROOT / "app" / "assets" / "medicines"
+INDEX_NAME = "index.json.zlib"
+CHUNK_NAME = "labels-{:03d}.jsonl.zlib"
+CHUNK_GLOB = "labels-*.jsonl.zlib"
 # Under data/, which is gitignored: the export is about 1.8 GB and is never
 # committed. Only what is selected from it is.
 CACHE = REPO_ROOT / "data" / "openfda" / "drug-label"
 
-SCHEMA_VERSION = 1
 SELECTION_SCHEMA_VERSION = 1
+BUNDLE_SCHEMA_VERSION = 1
+# Bytes of label text per chunk, before compression. zlib's 32 KB window means
+# a bigger chunk barely compresses better, and a smaller one opens faster.
+CHUNK_TARGET = 1_000_000
 KEY_LIMIT = 96  # characters of a key's substance part; see entry_key
 DOWNLOAD_INDEX = "https://api.fda.gov/download.json"
 HEADERS = {"User-Agent": "period-tracker-medicines-generator"}
@@ -684,27 +694,241 @@ def selection_problems(text: str) -> list[str]:
     return problems
 
 
-def empty_artifact() -> dict:
-    """The artifact's shape before anything has been fetched.
+def section_text(label: dict, section: str) -> str:
+    """Return a section's paragraphs as published, a blank line between each.
 
-    Committed rather than left absent so that every consumer — the Dart
-    generator, the app, the tests — exercises the real shape from the first
-    commit, and so the unpopulated state is visible in the repository instead
-    of being a missing file someone might mistake for an oversight.
+    Args:
+        label (dict): One label, as openFDA serves it.
+        section (str): The section's openFDA field name.
+
+    Returns:
+        str: The section's text. Nothing in it is reworded, reordered or cut.
     """
-    return {
-        "schema_version": SCHEMA_VERSION,
-        "source": "openFDA /drug/label",
-        "jurisdiction": "US",
-        "snapshot_status": "not_fetched",
-        "snapshot_date": None,
+    return "\n\n".join(
+        str(part).strip() for part in label.get(section) or [] if str(part).strip()
+    )
+
+
+def extract_sections(
+    partitions: list[tuple[Path, int]], entries: list[dict]
+) -> dict[str, list[list[str]]]:
+    """Read the chosen labels again and take their safety sections.
+
+    A second pass over the export, because a label cannot be chosen until every
+    label for its drug has been seen, and holding the text of all of them would
+    take gigabytes.
+
+    Args:
+        partitions (`list[tuple[Path, int]]`): Local paths and label counts.
+        entries (`list[dict]`): The selected drugs.
+
+    Returns:
+        `dict[str, list[list[str]]]`: Each drug's sections by key, as
+        `[name, text]` pairs in the order the app renders them.
+
+    Raises:
+        SystemExit: When a chosen label is not in the export, which means the
+            cached files changed between the two passes.
+    """
+    chosen = {entry["label"]["id"]: entry for entry in entries}
+    sections: dict[str, list[list[str]]] = {}
+    for path, expected in partitions:
+        for label in read_partition(path, expected):
+            entry = chosen.get(str(label.get("id") or ""))
+            if entry is None:
+                continue
+            order = RX_SECTIONS if entry["type"] == "rx" else OTC_SECTIONS
+            sections[entry["key"]] = [
+                [name, section_text(label, name)] for name in order if has_text(label, name)
+            ]
+        print(f"read {path.name} again", file=sys.stderr)
+    missing = sorted({entry["key"] for entry in entries} - set(sections))
+    if missing:
+        raise SystemExit(
+            f"error: {len(missing)} chosen labels are not in the export, e.g. {missing[0]}"
+        )
+    return sections
+
+
+def build_bundle(
+    meta: dict, entries: list[dict], sections: dict[str, list[list[str]]]
+) -> tuple[bytes, list[bytes]]:
+    """Pack the label text into compressed chunks, and index every drug.
+
+    Steps:
+        1. One JSON record per drug, one per line, in key order. Neighbouring
+           keys are usually the same substance in another form, and their
+           shared wording compresses together.
+        2. A new chunk once the current one holds `CHUNK_TARGET` bytes, so that
+           opening a drug decompresses a megabyte rather than sixty.
+        3. An index of every drug: what search needs, where its text is,
+           which label it came from, and how many labels it had. Search ranks
+           a drug sold under many labels above one sold under few.
+
+    Args:
+        meta (dict): The selection's metadata.
+        entries (`list[dict]`): The selected drugs, sorted by key.
+        sections (`dict[str, list[list[str]]]`): Each drug's sections.
+
+    Returns:
+        `tuple[bytes, list[bytes]]`: The compressed index, and the compressed
+        chunks in order.
+    """
+    rows, chunks, lines, size = [], [], [], 0
+    for entry in entries:
+        record = json.dumps(
+            {"key": entry["key"], "sections": sections[entry["key"]]},
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        rows.append(
+            {
+                "brands": entry["brands"],
+                "chunk": len(chunks),
+                "key": entry["key"],
+                "label": {
+                    "effective_time": entry["label"]["effective_time"],
+                    "manufacturer": entry["label"]["manufacturer"],
+                    "set_id": entry["label"]["set_id"],
+                },
+                "labels": entry["labels"],
+                "line": len(lines),
+                "name": entry["name"],
+                "routes": entry["routes"],
+                "substances": entry["substances"],
+                "type": entry["type"],
+            }
+        )
+        lines.append(record)
+        size += len(record.encode())
+        if size >= CHUNK_TARGET:
+            chunks.append("\n".join(lines).encode())
+            lines, size = [], 0
+    if lines:
+        chunks.append("\n".join(lines).encode())
+
+    index = {
+        "chunks": len(chunks),
         "disclaimer": DISCLAIMER,
-        "entries": [],
+        "entries": rows,
+        "export_date": meta["export_date"],
+        "jurisdiction": meta["jurisdiction"],
+        "schema_version": BUNDLE_SCHEMA_VERSION,
     }
+    encoded = json.dumps(index, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return zlib.compress(encoded.encode(), 9), [zlib.compress(c, 9) for c in chunks]
+
+
+def write_bundle(directory: Path, index: bytes, chunks: list[bytes]) -> None:
+    """Replace the bundle in `directory` with a new one.
+
+    Chunk files from the previous bundle are removed first: a refresh with fewer
+    chunks would otherwise leave old ones behind, still shipped and still
+    counted by the checksum.
+
+    Args:
+        directory (Path): Where the app's assets for the bundle live.
+        index (bytes): The compressed index.
+        chunks (`list[bytes]`): The compressed chunks, in order.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    for stale in directory.glob(CHUNK_GLOB):
+        stale.unlink()
+    (directory / INDEX_NAME).write_bytes(index)
+    for number, chunk in enumerate(chunks):
+        (directory / CHUNK_NAME.format(number)).write_bytes(chunk)
+
+
+def bundle_files(directory: Path) -> list[Path]:
+    """List the bundle's files, the index first and then the chunks in order.
+
+    Args:
+        directory (Path): Where the app's assets for the bundle live.
+
+    Returns:
+        `list[Path]`: The files, or an empty list when there is no index.
+    """
+    index = directory / INDEX_NAME
+    if not index.exists():
+        return []
+    return [index, *sorted(directory.glob(CHUNK_GLOB))]
+
+
+def bundle_digest(files: list[Path]) -> str:
+    """Return one SHA-256 over every file's name, length and contents.
+
+    Args:
+        files (`list[Path]`): The bundle's files, in order.
+
+    Returns:
+        str: The hex digest. That of nothing at all when there is no bundle.
+    """
+    digest = hashlib.sha256()
+    for path in files:
+        content = path.read_bytes()
+        digest.update(f"{path.name}\0{len(content)}\0".encode())
+        digest.update(content)
+    return digest.hexdigest()
+
+
+def read_index(path: Path) -> dict:
+    """Decompress and parse the bundle's index.
+
+    Args:
+        path (Path): The compressed index file.
+
+    Returns:
+        dict: The index, as `build_bundle` wrote it.
+    """
+    return json.loads(zlib.decompress(path.read_bytes()))
+
+
+def bundle_problems(files: list[Path], selection: dict | None) -> list[str]:
+    """Check the bundle is whole, and agrees with the committed selection.
+
+    Args:
+        files (`list[Path]`): The bundle's files, index first.
+        selection (dict | None): The parsed selection, when there is one.
+
+    Returns:
+        `list[str]`: What is wrong. Empty when every drug's line holds that
+        drug's text, and the drugs and labels are the selection's.
+    """
+    index = read_index(files[0])
+    chunk_files = files[1:]
+    if index.get("schema_version") != BUNDLE_SCHEMA_VERSION:
+        return ["the index's schema_version is not one this generator writes"]
+    if index["chunks"] != len(chunk_files):
+        return [f"the index expects {index['chunks']} chunks, and there are {len(chunk_files)}"]
+
+    problems = []
+    chunks = [zlib.decompress(path.read_bytes()).decode().split("\n") for path in chunk_files]
+    for row in index["entries"]:
+        lines = chunks[row["chunk"]] if row["chunk"] < len(chunks) else []
+        record = json.loads(lines[row["line"]]) if row["line"] < len(lines) else {}
+        if record.get("key") != row["key"]:
+            problems.append(f"{row['key']} does not point at its own text")
+            break
+    if selection is not None:
+        drugs = [(e["key"], e["label"]["set_id"]) for e in selection["entries"]]
+        indexed = [(row["key"], row["label"]["set_id"]) for row in index["entries"]]
+        if drugs != indexed:
+            problems.append("its drugs or labels are not the selection's")
+        if index["export_date"] != selection["meta"]["export_date"]:
+            problems.append("it was built from a different export than the selection")
+    return problems
 
 
 def dart_string(value: str) -> str:
-    """Render `value` as a Dart single-quoted literal."""
+    """Render `value` as a Dart single-quoted literal.
+
+    Args:
+        value (str): The text.
+
+    Returns:
+        str: The literal, with quotes, dollar signs, backslashes and newlines
+        escaped.
+    """
     escaped = (
         value.replace("\\", "\\\\")
         .replace("'", "\\'")
@@ -715,142 +939,100 @@ def dart_string(value: str) -> str:
     return f"'{escaped}'"
 
 
-def dart_string_list(values: list[str], indent: str) -> str:
-    """Render `values` as a Dart `List<String>` literal, one item per line.
+def render(index: dict | None, digest: str) -> str:
+    """Return the full text of the generated Dart file.
+
+    Rendered so that the output is already `dart format` clean. It has to be:
+    `--check` compares the file byte for byte against a fresh render, and the
+    repo's format gate rewrites anything that is not formatted. A generator
+    whose output the formatter touches makes those two checks fight.
 
     Args:
-        values (`list[str]`): The strings.
-        indent (str): The indentation of the line the literal opens on.
+        index (dict | None): The bundle's index, or None when there is none.
+        digest (str): `bundle_digest` of the bundle's files.
 
     Returns:
-        str: The literal, or `<String>[]` when there is nothing in it.
+        str: The file's full text.
     """
-    if not values:
-        return "<String>[]"
-    body = "".join(f"{indent}  {dart_string(v)},\n" for v in values)
-    return f"<String>[\n{body}{indent}]"
-
-
-def dart_entry(entry: dict, indent: str) -> str:
-    """Render one artifact entry as a `Medicine(...)` constructor call.
-
-    Args:
-        entry (dict): One entry of the medicines artifact.
-        indent (str): The indentation of the line the call opens on.
-
-    Returns:
-        str: The call, already in `dart format` layout, ending in a comma.
-    """
-    sections = entry.get("sections", {})
-    # The map literal opens on the `sections:` line, which sits at `indent` + 2
-    # spaces, so its entries indent to + 4 and its closing brace back to + 2.
-    # Getting this wrong is not cosmetic: `dart format` rewrites it, which makes
-    # the format gate and `--check` fight the moment someone runs `--fetch`.
-    # `TestFormatting` in research/tests/test_gen_medicines.py caught exactly
-    # that, on the only code path the committed empty artifact never exercises.
-    entry_indent = f"{indent}    "
-    section_lines = "".join(
-        f"{entry_indent}{dart_string(name)}: {dart_string(text)},\n"
-        for name, text in sorted(sections.items())
-    )
-    sections_literal = (
-        "<String, String>{}"
-        if not section_lines
-        else f"<String, String>{{\n{section_lines}{indent}  }}"
-    )
-    return (
-        f"{indent}Medicine(\n"
-        f"{indent}  key: {dart_string(entry['key'])},\n"
-        f"{indent}  genericName: {dart_string(entry['generic_name'])},\n"
-        f"{indent}  brandNames: "
-        f"{dart_string_list(entry.get('brand_names', []), indent + '  ')},\n"
-        f"{indent}  sections: {sections_literal},\n"
-        f"{indent}),\n"
-    )
-
-
-def render(payload: dict, digest: str) -> str:
-    """Return the full text of the generated Dart file."""
-    if payload["schema_version"] != SCHEMA_VERSION:
+    if index is not None and index.get("schema_version") != BUNDLE_SCHEMA_VERSION:
         raise SystemExit(
-            f"error: artifact schema_version {payload['schema_version']} is not "
-            f"{SCHEMA_VERSION}; this generator does not know how to read it"
+            f"error: bundle schema_version {index.get('schema_version')} is not "
+            f"{BUNDLE_SCHEMA_VERSION}; this generator does not know how to read it"
         )
+    fetched = index is not None
+    snapshot = "null" if index is None else dart_string(index["export_date"])
+    count = 0 if index is None else len(index["entries"])
+    chunks = 0 if index is None else index["chunks"]
+    disclaimer = DISCLAIMER if index is None else index["disclaimer"]
 
-    # Rendered so that the output is already `dart format` clean. It has to be:
-    # `--check` compares the file byte for byte against a fresh render, and the
-    # repo's format gate rewrites anything that is not formatted. A generator
-    # whose output the formatter touches makes those two checks fight — format
-    # the file and --check fails, regenerate and format fails — and the first
-    # thing anyone reaches for is deleting one of them.
-    entries = "".join(dart_entry(e, "  ") for e in payload["entries"])
-    entries_literal = (
-        "<Medicine>[]" if not entries else f"<Medicine>[\n{entries}]"
-    )
-    snapshot = payload.get("snapshot_date")
-    snapshot_literal = "null" if snapshot is None else dart_string(snapshot)
-
-    return f'''// GENERATED BY tools/scripts/gen_medicines.py. DO NOT EDIT BY HAND.
+    return f"""// GENERATED BY tools/scripts/gen_medicines.py. DO NOT EDIT BY HAND.
 //
 // Regenerate with:
 //     python3 tools/scripts/gen_medicines.py --fetch
 //
-// The app compiles this in rather than parsing an asset, so a lookup never
-// depends on file IO and a corrupt asset cannot leave the screen empty with no
-// explanation. The phone makes no request for any of it: the fetch happens in
-// the generator, and the app has no INTERNET permission at all (ADR-0004).
+// The label text is in app/assets/medicines, compressed. This file carries only
+// what the app needs before it opens that bundle. The phone makes no request
+// for any of it: the fetch happens in the generator, and the app has no
+// INTERNET permission at all (ADR-0004).
 
-/// Bundled medicine reference entries.
+/// Bundled medicines reference: what is known before the bundle is opened.
 ///
-/// Carries the openFDA label extracts the lookup screen renders, compiled in
-/// as Dart constants, plus the checksum and date of the artifact they came
-/// from. Nothing here is fetched on the phone.
+/// The bundle in `app/assets/medicines` holds every drug's label sections and
+/// the index the lookup searches. This file carries its checksum, its size and
+/// the date of the export it was built from, so that a screen can say what it
+/// is showing without loading any of it.
 ///
 /// Includes:
-///     - medicinesArtifactSha256: Checksum of the source artifact.
-///     - medicinesFetchedOn: When the snapshot was taken.
+///     - medicinesBundleSha256: Checksum of the bundle's files.
+///     - medicinesFetched: Whether a bundle has been built at all.
+///     - medicinesSnapshotDate: The date of the openFDA export.
+///     - medicinesCount: How many drugs the bundle holds.
+///     - medicinesChunkCount: How many compressed text chunks it has.
+///     - medicinesJurisdiction: Where the labelling applies.
 ///     - medicinesDisclaimer: What the screen says about the source.
-///     - bundledMedicines: The entries themselves.
 library;
 
-import 'package:period_tracker/data/reference/medicine.dart';
-
-/// SHA-256 of the `medicines_v1.json` these constants were generated from.
+/// SHA-256 over the files in `app/assets/medicines`: names, lengths, contents.
 ///
-/// A drift guard, not a security boundary: the artifact is committed to the
-/// repository and never fetched at runtime. `gen_medicines.py --check` fails
-/// CI if the two stop matching.
-const String medicinesArtifactSha256 =
+/// A drift guard, not a security boundary: `gen_medicines.py --check` fails CI
+/// if the bundle and this file stop matching.
+const String medicinesBundleSha256 =
     '{digest}';
 
-/// Whether the artifact has actually been populated from openFDA.
+/// Whether a bundle has been built from openFDA at all.
 ///
 /// False in a repository where nobody has run `--fetch` yet. The app renders
 /// an explanation rather than an empty screen in that case, and a release-gate
 /// test reports it. Shipping an empty reference section silently would be
 /// worse than not having one.
-const bool medicinesFetched = {str(payload["snapshot_status"] == "fetched").lower()};
+const bool medicinesFetched = {str(fetched).lower()};
 
-/// The day the data was pulled from openFDA, or null if it never was.
+/// The date of the openFDA export the bundle came from, or null if none did.
 ///
 /// Displayed on the screen. Drug labelling changes, and a reference with no
 /// date on it invites the reader to assume it is current.
-const String? medicinesSnapshotDate = {snapshot_literal};
+// Nullable whichever state this file is generated in, so that the code reading
+// it compiles in both.
+// ignore: unnecessary_nullable_for_final_variable_declarations
+const String? medicinesSnapshotDate = {snapshot};
+
+/// How many drugs the bundle holds.
+const int medicinesCount = {count};
+
+/// How many compressed text chunks the label sections are split into.
+const int medicinesChunkCount = {chunks};
 
 /// The jurisdiction this labelling comes from.
 ///
 /// **US**, and the screen says so. Strengths, brand names, available
 /// formulations and warnings differ everywhere else, and a user reading US
 /// warnings about a box bought elsewhere is being quietly misinformed.
-const String medicinesJurisdiction = {dart_string(payload["jurisdiction"])};
+const String medicinesJurisdiction = 'US';
 
 /// The notice openFDA asks to travel with the data.
 const String medicinesDisclaimer =
-    {dart_string(payload["disclaimer"])};
-
-/// Every medicine compiled into the app.
-const List<Medicine> bundledMedicines = {entries_literal};
-'''
+    {dart_string(disclaimer)};
+"""
 
 
 def main() -> int:
@@ -858,13 +1040,13 @@ def main() -> int:
 
     Returns:
         int: 0 on success, 1 when a fetch fails or `--check` finds a stale or
-        edited file, and 2 for flags that cannot be combined.
+        malformed file, and 2 for flags that cannot be combined.
     """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--fetch",
         action="store_true",
-        help="download openFDA's label export and rewrite the selection",
+        help="download openFDA's label export and rebuild the selection and bundle",
     )
     parser.add_argument(
         "--cache",
@@ -875,7 +1057,7 @@ def main() -> int:
     parser.add_argument(
         "--check",
         action="store_true",
-        help="exit non-zero if a generated file is stale or edited, and write nothing",
+        help="exit non-zero if a generated file is stale or malformed, and write nothing",
     )
     args = parser.parse_args()
 
@@ -888,36 +1070,33 @@ def main() -> int:
             export_date, partitions = export_index()
             local = download_partitions(args.cache, partitions)
             meta, entries = build_selection(local, export_date)
+            sections = extract_sections(local, entries)
         except (urllib.error.URLError, TimeoutError, OSError, zipfile.BadZipFile) as error:
             # Reported rather than swallowed, and nothing committed is touched.
-            # A selection built from part of the export would silently drop
-            # every drug whose labels all sat in the missing part.
+            # A bundle built from part of the export would silently drop every
+            # drug whose labels all sat in the missing part.
             print(f"error: reading openFDA's export failed: {error}", file=sys.stderr)
             print("the committed artifacts have not been modified.", file=sys.stderr)
             return 1
+        index, chunks = build_bundle(meta, entries, sections)
         SELECTION.parent.mkdir(parents=True, exist_ok=True)
         SELECTION.write_text(selection_json(meta, entries), encoding="utf-8")
+        write_bundle(BUNDLE, index, chunks)
         print(
-            f"wrote {SELECTION.relative_to(REPO_ROOT)}: {len(entries)} drugs "
-            f"from {meta['counts']['labels']} labels"
+            f"wrote {SELECTION.relative_to(REPO_ROOT)} and {len(chunks)} chunks to "
+            f"{BUNDLE.relative_to(REPO_ROOT)}: {len(entries)} drugs from "
+            f"{meta['counts']['labels']} labels"
         )
 
-    if not ARTIFACT.exists():
-        ARTIFACT.parent.mkdir(parents=True, exist_ok=True)
-        ARTIFACT.write_text(
-            json.dumps(empty_artifact(), indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
-        print(f"created empty {ARTIFACT.relative_to(REPO_ROOT)}")
-
-    raw = ARTIFACT.read_bytes()
-    digest = hashlib.sha256(raw).hexdigest()
-    generated = render(json.loads(raw), digest)
+    files = bundle_files(BUNDLE)
+    generated = render(read_index(files[0]) if files else None, bundle_digest(files))
 
     if args.check:
         failed = False
+        selection = None
         if SELECTION.exists():
-            problems = selection_problems(SELECTION.read_text(encoding="utf-8"))
+            text = SELECTION.read_text(encoding="utf-8")
+            problems = selection_problems(text)
             for problem in problems:
                 print(
                     f"error: {SELECTION.relative_to(REPO_ROOT)}: {problem}. "
@@ -925,8 +1104,12 @@ def main() -> int:
                     file=sys.stderr,
                 )
             failed = bool(problems)
-            if not problems:
-                print(f"OK: {SELECTION.relative_to(REPO_ROOT)} is well formed")
+            selection = None if problems else json.loads(text)
+        if files:
+            problems = bundle_problems(files, selection)
+            for problem in problems:
+                print(f"error: {BUNDLE.relative_to(REPO_ROOT)}: {problem}.", file=sys.stderr)
+            failed = failed or bool(problems)
         current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.exists() else ""
         if current != generated:
             print(
@@ -937,12 +1120,12 @@ def main() -> int:
             failed = True
         if failed:
             return 1
-        print(f"OK: {OUTPUT.relative_to(REPO_ROOT)} matches the artifact")
+        print(f"OK: the selection, the bundle and {OUTPUT.name} agree")
         return 0
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(generated, encoding="utf-8")
-    print(f"wrote {OUTPUT.relative_to(REPO_ROOT)} (sha256 {digest[:12]}...)")
+    print(f"wrote {OUTPUT.relative_to(REPO_ROOT)} (sha256 {bundle_digest(files)[:12]}...)")
     return 0
 
 
