@@ -13,8 +13,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:period_tracker/data/reference/medicines_bundled.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/features/conditions/conditions_screen.dart';
+import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
 import 'package:period_tracker/features/lookup/lookup_screen.dart';
 import 'package:period_tracker/features/movement/movement_screen.dart';
 import 'package:period_tracker/features/nutrition/nutrition_screen.dart';
@@ -76,6 +78,15 @@ class LearnScreen extends ConsumerWidget {
               subtitle: l10n.settingsLookupSubtitle,
               destination: () => const LookupScreen(),
             ),
+            // Not offered in a build without the medicines bundle: it would
+            // open onto a search with nothing to find.
+            if (medicinesFetched)
+              _LearnTile(
+                icon: Icons.compare_arrows,
+                title: l10n.checkerTitle,
+                subtitle: l10n.checkerEntrySubtitle,
+                destination: () => const InteractionCheckerScreen(),
+              ),
             if (revealed) ...<Widget>[
               _LearnTile(
                 icon: Icons.eco_outlined,

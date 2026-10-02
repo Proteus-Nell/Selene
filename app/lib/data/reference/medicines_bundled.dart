@@ -30,7 +30,7 @@ library;
 /// A drift guard, not a security boundary: `gen_medicines.py --check` fails CI
 /// if the bundle and this file stop matching.
 const String medicinesBundleSha256 =
-    '779acf7cd6473920834ede66585630b45f9011b272ce23a4d54c19b02f7f3415';
+    '0a1f81dd94da06f375c2b3027b4fc9172dba9a9996bbaed1c76a5c34e7e926db';
 
 /// Whether a bundle has been built from openFDA at all.
 ///
@@ -50,7 +50,7 @@ const bool medicinesFetched = true;
 const String? medicinesSnapshotDate = '2026-10-02';
 
 /// How many drugs the bundle holds.
-const int medicinesCount = 5843;
+const int medicinesCount = 5835;
 
 /// How many compressed text chunks the label sections are split into.
 const int medicinesChunkCount = 60;

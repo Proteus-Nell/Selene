@@ -1500,7 +1500,7 @@ abstract class AppLocalizations {
   /// Shown when no medicines bundle has been built from openFDA. Says so plainly rather than rendering an empty list, which reads as a broken screen.
   ///
   /// In en, this message translates to:
-  /// **'The medicines reference is not built into this version. The other sections still work.'**
+  /// **'The medicines reference is not built into this version.'**
   String get lookupMedicinesUnavailable;
 
   /// The progress bar's label for a screen reader, while the index of every medicine loads. A bar alone says nothing to someone who cannot see it.
@@ -1512,7 +1512,7 @@ abstract class AppLocalizations {
   /// No description provided for @lookupMedicinesFailed.
   ///
   /// In en, this message translates to:
-  /// **'The medicines reference could not be opened. The other sections still work.'**
+  /// **'The medicines reference could not be opened.'**
   String get lookupMedicinesFailed;
 
   /// Under the medicines heading before anything is typed. Several thousand medicines listed unasked would be a list nobody reads.
@@ -1760,6 +1760,143 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No browser could be opened.'**
   String get lookupLeavingFailed;
+
+  /// No description provided for @checkerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check medicines together'**
+  String get checkerTitle;
+
+  /// No description provided for @checkerEntrySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What the US labels of two or more medicines say about each other.'**
+  String get checkerEntrySubtitle;
+
+  /// The checker's first paragraph. It says what the check reads and what it cannot conclude before anyone adds a medicine (ADR-0014).
+  ///
+  /// In en, this message translates to:
+  /// **'Add two or more medicines. For each pair, this shows whether they share an ingredient or an FDA drug class, and quotes any place where one label names the other. It reads the labels and nothing else, so it cannot tell you that a combination is safe.'**
+  String get checkerIntro;
+
+  /// No description provided for @checkerAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a medicine'**
+  String get checkerAdd;
+
+  /// Tooltip, and what a screen reader says, for the button that takes a medicine off a list.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}'**
+  String checkerRemove(String name);
+
+  /// No description provided for @checkerNeedTwo.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least two medicines to compare them.'**
+  String get checkerNeedTwo;
+
+  /// No description provided for @checkerFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} medicines can be compared at once.'**
+  String checkerFull(int count);
+
+  /// No description provided for @checkerAlreadyAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is already on the list.'**
+  String checkerAlreadyAdded(String name);
+
+  /// The progress bar's label for a screen reader, while the labels being compared load.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the labels'**
+  String get checkerLoading;
+
+  /// No description provided for @checkerFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The labels could not be read.'**
+  String get checkerFailed;
+
+  /// No description provided for @checkerPairTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second}'**
+  String checkerPairTitle(String first, String second);
+
+  /// Two medicines with the same ingredient can add up to more of it than either label allows on its own.
+  ///
+  /// In en, this message translates to:
+  /// **'Both contain {names}.'**
+  String checkerSharedSubstance(String names);
+
+  /// The FDA's established pharmacologic classes, by their own names: "Nonsteroidal Anti-inflammatory Drug".
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Both are in the FDA drug class {classes}.} other{Both are in the FDA drug classes {classes}.}}'**
+  String checkerSharedClass(int count, String classes);
+
+  /// Above a passage quoted from one label that names the other medicine. The words are as the label prints them.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”. From {section}:'**
+  String checkerMentionsName(String medicine, String words, String section);
+
+  /// Above a passage quoted from one label that names a class the other medicine is in.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”, an FDA drug class that includes {other}. From {section}:'**
+  String checkerMentionsClass(
+    String medicine,
+    String words,
+    String other,
+    String section,
+  );
+
+  /// No description provided for @checkerNothingFoundPair.
+  ///
+  /// In en, this message translates to:
+  /// **'Neither label names the other, and they share no ingredient or FDA drug class.'**
+  String get checkerNothingFoundPair;
+
+  /// Shown wherever the labels connect a pair in none of the ways the check looks for. It must never read as a reassurance; interaction_copy_test bans the words that would make it one.
+  ///
+  /// In en, this message translates to:
+  /// **'That does not mean they are safe together. Labels leave interactions out, and often name medicines only by a group, such as “NSAIDs” or “combined hormonal contraceptives”, which this check cannot match.'**
+  String get checkerNothingFoundNote;
+
+  /// No description provided for @checkerSearchOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Look this pair up online'**
+  String get checkerSearchOnline;
+
+  /// What is put into the browser's search box for a pair. Named back to the user before the browser opens.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second} interaction'**
+  String checkerSearchTerm(String first, String second);
+
+  /// No description provided for @checkerAskPharmacist.
+  ///
+  /// In en, this message translates to:
+  /// **'Only a pharmacist or doctor who knows your situation can say whether these medicines are right for you together. Show them this list, or the packets.'**
+  String get checkerAskPharmacist;
+
+  /// No description provided for @checkerPickerPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the name of a medicine, a brand or an ingredient.'**
+  String get checkerPickerPrompt;
+
+  /// No description provided for @lookupMedicineCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check with other medicines'**
+  String get lookupMedicineCheck;
 
   /// No description provided for @settingsLookup.
   ///
@@ -2204,6 +2341,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 cycle logged while this was recorded} other{{count} cycles logged while this was recorded}}'**
   String conditionsOverlap(int count);
+
+  /// No description provided for @conditionsMedicinesHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines'**
+  String get conditionsMedicinesHeading;
+
+  /// No description provided for @conditionsMedicinesIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines you take, picked from the app\'s list of US medicines and kept on this device only. Each is compared with the others using their labels.'**
+  String get conditionsMedicinesIntro;
+
+  /// No description provided for @conditionsMedicinesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No medicines recorded.'**
+  String get conditionsMedicinesEmpty;
+
+  /// No description provided for @conditionsMedicinesUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The medicines list is not built into this version, so medicines cannot be recorded.'**
+  String get conditionsMedicinesUnavailable;
+
+  /// Under a recorded medicine that a later refresh of the US data no longer lists. Kept rather than deleted: the user recorded it.
+  ///
+  /// In en, this message translates to:
+  /// **'No longer in this app\'s list of medicines, so it is not compared.'**
+  String get conditionsMedicineGone;
+
+  /// No description provided for @conditionsConflictsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Possible conflicts'**
+  String get conditionsConflictsHeading;
+
+  /// Above the conflict flags. A flag only informs: it says the labels connect two medicines, never that the user should stop or change anything.
+  ///
+  /// In en, this message translates to:
+  /// **'Their labels connect these medicines. That is not a finding about you: a pharmacist can tell you whether it matters.'**
+  String get conditionsConflictsIntro;
+
+  /// No description provided for @conditionsConflictsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Their labels connect none of these medicines in the ways this app checks for.'**
+  String get conditionsConflictsNone;
+
+  /// No description provided for @conditionsConflictLookUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Look it up online'**
+  String get conditionsConflictLookUp;
 
   /// No description provided for @conditionHormonalContraceptionCombined.
   ///

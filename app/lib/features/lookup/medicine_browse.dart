@@ -244,13 +244,16 @@ class MedicineNameScreen extends StatelessWidget {
 
 /// One drug in a list: its name, how it is taken, and its brands.
 ///
-/// Opens onto the drug's own page. The label text is long, and a list where
-/// every row carried its full label would be a list nobody could scan.
+/// Opens onto the drug's own page, unless it is being picked for a list. The
+/// label text is long, and a list where every row carried its full label
+/// would be a list nobody could scan.
 ///
 /// Attributes:
 ///     entry (MedicineEntry): The drug.
 ///     brand (String?): The brand it was found by, listed first.
 ///     title (String?): What to title the row by, in place of the name.
+///     onPicked (`ValueChanged<MedicineEntry>?`): Called with [entry] when
+///         the tile picks a drug rather than opening one.
 class MedicineTile extends StatelessWidget {
   /// Creates a tile.
   ///
@@ -259,10 +262,13 @@ class MedicineTile extends StatelessWidget {
   ///     brand (String?): The brand a search found it by, if any.
   ///     title (String?): A title in place of the drug's name: its
   ///         substances, where several drugs share the name.
+  ///     onPicked (`ValueChanged<MedicineEntry>?`): Picks the drug instead of
+  ///         opening its page. Defaults to null, which opens the page.
   const MedicineTile({
     required this.entry,
     this.brand,
     this.title,
+    this.onPicked,
     super.key,
   });
 
@@ -274,6 +280,9 @@ class MedicineTile extends StatelessWidget {
 
   /// What the row is titled by, when not the drug's name.
   final String? title;
+
+  /// Called with [entry] when the tile picks a drug rather than opening one.
+  final ValueChanged<MedicineEntry>? onPicked;
 
   @override
   Widget build(BuildContext context) {
@@ -291,12 +300,17 @@ class MedicineTile extends StatelessWidget {
             if (brands != null) Text(brands),
           ],
         ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (context) => MedicineScreen(entry: entry, brand: brand),
-          ),
+        trailing: Icon(
+          onPicked == null ? Icons.chevron_right : Icons.add_circle_outline,
         ),
+        onTap: switch (onPicked) {
+          final picked? => () => picked(entry),
+          null => () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => MedicineScreen(entry: entry, brand: brand),
+            ),
+          ),
+        },
       ),
     );
   }

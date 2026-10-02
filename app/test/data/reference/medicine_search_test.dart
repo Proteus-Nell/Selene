@@ -283,11 +283,29 @@ void main() {
 
   group('the index', () {
     test('refuses a schema it does not read', () {
-      final json = fixtureIndexJson(fixtureDrugs)..['schema_version'] = 2;
-      expect(
-        () => MedicineIndex.fromJson(json),
-        throwsA(isA<MedicineBundleException>()),
-      );
+      // Older too: an index from before the interaction checker has no match
+      // terms, and would quietly find no mentions at all.
+      for (final version in <int>[
+        medicinesBundleSchemaVersion - 1,
+        medicinesBundleSchemaVersion + 1,
+      ]) {
+        final json = fixtureIndexJson(fixtureDrugs)
+          ..['schema_version'] = version;
+        expect(
+          () => MedicineIndex.fromJson(json),
+          throwsA(isA<MedicineBundleException>()),
+        );
+      }
+    });
+
+    test('finds a drug by its key, and says when there is none', () {
+      final index = fixtureIndex(fixtureDrugs);
+      for (final drug in fixtureDrugs) {
+        expect(index.byKey(drug.key)?.key, drug.key);
+      }
+      expect(index.byKey('aspirin.oral.otc'), isNull);
+      expect(index.byKey('zzz.oral.otc'), isNull);
+      expect(fixtureIndex(const <FixtureDrug>[]).byKey('a'), isNull);
     });
 
     test("reads a label's date, and only a real one", () {

@@ -26,7 +26,7 @@ import 'package:meta/meta.dart';
 import 'package:period_tracker/core/date_utils.dart';
 
 /// The bundle format this code reads. The generator's `BUNDLE_SCHEMA_VERSION`.
-const int medicinesBundleSchemaVersion = 1;
+const int medicinesBundleSchemaVersion = 2;
 
 /// Whether a drug needs a prescription in the US.
 enum MedicineType {
@@ -112,6 +112,8 @@ final class MedicineLabel {
 ///     substances (`List<String>`): Its active substances.
 ///     routes (`List<String>`): How it is taken, in openFDA's words.
 ///     type (MedicineType): Prescription or over the counter.
+///     classes (`List<String>`): The FDA's pharmacologic classes for it.
+///     terms (`List<String>`): What another label would call it.
 ///     labels (int): How many labels were filed for it.
 ///     chunk (int): Which text chunk holds its sections.
 ///     line (int): Which line of that chunk.
@@ -127,6 +129,8 @@ final class MedicineEntry {
   ///     substances (`List<String>`): Active substances.
   ///     routes (`List<String>`): Routes, in openFDA's words.
   ///     type (MedicineType): Prescription or over the counter.
+  ///     classes (`List<String>`): The FDA's pharmacologic classes.
+  ///     terms (`List<String>`): What another label would call it.
   ///     labels (int): How many labels were filed for it.
   ///     chunk (int): Which text chunk holds its sections.
   ///     line (int): Which line of that chunk.
@@ -138,6 +142,8 @@ final class MedicineEntry {
     required this.substances,
     required this.routes,
     required this.type,
+    required this.classes,
+    required this.terms,
     required this.labels,
     required this.chunk,
     required this.line,
@@ -160,6 +166,8 @@ final class MedicineEntry {
       substances: _strings(row['substances']),
       routes: _strings(row['routes']),
       type: MedicineType.fromWireName(row['type']! as String),
+      classes: _strings(row['classes']),
+      terms: _strings(row['match']),
       labels: row['labels']! as int,
       chunk: row['chunk']! as int,
       line: row['line']! as int,
@@ -188,6 +196,16 @@ final class MedicineEntry {
 
   /// Prescription or over the counter.
   final MedicineType type;
+
+  /// The FDA's established pharmacologic classes for this drug, by their
+  /// names: "Nonsteroidal Anti-inflammatory Drug". Empty for most drugs,
+  /// which the FDA has not classed.
+  final List<String> classes;
+
+  /// The names another label would mention this drug by, as lower-case words
+  /// separated by spaces: "naproxen sodium" and "naproxen". The generator
+  /// works them out (`match_terms`); empty for a drug no label could name.
+  final List<String> terms;
 
   /// How many labels were filed for this drug.
   final int labels;
@@ -495,6 +513,32 @@ final class MedicineIndex {
     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', //
     'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '#',
   ];
+
+  /// Find the drug with [key].
+  ///
+  /// A binary search, since the generator writes the drugs in key order.
+  ///
+  /// Args:
+  ///     key (String): A key, as [MedicineEntry.key] gives it.
+  ///
+  /// Returns:
+  ///     MedicineEntry?: The drug, or null when this bundle has none by that
+  ///     key: a drug the export no longer lists, since the key was stored.
+  MedicineEntry? byKey(String key) {
+    var low = 0;
+    var high = entries.length - 1;
+    while (low <= high) {
+      final middle = (low + high) >> 1;
+      final order = entries[middle].key.compareTo(key);
+      if (order == 0) return entries[middle];
+      if (order < 0) {
+        low = middle + 1;
+      } else {
+        high = middle - 1;
+      }
+    }
+    return null;
+  }
 
   /// List the names that start with [letter], in alphabetical order.
   ///

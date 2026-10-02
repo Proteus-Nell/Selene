@@ -22,6 +22,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0011](#adr-0011-export-v2-refuses-v1-files) | Export v2 refuses v1 files | Accepted | 2026-08-20 |
 | [0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) | The medicines reference covers every drug, one label each, chosen by rule | Accepted | 2026-10-02 |
 | [0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone) | The medicines bundle is compressed chunks and an index, searched on the phone | Accepted | 2026-10-02 |
+| [0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe) | The interaction checker compares label text, and never calls a pair safe | Accepted | 2026-10-02 |
 
 ---
 
@@ -598,6 +599,90 @@ resident in memory whenever the app runs.
   repository's history each time. Refresh for a release, not routinely. If the
   history grows to matter, move `app/assets/medicines` to Git LFS.
 - The A-Z browse and the interaction checker build on this index.
+
+---
+
+## ADR-0014: The interaction checker compares label text, and never calls a pair safe
+
+**Status:** Accepted, 2026-10-02. Builds on [ADR-0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) and [ADR-0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone).
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for an interaction checker modelled on Drugs.com's, built from
+open data with nothing hand-written. Drugs.com's checker draws on a licensed
+database with severity ratings, and nothing like it is open. What is open is
+the label text the bundle already carries, and the FDA's established
+pharmacologic classes, which openFDA attaches to some labels.
+
+### Decision
+
+1. **Three findings for each pair, and no others:** an ingredient both
+   contain; an FDA class both are in; and each passage in one label's safety
+   sections that names the other, by one of its substances or one of its
+   classes, quoted as the label prints it. No severity, no verdict, no advice.
+2. **The names are worked out by the generator, from the data**
+   (`match_terms`). A substance is looked for under its full name, and under
+   its name without its salt ("naproxen" for "naproxen sodium") when what is
+   left is unambiguous, at least five characters long, and not itself a salt
+   word. A salt word is any word that ends eight or more substance names.
+   Only a substance openFDA lists on some label counts. A name read off a
+   kit's title, "DAY" or "COLD", would be found in nearly every label.
+3. **Classes come from `pharm_class_epc`.** They are merged over a drug's
+   labels, and carried from a label of one substance alone to every drug
+   containing that substance: most labels carry no class, a shop's ibuprofen
+   among them. A combination lends its classes to neither ingredient. 36% of
+   drugs end up with at least one class.
+4. **Some name matches do not count as mentions:**
+   - a match inside one of the label's own names, such as "estradiol" inside
+     "ethinyl estradiol" on the pill's label;
+   - an ingredient or class the two share, which is reported once, as shared;
+   - anything outside the safety sections, such as uses or purpose.
+
+   Where a name appears in several sections, the passage quoted comes from the
+   most telling one: drug interactions, then the Drug Facts lines about other
+   medicines, then contraindications, the boxed warning and the warnings.
+5. **Never "safe".** Where the labels connect a pair in none of these ways, the
+   screen says that this does not mean the two are safe together, and why.
+   `interaction_copy_test.dart` fails the build on reassuring or directive
+   wording.
+6. **The list is not kept.** The checker's list lives on its screen and is gone
+   when the reader leaves it.
+7. **Run on the phone, off the UI thread**, as regular expressions over the two
+   labels. Ten medicines, 45 pairs, take about a tenth of a second on a
+   development machine, labels included.
+
+### Runner-up and why rejected
+
+**A licensed interaction database** (First Databank, Medi-Span, Lexicomp,
+DrugBank). It would add severity ratings and far wider coverage, but it costs
+money, and the licence would have to allow bundling into an offline app. It
+could replace the matching later without changing the screens.
+
+**A table of mentions computed by the generator.** Once every substance and
+class is expanded, it runs to millions of pairs. Matching two labels on the
+phone takes milliseconds.
+
+**A table mapping group names to FDA classes**, for "NSAIDs", "combined
+hormonal contraceptives", "MAO inhibitors" and the like. It would catch what
+this misses, but it is hand-written, which the owner has ruled out for now.
+
+### Consequences
+
+- Labels often name medicines only by a group or an abbreviation, which this
+  matching cannot see. Tranexamic acid's label contraindicates "combined
+  hormonal contraceptives", and the checker does not connect it with the
+  combined pill. The screen names this limit wherever it finds nothing.
+- Matching is by whole words, so a word can be found in another sense:
+  "lactic" in "lactic acidosis", taken as the base of lactic acid. Every
+  mention is quoted, so the reader sees the words around it.
+- The classes are the FDA's own, including some that read oddly on a product:
+  levonorgestrel's include "Progestin-containing Intrauterine System", and so
+  do Plan B's.
+- The selection's schema went to 2 and its file to `selection_v2.json`. The
+  bundle's schema went to 2 as well, and the app refuses an older bundle,
+  which would have no names to look for.
+- Medication Guides, proposed alongside this step, are deferred.
 
 ---
 

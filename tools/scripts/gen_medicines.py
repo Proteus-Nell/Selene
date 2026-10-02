@@ -24,6 +24,9 @@ Pipeline:
     3. Group the rest by active substances, route, and prescription status.
     4. Take one label per group, best first by `rank`, and write the
        selection with one drug per line so that a refresh diffs per drug.
+       Each drug carries the FDA's pharmacologic classes for it, and the
+       names another label would mention it by (`match_terms`), which is
+       what the app's interaction checker looks for (ADR-0014).
     5. Read the chosen labels again, and pack their safety sections into
        compressed chunks under app/assets/medicines, with an index the app
        searches.
@@ -61,10 +64,8 @@ from itertools import pairwise
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SELECTION = REPO_ROOT / "artifacts" / "medicines" / "selection_v1.json"
-OUTPUT = (
-    REPO_ROOT / "app" / "lib" / "data" / "reference" / "medicines_bundled.dart"
-)
+SELECTION = REPO_ROOT / "artifacts" / "medicines" / "selection_v2.json"
+OUTPUT = REPO_ROOT / "app" / "lib" / "data" / "reference" / "medicines_bundled.dart"
 BUNDLE = REPO_ROOT / "app" / "assets" / "medicines"
 INDEX_NAME = "index.json.zlib"
 CHUNK_NAME = "labels-{:03d}.jsonl.zlib"
@@ -73,8 +74,8 @@ CHUNK_GLOB = "labels-*.jsonl.zlib"
 # committed. Only what is selected from it is.
 CACHE = REPO_ROOT / "data" / "openfda" / "drug-label"
 
-SELECTION_SCHEMA_VERSION = 1
-BUNDLE_SCHEMA_VERSION = 1
+SELECTION_SCHEMA_VERSION = 2
+BUNDLE_SCHEMA_VERSION = 2
 # Bytes of label text per chunk, before compression. zlib's 32 KB window means
 # a bigger chunk barely compresses better, and a smaller one opens faster.
 CHUNK_TARGET = 1_000_000
@@ -134,6 +135,15 @@ FORM_WORDS = frozenset({"TABLET", "TABLETS", "CAPSULE", "CAPSULES", "KIT", "USP"
 TABLETS = re.compile(r"\b(?:TABLETS?|CAPSULES?)\b")
 # A strength written into a generic name, "1 MG/0.02 MG". Not a substance.
 STRENGTH = re.compile(r"\b\d+(?:\.\d+)?\s*(?:MG|MCG|G|ML|IU|UNITS?|%)(?=\W|$)")
+# The tag on an established pharmacologic class, "Estrogen [EPC]".
+EPC_TAG = re.compile(r"\s*\[EPC\]$")
+# A word that ends at least this many different substance names is the form a
+# substance comes in, not the substance: the salt in "NAPROXEN SODIUM", the
+# part of the plant in "GINGER ROOT". Read off the data, not listed by hand.
+SALT_MIN = 8
+# The fewest characters a substance's name may be cut down to. Shorter, and
+# what is left is more often an abbreviation or a word than a drug.
+BASE_MIN = 5
 
 # openFDA asks that this notice travel with the data.
 #
@@ -218,17 +228,14 @@ def fetch_partition(url: str, path: Path, size_mib: float) -> None:
             partial.replace(path)
             return
         print(
-            f"{path.name} arrived short ({size:,} bytes), attempt {attempt} of "
-            f"{DOWNLOAD_ATTEMPTS}",
+            f"{path.name} arrived short ({size:,} bytes), attempt {attempt} of {DOWNLOAD_ATTEMPTS}",
             file=sys.stderr,
         )
     partial.unlink(missing_ok=True)
     raise IncompleteDownloadError(f"{path.name} arrived short {DOWNLOAD_ATTEMPTS} times")
 
 
-def download_partitions(
-    cache: Path, partitions: list[dict]
-) -> list[tuple[Path, int]]:
+def download_partitions(cache: Path, partitions: list[dict]) -> list[tuple[Path, int]]:
     """Download every partition that is not already cached whole.
 
     A cached file counts only if its size matches the index and it opens as a
@@ -253,9 +260,7 @@ def download_partitions(
         path = cache / url.rsplit("/", 1)[-1]
         size_mib = float(partition["size_mb"])
         cached = (
-            path.exists()
-            and is_whole(path.stat().st_size, size_mib)
-            and zipfile.is_zipfile(path)
+            path.exists() and is_whole(path.stat().st_size, size_mib) and zipfile.is_zipfile(path)
         )
         if not cached:
             print(f"downloading {path.name} ({size_mib:.0f} MiB)...", file=sys.stderr)
@@ -284,8 +289,7 @@ def read_partition(path: Path, expected: int) -> list[dict]:
             labels = json.load(stream)["results"]
     if len(labels) != expected:
         raise SystemExit(
-            f"error: {path.name} holds {len(labels)} labels, and openFDA's "
-            f"index says {expected}"
+            f"error: {path.name} holds {len(labels)} labels, and openFDA's index says {expected}"
         )
     return labels
 
@@ -347,6 +351,19 @@ def substances_from_name(generic: str) -> tuple[str, ...]:
         if words:
             found.add(" ".join(words))
     return tuple(sorted(found)) or (generic,)
+
+
+def pharm_class(text: str) -> str:
+    """Return an established pharmacologic class's name, without its tag.
+
+    Args:
+        text (str): The class as openFDA gives it, "Estrogen [EPC]".
+
+    Returns:
+        str: "Estrogen". The FDA's own capitalisation is kept, since the app
+        shows the name.
+    """
+    return EPC_TAG.sub("", " ".join(str(text).split()))
 
 
 def says_tablets(label: dict) -> bool:
@@ -445,6 +462,10 @@ def summarise(label: dict) -> tuple[str | None, dict | None]:
         # same product, and "LEVONORGESTREL" is a substring of a combined pill.
         "identity": tuple(sorted({slug(s) for s in substances})),
         "substances": substances,
+        # Whether openFDA lists the substances, rather than their being read
+        # off the name. Only a listed name is looked for in other labels.
+        "listed": bool(listed),
+        "classes": tuple(sorted({pharm_class(c) for c in openfda.get("pharm_class_epc") or []})),
         "routes": tuple(sorted({normalise(r) for r in openfda.get("route") or []})),
         "says_tablets": says_tablets(label),
         "type": kind,
@@ -503,11 +524,7 @@ def rank(record: dict) -> tuple:
     """
     application = record["application"]
     reference = (
-        2
-        if application.startswith(("NDA", "BLA"))
-        else 1
-        if application.startswith("ANDA")
-        else 0
+        2 if application.startswith(("NDA", "BLA")) else 1 if application.startswith("ANDA") else 0
     )
     effective = int(record["effective_time"]) if record["effective_time"].isdigit() else 0
     return (
@@ -607,6 +624,109 @@ def with_routes(records: list[dict]) -> list[dict]:
     return filled
 
 
+def name_words(name: str) -> tuple[str, ...]:
+    """Split a name into lower-case words, dropping everything else.
+
+    Args:
+        name (str): A substance's name, "NAPROXEN SODIUM".
+
+    Returns:
+        `tuple[str, ...]`: `("naproxen", "sodium")`. A label writes the same
+        name with any punctuation or capitals, so only the words are matched.
+    """
+    return tuple(re.findall(r"[a-z0-9]+", name.lower()))
+
+
+def salt_words(names: Iterable[str]) -> frozenset[str]:
+    """Find the words that say what form a substance is in, not which it is.
+
+    Args:
+        names (`Iterable[str]`): Every substance name in the selection.
+
+    Returns:
+        `frozenset[str]`: Each word that ends at least `SALT_MIN` different
+        names of more than one word: "sodium", "hydrochloride", "root".
+    """
+    last = Counter(words[-1] for words in map(name_words, set(names)) if len(words) > 1)
+    return frozenset(word for word, count in last.items() if count >= SALT_MIN)
+
+
+def base_words(words: tuple[str, ...], salt: frozenset[str]) -> tuple[str, ...]:
+    """Cut the salt words off the end of a name, keeping at least one word.
+
+    Args:
+        words (`tuple[str, ...]`): A name's words.
+        salt (`frozenset[str]`): From `salt_words`.
+
+    Returns:
+        `tuple[str, ...]`: `("naproxen",)` for "naproxen sodium".
+    """
+    while len(words) > 1 and words[-1] in salt:
+        words = words[:-1]
+    return words
+
+
+def match_terms(entries: list[dict], listed: set[str]) -> dict[str, list[str]]:
+    """Work out the names another label would mention each drug by.
+
+    A label warning about naproxen sodium usually says "naproxen", so each
+    substance is looked for under its full name and, where it is safe to,
+    under its name with the salt cut off. Every rule here is read off the data.
+
+    Steps:
+        1. Only a substance openFDA lists on some label counts. A name read
+           off a kit's title can be "DAY" or "COLD", and would match nearly
+           every label there is.
+        2. The full name, unless it is only digits.
+        3. The name without its salt words, when that is `BASE_MIN` or more
+           characters, is not itself a salt word, and is unambiguous: every
+           substance whose name starts with it cuts down to it too. "estradiol"
+           is not a base of "estradiol valerate" while "estradiol cypionate"
+           does not cut down to "estradiol".
+
+    Args:
+        entries (`list[dict]`): The selected drugs.
+        listed (`set[str]`): The slug of every substance openFDA lists on at
+            least one label.
+
+    Returns:
+        `dict[str, list[str]]`: Each drug's terms by key, as space-separated
+        lower-case words, sorted. Empty for a drug no other label could name.
+    """
+    names = {substance for entry in entries for substance in entry["substances"]}
+    salt = salt_words(names)
+    bases = {name: base_words(name_words(name), salt) for name in names}
+    candidates = {base for name, base in bases.items() if base != name_words(name)}
+    ambiguous = set()
+    for name, base in bases.items():
+        words = name_words(name)
+        for length in range(1, len(words) + 1):
+            prefix = words[:length]
+            if prefix in candidates and prefix != base:
+                ambiguous.add(prefix)
+
+    terms = {}
+    for entry in entries:
+        found = set()
+        for name in entry["substances"]:
+            words = name_words(name)
+            if slug(name) not in listed or not words or "".join(words).isdigit():
+                continue
+            found.add(" ".join(words))
+            base = bases[name]
+            text = " ".join(base)
+            if (
+                base != words
+                and base not in ambiguous
+                and len(text) >= BASE_MIN
+                and not "".join(base).isdigit()
+                and base[-1] not in salt
+            ):
+                found.add(text)
+        terms[entry["key"]] = sorted(found)
+    return terms
+
+
 def select(records: Iterable[dict]) -> tuple[list[dict], int]:
     """Choose one label to stand for each drug.
 
@@ -623,8 +743,17 @@ def select(records: Iterable[dict]) -> tuple[list[dict], int]:
     """
     records = with_routes(list(records))
     groups: dict[tuple, list[dict]] = defaultdict(list)
+    # The FDA classes a substance by what it is, so a class given on a label
+    # of that substance alone holds wherever the substance is: most labels
+    # carry no class at all, a drugstore's ibuprofen among them.
+    substance_classes: dict[str, set[str]] = defaultdict(set)
+    listed: set[str] = set()
     for record in records:
         groups[(record["identity"], record["routes"], record["type"])].append(record)
+        if len(record["identity"]) == 1:
+            substance_classes[record["identity"][0]].update(record["classes"])
+        if record["listed"]:
+            listed.update(record["identity"])
 
     entries, empty = [], 0
     for (identity, routes, kind), labels in groups.items():
@@ -633,6 +762,10 @@ def select(records: Iterable[dict]) -> tuple[list[dict], int]:
             empty += 1
             continue
         names = Counter(label["generic_name"] for label in labels)
+        classes = set().union(
+            *(label["classes"] for label in labels),
+            *(substance_classes[substance] for substance in identity),
+        )
         entries.append(
             {
                 "key": entry_key(identity, routes, kind),
@@ -643,6 +776,7 @@ def select(records: Iterable[dict]) -> tuple[list[dict], int]:
                 "routes": list(routes),
                 "type": kind,
                 "brands": brand_names(labels, names),
+                "classes": sorted(classes),
                 "labels": len(labels),
                 "label": {
                     "application": best["application"],
@@ -658,6 +792,9 @@ def select(records: Iterable[dict]) -> tuple[list[dict], int]:
     clashes = sorted({a["key"] for a, b in pairwise(entries) if a["key"] == b["key"]})
     if clashes:
         raise SystemExit("error: different drugs share a key: " + ", ".join(clashes[:5]))
+    terms = match_terms(entries, listed)
+    for entry in entries:
+        entry["match"] = terms[entry["key"]]
     return entries, empty
 
 
@@ -724,11 +861,7 @@ def selection_json(meta: dict, entries: list[dict]) -> str:
         str: The file's full text.
     """
     lines = ",\n".join(json.dumps(e, sort_keys=True) for e in entries)
-    return (
-        '{"meta": ' + json.dumps(meta, sort_keys=True) + ',\n"entries": [\n'
-        + lines
-        + "\n]}\n"
-    )
+    return '{"meta": ' + json.dumps(meta, sort_keys=True) + ',\n"entries": [\n' + lines + "\n]}\n"
 
 
 def selection_problems(text: str) -> list[str]:
@@ -768,9 +901,7 @@ def section_text(label: dict, section: str) -> str:
     Returns:
         str: The section's text. Nothing in it is reworded, reordered or cut.
     """
-    return "\n\n".join(
-        str(part).strip() for part in label.get(section) or [] if str(part).strip()
-    )
+    return "\n\n".join(str(part).strip() for part in label.get(section) or [] if str(part).strip())
 
 
 def extract_sections(
@@ -827,7 +958,8 @@ def build_bundle(
            opening a drug decompresses a megabyte rather than sixty.
         3. An index of every drug: what search needs, where its text is,
            which label it came from, and how many labels it had. Search ranks
-           a drug sold under many labels above one sold under few.
+           a drug sold under many labels above one sold under few. Its
+           classes and match terms go in too, for the interaction checker.
 
     Args:
         meta (dict): The selection's metadata.
@@ -849,6 +981,7 @@ def build_bundle(
             {
                 "brands": entry["brands"],
                 "chunk": len(chunks),
+                "classes": entry["classes"],
                 "key": entry["key"],
                 "label": {
                     "effective_time": entry["label"]["effective_time"],
@@ -857,6 +990,7 @@ def build_bundle(
                 },
                 "labels": entry["labels"],
                 "line": len(lines),
+                "match": entry["match"],
                 "name": entry["name"],
                 "routes": entry["routes"],
                 "substances": entry["substances"],
@@ -976,8 +1110,11 @@ def bundle_problems(files: list[Path], selection: dict | None) -> list[str]:
     if selection is not None:
         drugs = [(e["key"], e["label"]["set_id"]) for e in selection["entries"]]
         indexed = [(row["key"], row["label"]["set_id"]) for row in index["entries"]]
+        matching = [(e["classes"], e["match"]) for e in selection["entries"]]
         if drugs != indexed:
             problems.append("its drugs or labels are not the selection's")
+        elif matching != [(row["classes"], row["match"]) for row in index["entries"]]:
+            problems.append("its classes or match terms are not the selection's")
         if index["export_date"] != selection["meta"]["export_date"]:
             problems.append("it was built from a different export than the selection")
     return problems

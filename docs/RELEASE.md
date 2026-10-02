@@ -155,7 +155,7 @@ Checklist, in the order the failures actually happen:
 
 The medicines reference is every drug in openFDA's label export, one label each
 (ADR-0012), packed into `app/assets/medicines` (ADR-0013). The bundle and the
-selection it was built from, `artifacts/medicines/selection_v1.json`, are
+selection it was built from, `artifacts/medicines/selection_v2.json`, are
 committed, and the lookup shows the export's date. Refresh both before a
 release:
 
@@ -167,7 +167,7 @@ python3 tools/scripts/gen_medicines.py --check   # should pass
 That needs network, on purpose: it is the one part of this project that talks to
 anything, and it runs on a developer machine or in CI, never on the phone. The
 download is cached under `data/`, which is never committed. Commit
-`artifacts/medicines/selection_v1.json`, `app/assets/medicines/` and
+`artifacts/medicines/selection_v2.json`, `app/assets/medicines/` and
 `app/lib/data/reference/medicines_bundled.dart` together; `--check` fails when
 they disagree.
 
@@ -182,6 +182,10 @@ Two things to check by eye after fetching, because no test can:
 - The counts in the selection's `meta`. A large change in any of them between
   two exports, the number of drugs most of all, means openFDA changed something
   the rules depend on. Look at the rules before using the result.
+- The interaction checker's examples (ADR-0014). `medicines_test.dart` fails if
+  the pill's label stops naming rifampin, or two NSAIDs stop sharing a class,
+  but open the checker too: the pill with rifampin, ibuprofen with naproxen,
+  and levothyroxine with the pill should each quote the label.
 
 ### The re-export warning (export format v2)
 

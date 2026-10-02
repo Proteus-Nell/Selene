@@ -77,6 +77,55 @@ void main() {
     expect(await bundle.sections(ibuprofen), isNotEmpty);
   });
 
+  group('what several labels say about each other', () {
+    // In key order, as the generator writes them.
+    final drugs = <FixtureDrug>[
+      fixtureDrug('aspirin.oral.otc', name: 'ASPIRIN'),
+      fixtureDrugs.firstWhere((drug) => drug.key == 'ibuprofen.oral.rx'),
+      fixtureDrugs.firstWhere((drug) => drug.key == 'tranexamic-acid.oral.rx'),
+    ];
+
+    Future<void> check(MedicineBundle bundle) async {
+      final index = await bundle.index();
+      final pairs = await bundle.interactions(<MedicineEntry>[
+        index.byKey('ibuprofen.oral.rx')!,
+        index.byKey('aspirin.oral.otc')!,
+        index.byKey('tranexamic-acid.oral.rx')!,
+      ]);
+      expect(pairs, hasLength(3));
+      final mention = pairs.first.firstMentions.single;
+      expect(mention.name, 'aspirin');
+      expect(mention.section, 'drug_interactions');
+      expect(mention.passage, 'Aspirin: not generally recommended.');
+      expect(pairs.skip(1).map((pair) => pair.connected), <bool>[
+        false,
+        false,
+      ]);
+    }
+
+    test('reads each label and compares them', () async {
+      await check(fixtureBundle(drugs, perChunk: 1));
+    });
+
+    test('in another isolate, unless told otherwise', () async {
+      // The drugs, their labels and what is found all cross to the isolate
+      // and back.
+      await check(MedicineBundle(MemoryAssets(fixtureFiles(drugs))));
+    });
+
+    test('refuses a label that belongs to another drug', () async {
+      final bundle = MedicineBundle(
+        MemoryAssets(fixtureFiles(drugs, records: shifted(drugs))),
+        run: inPlace,
+      );
+      final index = await bundle.index();
+      await expectLater(
+        bundle.interactions(index.entries),
+        throwsA(isA<MedicineBundleException>()),
+      );
+    });
+  });
+
   test('decodes in another isolate, unless told otherwise', () async {
     // Proves that what crosses to the isolate and back can: a closure that
     // carried the asset bundle along would fail here, and only at run time.

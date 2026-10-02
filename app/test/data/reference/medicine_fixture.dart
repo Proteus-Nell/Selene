@@ -22,13 +22,17 @@ typedef FixtureDrug = ({
   List<String> substances,
   List<String> routes,
   String type,
+  List<String> classes,
+  List<String> terms,
   int labels,
   List<List<String>> sections,
 });
 
 /// Describe a drug for a test bundle.
 ///
-/// Its substances default to its name, and its sections to one purpose line.
+/// Its substances default to its name, its match terms to its substances in
+/// lower case, it has no classes, and its sections default to one purpose
+/// line.
 FixtureDrug fixtureDrug(
   String key, {
   required String name,
@@ -36,6 +40,8 @@ FixtureDrug fixtureDrug(
   List<String>? substances,
   List<String> routes = const <String>['ORAL'],
   String type = 'otc',
+  List<String> classes = const <String>[],
+  List<String>? terms,
   int labels = 1,
   List<List<String>>? sections,
 }) => (
@@ -45,6 +51,13 @@ FixtureDrug fixtureDrug(
   substances: substances ?? <String>[name],
   routes: routes,
   type: type,
+  classes: classes,
+  terms:
+      terms ??
+      <String>[
+        for (final substance in substances ?? <String>[name])
+          substance.toLowerCase(),
+      ],
   labels: labels,
   sections:
       sections ??
@@ -137,6 +150,7 @@ Map<String, Object?> fixtureIndexJson(
       <String, Object?>{
         'brands': drug.brands,
         'chunk': i ~/ perChunk,
+        'classes': drug.classes,
         'key': drug.key,
         'label': <String, Object?>{
           'effective_time': '20250929',
@@ -145,6 +159,7 @@ Map<String, Object?> fixtureIndexJson(
         },
         'labels': drug.labels,
         'line': i % perChunk,
+        'match': drug.terms,
         'name': drug.name,
         'routes': drug.routes,
         'substances': drug.substances,

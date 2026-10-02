@@ -7,7 +7,8 @@
 ///
 /// Includes:
 ///     - MedicineRunner: Where decompression and decoding run.
-///     - MedicineBundle: Loads the index, and one drug's sections.
+///     - MedicineBundle: Loads the index, one drug's sections, and what
+///       several drugs' labels say about each other.
 ///     - medicineBundleProvider: The bundle, read from the app's assets.
 ///     - medicineIndexProvider: Every drug, once loaded.
 ///     - medicineSectionsProvider: One drug's label sections.
@@ -21,6 +22,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:period_tracker/data/reference/interactions.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 
 /// Runs a task and returns its result: in a background isolate in the app,
@@ -108,6 +110,32 @@ class MedicineBundle {
     ]);
   }
 
+  /// Compare what several drugs' labels say about each other.
+  ///
+  /// Each label is read in turn, and the comparing runs where decoding does,
+  /// off the UI thread: a pair is a few regular expressions over two labels,
+  /// and a list of eight medicines is twenty-eight pairs.
+  ///
+  /// Args:
+  ///     medicines (`List<MedicineEntry>`): The drugs, in the order they were
+  ///         added.
+  ///
+  /// Returns:
+  ///     `Future<List<InteractionPair>>`: One per pair, as
+  ///     [checkInteractions] orders them.
+  ///
+  /// Throws:
+  ///     MedicineBundleException: When a drug's line holds another drug's
+  ///         text, as [sections] does.
+  Future<List<InteractionPair>> interactions(
+    List<MedicineEntry> medicines,
+  ) async {
+    final labels = <String, List<MedicineSection>>{
+      for (final medicine in medicines) medicine.key: await sections(medicine),
+    };
+    return _check(_runner, medicines, labels);
+  }
+
   /// Return chunk [number], decompressed, from the cache when it was the last
   /// one opened.
   Future<_Chunk> _chunk(int number) {
@@ -152,6 +180,13 @@ class MedicineBundle {
   /// Decompress a chunk and find its lines, through [run].
   static Future<_Chunk> _decodeChunk(MedicineRunner run, Uint8List bytes) =>
       run(() => _Chunk.decode(bytes));
+
+  /// Compare every pair of [medicines], through [run].
+  static Future<List<InteractionPair>> _check(
+    MedicineRunner run,
+    List<MedicineEntry> medicines,
+    Map<String, List<MedicineSection>> labels,
+  ) => run(() => checkInteractions(medicines, labels));
 }
 
 /// One decompressed chunk of label text, and where each of its lines starts.

@@ -17,6 +17,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:period_tracker/data/reference/interactions.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_bundle.dart';
 import 'package:period_tracker/data/reference/medicines_bundled.dart';
@@ -223,6 +224,55 @@ void main() {
         listed.toSet(),
         index.entries.map((entry) => entry.key).toSet(),
       );
+    });
+
+    test('connects the pairs whose labels are known to', () async {
+      // The examples the checker was built from (ADR-0014): a change to the
+      // matching, or a refresh, that loses one of them fails here rather
+      // than in front of somebody taking both.
+      final bundle = MedicineBundle(rootBundle, run: inPlace);
+      Future<InteractionPair> compare(String first, String second) async =>
+          (await bundle.interactions(<MedicineEntry>[
+            index.byKey(first)!,
+            index.byKey(second)!,
+          ])).single;
+
+      // The pill's label names rifampin among the drugs that weaken it.
+      final pill = await compare(
+        'ethinyl-estradiol+levonorgestrel.oral.rx',
+        'rifampin.oral.rx',
+      );
+      expect(
+        pill.firstMentions.map((mention) => mention.name),
+        contains('rifampin'),
+      );
+      // Two NSAIDs, by the FDA's class, though the shop's ibuprofen label
+      // carries no class of its own.
+      final nsaids = await compare('ibuprofen.oral.otc', 'naproxen.oral.rx');
+      expect(
+        nsaids.sharedClasses,
+        contains('Nonsteroidal Anti-inflammatory Drug'),
+      );
+      // Levothyroxine's label names estrogens, the pill's class.
+      final thyroid = await compare(
+        'levothyroxine-sodium.oral.rx',
+        'ethinyl-estradiol+levonorgestrel.oral.rx',
+      );
+      expect(
+        thyroid.firstMentions.map((mention) => mention.name),
+        contains('Estrogen'),
+      );
+    });
+
+    test('matches nothing on a name that is only a word', () {
+      // Names read off a kit's title, "DAY" or "COLD", would be found in
+      // nearly every label; gen_medicines.py keeps them out of the terms.
+      final terms = <String>{
+        for (final entry in index.entries) ...entry.terms,
+      };
+      expect(terms, isNot(contains('day')));
+      expect(terms, isNot(contains('cold')));
+      expect(terms.where((term) => RegExp(r'^\d+$').hasMatch(term)), isEmpty);
     });
 
     test('finds the drugs the first version got wrong', () {

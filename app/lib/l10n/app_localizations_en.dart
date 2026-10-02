@@ -848,14 +848,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lookupMedicinesUnavailable =>
-      'The medicines reference is not built into this version. The other sections still work.';
+      'The medicines reference is not built into this version.';
 
   @override
   String get lookupMedicinesLoading => 'Opening the medicines reference';
 
   @override
   String get lookupMedicinesFailed =>
-      'The medicines reference could not be opened. The other sections still work.';
+      'The medicines reference could not be opened.';
 
   @override
   String lookupMedicinesPrompt(int count) {
@@ -1021,6 +1021,107 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lookupLeavingFailed => 'No browser could be opened.';
+
+  @override
+  String get checkerTitle => 'Check medicines together';
+
+  @override
+  String get checkerEntrySubtitle =>
+      'What the US labels of two or more medicines say about each other.';
+
+  @override
+  String get checkerIntro =>
+      'Add two or more medicines. For each pair, this shows whether they share an ingredient or an FDA drug class, and quotes any place where one label names the other. It reads the labels and nothing else, so it cannot tell you that a combination is safe.';
+
+  @override
+  String get checkerAdd => 'Add a medicine';
+
+  @override
+  String checkerRemove(String name) {
+    return 'Remove $name';
+  }
+
+  @override
+  String get checkerNeedTwo => 'Add at least two medicines to compare them.';
+
+  @override
+  String checkerFull(int count) {
+    return 'Up to $count medicines can be compared at once.';
+  }
+
+  @override
+  String checkerAlreadyAdded(String name) {
+    return '$name is already on the list.';
+  }
+
+  @override
+  String get checkerLoading => 'Reading the labels';
+
+  @override
+  String get checkerFailed => 'The labels could not be read.';
+
+  @override
+  String checkerPairTitle(String first, String second) {
+    return '$first and $second';
+  }
+
+  @override
+  String checkerSharedSubstance(String names) {
+    return 'Both contain $names.';
+  }
+
+  @override
+  String checkerSharedClass(int count, String classes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Both are in the FDA drug classes $classes.',
+      one: 'Both are in the FDA drug class $classes.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String checkerMentionsName(String medicine, String words, String section) {
+    return 'The $medicine label mentions “$words”. From $section:';
+  }
+
+  @override
+  String checkerMentionsClass(
+    String medicine,
+    String words,
+    String other,
+    String section,
+  ) {
+    return 'The $medicine label mentions “$words”, an FDA drug class that includes $other. From $section:';
+  }
+
+  @override
+  String get checkerNothingFoundPair =>
+      'Neither label names the other, and they share no ingredient or FDA drug class.';
+
+  @override
+  String get checkerNothingFoundNote =>
+      'That does not mean they are safe together. Labels leave interactions out, and often name medicines only by a group, such as “NSAIDs” or “combined hormonal contraceptives”, which this check cannot match.';
+
+  @override
+  String get checkerSearchOnline => 'Look this pair up online';
+
+  @override
+  String checkerSearchTerm(String first, String second) {
+    return '$first and $second interaction';
+  }
+
+  @override
+  String get checkerAskPharmacist =>
+      'Only a pharmacist or doctor who knows your situation can say whether these medicines are right for you together. Show them this list, or the packets.';
+
+  @override
+  String get checkerPickerPrompt =>
+      'Type the name of a medicine, a brand or an ingredient.';
+
+  @override
+  String get lookupMedicineCheck => 'Check with other medicines';
 
   @override
   String get settingsLookup => 'Look something up';
@@ -1292,6 +1393,38 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get conditionsMedicinesHeading => 'Medicines';
+
+  @override
+  String get conditionsMedicinesIntro =>
+      'Medicines you take, picked from the app\'s list of US medicines and kept on this device only. Each is compared with the others using their labels.';
+
+  @override
+  String get conditionsMedicinesEmpty => 'No medicines recorded.';
+
+  @override
+  String get conditionsMedicinesUnavailable =>
+      'The medicines list is not built into this version, so medicines cannot be recorded.';
+
+  @override
+  String get conditionsMedicineGone =>
+      'No longer in this app\'s list of medicines, so it is not compared.';
+
+  @override
+  String get conditionsConflictsHeading => 'Possible conflicts';
+
+  @override
+  String get conditionsConflictsIntro =>
+      'Their labels connect these medicines. That is not a finding about you: a pharmacist can tell you whether it matters.';
+
+  @override
+  String get conditionsConflictsNone =>
+      'Their labels connect none of these medicines in the ways this app checks for.';
+
+  @override
+  String get conditionsConflictLookUp => 'Look it up online';
 
   @override
   String get conditionHormonalContraceptionCombined => 'Combined pill';

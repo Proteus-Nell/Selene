@@ -19,6 +19,7 @@ import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_bundle.dart';
 import 'package:period_tracker/data/reference/medicines_bundled.dart';
 import 'package:period_tracker/features/common/formatting.dart';
+import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Medicine screen: one medicine's label.
@@ -82,6 +83,20 @@ class MedicineScreen extends ConsumerWidget {
             const SizedBox(height: 4),
             Text(l10n.lookupMedicineOneLabel, style: small),
             const SizedBox(height: 8),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (context) => InteractionCheckerScreen(
+                      initial: <MedicineEntry>[entry],
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.compare_arrows),
+                label: Text(l10n.lookupMedicineCheck),
+              ),
+            ),
             ...sections.when(
               data: (sections) => <Widget>[
                 for (final section in sections) _Section(section: section),

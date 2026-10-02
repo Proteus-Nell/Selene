@@ -14,8 +14,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_bundle.dart';
 import 'package:period_tracker/data/reference/medicines_bundled.dart';
-import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/lookup/browser_handoff.dart';
+import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
 import 'package:period_tracker/features/lookup/medicine_browse.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
@@ -90,25 +90,17 @@ class _LookupScreenState extends ConsumerState<LookupScreen> {
 
   /// Hand the query off to a browser, after confirming.
   ///
-  /// The confirmation is [BrowserHandoff.confirmAndOpen]'s, not this screen's:
-  /// leaving the app is the one action here that reaches the network, and the
-  /// user is told before it happens rather than after.
+  /// The confirmation is [BrowserHandoff.offer]'s, not this screen's: leaving
+  /// the app is the one action here that reaches the network, and the user is
+  /// told before it happens rather than after.
   ///
   /// Returns:
-  ///     `Future<void>`: Completes once the browser has opened, or once the
-  ///     failure has been reported. A user who declined the confirmation gets
-  ///     neither.
-  Future<void> _handOff() async {
-    final opened = await BrowserHandoff.confirmAndOpen(
-      context,
-      term: _query.text.trim().isEmpty ? null : _query.text.trim(),
-    );
-    if (!mounted || opened) return;
-    // Only reported when the user asked for it and it did not happen. A device
-    // with no browser is unusual but not impossible, and silence there looks
-    // like a dead button.
-    showAppSnackBar(context, AppLocalizations.of(context).lookupLeavingFailed);
-  }
+  ///     `Future<void>`: Completes once the browser has opened, the user has
+  ///     declined, or the failure has been reported.
+  Future<void> _handOff() => BrowserHandoff.offer(
+    context,
+    term: _query.text.trim().isEmpty ? null : _query.text.trim(),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -142,6 +134,22 @@ class _LookupScreenState extends ConsumerState<LookupScreen> {
                 border: const OutlineInputBorder(),
               ),
             ),
+            if (medicinesFetched && query.isEmpty) ...<Widget>[
+              const SizedBox(height: 12),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.compare_arrows),
+                  title: Text(l10n.checkerTitle),
+                  subtitle: Text(l10n.checkerEntrySubtitle),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const InteractionCheckerScreen(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
 
             Text(

@@ -30,7 +30,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 # did before this constant existed.
 DIGEST = "49cad45aaa0c88b3c020425afcaa77bbd496411f932e4bef1a770c0fa771e8f1"
 SCRIPT = REPO_ROOT / "tools" / "scripts" / "gen_medicines.py"
-SELECTION = REPO_ROOT / "artifacts" / "medicines" / "selection_v1.json"
+SELECTION = REPO_ROOT / "artifacts" / "medicines" / "selection_v2.json"
 BUNDLE = REPO_ROOT / "app" / "assets" / "medicines"
 GENERATED = REPO_ROOT / "app" / "lib" / "data" / "reference" / "medicines_bundled.dart"
 
@@ -57,7 +57,7 @@ def index_for(count: int = 3) -> dict:
         "entries": [{"key": f"drug-{i}.oral.rx"} for i in range(count)],
         "export_date": "2026-10-02",
         "jurisdiction": "US",
-        "schema_version": 1,
+        "schema_version": 2,
     }
 
 
@@ -175,12 +175,13 @@ def raw_label(
     effective: str = "20250101",
     set_id: str = "set-a",
     label_id: str = "id-a",
+    classes: tuple[str, ...] = (),
     **fields: list[str],
 ) -> dict:
     """Build a label shaped like one in openFDA's export.
 
     An empty `substances` or `routes` leaves the field out, the way openFDA does
-    for kits.
+    for kits, and so does an empty `classes`, the way it does for most labels.
     """
     openfda: dict = {
         "product_type": [product_type],
@@ -195,6 +196,8 @@ def raw_label(
         openfda["route"] = list(routes)
     if original:
         openfda["is_original_packager"] = [True]
+    if classes:
+        openfda["pharm_class_epc"] = list(classes)
     label = {"openfda": openfda, "effective_time": effective, "set_id": set_id, "id": label_id}
     for section in sections:
         label[section] = ["Text."]
@@ -491,6 +494,154 @@ class TestNamesAndKeys:
             drugs(gen, one, two)
 
 
+NSAID = "Nonsteroidal Anti-inflammatory Drug [EPC]"
+
+
+class TestClasses:
+    def test_a_class_is_named_without_its_tag(self, gen) -> None:
+        found = drugs(gen, raw_label(classes=(NSAID,)))
+        assert found["ibuprofen.oral.otc"]["classes"] == ["Nonsteroidal Anti-inflammatory Drug"]
+
+    def test_a_drug_takes_the_classes_of_all_its_labels(self, gen) -> None:
+        found = drugs(
+            gen,
+            raw_label(set_id="a", classes=(NSAID,)),
+            raw_label(set_id="b", classes=("Analgesic [EPC]",)),
+            raw_label(set_id="c"),
+        )
+        assert found["ibuprofen.oral.otc"]["classes"] == [
+            "Analgesic",
+            "Nonsteroidal Anti-inflammatory Drug",
+        ]
+
+    def test_a_substance_carries_its_class_to_labels_that_leave_it_out(self, gen) -> None:
+        # Most labels carry no class. A drugstore's ibuprofen is an NSAID
+        # because ibuprofen is, which the prescription label says.
+        found = drugs(
+            gen,
+            raw_label(set_id="otc"),
+            raw_label(product_type=RX, sections=RX_SAFETY, set_id="rx", classes=(NSAID,)),
+            raw_label(
+                generic="IBUPROFEN AND FAMOTIDINE",
+                substances=("FAMOTIDINE", "IBUPROFEN"),
+                set_id="combination",
+            ),
+        )
+        nsaid = ["Nonsteroidal Anti-inflammatory Drug"]
+        assert found["ibuprofen.oral.otc"]["classes"] == nsaid
+        assert found["famotidine+ibuprofen.oral.otc"]["classes"] == nsaid
+
+    def test_a_combination_lends_no_class_to_its_parts(self, gen) -> None:
+        # Its class could belong to either ingredient.
+        found = drugs(
+            gen,
+            raw_label(set_id="ibuprofen"),
+            raw_label(generic="FAMOTIDINE", substances=("FAMOTIDINE",), set_id="famotidine"),
+            raw_label(
+                generic="IBUPROFEN AND FAMOTIDINE",
+                substances=("FAMOTIDINE", "IBUPROFEN"),
+                set_id="combination",
+                classes=("Histamine-2 Receptor Antagonist [EPC]", NSAID),
+            ),
+        )
+        assert found["ibuprofen.oral.otc"]["classes"] == []
+        assert found["famotidine.oral.otc"]["classes"] == []
+
+
+def _salted(name: str) -> list[dict]:
+    """Labels for enough drugs ending in `name` that it reads as a salt word."""
+    return [
+        raw_label(generic=f"DRUG{i} {name}", substances=(f"DRUG{i} {name}",), set_id=f"s{i}")
+        for i in range(8)
+    ]
+
+
+class TestWhatOtherLabelsCallADrug:
+    def test_its_substances_by_name(self, gen) -> None:
+        found = drugs(
+            gen,
+            raw_label(
+                generic="LEVONORGESTREL AND ETHINYL ESTRADIOL",
+                substances=("ETHINYL ESTRADIOL", "LEVONORGESTREL"),
+                product_type=RX,
+                sections=RX_SAFETY,
+            ),
+        )
+        (drug,) = found.values()
+        assert drug["match"] == ["ethinyl estradiol", "levonorgestrel"]
+
+    def test_and_without_its_salt(self, gen) -> None:
+        # A label warning about naproxen sodium says "naproxen".
+        found = drugs(
+            gen,
+            raw_label(generic="NAPROXEN SODIUM", substances=("NAPROXEN SODIUM",), set_id="n"),
+            *_salted("SODIUM"),
+        )
+        assert found["naproxen-sodium.oral.otc"]["match"] == ["naproxen", "naproxen sodium"]
+
+    def test_salt_is_read_off_the_data(self, gen) -> None:
+        # One name ending in a word does not make that word a salt.
+        found = drugs(gen, raw_label(generic="NAPROXEN SODIUM", substances=("NAPROXEN SODIUM",)))
+        assert found["naproxen-sodium.oral.otc"]["match"] == ["naproxen sodium"]
+
+    def test_not_by_a_base_two_substances_share(self, gen) -> None:
+        # "ESTRADIOL VALERATE" is not cut to "estradiol" while another
+        # substance starting "ESTRADIOL" is something else.
+        found = drugs(
+            gen,
+            raw_label(generic="ESTRADIOL VALERATE", substances=("ESTRADIOL VALERATE",), set_id="v"),
+            raw_label(generic="ESTRADIOL BENZOATE", substances=("ESTRADIOL BENZOATE",), set_id="b"),
+            *_salted("VALERATE"),
+        )
+        assert found["estradiol-valerate.oral.otc"]["match"] == ["estradiol valerate"]
+
+    def test_not_by_a_base_too_short_to_be_a_drug(self, gen) -> None:
+        found = drugs(
+            gen,
+            raw_label(generic="TEA ROOT", substances=("TEA ROOT",), set_id="t"),
+            *_salted("ROOT"),
+        )
+        assert found["tea-root.oral.otc"]["match"] == ["tea root"]
+
+    def test_not_by_a_salt_alone(self, gen) -> None:
+        found = drugs(
+            gen,
+            raw_label(generic="SODIUM CHLORIDE", substances=("SODIUM CHLORIDE",), set_id="c"),
+            *_salted("CHLORIDE"),
+            *_salted("SODIUM"),
+        )
+        assert found["sodium-chloride.oral.otc"]["match"] == ["sodium chloride"]
+
+    def test_not_by_a_name_read_off_a_title(self, gen) -> None:
+        # A kit's substances come from its name when openFDA lists none, and
+        # "DAY" would be found in nearly every label there is.
+        found = drugs(
+            gen,
+            raw_label(generic="DAY AND NIGHT COLD RELIEF", substances=(), set_id="kit"),
+        )
+        assert found["day+night-cold-relief.oral.otc"]["match"] == []
+
+    def test_but_by_one_another_label_lists(self, gen) -> None:
+        # A pill pack lists no substances, but levonorgestrel is listed on
+        # labels of its own.
+        found = drugs(
+            gen,
+            raw_label(
+                generic="LEVONORGESTREL AND ETHINYL ESTRADIOL",
+                substances=(),
+                product_type=RX,
+                sections=RX_SAFETY,
+                set_id="kit",
+            ),
+            raw_label(generic="LEVONORGESTREL", substances=("LEVONORGESTREL",), set_id="ec"),
+        )
+        assert found["ethinyl-estradiol+levonorgestrel.oral.rx"]["match"] == ["levonorgestrel"]
+
+    def test_not_by_a_number(self, gen) -> None:
+        found = drugs(gen, raw_label(generic="5", substances=("5",)))
+        assert found["5.oral.otc"]["match"] == []
+
+
 class _Response:
     """A stand-in for an HTTP response: a body, and the length it announced."""
 
@@ -587,7 +738,7 @@ class TestTheSelectionFile:
     def test_one_drug_per_line_and_still_one_json_document(self, gen) -> None:
         prescription = raw_label(product_type=RX, sections=RX_SAFETY)
         entries = list(drugs(gen, raw_label(), prescription).values())
-        text = gen.selection_json({"schema_version": 1}, entries)
+        text = gen.selection_json({"schema_version": gen.SELECTION_SCHEMA_VERSION}, entries)
         assert json.loads(text)["entries"] == entries
         assert len(text.splitlines()) == len(entries) + 3
 
@@ -740,6 +891,23 @@ class TestTheBundle:
         parsed, _ = unpacked(gen, index, chunks)
         labels = {row["key"]: row["labels"] for row in parsed["entries"]}
         assert labels == {entry["key"]: entry["labels"] for entry in entries}
+
+    def test_the_index_carries_what_the_interaction_checker_looks_for(self, gen) -> None:
+        entries, index, chunks = bundle_of(gen, THREE_DRUGS)
+        parsed, _ = unpacked(gen, index, chunks)
+        assert [(row["classes"], row["match"]) for row in parsed["entries"]] == [
+            (entry["classes"], entry["match"]) for entry in entries
+        ]
+        assert ["naproxen"] in [row["match"] for row in parsed["entries"]]
+
+    def test_match_terms_that_are_not_the_selections_are_found(self, gen, tmp_path: Path) -> None:
+        entries, index, chunks = bundle_of(gen, THREE_DRUGS)
+        gen.write_bundle(tmp_path, index, chunks)
+        changed = [{**entry, "match": []} for entry in entries]
+        other = {"meta": {"export_date": "2026-10-02"}, "entries": changed}
+        assert gen.bundle_problems(gen.bundle_files(tmp_path), other) == [
+            "its classes or match terms are not the selection's"
+        ]
 
     def test_is_byte_for_byte_repeatable(self, gen) -> None:
         # --check compares checksums, so a rebuild from the same export must
