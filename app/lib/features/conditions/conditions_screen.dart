@@ -5,9 +5,16 @@
 /// (ADR-0010). What it does give back is the number of cycles each one
 /// overlapped, which is context for reading the user's own figures.
 ///
+/// Below them, the medicines the user takes, picked from the bundled US list,
+/// and a flag for each pair whose labels connect them (ADR-0015). A flag only
+/// informs, and offers the pair to a browser.
+///
 /// Includes:
 ///     - ConditionsScreen: The list, and the flow that adds to it.
 ///     - _ConditionTile: One record, its dates, and what it overlapped.
+///     - _Medicines: The recorded medicines, and the flow that adds to them.
+///     - _Conflicts: The flags for the recorded medicines.
+///     - _ConflictFlag: One flagged pair.
 ///     - conditionLabel: The user-facing name of a condition.
 ///     - _pickDate: The date picker both flows use.
 library;
@@ -15,11 +22,19 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/data/reference/interactions.dart';
+import 'package:period_tracker/data/reference/medicine.dart';
+import 'package:period_tracker/data/reference/medicine_bundle.dart';
+import 'package:period_tracker/data/reference/medicines_bundled.dart';
+import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/domain/cycles/condition_overlap.dart';
 import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/common/snack.dart';
+import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
+import 'package:period_tracker/features/lookup/medicine_picker.dart';
+import 'package:period_tracker/features/lookup/medicine_screen.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Conditions screen: what was recorded, and over which days.
@@ -77,6 +92,8 @@ class ConditionsScreen extends ConsumerWidget {
                       .map((o) => o.cycles)
                       .firstOrNull,
                 ),
+            const SizedBox(height: 24),
+            const _Medicines(),
           ],
         ),
       ),
@@ -297,6 +314,237 @@ class _ConditionTile extends ConsumerWidget {
     );
     if (chosen == null) return;
     await ref.read(conditionRepositoryProvider).end(id: record.id, end: chosen);
+  }
+}
+
+/// The medicines the user takes, and a way to add more.
+///
+/// Picked from the bundled US list rather than typed, because a typed name
+/// cannot be compared with anything. Stored as a setting, so they travel in
+/// exports and go with "delete everything" (ADR-0015). Like the conditions
+/// above them, none of it reaches the prediction.
+class _Medicines extends ConsumerWidget {
+  /// Creates the section.
+  const _Medicines();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final body = theme.textTheme.bodyMedium;
+    final recorded =
+        ref.watch(recordedMedicinesProvider).valueOrNull ??
+        const <RecordedMedicine>[];
+    // The index says how each medicine is taken, and which ones a refresh of
+    // the bundle dropped. Loaded only once there is something to say it of.
+    final index = medicinesFetched && recorded.isNotEmpty
+        ? ref.watch(medicineIndexProvider).valueOrNull
+        : null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Semantics(
+          header: true,
+          child: Text(
+            l10n.conditionsMedicinesHeading,
+            style: theme.textTheme.titleMedium,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(l10n.conditionsMedicinesIntro, style: body),
+        const SizedBox(height: 8),
+        if (!medicinesFetched)
+          Text(l10n.conditionsMedicinesUnavailable, style: body)
+        else ...<Widget>[
+          if (recorded.isEmpty)
+            Text(l10n.conditionsMedicinesEmpty, style: body),
+          for (final medicine in recorded)
+            Card(
+              child: ListTile(
+                title: Text(medicine.name),
+                subtitle: switch (index) {
+                  null => null,
+                  final index => Text(switch (index.byKey(medicine.key)) {
+                    final entry? => medicineKind(l10n, entry),
+                    null => l10n.conditionsMedicineGone,
+                  }),
+                },
+                trailing: IconButton(
+                  onPressed: () => ref
+                      .read(medicineListRepositoryProvider)
+                      .remove(medicine.key),
+                  icon: const Icon(Icons.close),
+                  tooltip: l10n.checkerRemove(medicine.name),
+                ),
+              ),
+            ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => _add(context, ref),
+            icon: const Icon(Icons.add),
+            label: Text(l10n.checkerAdd),
+          ),
+          if (recorded.length >= 2) ...<Widget>[
+            const SizedBox(height: 16),
+            const _Conflicts(),
+          ],
+        ],
+      ],
+    );
+  }
+
+  /// Pick a medicine and record it, and say which.
+  ///
+  /// Args:
+  ///     context (BuildContext): What to open the picker over.
+  ///     ref (WidgetRef): For the medicine list.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once it is recorded, or at once if the
+  ///     user went back without picking one.
+  Future<void> _add(BuildContext context, WidgetRef ref) async {
+    final picked = await pickMedicine(context);
+    if (picked == null || !context.mounted) return;
+    final added = await ref.read(medicineListRepositoryProvider).add(picked);
+    if (!context.mounted) return;
+    showAppSnackBar(
+      context,
+      added
+          ? picked.name
+          : AppLocalizations.of(context).checkerAlreadyAdded(picked.name),
+    );
+  }
+}
+
+/// The flags for the recorded medicines: one for each pair whose labels
+/// connect them, and a plain statement when none do.
+class _Conflicts extends ConsumerWidget {
+  /// Creates the flags.
+  const _Conflicts();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final body = theme.textTheme.bodyMedium;
+    final pairs = ref.watch(recordedInteractionsProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Semantics(
+          header: true,
+          child: Text(
+            l10n.conditionsConflictsHeading,
+            style: theme.textTheme.titleMedium,
+          ),
+        ),
+        const SizedBox(height: 4),
+        ...pairs.when(
+          data: (pairs) {
+            final flagged = <InteractionPair>[
+              for (final pair in pairs)
+                if (pair.connected) pair,
+            ];
+            if (flagged.isEmpty) {
+              // Said, rather than an empty section, and never as "no
+              // conflicts": the labels leave interactions out.
+              return <Widget>[
+                Text(l10n.conditionsConflictsNone, style: body),
+                const SizedBox(height: 4),
+                Text(l10n.checkerNothingFoundNote, style: body),
+              ];
+            }
+            return <Widget>[
+              Text(l10n.conditionsConflictsIntro, style: body),
+              const SizedBox(height: 8),
+              for (final pair in flagged) _ConflictFlag(pair: pair),
+            ];
+          },
+          error: (error, stack) => <Widget>[
+            Text(l10n.checkerFailed, style: body),
+          ],
+          loading: () => <Widget>[
+            LinearProgressIndicator(semanticsLabel: l10n.checkerLoading),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// One flagged pair: what connects them, and where to read more.
+///
+/// It informs and nothing else, at the owner's direction. It never says to
+/// stop or change anything, and `interaction_copy_test.dart` holds it to
+/// that. Its two ways on are the browser, where the pair is searched for
+/// after the usual confirmation, and the checker, where each mention is
+/// quoted in full.
+///
+/// Attributes:
+///     pair (InteractionPair): The pair.
+class _ConflictFlag extends StatelessWidget {
+  /// Creates the flag.
+  ///
+  /// Args:
+  ///     pair (InteractionPair): The pair.
+  const _ConflictFlag({required this.pair});
+
+  /// The pair.
+  final InteractionPair pair;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Icon(Icons.flag_outlined, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.checkerPairTitle(pair.first.name, pair.second.name),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            for (final reason in interactionReasons(l10n, pair))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(reason, style: theme.textTheme.bodyMedium),
+              ),
+            Wrap(
+              spacing: 8,
+              children: <Widget>[
+                TextButton.icon(
+                  onPressed: () => searchPairOnline(context, pair),
+                  icon: const Icon(Icons.open_in_new),
+                  label: Text(l10n.conditionsConflictLookUp),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (context) => InteractionCheckerScreen(
+                        initial: <MedicineEntry>[pair.first, pair.second],
+                      ),
+                    ),
+                  ),
+                  child: Text(l10n.conditionsConflictLabels),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

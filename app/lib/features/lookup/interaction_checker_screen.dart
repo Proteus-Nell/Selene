@@ -296,25 +296,45 @@ List<String> interactionReasons(
     ),
   if (!quotes) ...<String>[
     for (final mention in pair.firstMentions)
-      _mentionSentence(l10n, mention, own: pair.first, other: pair.second),
+      _mentionSentence(
+        l10n,
+        mention,
+        own: pair.first,
+        other: pair.second,
+        short: true,
+      ),
     for (final mention in pair.secondMentions)
-      _mentionSentence(l10n, mention, own: pair.second, other: pair.first),
+      _mentionSentence(
+        l10n,
+        mention,
+        own: pair.second,
+        other: pair.first,
+        short: true,
+      ),
   ],
 ];
 
-/// The sentence that introduces a mention: which label, which words, and
-/// where in the label.
+/// The sentence that introduces a mention: which label, which words, and,
+/// above a quoted passage, where in the label.
+///
+/// [short] leaves out where, for a reason with no passage under it.
 String _mentionSentence(
   AppLocalizations l10n,
   LabelMention mention, {
   required MedicineEntry own,
   required MedicineEntry other,
+  bool short = false,
 }) {
   // The words as the label prints them, on one line: a match can run over a
   // line break, "Naproxen\nsodium".
   final words = mention.passage
       .substring(mention.start, mention.end)
       .replaceAll(RegExp(r'\s+'), ' ');
+  if (short) {
+    return mention.isClass
+        ? l10n.checkerMentionsClassShort(own.name, words, other.name)
+        : l10n.checkerMentionsNameShort(own.name, words);
+  }
   final section = medicineSectionHeading(l10n, mention.section);
   return mention.isClass
       ? l10n.checkerMentionsClass(own.name, words, other.name, section)

@@ -1856,6 +1856,18 @@ abstract class AppLocalizations {
     String section,
   );
 
+  /// A conflict flag's reason, where there is no room for the passage itself.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”.'**
+  String checkerMentionsNameShort(String medicine, String words);
+
+  /// No description provided for @checkerMentionsClassShort.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”, an FDA drug class that includes {other}.'**
+  String checkerMentionsClassShort(String medicine, String words, String other);
+
   /// No description provided for @checkerNothingFoundPair.
   ///
   /// In en, this message translates to:
@@ -2396,6 +2408,12 @@ abstract class AppLocalizations {
   /// **'Look it up online'**
   String get conditionsConflictLookUp;
 
+  /// Opens the interaction checker on the flagged pair, where each mention is quoted: a name can be found in a sense the flag cannot show, "lactic" in "lactic acidosis".
+  ///
+  /// In en, this message translates to:
+  /// **'What the labels say'**
+  String get conditionsConflictLabels;
+
   /// No description provided for @conditionHormonalContraceptionCombined.
   ///
   /// In en, this message translates to:
@@ -2489,7 +2507,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsConditionsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Record long-term things that can change your cycle.'**
+  /// **'Record long-term things that can change your cycle, and the medicines you take.'**
   String get settingsConditionsSubtitle;
 
   /// No description provided for @learnTitle.

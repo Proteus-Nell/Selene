@@ -9,8 +9,9 @@
 /// database, handles the failure outcomes, and overrides it.
 ///
 /// Includes:
-///     - appDatabaseProvider and the three repository providers.
+///     - appDatabaseProvider and the four repository providers.
 ///     - The day-log, cycle, prediction and condition read providers.
+///     - The recorded medicines, and what their labels say about each other.
 ///     - One provider per stored preference.
 ///     - themeModeFromWireName: Resolves a stored theme mode.
 library;
@@ -22,8 +23,12 @@ import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/core/palette.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/data/reference/interactions.dart';
+import 'package:period_tracker/data/reference/medicine.dart';
+import 'package:period_tracker/data/reference/medicine_bundle.dart';
 import 'package:period_tracker/data/repositories/condition_repository.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
+import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 import 'package:period_tracker/data/repositories/prediction_repository.dart';
 import 'package:period_tracker/domain/cycles/condition_overlap.dart';
 import 'package:period_tracker/domain/models/condition.dart';
@@ -124,6 +129,40 @@ final FutureProvider<List<ConditionOverlap>> conditionOverlapsProvider =
         cycles: segmented.valueOrNull ?? const <CycleRecord>[],
         records: records,
       );
+    });
+
+/// Reads and writes the medicines recorded under Conditions and medication.
+final Provider<MedicineListRepository> medicineListRepositoryProvider =
+    Provider<MedicineListRepository>(
+      (ref) =>
+          MedicineListRepository(ref.watch(appDatabaseProvider).settingsDao),
+    );
+
+/// The recorded medicines, in the order added, kept current as they change.
+final StreamProvider<List<RecordedMedicine>> recordedMedicinesProvider =
+    StreamProvider<List<RecordedMedicine>>(
+      (ref) => ref.watch(medicineListRepositoryProvider).watch(),
+    );
+
+/// What the recorded medicines' labels say about each other: the conflict
+/// flags under Conditions and medication (ADR-0014, ADR-0015).
+///
+/// Loads the medicines index and each recorded medicine's label, so only the
+/// screen that shows the flags watches it, and both are dropped when it
+/// closes. A medicine the bundle no longer lists is left out of the
+/// comparison; the screen says so under its name.
+final AutoDisposeFutureProvider<List<InteractionPair>>
+recordedInteractionsProvider =
+    FutureProvider.autoDispose<List<InteractionPair>>((
+      ref,
+    ) async {
+      final recorded = await ref.watch(recordedMedicinesProvider.future);
+      if (recorded.length < 2) return const <InteractionPair>[];
+      final index = await ref.watch(medicineIndexProvider.future);
+      final medicines = <MedicineEntry>[
+        for (final medicine in recorded) ?index.byKey(medicine.key),
+      ];
+      return ref.watch(medicineBundleProvider).interactions(medicines);
     });
 
 /// Whether the flow control is collapsed to bleeding yes/no (AND-24).

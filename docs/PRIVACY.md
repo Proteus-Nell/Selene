@@ -81,6 +81,23 @@ a screen reader is audible to whoever is in the room.
 If you want the app to ask for your fingerprint or PIN before showing anything,
 turn on the app lock described below. It is off by default.
 
+## Medicines you record
+
+Conditions and medication can keep a list of the medicines you take, so the app
+can flag pairs whose labels connect them. It is optional, and a list like this
+can say a great deal: emergency contraception, HIV prevention, antidepressants.
+
+- **It stays on your device.** It is compared with the US labels the app
+  carries, on the phone. Nothing is sent anywhere unless you choose "Look it up
+  online" for a pair and confirm, and then it is your browser that searches for
+  those two names, and keeps them in its history.
+- **It is in your exports**, because a backup that dropped it would lose
+  something you recorded. "Delete everything" deletes it, and taking the last
+  medicine off the list leaves nothing behind.
+- **It is never used to predict anything**, the same as conditions.
+- **A flag is not advice.** It says that two labels connect, and nothing about
+  whether that matters for you. A pharmacist can tell you that.
+
 ## The app lock
 
 You can require your fingerprint, face, PIN or pattern before the app will show

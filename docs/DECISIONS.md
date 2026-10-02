@@ -23,6 +23,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) | The medicines reference covers every drug, one label each, chosen by rule | Accepted | 2026-10-02 |
 | [0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone) | The medicines bundle is compressed chunks and an index, searched on the phone | Accepted | 2026-10-02 |
 | [0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe) | The interaction checker compares label text, and never calls a pair safe | Accepted | 2026-10-02 |
+| [0015](#adr-0015-recorded-medicines-are-kept-as-a-setting-and-their-flags-only-inform) | Recorded medicines are kept as a setting, and their flags only inform | Accepted | 2026-10-02 |
 
 ---
 
@@ -683,6 +684,69 @@ this misses, but it is hand-written, which the owner has ruled out for now.
   bundle's schema went to 2 as well, and the app refuses an older bundle,
   which would have no names to look for.
 - Medication Guides, proposed alongside this step, are deferred.
+
+---
+
+## ADR-0015: Recorded medicines are kept as a setting, and their flags only inform
+
+**Status:** Accepted, 2026-10-02. Uses the matching of [ADR-0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe).
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for conflict flags in Conditions and medication: a notice that
+medicines a person takes might conflict, which only informs, with a way out to
+the web. Flags need the medicines kept between visits, which the checker
+deliberately does not do. A medicine list is among the most revealing things
+this app could hold: emergency contraception, HIV prevention, antidepressants.
+
+Two constraints decide where it lives:
+
+- **Exports.** Under ADR-0011 a build refuses backups in an older format. A new
+  table would mean export format v3, and every v2 backup a user holds would
+  stop restoring, for the second time in two releases.
+- **Deletion.** "Delete everything" has to remove the list, and the activity
+  log must not record it.
+
+### Decision
+
+1. **One setting, `recorded_medicines`:** a JSON list of `{key, name}`, in the
+   order added. Exports carry settings verbatim and imports restore them as
+   they are, so the format does not change. "Delete everything" empties the
+   settings table, and removing the last medicine deletes the row. Settings
+   writes are not logged.
+2. **Picked, not typed.** Each medicine comes from the bundled US list and is
+   kept by the bundle's key. Its name is kept too, so one that a later refresh
+   drops is still shown, marked as no longer compared.
+3. **The flags are computed when the screen opens**, with ADR-0014's matching
+   over every pair. A flagged pair shows what connects it, a sentence each,
+   and two ways on: the browser hand-off, which searches the two names after
+   the usual confirmation, and the checker, which quotes each mention. A flag
+   never says to stop or change anything, and `interaction_copy_test.dart`
+   fails the build on directive or reassuring wording. Where nothing connects,
+   the screen says so, and that this does not mean the medicines are safe
+   together.
+4. **Nothing reaches the prediction**, as with conditions (ADR-0010).
+
+### Runner-up and why rejected
+
+**A medicines table, with dates like conditions.** Typed, queryable, and spans
+would allow "taken from ... to ...". But it changes the export format to v3,
+which under ADR-0011 strands every v2 backup.
+
+**Flags against conditions too**, such as a recorded combined pill with
+rifampin. That needs a hand-written mapping from each condition to medicines,
+which the owner has ruled out for now.
+
+### Consequences
+
+- The list is stored unencrypted with everything else (ADR-0004), and is in
+  every export. Anyone who can read either can read it. PRIVACY.md says so.
+- A setting has no dates. The list is what someone takes now, not a history.
+- An older build that restores a backup with this setting keeps it, and
+  ignores it.
+- The flags inherit ADR-0014's limits. A label that names the other medicine
+  only by a group, such as "combined hormonal contraceptives", raises no flag.
 
 ---
 

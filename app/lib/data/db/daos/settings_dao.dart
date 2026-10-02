@@ -134,7 +134,15 @@ enum SettingKey {
   /// Recorded so the app asks once. On Android 13+ a denial is close to final,
   /// so re-prompting spends the user's patience on a request that cannot
   /// succeed.
-  notificationPermissionAsked('notification_permission_asked');
+  notificationPermissionAsked('notification_permission_asked'),
+
+  /// The medicines recorded under Conditions and medication, as JSON.
+  ///
+  /// A list of `{"key": ..., "name": ...}`, in the order added
+  /// (`MedicineListRepository`). A setting rather than a table, so that it
+  /// travels in exports with no change to their format (ADR-0015). Absent
+  /// when none are recorded.
+  recordedMedicines('recorded_medicines');
 
   const SettingKey(this.wireName);
 
@@ -450,6 +458,14 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
       into(settings).insertOnConflictUpdate(
         SettingRow(settingKey: key, settingValue: value),
       );
+
+  /// Delete a stored setting, so that it reads as unset.
+  ///
+  /// Args:
+  ///     key (SettingKey): Which preference to delete.
+  Future<void> remove(SettingKey key) => (delete(
+    settings,
+  )..where((t) => t.settingKey.equals(key.wireName))).go();
 
   /// Replace every stored setting.
   ///

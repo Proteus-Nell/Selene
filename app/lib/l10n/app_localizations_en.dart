@@ -1097,6 +1097,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String checkerMentionsNameShort(String medicine, String words) {
+    return 'The $medicine label mentions “$words”.';
+  }
+
+  @override
+  String checkerMentionsClassShort(
+    String medicine,
+    String words,
+    String other,
+  ) {
+    return 'The $medicine label mentions “$words”, an FDA drug class that includes $other.';
+  }
+
+  @override
   String get checkerNothingFoundPair =>
       'Neither label names the other, and they share no ingredient or FDA drug class.';
 
@@ -1427,6 +1441,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get conditionsConflictLookUp => 'Look it up online';
 
   @override
+  String get conditionsConflictLabels => 'What the labels say';
+
+  @override
   String get conditionHormonalContraceptionCombined => 'Combined pill';
 
   @override
@@ -1474,7 +1491,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsConditionsSubtitle =>
-      'Record long-term things that can change your cycle.';
+      'Record long-term things that can change your cycle, and the medicines you take.';
 
   @override
   String get learnTitle => 'Learn';
