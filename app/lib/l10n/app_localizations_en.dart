@@ -879,6 +879,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lookupMedicinesShowMore => 'Show more';
 
   @override
+  String get lookupBrowseHeading => 'Or browse them from A to Z';
+
+  @override
+  String lookupBrowseLetter(String letter) {
+    return 'Medicines starting with $letter';
+  }
+
+  @override
+  String get lookupBrowseOther =>
+      'Medicines starting with a number or a symbol';
+
+  @override
+  String lookupBrowseTitle(String letter) {
+    return 'Medicines: $letter';
+  }
+
+  @override
+  String lookupBrowseShared(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count medicines by this name',
+      one: '1 medicine by this name',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lookupBrowseSharedIntro =>
+      'These go by the same name. They differ in what is in them, how they are taken, or whether they need a prescription.';
+
+  @override
   String get lookupMedicinePrescription => 'Prescription';
 
   @override

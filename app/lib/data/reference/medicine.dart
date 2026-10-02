@@ -12,6 +12,7 @@
 ///     - MedicineSection: One section of a label, as published.
 ///     - MedicineMatch: A drug a search found, and the brand it was found by.
 ///     - MedicineSearch: What a search found.
+///     - MedicineName: One name in the A-Z, and the drugs that go by it.
 ///     - MedicineIndex: Every drug, and the search over them.
 ///     - MedicineBundleException: The bundle contradicts itself.
 ///     - foldForSearch: The form both a query and a name are compared in.
@@ -303,6 +304,31 @@ final class MedicineSearch {
   final int total;
 }
 
+/// One name in the A-Z, and every drug that goes by it.
+///
+/// A drug here is its substances, route and prescription status (ADR-0012),
+/// so one name can stand for several: ibuprofen tablets from a shop, on
+/// prescription, and by injection. The A-Z lists the name once.
+///
+/// Attributes:
+///     name (String): The name, as the most widely sold of the drugs gives it.
+///     entries (`List<MedicineEntry>`): The drugs, most labels first.
+@immutable
+final class MedicineName {
+  /// Creates a name.
+  ///
+  /// Args:
+  ///     name (String): The name.
+  ///     entries (`List<MedicineEntry>`): The drugs that go by it.
+  const MedicineName(this.name, this.entries);
+
+  /// The name, as the most widely sold of the drugs gives it.
+  final String name;
+
+  /// The drugs that go by this name, most labels first.
+  final List<MedicineEntry> entries;
+}
+
 /// The bundle disagrees with itself, or with the code reading it.
 ///
 /// Attributes:
@@ -339,7 +365,8 @@ final class MedicineIndex {
     this._text,
     this._starts,
     this._substancesAt,
-    this._brandsAt, {
+    this._brandsAt,
+    this._byLetter, {
     required this.entries,
     required this.exportDate,
     required this.jurisdiction,
@@ -382,10 +409,17 @@ final class MedicineIndex {
         ..addByte(_newline);
     }
 
+    // The A-Z goes by folded names too, so "Ibuprofen" and "IBUPROFEN" are one
+    // row, and a combination is one row however its labels punctuate it.
+    final named = <String, List<MedicineEntry>>{};
     for (final (i, entry) in entries.indexed) {
+      final folded = foldForSearch(entry.name);
+      (named[folded] ??= <MedicineEntry>[]).add(entry);
       starts[i] = text.length;
-      text.addByte(_newline);
-      add(entry.name);
+      text
+        ..addByte(_newline)
+        ..add(utf8.encode(folded))
+        ..addByte(_newline);
       substancesAt[i] = text.length;
       entry.substances.forEach(add);
       brandsAt[i] = text.length;
@@ -393,11 +427,20 @@ final class MedicineIndex {
     }
     starts[entries.length] = text.length;
 
+    final byLetter = <String, List<MedicineName>>{};
+    for (final folded in named.keys.toList()..sort()) {
+      final drugs = named[folded]!..sort(_mostLabelsFirst);
+      (byLetter[_letterOf(folded)] ??= <MedicineName>[]).add(
+        MedicineName(drugs.first.name, List<MedicineEntry>.unmodifiable(drugs)),
+      );
+    }
+
     return MedicineIndex._(
       text.takeBytes(),
       starts,
       substancesAt,
       brandsAt,
+      byLetter,
       entries: entries,
       exportDate: json['export_date']! as String,
       jurisdiction: json['jurisdiction']! as String,
@@ -441,6 +484,31 @@ final class MedicineIndex {
 
   /// Where each drug's brands begin in [_text].
   final Int32List _brandsAt;
+
+  /// The A-Z: every name, in alphabetical order, under the letter it starts
+  /// with.
+  final Map<String, List<MedicineName>> _byLetter;
+
+  /// The letters of the A-Z, in order: `a` to `z`, then `#` for the names
+  /// that start with a digit or anything else.
+  static const List<String> letters = <String>[
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', //
+    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '#',
+  ];
+
+  /// List the names that start with [letter], in alphabetical order.
+  ///
+  /// Case and punctuation are ignored, both in the order and in which names
+  /// count as one.
+  ///
+  /// Args:
+  ///     letter (String): One of [letters].
+  ///
+  /// Returns:
+  ///     `List<MedicineName>`: The names, each with every drug that goes by
+  ///     it. Empty for a letter no name starts with.
+  List<MedicineName> browse(String letter) =>
+      _byLetter[letter] ?? const <MedicineName>[];
 
   /// Find the drugs whose names, substances or brands match [query].
   ///
@@ -604,6 +672,19 @@ final class MedicineIndex {
       }
       onMatch(current, i, before, text[i + query.length]);
     }
+  }
+
+  /// Order two drugs that share a name: more labels first, then by key.
+  static int _mostLabelsFirst(MedicineEntry a, MedicineEntry b) {
+    final order = b.labels.compareTo(a.labels);
+    return order != 0 ? order : a.key.compareTo(b.key);
+  }
+
+  /// The letter of the A-Z a folded name is listed under.
+  static String _letterOf(String folded) {
+    if (folded.isEmpty) return '#';
+    final first = folded.codeUnitAt(0);
+    return first >= 0x61 && first <= 0x7A ? folded[0] : '#';
   }
 
   /// Order two ranked drugs, better first.

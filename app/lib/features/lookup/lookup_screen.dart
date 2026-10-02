@@ -7,7 +7,6 @@
 /// Includes:
 ///     - LookupScreen: The screen itself.
 ///     - _LookupScreenState: The query, the matching, and the hand-off.
-///     - _MedicineTile: One medicine a search found.
 library;
 
 import 'package:flutter/material.dart';
@@ -17,7 +16,7 @@ import 'package:period_tracker/data/reference/medicine_bundle.dart';
 import 'package:period_tracker/data/reference/medicines_bundled.dart';
 import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/lookup/browser_handoff.dart';
-import 'package:period_tracker/features/lookup/medicine_screen.dart';
+import 'package:period_tracker/features/lookup/medicine_browse.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Lookup screen: look something up, with somewhere to go if it is not here.
@@ -29,8 +28,8 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// otherwise.
 ///
 /// The medicines are every drug in openFDA's label export, several thousand of
-/// them (ADR-0012), so they are searched rather than listed, and each opens
-/// onto its own page.
+/// them (ADR-0012), so they are searched, or browsed a letter at a time, and
+/// each opens onto its own page.
 class LookupScreen extends ConsumerStatefulWidget {
   /// Creates the lookup screen.
   const LookupScreen({super.key});
@@ -180,12 +179,22 @@ class _LookupScreenState extends ConsumerState<LookupScreen> {
                           l10n.lookupMedicinesPrompt(reference.entries.length),
                           style: theme.textTheme.bodyMedium,
                         ),
+                        const SizedBox(height: 16),
+                        Text(
+                          l10n.lookupBrowseHeading,
+                          style: theme.textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        MedicineLetters(index: reference),
                       ]
                     : <Widget>[
                         for (final match in medicines.matches)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8),
-                            child: _MedicineTile(match: match),
+                            child: MedicineTile(
+                              entry: match.entry,
+                              brand: match.brand,
+                            ),
                           ),
                         if (medicines.total >
                             medicines.matches.length) ...<Widget>[
@@ -247,53 +256,6 @@ class _LookupScreenState extends ConsumerState<LookupScreen> {
             const SizedBox(height: 8),
             Text(medicinesDisclaimer, style: theme.textTheme.bodySmall),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One medicine a search found: its name, how it is taken, and its brands.
-///
-/// Opens onto the medicine's own page. The label text is long, and a list
-/// where every result carried its full label would be a list nobody could
-/// scan.
-///
-/// Attributes:
-///     match (MedicineMatch): The medicine, and the brand it was found by.
-class _MedicineTile extends StatelessWidget {
-  /// Creates a tile.
-  ///
-  /// Args:
-  ///     match (MedicineMatch): The medicine, and the brand it was found by.
-  const _MedicineTile({required this.match});
-
-  /// The medicine, and the brand it was found by.
-  final MedicineMatch match;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final entry = match.entry;
-    // The brand it was found by goes first: searching "plan b" and getting
-    // "LEVONORGESTREL" back is only reassuring if "Plan B" is on the tile.
-    final brands = medicineBrands(l10n, entry, first: match.brand, limit: 3);
-    return Card(
-      child: ListTile(
-        title: Text(entry.name),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(medicineKind(l10n, entry)),
-            if (brands != null) Text(brands),
-          ],
-        ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (context) =>
-                MedicineScreen(entry: entry, brand: match.brand),
-          ),
         ),
       ),
     );

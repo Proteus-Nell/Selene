@@ -1533,6 +1533,42 @@ abstract class AppLocalizations {
   /// **'Show more'**
   String get lookupMedicinesShowMore;
 
+  /// No description provided for @lookupBrowseHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Or browse them from A to Z'**
+  String get lookupBrowseHeading;
+
+  /// What a screen reader says for a letter in the A to Z grid. The letter alone would be read as a letter, not as a way in.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines starting with {letter}'**
+  String lookupBrowseLetter(String letter);
+
+  /// What a screen reader says for the # in the A to Z grid.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines starting with a number or a symbol'**
+  String get lookupBrowseOther;
+
+  /// No description provided for @lookupBrowseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines: {letter}'**
+  String lookupBrowseTitle(String letter);
+
+  /// Under a name in the A to Z that several medicines go by: ibuprofen tablets from a shop, on prescription, and by injection.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 medicine by this name} other{{count} medicines by this name}}'**
+  String lookupBrowseShared(int count);
+
+  /// No description provided for @lookupBrowseSharedIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'These go by the same name. They differ in what is in them, how they are taken, or whether they need a prescription.'**
+  String get lookupBrowseSharedIntro;
+
   /// No description provided for @lookupMedicinePrescription.
   ///
   /// In en, this message translates to:

@@ -22,6 +22,7 @@ import 'package:period_tracker/data/reference/medicine_bundle.dart';
 import 'package:period_tracker/data/reference/medicines_bundled.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/lookup/lookup_screen.dart';
+import 'package:period_tracker/features/lookup/medicine_browse.dart';
 import 'package:period_tracker/features/lookup/medicine_screen.dart';
 
 import '../../data/reference/medicine_fixture.dart';
@@ -351,6 +352,106 @@ void main() {
     });
   });
 
+  group('the A to Z', () {
+    /// Scrolls to the letter's button and taps it.
+    Future<void> openLetter(WidgetTester tester, String letter) async {
+      final button = find.text(letter);
+      await reveal(tester, button);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      expect(find.byType(MedicineLetterScreen), findsOneWidget);
+    }
+
+    testWidgets('is offered while nothing is typed', (tester) async {
+      await pump(tester);
+      final heading = find.text(l10nOf(tester).lookupBrowseHeading);
+      await reveal(tester, heading);
+      expect(heading, findsOneWidget);
+      expect(find.byType(MedicineLetters), findsOneWidget);
+    });
+
+    testWidgets('gives way to the results once something is', (tester) async {
+      await pump(tester);
+      await search(tester, 'ibuprofen');
+      // To the foot of the page, past where the grid would be.
+      await reveal(tester, find.text(l10nOf(tester).lookupSearchOnlineAction));
+      expect(find.byType(MedicineLetters), findsNothing);
+      expect(find.text(l10nOf(tester).lookupBrowseHeading), findsNothing);
+    });
+
+    testWidgets('greys out a letter no name starts with', (tester) async {
+      // Every letter stays where it is. One with nothing under it is shown
+      // and cannot be tapped, rather than left out.
+      await pump(tester);
+      await reveal(tester, find.text('Q'));
+      final q = tester.widget<TextButton>(
+        find.ancestor(of: find.text('Q'), matching: find.byType(TextButton)),
+      );
+      expect(q.onPressed, isNull);
+      final i = tester.widget<TextButton>(
+        find.ancestor(of: find.text('I'), matching: find.byType(TextButton)),
+      );
+      expect(i.onPressed, isNotNull);
+    });
+
+    testWidgets('says what each letter does to a screen reader', (
+      tester,
+    ) async {
+      await pump(tester);
+      await reveal(tester, find.text('I'));
+      final l10n = l10nOf(tester);
+      expect(find.bySemanticsLabel(l10n.lookupBrowseLetter('I')), findsOne);
+      expect(find.bySemanticsLabel(l10n.lookupBrowseOther), findsOne);
+    });
+
+    testWidgets('lists the names under a letter', (tester) async {
+      await pump(tester);
+      await openLetter(tester, 'T');
+      final l10n = l10nOf(tester);
+      expect(find.text(l10n.lookupBrowseTitle('T')), findsOneWidget);
+      expect(find.text('TRANEXAMIC ACID'), findsOneWidget);
+      expect(
+        find.text('Oral · ${l10n.lookupMedicinePrescription}'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('opens a name one medicine goes by onto its label', (
+      tester,
+    ) async {
+      await pump(tester);
+      await openLetter(tester, 'L');
+      await tester.tap(find.text('LEVONORGESTREL'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MedicineScreen), findsOneWidget);
+      expect(find.text('Emergency contraceptive'), findsOneWidget);
+    });
+
+    testWidgets('tells apart the medicines that share a name', (tester) async {
+      // Ibuprofen from a shop shelf, on prescription, and by injection: one
+      // name in the A to Z, and the reader picks which one they mean rather
+      // than being shown whichever came first.
+      await pump(tester);
+      await openLetter(tester, 'I');
+      final l10n = l10nOf(tester);
+      expect(find.text(l10n.lookupBrowseShared(3)), findsOneWidget);
+
+      await tester.tap(find.text('IBUPROFEN'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MedicineNameScreen), findsOneWidget);
+      expect(find.text(l10n.lookupBrowseSharedIntro), findsOneWidget);
+      expect(find.byType(MedicineTile), findsNWidgets(3));
+
+      final injection = find.text(
+        'Intravenous · ${l10n.lookupMedicinePrescription}',
+      );
+      await tester.tap(injection);
+      await tester.pumpAndSettle();
+      expect(find.byType(MedicineScreen), findsOneWidget);
+      expect(find.text('Management of pain in adults.'), findsOneWidget);
+    });
+  });
+
   group('layout', () {
     testWidgets('survives a 200% text scale', (tester) async {
       await tester.pumpWidget(
@@ -358,6 +459,19 @@ void main() {
       );
       await tester.pumpAndSettle();
       await search(tester, 'ibuprofen');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets("and so does a letter's page", (tester) async {
+      await tester.pumpWidget(
+        screen(textScaler: const TextScaler.linear(2)),
+      );
+      await tester.pumpAndSettle();
+      final letter = find.text('I');
+      await reveal(tester, letter);
+      await tester.tap(letter);
+      await tester.pumpAndSettle();
+      expect(find.byType(MedicineLetterScreen), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

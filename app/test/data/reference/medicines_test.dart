@@ -210,6 +210,21 @@ void main() {
       );
     });
 
+    test('has every drug in its A to Z exactly once', () {
+      // A drug left out of the A to Z can still be searched for, so nothing
+      // else would notice it missing.
+      final listed = <String>[
+        for (final letter in MedicineIndex.letters)
+          for (final name in index.browse(letter))
+            for (final entry in name.entries) entry.key,
+      ];
+      expect(listed, hasLength(index.entries.length));
+      expect(
+        listed.toSet(),
+        index.entries.map((entry) => entry.key).toSet(),
+      );
+    });
+
     test('finds the drugs the first version got wrong', () {
       // ADR-0012: a text search on the generic name answered emergency
       // contraception with a combined pill and zinc with a diaper cream.

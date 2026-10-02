@@ -207,6 +207,80 @@ void main() {
     });
   });
 
+  group('the A to Z', () {
+    List<String> names(MedicineIndex index, String letter) => <String>[
+      for (final name in index.browse(letter)) name.name,
+    ];
+
+    test('lists a name once, however its labels write it', () {
+      final index = fixtureIndex(<FixtureDrug>[
+        fixtureDrug('ibuprofen.oral.otc', name: 'IBUPROFEN', labels: 300),
+        fixtureDrug('ibuprofen.oral.rx', name: 'Ibuprofen', labels: 40),
+        fixtureDrug(
+          'ethinyl-estradiol+levonorgestrel.oral.rx',
+          name: 'LEVONORGESTREL AND ETHINYL ESTRADIOL',
+        ),
+        fixtureDrug(
+          'ethinyl-estradiol+levonorgestrel.transdermal.rx',
+          name: 'LEVONORGESTREL/ETHINYL ESTRADIOL',
+          routes: <String>['TRANSDERMAL'],
+        ),
+      ]);
+      expect(index.browse('i').single.entries, hasLength(2));
+      expect(index.browse('l').single.entries, hasLength(2));
+    });
+
+    test('names a row after the most widely sold of its medicines', () {
+      // And lists that one first: ibuprofen from a shop shelf before the
+      // prescription tablets and the injection.
+      final index = fixtureIndex(<FixtureDrug>[
+        fixtureDrug('ibuprofen.oral.rx', name: 'IBUPROFEN', labels: 40),
+        fixtureDrug('ibuprofen.oral.otc', name: 'Ibuprofen', labels: 300),
+      ]);
+      final name = index.browse('i').single;
+      expect(name.name, 'Ibuprofen');
+      expect(name.entries.first.key, 'ibuprofen.oral.otc');
+    });
+
+    test('is in alphabetical order, whatever the case', () {
+      final index = fixtureIndex(<FixtureDrug>[
+        fixtureDrug('c.oral.otc', name: 'aspirin'),
+        fixtureDrug('a.oral.otc', name: 'ZINC'),
+        fixtureDrug('b.oral.otc', name: 'ACETAMINOPHEN'),
+        fixtureDrug('d.oral.otc', name: 'Allantoin'),
+      ]);
+      expect(names(index, 'a'), <String>[
+        'ACETAMINOPHEN',
+        'Allantoin',
+        'aspirin',
+      ]);
+      expect(names(index, 'z'), <String>['ZINC']);
+    });
+
+    test('files a name that does not start with a letter under #', () {
+      final index = fixtureIndex(<FixtureDrug>[
+        fixtureDrug('a.topical.otc', name: '1,2-HEXANEDIOL'),
+        fixtureDrug('b.topical.otc', name: '(+)-LIMONENE'),
+      ]);
+      expect(names(index, '#'), <String>['1,2-HEXANEDIOL']);
+      expect(names(index, 'l'), <String>['(+)-LIMONENE']);
+    });
+
+    test('has every medicine in it exactly once', () {
+      final index = fixtureIndex(fixtureDrugs);
+      final listed = <String>[
+        for (final letter in MedicineIndex.letters)
+          for (final name in index.browse(letter))
+            for (final entry in name.entries) entry.key,
+      ];
+      expect(listed, unorderedEquals(fixtureDrugs.map((drug) => drug.key)));
+    });
+
+    test('has nothing under a letter no name starts with', () {
+      expect(fixtureIndex(fixtureDrugs).browse('q'), isEmpty);
+    });
+  });
+
   group('the index', () {
     test('refuses a schema it does not read', () {
       final json = fixtureIndexJson(fixtureDrugs)..['schema_version'] = 2;
