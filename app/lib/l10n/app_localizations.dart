@@ -2396,6 +2396,12 @@ abstract class AppLocalizations {
   /// **'Their labels connect these medicines. That is not a finding about you: a pharmacist can tell you whether it matters.'**
   String get conditionsConflictsIntro;
 
+  /// Under the flags, when some pairs were not flagged. Without it, an unflagged pair beside flagged ones reads as cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The labels of the one other pair do not connect it in the ways this app checks for.} other{The labels of the {count} other pairs do not connect them in the ways this app checks for.}}'**
+  String conditionsConflictsOthers(int count);
+
   /// No description provided for @conditionsConflictsNone.
   ///
   /// In en, this message translates to:

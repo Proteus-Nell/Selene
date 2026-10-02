@@ -180,6 +180,25 @@ void main() {
       );
     });
 
+    testWidgets('beside others that are not flagged says those are not '
+        'cleared', (tester) async {
+      // Three medicines, three pairs, one flagged. Without a word about the
+      // other two, they would read as checked and fine.
+      await record(const <String>[
+        'aspirin.oral.otc',
+        'ibuprofen.oral.otc',
+        'tranexamic-acid.oral.rx',
+      ]);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      await reveal(tester, find.text(l10n.checkerNothingFoundNote));
+      expect(
+        find.text(l10n.checkerPairTitle('ASPIRIN', 'IBUPROFEN')),
+        findsOneWidget,
+      );
+      expect(find.text(l10n.conditionsConflictsOthers(2)), findsOneWidget);
+    });
+
     testWidgets('is not shown for one medicine alone', (tester) async {
       await record(const <String>['ibuprofen.oral.otc']);
       await pump(tester);

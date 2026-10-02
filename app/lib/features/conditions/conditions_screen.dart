@@ -455,10 +455,19 @@ class _Conflicts extends ConsumerWidget {
                 Text(l10n.checkerNothingFoundNote, style: body),
               ];
             }
+            final others = pairs.length - flagged.length;
             return <Widget>[
               Text(l10n.conditionsConflictsIntro, style: body),
               const SizedBox(height: 8),
               for (final pair in flagged) _ConflictFlag(pair: pair),
+              // An unflagged pair beside flagged ones reads as cleared unless
+              // something says otherwise.
+              if (others > 0) ...<Widget>[
+                const SizedBox(height: 8),
+                Text(l10n.conditionsConflictsOthers(others), style: body),
+                const SizedBox(height: 4),
+                Text(l10n.checkerNothingFoundNote, style: body),
+              ],
             ];
           },
           error: (error, stack) => <Widget>[

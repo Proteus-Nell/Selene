@@ -1434,6 +1434,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Their labels connect these medicines. That is not a finding about you: a pharmacist can tell you whether it matters.';
 
   @override
+  String conditionsConflictsOthers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The labels of the $count other pairs do not connect them in the ways this app checks for.',
+      one: 'The labels of the one other pair do not connect it in the ways this app checks for.',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get conditionsConflictsNone =>
       'Their labels connect none of these medicines in the ways this app checks for.';
 
