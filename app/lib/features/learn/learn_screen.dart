@@ -27,6 +27,10 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// and a user looking for what the app says about iron had to guess which of
 /// two unrelated screens somebody had filed it under.
 ///
+/// This tab is now the only way to them, at the owner's direction: they are
+/// not listed in Settings, and Insights offers its two only while the tab is
+/// switched on. Turning the tab off hides the pages, not just a route to them.
+///
 /// The subtitles are not decoration. Each one says what the page argues before
 /// anyone taps it, which matters most for the two that answer a popular
 /// question with "less than you would hope": somebody arriving at the movement

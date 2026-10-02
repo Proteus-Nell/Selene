@@ -1,6 +1,6 @@
-// Learn and the companion are opt-in, and hiding one must not move the others.
+// The Learn tab is opt-in, and hiding it must not move the other tabs.
 //
-// The Learn tab is the interesting half. The shell keeps all five branches
+// The shell keeps all five branches
 // whatever the bar shows, so a hidden destination makes the index the user taps
 // stop matching the branch behind it: with Learn gone, Settings is the fourth
 // destination and the fifth branch. Getting that wrong is not a crash, it is a
@@ -17,7 +17,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
-import 'package:period_tracker/features/companion/companion_dock.dart';
 import 'package:period_tracker/features/learn/learn_screen.dart';
 import 'package:period_tracker/features/settings/settings_screen.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
@@ -111,56 +110,60 @@ void main() {
       expect(find.byType(LearnScreen), findsNothing);
     });
 
-    testWidgets('leaves its pages reachable from Settings', (tester) async {
-      // Movement and body composition had no home outside the Learn tab. With
-      // the tab off by default they would be unreachable, which is a feature
-      // deleted by a preference rather than hidden by one.
+    testWidgets('keeps its pages out of Settings', (tester) async {
+      // At the owner's direction, the reference pages and conditions and
+      // medication are shown only to someone who has switched this tab on.
       // Settings is a lazy ListView, so a row below the fold is not built at
       // all. Rather than scroll past each one in turn, the window is made tall
-      // enough to hold the screen: what is being checked is that the rows
-      // exist, not where they sit.
+      // enough to hold the screen: what is being checked is that the rows are
+      // absent, not where they would sit.
       tester.view.physicalSize = const Size(1000, 6000);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
 
+      await db.settingsDao.writeBool(SettingKey.showLearnTab, value: true);
       await pumpApp(tester);
       await tester.tap(find.text(l10n(tester).navSettings));
       await pumpFor(tester);
 
-      final strings = l10n(tester);
-      for (final title in <String>[
-        strings.settingsLookup,
-        strings.settingsNutrition,
-        strings.movementEntryTitle,
-        strings.weightEntryTitle,
-        strings.settingsConditions,
-      ]) {
+      for (final title in _pages(l10n(tester))) {
+        expect(
+          find.text(title),
+          findsNothing,
+          reason: '"$title" is listed in Settings',
+        );
+      }
+    });
+
+    testWidgets('holds every one of those pages once it is on', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1000, 6000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await db.settingsDao.writeBool(SettingKey.showLearnTab, value: true);
+      await pumpApp(tester);
+      await tester.tap(find.text(l10n(tester).navLearn));
+      await pumpFor(tester);
+
+      expect(find.byType(LearnScreen), findsOneWidget);
+      for (final title in _pages(l10n(tester))) {
         expect(
           find.text(title),
           findsOneWidget,
-          reason: '"$title" is reachable only from the Learn tab',
+          reason: '"$title" is missing from the Learn tab',
         );
       }
     });
   });
-
-  group('the companion', () {
-    testWidgets('is absent until it is switched on', (tester) async {
-      await pumpApp(tester);
-      expect(find.byType(CompanionButton), findsNothing);
-    });
-
-    testWidgets('appears once the preference is set', (tester) async {
-      await db.settingsDao.writeBool(SettingKey.showCompanion, value: true);
-      await pumpApp(tester);
-      expect(find.byType(CompanionButton), findsOneWidget);
-    });
-
-    testWidgets('hiding it leaves the navigation bar working', (tester) async {
-      await pumpApp(tester);
-      await tester.tap(find.text(l10n(tester).navSettings));
-      await pumpFor(tester);
-      expect(find.byType(SettingsScreen), findsOneWidget);
-    });
-  });
 }
+
+/// The pages the Learn tab is the only way to.
+List<String> _pages(AppLocalizations strings) => <String>[
+  strings.settingsLookup,
+  strings.settingsNutrition,
+  strings.movementEntryTitle,
+  strings.weightEntryTitle,
+  strings.settingsConditions,
+];

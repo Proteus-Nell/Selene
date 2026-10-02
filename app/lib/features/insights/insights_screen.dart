@@ -69,6 +69,9 @@ class InsightsScreen extends ConsumerWidget {
     final cycles =
         ref.watch(cyclesProvider).valueOrNull ?? const <CycleRecord>[];
     final statistics = CycleFeatures.summarise(cycles);
+    // The reference pages are shown only to someone who has switched the
+    // Learn tab on, here as everywhere else.
+    final references = ref.watch(showLearnTabProvider).valueOrNull ?? false;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.insightsTitle)),
@@ -101,15 +104,17 @@ class InsightsScreen extends ConsumerWidget {
             CardEntrance(index: 3, child: CycleLengthChart(cycles: cycles)),
             const SizedBox(height: 24),
             const CardEntrance(index: 4, child: _TrackRecordCard()),
-            const SizedBox(height: 24),
-            // Last, deliberately, and both of them. Everything above is this
-            // user's own data; the references are general reading that happens
-            // to be shown to someone tracking a cycle, and putting either
-            // higher would make it look like a response to the figures above
-            // it (AND-35, AND-36).
-            const CardEntrance(index: 5, child: _WeightReferenceLink()),
-            const SizedBox(height: 16),
-            const CardEntrance(index: 6, child: _MovementReferenceLink()),
+            if (references) ...<Widget>[
+              const SizedBox(height: 24),
+              // Last, deliberately, and both of them. Everything above is this
+              // user's own data; the references are general reading that
+              // happens to be shown to someone tracking a cycle, and putting
+              // either higher would make it look like a response to the
+              // figures above it (AND-35, AND-36).
+              const CardEntrance(index: 5, child: _WeightReferenceLink()),
+              const SizedBox(height: 16),
+              const CardEntrance(index: 6, child: _MovementReferenceLink()),
+            ],
           ],
         ),
       ),

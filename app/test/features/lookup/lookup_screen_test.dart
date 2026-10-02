@@ -1,22 +1,16 @@
-// The lookup screen (AND-32).
+// The lookup screen (AND-32): every drug in openFDA's label export, searched on
+// the phone (ADR-0012, ADR-0013).
 //
-// The screen holds two bodies of text with different provenance, and most of
-// what is tested here is that it keeps them apart. The medicines are a dated
-// snapshot of a regulator's own words; the hygiene entries are hand-written for
-// this app. Presenting the second as though it were the first would be
-// borrowing an authority we do not have (ADR-0009).
-//
-// The other half is the urgent entry. TSS is the one thing on this page anyone
-// might need within the hour, and a page where it is styled like reference
-// reading is a page where it is not found.
+// Most of what is tested here is what the screen has to say, because each is
+// something a reader would otherwise assume wrongly: that what they type goes
+// somewhere, that US labelling describes the box in their hand, and that a
+// label which cannot be opened is a label with nothing in it.
 //
 // The medicines here are the handful in medicine_fixture.dart rather than the
 // bundle the app ships, so that a refresh of openFDA's export cannot change
 // what these tests see. medicines_test.dart covers the real bundle.
 
 import 'dart:async';
-import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,16 +27,6 @@ import 'package:period_tracker/features/lookup/medicine_screen.dart';
 import '../../data/reference/medicine_fixture.dart';
 import '../harness.dart';
 
-File _repoFile(String relativePath) {
-  var directory = Directory.current.absolute;
-  for (var depth = 0; depth < 5; depth++) {
-    final candidate = File('${directory.path}/$relativePath');
-    if (candidate.existsSync()) return candidate;
-    directory = directory.parent;
-  }
-  throw StateError('could not find $relativePath');
-}
-
 /// An asset bundle whose files never arrive.
 class _NeverAssets extends AssetBundle {
   @override
@@ -58,12 +42,10 @@ void main() {
   Widget screen({
     MedicineBundle? bundle,
     TextScaler textScaler = TextScaler.noScaling,
-    Brightness brightness = Brightness.light,
   }) => harness(
     const LookupScreen(),
     database: db,
     textScaler: textScaler,
-    brightness: brightness,
     overrides: <Override>[
       medicineBundleProvider.overrideWith(
         (ref) => bundle ?? fixtureBundle(fixtureDrugs),
@@ -109,117 +91,20 @@ void main() {
       expect(find.text(l10nOf(tester).lookupSubtitle), findsOneWidget);
       expect(subtitle, contains('nothing you type here is sent anywhere'));
     });
-
-    testWidgets('shows the hygiene entries with no query', (tester) async {
-      await pump(tester);
-      expect(find.text(l10nOf(tester).hygieneTssTitle), findsOneWidget);
-      expect(find.text(l10nOf(tester).hygieneTamponsTitle), findsOneWidget);
-    });
-
-    // A test here used to assert that the hygiene entries were marked as
-    // this app's own words rather than a regulator's. The note carrying that
-    // distinction was removed at the owner's direction, along with the four
-    // others that named a source file, so there is nothing left on screen for
-    // it to check.
-  });
-
-  group('toxic shock syndrome', () {
-    testWidgets('is first, above the other entries', (tester) async {
-      // It is the only thing on this page anyone might need within the hour.
-      await pump(tester);
-      final tss = tester.getTopLeft(find.text(l10nOf(tester).hygieneTssTitle));
-      final tampons = tester.getTopLeft(
-        find.text(l10nOf(tester).hygieneTamponsTitle),
-      );
-      expect(tss.dy, lessThan(tampons.dy));
-    });
-
-    testWidgets('leads with what to do, not with what it is', (tester) async {
-      await pump(tester);
-      final l10n = l10nOf(tester);
-      final action = tester.getTopLeft(find.text(l10n.hygieneTssUrgent));
-      final explanation = tester.getTopLeft(find.text(l10n.hygieneTssBody));
-      expect(
-        action.dy,
-        lessThan(explanation.dy),
-        reason:
-            'the explanation comes before the instruction, so someone '
-            'scanning in a hurry reads the definition first',
-      );
-    });
-
-    testWidgets('is found by the words a frightened person would type', (
-      tester,
-    ) async {
-      // Nobody types "toxic shock syndrome" when they have a fever and a
-      // tampon in. A search that only matched titles would fail the person in
-      // the most hurry.
-      for (final term in <String>['tss', 'fever', 'rash']) {
-        await pump(tester);
-        await search(tester, term);
-        expect(
-          find.text(l10nOf(tester).hygieneTssTitle),
-          findsOneWidget,
-          reason: 'searching "$term" did not find it',
-        );
-      }
-    });
-  });
-
-  group('the TSS card', () {
-    testWidgets('is legible, light or dark', (tester) async {
-      // Its text was once printed in the body colour on the dark red card,
-      // which made the line saying to remove a tampon and get help the
-      // hardest thing on the page to read. WCAG asks 4.5:1 of body text.
-      double contrast(Color a, Color b) {
-        final light = math.max(a.computeLuminance(), b.computeLuminance());
-        final dark = math.min(a.computeLuminance(), b.computeLuminance());
-        return (light + 0.05) / (dark + 0.05);
-      }
-
-      for (final brightness in Brightness.values) {
-        await tester.pumpWidget(screen(brightness: brightness));
-        await tester.pumpAndSettle();
-        final l10n = l10nOf(tester);
-        final card = tester.widget<Card>(
-          find.ancestor(
-            of: find.text(l10n.hygieneTssUrgent),
-            matching: find.byType(Card),
-          ),
-        );
-        for (final text in <String>[
-          l10n.hygieneTssTitle,
-          l10n.hygieneTssUrgent,
-          l10n.hygieneTssBody,
-        ]) {
-          final ink = tester.widget<Text>(find.text(text)).style?.color;
-          expect(
-            ink,
-            isNotNull,
-            reason: '"$text" takes whatever colour is around it',
-          );
-          expect(
-            contrast(ink!, card.color!),
-            greaterThanOrEqualTo(4.5),
-            reason: '"$text" on the ${brightness.name} card',
-          );
-        }
-      }
-    });
   });
 
   group('searching', () {
     testWidgets('narrows to what matches', (tester) async {
       await pump(tester);
-      await search(tester, 'cup');
-      expect(find.text(l10nOf(tester).hygieneCupsTitle), findsOneWidget);
-      expect(find.text(l10nOf(tester).hygieneTamponsTitle), findsNothing);
+      await search(tester, 'tranexamic');
+      expect(find.text('TRANEXAMIC ACID'), findsOneWidget);
+      expect(find.text('IBUPROFEN'), findsNothing);
     });
 
     testWidgets('is case insensitive', (tester) async {
       await pump(tester);
-      await search(tester, 'TAMPON');
-      expect(find.text(l10nOf(tester).hygieneTamponsTitle), findsOneWidget);
+      await search(tester, 'LeVoNoRgEsTrEl');
+      expect(find.text('LEVONORGESTREL'), findsOneWidget);
     });
 
     testWidgets('offers the browser when nothing matches', (tester) async {
@@ -260,12 +145,9 @@ void main() {
       }
       await pump(tester);
 
-      // Checked before scrolling: the rest of the screen still works, rather
-      // than the whole page failing because one section has no data. After
-      // scrolling to the medicines section the ListView has disposed the
-      // hygiene cards, so asserting it afterwards would fail for the wrong
-      // reason.
-      expect(find.text(l10nOf(tester).hygieneTssTitle), findsOneWidget);
+      // The rest of the screen still works, rather than the whole page
+      // failing because the one section with data has none.
+      expect(find.text(l10nOf(tester).lookupSubtitle), findsOneWidget);
 
       final finder = find.text(l10nOf(tester).lookupMedicinesUnavailable);
       await reveal(tester, finder);
@@ -282,8 +164,7 @@ void main() {
     testWidgets('asks for a name rather than listing every medicine', (
       tester,
     ) async {
-      // Several thousand medicines, unasked, would bury the hygiene entries
-      // above them, TSS among them.
+      // Several thousand medicines, unasked, would be a list nobody reads.
       await pump(tester);
       final prompt = find.text(
         l10nOf(tester).lookupMedicinesPrompt(fixtureDrugs.length),
@@ -494,42 +375,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(MedicineScreen), findsOneWidget);
       expect(tester.takeException(), isNull);
-    });
-  });
-
-  group('HYGIENE_SOURCES.md', () {
-    test('exists and covers every curated entry', () {
-      // An uncited health claim in a health app is what this file exists to
-      // make impossible, and TSS is the claim where it matters most.
-      final sources = _repoFile('docs/HYGIENE_SOURCES.md').readAsStringSync();
-      for (final subject in <String>[
-        'Toxic shock syndrome',
-        'Tampons',
-        'Menstrual cups',
-        'Pads',
-      ]) {
-        expect(
-          sources,
-          contains(subject),
-          reason: '$subject is on the screen but not in the sources file',
-        );
-      }
-    });
-
-    test('tracks what has not been verified yet', () {
-      final sources = _repoFile('docs/HYGIENE_SOURCES.md').readAsStringSync();
-      final outstanding = RegExp(r'\[VERIFY\]').allMatches(sources).length;
-      // Printing is the point: this is a status report to whoever runs the
-      // suite, not an assertion. A failing test would be the wrong instrument,
-      // because reading the sources is a release task, not a per-commit one.
-      // ignore: avoid_print
-      print(
-        outstanding == 0
-            ? 'All hygiene claims are verified.'
-            : '$outstanding hygiene claim(s) still marked [VERIFY]. '
-                  'RELEASE.md must not pass while any remain.',
-      );
-      expect(outstanding, greaterThanOrEqualTo(0));
     });
   });
 }

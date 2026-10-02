@@ -203,18 +203,10 @@ final StreamProvider<bool> showOvulationWindowProvider = StreamProvider<bool>(
 ///
 /// **Off by default**, and unlike the ovulation window that default is a taste
 /// rather than a safety property: the reference pages make no claim about the
-/// reader, and every one of them is also listed in Settings. Turning the tab
-/// off hides a route to the reading, not the reading.
+/// reader. The tab is the only way to them, and to conditions and medication,
+/// so turning it off hides all of them, at the owner's direction.
 final StreamProvider<bool> showLearnTabProvider = StreamProvider<bool>(
   (ref) => ref.watch(appDatabaseProvider).settingsDao.watchShowLearnTab(),
-);
-
-/// Whether the companion sits at the end of the navigation bar (AND-37).
-///
-/// **Off by default.** The companion restates what the log already holds and
-/// never guesses at a reason, so whether it is there at all is a preference.
-final StreamProvider<bool> showCompanionProvider = StreamProvider<bool>(
-  (ref) => ref.watch(appDatabaseProvider).settingsDao.watchShowCompanion(),
 );
 
 /// The colour scheme the app is wearing (AND-39).

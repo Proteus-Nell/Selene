@@ -244,7 +244,7 @@ void main() {
       reason:
           'RELEASE.md no longer names docs/WEIGHT_SOURCES.md, so a reference '
           'section full of [VERIFY] claims could ship without anyone being '
-          'asked about it. Nutrition and hygiene are gated there; this is too.',
+          'asked about it. Nutrition and movement are gated there; this is too.',
     );
   });
 

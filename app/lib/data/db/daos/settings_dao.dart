@@ -77,17 +77,10 @@ enum SettingKey {
   /// Whether the Learn tab appears in the navigation bar (AND-39).
   ///
   /// Defaults to **off**, at the owner's direction: the reference pages are a
-  /// thing to go looking for rather than a fifth of the bar. Every page the tab
-  /// collects is also reachable from Settings, so turning it off hides a route
-  /// to the reading rather than the reading itself.
+  /// thing to go looking for rather than a fifth of the bar. The tab is the
+  /// only way to them and to conditions and medication, so turning it off
+  /// hides those pages too.
   showLearnTab('show_learn_tab'),
-
-  /// Whether the companion sits at the end of the navigation bar (AND-37).
-  ///
-  /// Defaults to **off**, at the owner's direction. The companion never asserts
-  /// anything the log does not already contain, so this is a preference about
-  /// whether anyone wants a presence there at all, not a safety gate.
-  showCompanion('show_companion'),
 
   /// Fire dates of the notifications currently scheduled, comma separated.
   ///
@@ -356,8 +349,7 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
 
   /// Whether the Learn tab appears in the navigation bar (AND-39).
   ///
-  /// Defaults to **off**. Every page it collects is also listed in Settings, so
-  /// this hides a route to the reference pages rather than the pages.
+  /// Defaults to **off**. The tab is the only way to the pages it collects.
   /// Returns:
   ///     `Future<bool>`: Whether the Learn tab is shown. False by default.
   Future<bool> readShowLearnTab() =>
@@ -369,21 +361,6 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   ///     Re-emitted on every write.
   Stream<bool> watchShowLearnTab() =>
       watchBool(SettingKey.showLearnTab, orElse: false);
-
-  /// Whether the companion sits at the end of the navigation bar (AND-37).
-  ///
-  /// Defaults to **off**.
-  /// Returns:
-  ///     `Future<bool>`: Whether the companion is shown. False by default.
-  Future<bool> readShowCompanion() =>
-      readBool(SettingKey.showCompanion, orElse: false);
-
-  /// Watches [readShowCompanion].
-  /// Returns:
-  ///     `Stream<bool>`: Whether the companion is shown. False by default.
-  ///     Re-emitted on every write.
-  Stream<bool> watchShowCompanion() =>
-      watchBool(SettingKey.showCompanion, orElse: false);
 
   /// Whether the app requires an unlock (AND-29). Defaults to **off**.
   ///

@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/features/insights/insights_screen.dart';
 import 'package:period_tracker/features/movement/movement_screen.dart';
@@ -113,6 +114,7 @@ void main() {
       // pain and exertion sitting among their figures would read as a response
       // to them, which is the one thing it must never be.
       await seedHistory(db, const <int>[28, 29, 28, 30, 28]);
+      await db.settingsDao.writeBool(SettingKey.showLearnTab, value: true);
       await tester.pumpWidget(harness(const InsightsScreen(), database: db));
       await tester.pumpAndSettle();
 
@@ -125,6 +127,7 @@ void main() {
 
     testWidgets('opens the reference when tapped', (tester) async {
       await seedHistory(db, const <int>[28, 29, 28, 30, 28]);
+      await db.settingsDao.writeBool(SettingKey.showLearnTab, value: true);
       await tester.pumpWidget(harness(const InsightsScreen(), database: db));
       await tester.pumpAndSettle();
 
@@ -139,6 +142,18 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(MovementScreen), findsOneWidget);
+    });
+
+    testWidgets('is not offered while the Learn tab is off', (tester) async {
+      // The reference pages are shown only to someone who has switched the
+      // Learn tab on, at the owner's direction, and Insights is no exception.
+      await seedHistory(db, const <int>[28, 29, 28, 30, 28]);
+      await tester.pumpWidget(harness(const InsightsScreen(), database: db));
+      await tester.pumpAndSettle();
+
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -4000));
+      await tester.pumpAndSettle();
+      expect(find.text(l10nOf(tester).movementEntryTitle), findsNothing);
     });
   });
 }

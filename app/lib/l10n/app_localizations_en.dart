@@ -838,9 +838,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lookupMedicinesHeading => 'Medicines';
 
   @override
-  String get lookupHygieneHeading => 'Tampons, cups and pads';
-
-  @override
   String lookupMedicinesSource(String date) {
     return 'From US drug labelling published by openFDA, as it stood on $date.';
   }
@@ -998,39 +995,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLookupSubtitle =>
-      'Medicines and hygiene product notes, stored on this device.';
-
-  @override
-  String get hygieneTssTitle => 'Toxic shock syndrome';
-
-  @override
-  String get hygieneTssUrgent =>
-      'If you have a sudden high fever, a sunburn-like rash, vomiting, diarrhoea, muscle aches, dizziness or confusion while using a tampon or a menstrual cup: remove it and get urgent medical help.';
-
-  @override
-  String get hygieneTssBody =>
-      'Toxic shock syndrome is rare and life-threatening. It is caused by bacterial toxins, and it is associated with tampon and menstrual cup use, though it also happens to people who are not menstruating at all.';
-
-  @override
-  String get hygieneTamponsTitle => 'Tampons';
-
-  @override
-  String get hygieneTamponsBody =>
-      'General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says.';
-
-  @override
-  String get hygieneCupsTitle => 'Menstrual cups';
-
-  @override
-  String get hygieneCupsBody =>
-      'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products, so follow the instructions that came with yours.';
-
-  @override
-  String get hygieneExternalTitle => 'Pads and period underwear';
-
-  @override
-  String get hygieneExternalBody =>
-      'Worn outside the body. The link with toxic shock syndrome is to products worn inside it.';
+      'Medicines from US drug labelling, stored on this device.';
 
   @override
   String get nutritionTitle => 'Supplements';
@@ -1240,62 +1205,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get movementEntrySubtitle =>
       'What exercise does about period pain, how weak the evidence for planning it by cycle phase is, and what is a reason to stop.';
-
-  @override
-  String get companionLabel => 'Companion';
-
-  @override
-  String get companionDismiss => 'Dismiss';
-
-  @override
-  String get companionLineStillReading => 'The log is still being read.';
-
-  @override
-  String get companionLinePredictionPaused =>
-      'A pregnancy is recorded, so predictions are paused. Days can still be logged.';
-
-  @override
-  String get companionLineHeavyBleeding =>
-      'Heavy bleeding is recorded on several days. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia. A blood test is what settles it.';
-
-  @override
-  String get companionLineCramps =>
-      'Cramps are recorded for today. Guidance on period pain lists heat, painkillers and exercise among the measures that may help.';
-
-  @override
-  String get companionLineSleep =>
-      'Disturbed sleep is recorded for today. Sleep problems are among the symptoms commonly reported around a period.';
-
-  @override
-  String get companionLineLowEnergy =>
-      'Low energy is recorded for today. Tiredness is among the symptoms commonly reported before and during a period.';
-
-  @override
-  String get companionLinePeriodToday =>
-      'A period is logged for today. Menstruation is not named anywhere in the guidance behind this app as a reason to stop moving.';
-
-  @override
-  String get companionLineOverdue =>
-      'The predicted window has passed with no period logged. That is a data state, and nothing here guesses at the reason.';
-
-  @override
-  String get companionLineNothingLoggedRecently =>
-      'Nothing has been logged for a few days. The log is on the first tab, whenever there is something to put in it.';
-
-  @override
-  String get companionLineNoLogsYet =>
-      'Nothing is recorded yet. One period start date is enough to begin.';
-
-  @override
-  String get companionLineNoPredictionYet =>
-      'There is not enough history for a prediction yet. Insights holds what has been recorded so far.';
-
-  @override
-  String get companionLineTodayLogged =>
-      'Today is already logged. The day can be opened again and changed.';
-
-  @override
-  String get companionLineNothingToPointAt => 'Nothing to point at just now.';
 
   @override
   String get conditionsTitle => 'Conditions and medication';
@@ -1517,14 +1426,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLearnTabSubtitle =>
-      'Off by default. The reference pages are listed here in Settings either way.';
-
-  @override
-  String get settingsCompanion => 'Show the companion';
-
-  @override
-  String get settingsCompanionSubtitle =>
-      'Off by default. A control at the end of the navigation bar that offers one line about what is already logged.';
+      'Off by default. The reference pages, and conditions and medication, appear only when this is on.';
 
   @override
   String get settingsPrivacySection => 'Privacy';

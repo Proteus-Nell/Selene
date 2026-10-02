@@ -28,14 +28,14 @@ Pipeline:
        compressed chunks under app/assets/medicines, with an index the app
        searches.
 
-Two things openFDA cannot give us, both of which the app has to say out loud:
+Two things openFDA cannot give us:
 
-  * It is **US labelling**. Strengths, brand names, available formulations and
-    warnings differ in every other jurisdiction, and a user reading US warnings
-    about a box bought in Manchester is being quietly misinformed.
-  * Tampons and menstrual cups are FDA **devices**, not drugs. They are not in
-    the drug label export at all, and their TSS guidance is curated separately
-    in AND-32, clearly marked as curated rather than sourced.
+  * Labelling from anywhere but the US. Strengths, brand names, available
+    formulations and warnings differ in every other jurisdiction, and a user
+    reading US warnings about a box bought in Manchester is being quietly
+    misinformed, so the app says so on every page.
+  * Tampons and menstrual cups. They are FDA **devices**, not drugs, and are
+    not in the drug label export at all.
 
 Usage:
     python3 tools/scripts/gen_medicines.py --fetch   # needs network, ~1.8 GB

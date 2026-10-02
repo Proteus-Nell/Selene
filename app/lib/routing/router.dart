@@ -8,7 +8,7 @@
 /// Includes:
 ///     - Routes: Every path, as a constant.
 ///     - buildRouter: The router itself.
-///     - AppScaffold: The shell, its bar and the companion dock.
+///     - AppScaffold: The shell and its navigation bar.
 ///     - _FadeThroughBranches: The cross-fade between branches.
 library;
 
@@ -18,7 +18,6 @@ import 'package:go_router/go_router.dart';
 import 'package:period_tracker/core/motion.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/features/calendar/calendar_screen.dart';
-import 'package:period_tracker/features/companion/companion_dock.dart';
 import 'package:period_tracker/features/insights/insights_screen.dart';
 import 'package:period_tracker/features/learn/learn_screen.dart';
 import 'package:period_tracker/features/log/log_screen.dart';
@@ -197,7 +196,6 @@ class AppScaffold extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final showLearn = ref.watch(showLearnTabProvider).valueOrNull ?? false;
-    final showCompanion = ref.watch(showCompanionProvider).valueOrNull ?? false;
     final branches = _visibleBranches(showLearn: showLearn);
     // The Learn branch can be the one in view when the preference is turned
     // off from Settings, which is itself a different tab, so in practice this
@@ -209,69 +207,61 @@ class AppScaffold extends ConsumerWidget {
       // on every prediction change, and a screen only does that while it is on
       // top.
       body: NotificationSync(child: shell),
-      // The companion shares the bar rather than floating above the content
-      // (AND-37). Everything inside this Scaffold's body is a screen somebody
-      // is reading, including the ones pushed on top of a branch, so the one
-      // place a persistent presence can sit without covering something is the
-      // furniture around them.
-      bottomNavigationBar: CompanionDock(
-        showCompanion: showCompanion,
-        navigationBar: NavigationBar(
-          selectedIndex: selected < 0 ? 0 : selected,
-          // Always the branch's initial location, not only when the tab
-          // already selected is tapped again. A stateful shell otherwise
-          // keeps each branch's navigation stack, so leaving Learn from
-          // inside "Look something up" and coming back later drops the
-          // reader into that page rather than the list they were expecting,
-          // and the same for Settings and Insights, which also have pages
-          // under them. Tapping a tab now means the same thing every time.
-          //
-          // What this gives up is resuming a sub-page after a glance at
-          // another tab. That is a real loss, and it is the smaller one:
-          // arriving somewhere you did not ask for is more disorienting than
-          // having to tap once more to get back.
-          onDestinationSelected: (index) {
-            // The tapped destination is an index into what is on screen, which
-            // is not the branch index once Learn is hidden.
-            final branch = branches[index];
-            // Empty the branch first, then switch to it. `goBranch` alone is
-            // not enough: it sets go_router's location, and the reference
-            // pages are pushed imperatively, so they outlive it and the
-            // reader lands back on whichever one they left.
-            _branchKeys[branch].currentState?.popUntil(
-              (route) => route.isFirst,
-            );
-            shell.goBranch(branch, initialLocation: true);
-          },
-          destinations: <NavigationDestination>[
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: selected < 0 ? 0 : selected,
+        // Always the branch's initial location, not only when the tab
+        // already selected is tapped again. A stateful shell otherwise
+        // keeps each branch's navigation stack, so leaving Learn from
+        // inside "Look something up" and coming back later drops the
+        // reader into that page rather than the list they were expecting,
+        // and the same for Settings and Insights, which also have pages
+        // under them. Tapping a tab now means the same thing every time.
+        //
+        // What this gives up is resuming a sub-page after a glance at
+        // another tab. That is a real loss, and it is the smaller one:
+        // arriving somewhere you did not ask for is more disorienting than
+        // having to tap once more to get back.
+        onDestinationSelected: (index) {
+          // The tapped destination is an index into what is on screen, which
+          // is not the branch index once Learn is hidden.
+          final branch = branches[index];
+          // Empty the branch first, then switch to it. `goBranch` alone is
+          // not enough: it sets go_router's location, and the reference
+          // pages are pushed imperatively, so they outlive it and the
+          // reader lands back on whichever one they left.
+          _branchKeys[branch].currentState?.popUntil(
+            (route) => route.isFirst,
+          );
+          shell.goBranch(branch, initialLocation: true);
+        },
+        destinations: <NavigationDestination>[
+          NavigationDestination(
+            icon: const Icon(Icons.schedule_outlined),
+            selectedIcon: const Icon(Icons.schedule),
+            label: l10n.navLog,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.calendar_month_outlined),
+            selectedIcon: const Icon(Icons.calendar_month),
+            label: l10n.navCalendar,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.insights_outlined),
+            selectedIcon: const Icon(Icons.insights),
+            label: l10n.navInsights,
+          ),
+          if (showLearn)
             NavigationDestination(
-              icon: const Icon(Icons.schedule_outlined),
-              selectedIcon: const Icon(Icons.schedule),
-              label: l10n.navLog,
+              icon: const Icon(Icons.menu_book_outlined),
+              selectedIcon: const Icon(Icons.menu_book),
+              label: l10n.navLearn,
             ),
-            NavigationDestination(
-              icon: const Icon(Icons.calendar_month_outlined),
-              selectedIcon: const Icon(Icons.calendar_month),
-              label: l10n.navCalendar,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.insights_outlined),
-              selectedIcon: const Icon(Icons.insights),
-              label: l10n.navInsights,
-            ),
-            if (showLearn)
-              NavigationDestination(
-                icon: const Icon(Icons.menu_book_outlined),
-                selectedIcon: const Icon(Icons.menu_book),
-                label: l10n.navLearn,
-              ),
-            NavigationDestination(
-              icon: const Icon(Icons.settings_outlined),
-              selectedIcon: const Icon(Icons.settings),
-              label: l10n.navSettings,
-            ),
-          ],
-        ),
+          NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: l10n.navSettings,
+          ),
+        ],
       ),
     );
   }
