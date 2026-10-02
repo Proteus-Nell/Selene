@@ -345,6 +345,10 @@ class _HygieneCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final urgent = entry.urgency == HygieneUrgency.urgent;
+    // The urgent card is the theme's error colour, dark in a light scheme, so
+    // its text takes the colour made for it. In the body colour, the line
+    // saying to get help was the hardest thing on the page to read.
+    final ink = urgent ? theme.colorScheme.onErrorContainer : null;
 
     return Card(
       // The urgent entry does not look like the rest of the page. A screen
@@ -370,7 +374,7 @@ class _HygieneCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     _hygieneTitle(l10n, entry),
-                    style: theme.textTheme.titleSmall,
+                    style: theme.textTheme.titleSmall?.copyWith(color: ink),
                   ),
                 ),
               ],
@@ -383,11 +387,12 @@ class _HygieneCard extends StatelessWidget {
                 l10n.hygieneTssUrgent,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: ink,
                 ),
               ),
               const SizedBox(height: 8),
             ],
-            Text(_hygieneBody(l10n, entry)),
+            Text(_hygieneBody(l10n, entry), style: TextStyle(color: ink)),
           ],
         ),
       ),

@@ -16,6 +16,7 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -57,10 +58,12 @@ void main() {
   Widget screen({
     MedicineBundle? bundle,
     TextScaler textScaler = TextScaler.noScaling,
+    Brightness brightness = Brightness.light,
   }) => harness(
     const LookupScreen(),
     database: db,
     textScaler: textScaler,
+    brightness: brightness,
     overrides: <Override>[
       medicineBundleProvider.overrideWith(
         (ref) => bundle ?? fixtureBundle(fixtureDrugs),
@@ -159,6 +162,48 @@ void main() {
           findsOneWidget,
           reason: 'searching "$term" did not find it',
         );
+      }
+    });
+  });
+
+  group('the TSS card', () {
+    testWidgets('is legible, light or dark', (tester) async {
+      // Its text was once printed in the body colour on the dark red card,
+      // which made the line saying to remove a tampon and get help the
+      // hardest thing on the page to read. WCAG asks 4.5:1 of body text.
+      double contrast(Color a, Color b) {
+        final light = math.max(a.computeLuminance(), b.computeLuminance());
+        final dark = math.min(a.computeLuminance(), b.computeLuminance());
+        return (light + 0.05) / (dark + 0.05);
+      }
+
+      for (final brightness in Brightness.values) {
+        await tester.pumpWidget(screen(brightness: brightness));
+        await tester.pumpAndSettle();
+        final l10n = l10nOf(tester);
+        final card = tester.widget<Card>(
+          find.ancestor(
+            of: find.text(l10n.hygieneTssUrgent),
+            matching: find.byType(Card),
+          ),
+        );
+        for (final text in <String>[
+          l10n.hygieneTssTitle,
+          l10n.hygieneTssUrgent,
+          l10n.hygieneTssBody,
+        ]) {
+          final ink = tester.widget<Text>(find.text(text)).style?.color;
+          expect(
+            ink,
+            isNotNull,
+            reason: '"$text" takes whatever colour is around it',
+          );
+          expect(
+            contrast(ink!, card.color!),
+            greaterThanOrEqualTo(4.5),
+            reason: '"$text" on the ${brightness.name} card',
+          );
+        }
       }
     });
   });
