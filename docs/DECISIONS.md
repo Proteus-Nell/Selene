@@ -15,6 +15,12 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0004](#adr-0004-unencrypted-local-sqlite-with-zero-network-permission) | Unencrypted local SQLite with zero network permission | Accepted | 2026-08-17 |
 | [0005](#adr-0005-uv-with-python-311-wsl2-for-gpu-work-jdk-17-pinned-for-android-mlflow-local-only) | uv + Python 3.11, WSL2 for GPU, JDK 17 pinned, MLflow local-only | Accepted; clause 2 (WSL2 scope) narrowed by [0006](#adr-0006-pytorch-and-executorch-replace-tensorflow-and-litert-entirely) | 2026-08-17 |
 | [0006](#adr-0006-pytorch-and-executorch-replace-tensorflow-and-litert-entirely) | PyTorch and ExecuTorch replace TensorFlow and LiteRT entirely | Accepted | 2026-08-17 |
+| [0007](#adr-0007-named-cycle-phases-shown-by-default-ovulation-estimation-still-opt-in) | Named cycle phases shown by default, ovulation estimation still opt-in | Accepted | 2026-08-20 |
+| [0008](#adr-0008-app-lock-gates-the-interface-and-does-not-encrypt-the-database) | App lock gates the interface and does not encrypt the database | Accepted | 2026-08-20 |
+| [0009](#adr-0009-medicines-reference-data-is-generated-at-build-time-from-openfda) | Medicines reference data is generated at build time from openFDA | Accepted; allowlist superseded by [0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) | 2026-08-20 |
+| [0010](#adr-0010-long-term-conditions-are-recorded-not-modelled) | Long-term conditions are recorded, not modelled | Accepted | 2026-08-20 |
+| [0011](#adr-0011-export-v2-refuses-v1-files) | Export v2 refuses v1 files | Accepted | 2026-08-20 |
+| [0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) | The medicines reference covers every drug, one label each, chosen by rule | Accepted | 2026-10-02 |
 
 ---
 
@@ -342,7 +348,7 @@ copy.
 
 ## ADR-0009: Medicines reference data is generated at build time from openFDA
 
-**Status:** Accepted, 2026-08-20
+**Status:** Accepted, 2026-08-20. **The allowlist is superseded by [ADR-0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule)**: the reference covers every drug in openFDA's label export, one label each, chosen by rule. Generating the data at build time, and the zero network permission that protects, are unaffected and remain in force.
 **Deciders:** Project owner
 
 ### Context
@@ -454,6 +460,76 @@ Import stays a single code path. Anyone who updates without re-exporting is one
 device failure away from losing everything, and the re-export prompt is the only
 thing standing between them and that. If this is ever revisited, accepting v1 on
 import is a small change and the right one.
+
+---
+
+## ADR-0012: The medicines reference covers every drug, one label each, chosen by rule
+
+**Status:** Accepted, 2026-10-02. Supersedes the allowlist in [ADR-0009](#adr-0009-medicines-reference-data-is-generated-at-build-time-from-openfda); its build-time generation, and ADR-0004's zero network permission, stand.
+**Deciders:** Project owner
+
+### Context
+
+The Learn section is being rebuilt around a drugs A-Z and an interaction checker,
+modelled on Drugs.com's. ADR-0009 shipped thirteen allowlisted medicines, each
+fetched by a text search on its generic name, keeping the first hit. Checked
+against openFDA before any snapshot was committed, that picked the wrong product
+for four of the five checked: a combined pill for both emergency contraception
+and the progestogen-only pill, a zinc oxide diaper cream for zinc, and an
+injection for tranexamic acid tablets.
+
+Drugs.com's data cannot be used. Its content is licensed, its `robots.txt` bars
+automated access, and this project is to be open source. openFDA's bulk label
+export is public, needs no key, and can be redistributed.
+
+### Decision
+
+1. **Every drug, not a list.** Every human prescription and over-the-counter
+   drug that openFDA links to a current US product listing, from the bulk
+   export.
+2. **A drug is what it contains.** It is identified by its active substances,
+   its route, and whether it is prescription or over the counter. Never by a
+   name match.
+3. **One label each, chosen by rule.** The most complete safety sections, then
+   the original manufacturer over a repackager, then the reference (NDA or BLA)
+   label over a generic, then the newest (`rank` in `gen_medicines.py`).
+   Nothing is picked by hand, and nothing is written by hand: the app shows the
+   professional label, or the Drug Facts panel for an over-the-counter drug, as
+   published.
+4. Homeopathic products are left out. Kits, which list no substances or route,
+   take their substances from their generic name and their route from their
+   carton or their drug's usual route.
+5. The selection is committed as `artifacts/medicines/selection_v1.json`, one
+   drug per line, so that a refresh diffs per drug.
+
+### Runner-up and why rejected
+
+**Keep the allowlist and fix its queries.** Still a list chosen by hand, and
+every addition is another query to get right by hand.
+
+**License a drug database** (First Databank, Medi-Span, Lexicomp, DrugBank) for
+Drugs.com-style severity ratings. Incompatible with an open-source project, and
+not needed to show the regulator's own text.
+
+**Query openFDA from the phone.** Reverses ADR-0004, for the reasons ADR-0009
+gives.
+
+### Consequences
+
+- 5,843 drugs from 262,888 labels (export of 2026-10-02). Two thirds of the
+  labels are not linked to a current listing and are left out, which also
+  leaves out discontinued products.
+- Still US labelling and still a dated snapshot, and the app must keep saying
+  both.
+- The bundle the app reads (the label text, the A-Z index and its search) is
+  the next step. Until it lands, `medicines_v1.json` stays unpopulated and the
+  release gate in `RELEASE.md` stays open. Measured for that step: the safety
+  sections of every selected label are 59 MB of text, 4.6 MB compressed with
+  xz, and search covers 35,022 distinct generic and brand names.
+- `--check` in CI confirms the selection is well formed. It cannot tell an
+  edited value from a real one; only a fresh `--fetch` can.
+- Flags for conflicting medications recorded in Conditions are planned on top
+  of this, and will need their own ADR, since they extend ADR-0010.
 
 ---
 

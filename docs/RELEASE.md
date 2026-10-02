@@ -160,30 +160,32 @@ Checklist, in the order the failures actually happen:
 
 ### The medicines artifact (export format aside)
 
-`artifacts/medicines/medicines_v1.json` is committed **unpopulated** until
-someone runs the fetch. In that state the reference screen explains itself
-rather than showing an empty list, which is honest but is not the feature.
+`artifacts/medicines/medicines_v1.json` is what the app reads, and it is
+committed **unpopulated** until the A-Z bundle lands (ADR-0012). In that state
+the reference screen explains itself rather than showing an empty list, which
+is honest but is not the feature.
+
+What exists now is the selection: one openFDA label, chosen by rule, for each
+drug the A-Z will cover. Refresh it before a release:
 
 ```bash
-python3 tools/scripts/gen_medicines.py --fetch
-python3 tools/scripts/gen_medicines.py --check   # should now pass
+python3 tools/scripts/gen_medicines.py --fetch   # downloads ~1.8 GB into data/
+python3 tools/scripts/gen_medicines.py --check   # should pass
 ```
 
 That needs network, on purpose: it is the one part of this project that talks to
-anything, and it runs on a developer machine or in CI, never on the phone. Commit
-both the artifact and the regenerated
-`app/lib/data/reference/medicines_bundled.dart` together — a snapshot committed
-without its Dart is a screen showing the previous snapshot under the new
-snapshot's date.
+anything, and it runs on a developer machine or in CI, never on the phone. The
+download is cached under `data/`, which is never committed. Commit only
+`artifacts/medicines/selection_v1.json`.
 
 Two things to check by eye after fetching, because no test can:
 
 - The `[VERIFY]` marker on the disclaimer in `gen_medicines.py`. Clearing it
   means opening <https://open.fda.gov/terms/> and confirming the wording is what
   they ask to be carried.
-- That the label text that came back is actually about the medicine you meant.
-  openFDA is queried by generic name and returns the first match; a query that
-  matched a combination product would put the wrong warnings on the screen.
+- The counts in the selection's `meta`. A large change in any of them between
+  two exports, the number of drugs most of all, means openFDA changed something
+  the rules depend on. Look at the rules before using the result.
 
 ### The re-export warning (export format v2)
 
