@@ -80,6 +80,7 @@ BUNDLE_SCHEMA_VERSION = 1
 CHUNK_TARGET = 1_000_000
 KEY_LIMIT = 96  # characters of a key's substance part; see entry_key
 DOWNLOAD_INDEX = "https://api.fda.gov/download.json"
+DOWNLOAD_ATTEMPTS = 3
 HEADERS = {"User-Agent": "period-tracker-medicines-generator"}
 
 # The sections each kind of label is judged on, in the order the app will
@@ -162,14 +163,77 @@ def export_index() -> tuple[str, list[dict]]:
     return str(label["export_date"]), list(label["partitions"])
 
 
+class IncompleteDownloadError(OSError):
+    """A partition kept arriving shorter than openFDA says it is."""
+
+
+def is_whole(size: int, size_mib: float) -> bool:
+    """Report whether a file is the size openFDA's download index gives.
+
+    The index gives sizes in MiB to two decimal places, so a whole file is
+    within a hundredth of a MiB of it.
+
+    Args:
+        size (int): The file's size in bytes.
+        size_mib (float): The size the index gives, in MiB.
+
+    Returns:
+        bool: True when the two agree.
+    """
+    return abs(size / 2**20 - size_mib) < 0.01
+
+
+def fetch_partition(url: str, path: Path, size_mib: float) -> None:
+    """Download one partition whole, or leave nothing behind.
+
+    Python's HTTP client returns quietly when a connection closes early, so a
+    transfer cut off part way would be written as a short file and fail later
+    as a zip that cannot be opened. Each attempt is checked against the length
+    the server announced, the size openFDA's index gives, and the zip's own
+    directory, and a short one is fetched again.
+
+    Args:
+        url (str): Where the partition is.
+        path (Path): Where it goes. Written only once it is whole.
+        size_mib (float): Its size according to the download index.
+
+    Raises:
+        IncompleteDownloadError: When every attempt arrived short.
+    """
+    partial = path.with_name(path.name + ".part")
+    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+        request = urllib.request.Request(url, headers=HEADERS)
+        with (
+            urllib.request.urlopen(request, timeout=300) as response,
+            partial.open("wb") as out,
+        ):
+            announced = response.headers.get("Content-Length")
+            shutil.copyfileobj(response, out, length=1 << 20)
+        size = partial.stat().st_size
+        if (
+            (announced is None or size == int(announced))
+            and is_whole(size, size_mib)
+            and zipfile.is_zipfile(partial)
+        ):
+            partial.replace(path)
+            return
+        print(
+            f"{path.name} arrived short ({size:,} bytes), attempt {attempt} of "
+            f"{DOWNLOAD_ATTEMPTS}",
+            file=sys.stderr,
+        )
+    partial.unlink(missing_ok=True)
+    raise IncompleteDownloadError(f"{path.name} arrived short {DOWNLOAD_ATTEMPTS} times")
+
+
 def download_partitions(
     cache: Path, partitions: list[dict]
 ) -> list[tuple[Path, int]]:
     """Download every partition that is not already cached whole.
 
-    A cached file counts only if its size matches the index, so an interrupted
-    download is fetched again rather than read as a short export. Each file
-    lands under a temporary name and is renamed into place.
+    A cached file counts only if its size matches the index and it opens as a
+    zip, so a download cut short on an earlier run is fetched again rather than
+    read as a short export.
 
     Args:
         cache (Path): Where the zip files are kept between runs.
@@ -178,6 +242,9 @@ def download_partitions(
     Returns:
         `list[tuple[Path, int]]`: Each partition's local path, and how many
         labels openFDA says it holds.
+
+    Raises:
+        IncompleteDownloadError: When a partition never arrives whole.
     """
     cache.mkdir(parents=True, exist_ok=True)
     local = []
@@ -185,17 +252,14 @@ def download_partitions(
         url = str(partition["file"])
         path = cache / url.rsplit("/", 1)[-1]
         size_mib = float(partition["size_mb"])
-        cached = path.exists() and abs(path.stat().st_size / 2**20 - size_mib) < 0.01
+        cached = (
+            path.exists()
+            and is_whole(path.stat().st_size, size_mib)
+            and zipfile.is_zipfile(path)
+        )
         if not cached:
             print(f"downloading {path.name} ({size_mib:.0f} MiB)...", file=sys.stderr)
-            partial = path.with_name(path.name + ".part")
-            request = urllib.request.Request(url, headers=HEADERS)
-            with (
-                urllib.request.urlopen(request, timeout=300) as response,
-                partial.open("wb") as out,
-            ):
-                shutil.copyfileobj(response, out, length=1 << 20)
-            partial.replace(path)
+            fetch_partition(url, path, size_mib)
         local.append((path, int(partition["records"])))
     return local
 

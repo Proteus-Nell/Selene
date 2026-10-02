@@ -16,6 +16,7 @@ for tranexamic acid tablets.
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
 from pathlib import Path
 
@@ -488,6 +489,98 @@ class TestNamesAndKeys:
         two = raw_label(routes=("INTRA VENOUS",), set_id="b")
         with pytest.raises(SystemExit):
             drugs(gen, one, two)
+
+
+class _Response:
+    """A stand-in for an HTTP response: a body, and the length it announced."""
+
+    def __init__(self, body: bytes, announced: int) -> None:
+        self._body = io.BytesIO(body)
+        self.headers = {"Content-Length": str(announced)}
+
+    def read(self, size: int = -1) -> bytes:
+        return self._body.read(size)
+
+    def __enter__(self) -> _Response:
+        return self
+
+    def __exit__(self, *_) -> None:
+        return None
+
+
+def _zip_bytes() -> bytes:
+    """A small, whole zip file."""
+    import zipfile
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("part.json", json.dumps({"results": []}) * 50)
+    return buffer.getvalue()
+
+
+class TestDownloading:
+    def test_a_transfer_cut_short_is_fetched_again(self, gen, tmp_path: Path, monkeypatch) -> None:
+        # Python's HTTP client returns quietly when a connection closes early,
+        # which once left three partitions short and failed the run as a zip
+        # that could not be opened.
+        whole = _zip_bytes()
+        bodies = iter([whole[: len(whole) // 2], whole])
+        calls = []
+
+        def urlopen(request, timeout):
+            calls.append(request.full_url)
+            return _Response(next(bodies), len(whole))
+
+        monkeypatch.setattr(gen.urllib.request, "urlopen", urlopen)
+        path = tmp_path / "part.json.zip"
+        gen.fetch_partition("https://example.test/part.json.zip", path, 0.0)
+        assert path.read_bytes() == whole
+        assert len(calls) == 2
+
+    def test_one_that_never_arrives_whole_is_refused(
+        self, gen, tmp_path: Path, monkeypatch
+    ) -> None:
+        whole = _zip_bytes()
+        monkeypatch.setattr(
+            gen.urllib.request,
+            "urlopen",
+            lambda request, timeout: _Response(whole[:-10], len(whole)),
+        )
+        path = tmp_path / "part.json.zip"
+        with pytest.raises(gen.IncompleteDownloadError):
+            gen.fetch_partition("https://example.test/part.json.zip", path, 0.0)
+        # Nothing is left for the next run to mistake for a download.
+        assert list(tmp_path.iterdir()) == []
+
+    def test_a_short_file_in_the_cache_is_fetched_again(
+        self, gen, tmp_path: Path, monkeypatch
+    ) -> None:
+        whole = _zip_bytes()
+        (tmp_path / "part.json.zip").write_bytes(whole[:-10])
+        monkeypatch.setattr(
+            gen.urllib.request,
+            "urlopen",
+            lambda request, timeout: _Response(whole, len(whole)),
+        )
+        partitions = [
+            {"file": "https://example.test/part.json.zip", "size_mb": "0.00", "records": "0"}
+        ]
+        gen.download_partitions(tmp_path, partitions)
+        assert (tmp_path / "part.json.zip").read_bytes() == whole
+
+    def test_a_whole_file_in_the_cache_is_not_fetched_again(
+        self, gen, tmp_path: Path, monkeypatch
+    ) -> None:
+        (tmp_path / "part.json.zip").write_bytes(_zip_bytes())
+
+        def urlopen(request, timeout):
+            raise AssertionError("fetched a partition that was already whole")
+
+        monkeypatch.setattr(gen.urllib.request, "urlopen", urlopen)
+        partitions = [
+            {"file": "https://example.test/part.json.zip", "size_mb": "0.00", "records": "0"}
+        ]
+        assert gen.download_partitions(tmp_path, partitions) == [(tmp_path / "part.json.zip", 0)]
 
 
 class TestTheSelectionFile:
