@@ -69,9 +69,11 @@ class InsightsScreen extends ConsumerWidget {
     final cycles =
         ref.watch(cyclesProvider).valueOrNull ?? const <CycleRecord>[];
     final statistics = CycleFeatures.summarise(cycles);
-    // The reference pages are shown only to someone who has switched the
-    // Learn tab on, here as everywhere else.
-    final references = ref.watch(showLearnTabProvider).valueOrNull ?? false;
+    // Body composition and movement are shown only to someone who has
+    // switched the Learn tab on and revealed them there, here as in Learn.
+    final references =
+        (ref.watch(showLearnTabProvider).valueOrNull ?? false) &&
+        (ref.watch(revealHiddenReferenceProvider).valueOrNull ?? false);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.insightsTitle)),

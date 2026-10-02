@@ -2325,6 +2325,18 @@ abstract class AppLocalizations {
   /// **'Your record'**
   String get learnYourRecordSection;
 
+  /// After the Learn tab has been held for ten seconds. Says what changed, since nothing on screen asked for it.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplements, Pain and movement, and Body composition are now listed in Learn.'**
+  String get learnHiddenPagesShown;
+
+  /// No description provided for @learnHiddenPagesHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplements, Pain and movement, and Body composition are hidden again.'**
+  String get learnHiddenPagesHidden;
+
   /// No description provided for @settingsAppearance.
   ///
   /// In en, this message translates to:

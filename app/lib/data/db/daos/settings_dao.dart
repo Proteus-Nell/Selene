@@ -82,6 +82,12 @@ enum SettingKey {
   /// hides those pages too.
   showLearnTab('show_learn_tab'),
 
+  /// Whether Learn lists Supplements, Pain and movement, and Body composition.
+  ///
+  /// Defaults to **off**, at the owner's direction, and has no switch: it is
+  /// turned on and off again by holding the Learn tab for ten seconds.
+  revealHiddenReference('reveal_hidden_reference'),
+
   /// Fire dates of the notifications currently scheduled, comma separated.
   ///
   /// Kept so the next launch can tell whether one of them came due while the
@@ -361,6 +367,15 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   ///     Re-emitted on every write.
   Stream<bool> watchShowLearnTab() =>
       watchBool(SettingKey.showLearnTab, orElse: false);
+
+  /// Whether Learn lists the three reference pages it otherwise keeps back.
+  ///
+  /// Defaults to **off**. Turned on and off by holding the Learn tab.
+  /// Returns:
+  ///     `Stream<bool>`: Whether they are listed. False by default.
+  ///     Re-emitted on every write.
+  Stream<bool> watchRevealHiddenReference() =>
+      watchBool(SettingKey.revealHiddenReference, orElse: false);
 
   /// Whether the app requires an unlock (AND-29). Defaults to **off**.
   ///

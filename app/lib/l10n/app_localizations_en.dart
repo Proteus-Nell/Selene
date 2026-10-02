@@ -1357,6 +1357,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get learnYourRecordSection => 'Your record';
 
   @override
+  String get learnHiddenPagesShown =>
+      'Supplements, Pain and movement, and Body composition are now listed in Learn.';
+
+  @override
+  String get learnHiddenPagesHidden =>
+      'Supplements, Pain and movement, and Body composition are hidden again.';
+
+  @override
   String get settingsAppearance => 'Appearance';
 
   @override

@@ -209,6 +209,15 @@ final StreamProvider<bool> showLearnTabProvider = StreamProvider<bool>(
   (ref) => ref.watch(appDatabaseProvider).settingsDao.watchShowLearnTab(),
 );
 
+/// Whether Learn lists Supplements, Pain and movement, and Body composition.
+///
+/// **Off by default**, at the owner's direction, with no switch for it:
+/// holding the Learn tab for ten seconds turns it on, and again turns it off.
+final StreamProvider<bool> revealHiddenReferenceProvider = StreamProvider<bool>(
+  (ref) =>
+      ref.watch(appDatabaseProvider).settingsDao.watchRevealHiddenReference(),
+);
+
 /// The colour scheme the app is wearing (AND-39).
 ///
 /// A stream, so that tapping a scheme in settings repaints the app on the next

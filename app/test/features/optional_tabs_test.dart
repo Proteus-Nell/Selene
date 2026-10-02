@@ -135,7 +135,7 @@ void main() {
       }
     });
 
-    testWidgets('holds every one of those pages once it is on', (
+    testWidgets('holds every one of those pages once they are revealed', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(1000, 6000);
@@ -143,6 +143,10 @@ void main() {
       addTearDown(tester.view.reset);
 
       await db.settingsDao.writeBool(SettingKey.showLearnTab, value: true);
+      await db.settingsDao.writeBool(
+        SettingKey.revealHiddenReference,
+        value: true,
+      );
       await pumpApp(tester);
       await tester.tap(find.text(l10n(tester).navLearn));
       await pumpFor(tester);
@@ -157,13 +161,80 @@ void main() {
       }
     });
   });
+
+  group('the pages Learn keeps back', () {
+    /// Holds the Learn tab down for [hold], then lets go and opens Learn.
+    Future<void> holdLearn(WidgetTester tester, Duration hold) async {
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.text(l10n(tester).navLearn)),
+      );
+      await tester.pump(hold);
+      await gesture.up();
+      // Long enough for the tab's tooltip and the message to go again.
+      await pumpFor(tester, 6);
+      await tester.tap(find.text(l10n(tester).navLearn));
+      await pumpFor(tester);
+      expect(find.byType(LearnScreen), findsOneWidget);
+    }
+
+    setUp(() async {
+      await db.settingsDao.writeBool(SettingKey.showLearnTab, value: true);
+    });
+
+    testWidgets('are not listed until the tab is held', (tester) async {
+      await pumpApp(tester);
+      await tester.tap(find.text(l10n(tester).navLearn));
+      await pumpFor(tester);
+      final strings = l10n(tester);
+      expect(find.text(strings.settingsLookup), findsOneWidget);
+      expect(find.text(strings.settingsConditions), findsOneWidget);
+      for (final title in _keptBack(strings)) {
+        expect(find.text(title), findsNothing, reason: '"$title" is listed');
+      }
+    });
+
+    testWidgets('are listed once the tab is held for ten seconds', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      await holdLearn(tester, revealHold);
+      for (final title in _keptBack(l10n(tester))) {
+        expect(find.text(title), findsOneWidget, reason: '"$title" is not');
+      }
+    });
+
+    testWidgets('stay back after a shorter hold', (tester) async {
+      await pumpApp(tester);
+      await holdLearn(tester, revealHold - const Duration(seconds: 1));
+      for (final title in _keptBack(l10n(tester))) {
+        expect(find.text(title), findsNothing, reason: '"$title" is listed');
+      }
+    });
+
+    testWidgets('go back once the tab is held again', (tester) async {
+      await db.settingsDao.writeBool(
+        SettingKey.revealHiddenReference,
+        value: true,
+      );
+      await pumpApp(tester);
+      await holdLearn(tester, revealHold);
+      for (final title in _keptBack(l10n(tester))) {
+        expect(find.text(title), findsNothing, reason: '"$title" is listed');
+      }
+    });
+  });
 }
 
 /// The pages the Learn tab is the only way to.
 List<String> _pages(AppLocalizations strings) => <String>[
   strings.settingsLookup,
+  ..._keptBack(strings),
+  strings.settingsConditions,
+];
+
+/// The pages Learn lists only once its tab has been held.
+List<String> _keptBack(AppLocalizations strings) => <String>[
   strings.settingsNutrition,
   strings.movementEntryTitle,
   strings.weightEntryTitle,
-  strings.settingsConditions,
 ];

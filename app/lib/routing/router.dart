@@ -9,15 +9,22 @@
 ///     - Routes: Every path, as a constant.
 ///     - buildRouter: The router itself.
 ///     - AppScaffold: The shell and its navigation bar.
+///     - revealHold: How long the Learn tab is held to show or hide pages.
+///     - _HoldToReveal: Turns a held Learn tab into that toggle.
 ///     - _FadeThroughBranches: The cross-fade between branches.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:period_tracker/core/motion.dart';
+import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/features/calendar/calendar_screen.dart';
+import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/insights/insights_screen.dart';
 import 'package:period_tracker/features/learn/learn_screen.dart';
 import 'package:period_tracker/features/log/log_screen.dart';
@@ -234,7 +241,7 @@ class AppScaffold extends ConsumerWidget {
           );
           shell.goBranch(branch, initialLocation: true);
         },
-        destinations: <NavigationDestination>[
+        destinations: <Widget>[
           NavigationDestination(
             icon: const Icon(Icons.schedule_outlined),
             selectedIcon: const Icon(Icons.schedule),
@@ -251,10 +258,12 @@ class AppScaffold extends ConsumerWidget {
             label: l10n.navInsights,
           ),
           if (showLearn)
-            NavigationDestination(
-              icon: const Icon(Icons.menu_book_outlined),
-              selectedIcon: const Icon(Icons.menu_book),
-              label: l10n.navLearn,
+            _HoldToReveal(
+              child: NavigationDestination(
+                icon: const Icon(Icons.menu_book_outlined),
+                selectedIcon: const Icon(Icons.menu_book),
+                label: l10n.navLearn,
+              ),
             ),
           NavigationDestination(
             icon: const Icon(Icons.settings_outlined),
@@ -265,6 +274,79 @@ class AppScaffold extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// How long the Learn tab is held to show or hide the three reference pages
+/// Learn keeps back.
+const Duration revealHold = Duration(seconds: 10);
+
+/// Turns a held Learn tab into a switch for the pages Learn keeps back.
+///
+/// Supplements, Pain and movement, and Body composition are not listed until
+/// the tab has been held for [revealHold], at the owner's direction; holding
+/// it as long again hides them. Ten seconds is long enough that nobody does
+/// it by accident, and the message afterwards says what changed.
+///
+/// A [Listener] rather than a gesture recogniser: it sees the press without
+/// competing for it, so the tab's tap and its tooltip work as they did.
+///
+/// Attributes:
+///     child (Widget): The Learn destination.
+class _HoldToReveal extends ConsumerStatefulWidget {
+  /// Wraps [child].
+  const _HoldToReveal({required this.child});
+
+  /// The Learn destination.
+  final Widget child;
+
+  @override
+  ConsumerState<_HoldToReveal> createState() => _HoldToRevealState();
+}
+
+/// State for [_HoldToReveal]: the hold in progress, if there is one.
+///
+/// Attributes:
+///     _hold (Timer?): Fires once the press has lasted [revealHold].
+class _HoldToRevealState extends ConsumerState<_HoldToReveal> {
+  /// Fires once the press has lasted [revealHold].
+  Timer? _hold;
+
+  @override
+  void dispose() {
+    _hold?.cancel();
+    super.dispose();
+  }
+
+  /// Flip the setting, and say which way it went.
+  Future<void> _toggle() async {
+    _hold = null;
+    // Read from the database rather than the provider: nothing on the tab
+    // being held watches it, so the provider may not have loaded yet.
+    final settings = ref.read(appDatabaseProvider).settingsDao;
+    final shown = await settings.readBool(
+      SettingKey.revealHiddenReference,
+      orElse: false,
+    );
+    await settings.writeBool(SettingKey.revealHiddenReference, value: !shown);
+    if (!mounted) return;
+    unawaited(HapticFeedback.mediumImpact());
+    final l10n = AppLocalizations.of(context);
+    showAppSnackBar(
+      context,
+      shown ? l10n.learnHiddenPagesHidden : l10n.learnHiddenPagesShown,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: (_) {
+      _hold?.cancel();
+      _hold = Timer(revealHold, _toggle);
+    },
+    onPointerUp: (_) => _hold?.cancel(),
+    onPointerCancel: (_) => _hold?.cancel(),
+    child: widget.child,
+  );
 }
 
 /// Map each visible destination onto the branch behind it.
