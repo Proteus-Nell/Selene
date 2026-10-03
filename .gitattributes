@@ -7,3 +7,8 @@
 # nothing; app/test/features/fonts_test.dart checks the version tag for the
 # same reason.
 *.ttf binary
+
+# The medicines bundle (ADR-0013), compressed with zlib. Same reasoning as the
+# fonts: a chunk without a NUL byte early on would otherwise be taken for text,
+# and a chunk with its line endings rewritten no longer decompresses.
+*.zlib binary

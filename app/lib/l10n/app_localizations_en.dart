@@ -838,9 +838,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lookupMedicinesHeading => 'Medicines';
 
   @override
-  String get lookupHygieneHeading => 'Tampons, cups and pads';
-
-  @override
   String lookupMedicinesSource(String date) {
     return 'From US drug labelling published by openFDA, as it stood on $date.';
   }
@@ -851,7 +848,100 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lookupMedicinesUnavailable =>
-      'The medicines reference is not built into this version. The other sections still work.';
+      'The medicines reference is not built into this version.';
+
+  @override
+  String get lookupMedicinesLoading => 'Opening the medicines reference';
+
+  @override
+  String get lookupMedicinesFailed =>
+      'The medicines reference could not be opened.';
+
+  @override
+  String lookupMedicinesPrompt(int count) {
+    final intl.NumberFormat countNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Type the name of a medicine, a brand or an ingredient to search $countString medicines.';
+  }
+
+  @override
+  String lookupMedicinesShowing(int shown, int total) {
+    final intl.NumberFormat totalNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Showing the closest $shown of $totalString. Type more of the name to narrow it down.';
+  }
+
+  @override
+  String get lookupMedicinesShowMore => 'Show more';
+
+  @override
+  String get lookupBrowseHeading => 'Or browse them from A to Z';
+
+  @override
+  String lookupBrowseLetter(String letter) {
+    return 'Medicines starting with $letter';
+  }
+
+  @override
+  String get lookupBrowseOther =>
+      'Medicines starting with a number or a symbol';
+
+  @override
+  String lookupBrowseTitle(String letter) {
+    return 'Medicines: $letter';
+  }
+
+  @override
+  String lookupBrowseShared(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count medicines by this name',
+      one: '1 medicine by this name',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lookupBrowseSharedIntro =>
+      'These go by the same name. They differ in what is in them, how they are taken, or whether they need a prescription.';
+
+  @override
+  String get lookupMedicinePrescription => 'Prescription';
+
+  @override
+  String get lookupMedicineOverTheCounter => 'Over the counter';
+
+  @override
+  String lookupMedicineOtherNames(String names, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count other names',
+      one: '1 other name',
+    );
+    return '$names and $_temp0';
+  }
+
+  @override
+  String lookupMedicineLabel(String manufacturer, String date) {
+    return 'From the label filed by $manufacturer, dated $date.';
+  }
+
+  @override
+  String get lookupMedicineOneLabel =>
+      'Each maker files its own label for a medicine. One is shown here, chosen by a fixed rule, and the label on your packet may differ.';
+
+  @override
+  String get lookupMedicineLoading => 'Opening this medicine\'s label';
+
+  @override
+  String get lookupMedicineFailed =>
+      'This medicine\'s label could not be opened.';
 
   @override
   String get lookupSectionPurpose => 'What it is for';
@@ -870,6 +960,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lookupSectionPregnancy => 'If pregnant or breastfeeding';
+
+  @override
+  String get lookupSectionBoxedWarning => 'Boxed warning';
+
+  @override
+  String get lookupSectionUses => 'Uses';
+
+  @override
+  String get lookupSectionContraindications => 'Contraindications';
+
+  @override
+  String get lookupSectionWarningsAndPrecautions => 'Warnings and precautions';
+
+  @override
+  String get lookupSectionPrecautions => 'Precautions';
+
+  @override
+  String get lookupSectionInteractions => 'Drug interactions';
+
+  @override
+  String get lookupSectionSpecificPopulations => 'Use in specific populations';
+
+  @override
+  String get lookupSectionPregnancyLabel => 'Pregnancy';
+
+  @override
+  String get lookupSectionNursingMothers => 'Nursing mothers';
+
+  @override
+  String get lookupSectionAskDoctorOrPharmacist => 'Ask a doctor or pharmacist';
+
+  @override
+  String get lookupSectionWhenUsing => 'When using this product';
 
   @override
   String get lookupSearchOnlineTitle => 'Not here?';
@@ -900,43 +1023,126 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lookupLeavingFailed => 'No browser could be opened.';
 
   @override
+  String get checkerTitle => 'Check medicines together';
+
+  @override
+  String get checkerEntrySubtitle =>
+      'What the US labels of two or more medicines say about each other.';
+
+  @override
+  String get checkerIntro =>
+      'Add two or more medicines. For each pair, this shows whether they share an ingredient or an FDA drug class, and quotes any place where one label names the other. It reads the labels and nothing else, so it cannot tell you that a combination is safe.';
+
+  @override
+  String get checkerAdd => 'Add a medicine';
+
+  @override
+  String checkerRemove(String name) {
+    return 'Remove $name';
+  }
+
+  @override
+  String get checkerNeedTwo => 'Add at least two medicines to compare them.';
+
+  @override
+  String checkerFull(int count) {
+    return 'Up to $count medicines can be compared at once.';
+  }
+
+  @override
+  String checkerAlreadyAdded(String name) {
+    return '$name is already on the list.';
+  }
+
+  @override
+  String get checkerLoading => 'Reading the labels';
+
+  @override
+  String get checkerFailed => 'The labels could not be read.';
+
+  @override
+  String checkerPairTitle(String first, String second) {
+    return '$first and $second';
+  }
+
+  @override
+  String checkerSharedSubstance(String names) {
+    return 'Both contain $names.';
+  }
+
+  @override
+  String checkerSharedClass(int count, String classes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Both are in the FDA drug classes $classes.',
+      one: 'Both are in the FDA drug class $classes.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String checkerMentionsName(String medicine, String words, String section) {
+    return 'The $medicine label mentions “$words”. From $section:';
+  }
+
+  @override
+  String checkerMentionsClass(
+    String medicine,
+    String words,
+    String other,
+    String section,
+  ) {
+    return 'The $medicine label mentions “$words”, an FDA drug class that includes $other. From $section:';
+  }
+
+  @override
+  String checkerMentionsNameShort(String medicine, String words) {
+    return 'The $medicine label mentions “$words”.';
+  }
+
+  @override
+  String checkerMentionsClassShort(
+    String medicine,
+    String words,
+    String other,
+  ) {
+    return 'The $medicine label mentions “$words”, an FDA drug class that includes $other.';
+  }
+
+  @override
+  String get checkerNothingFoundPair =>
+      'Neither label names the other, and they share no ingredient or FDA drug class.';
+
+  @override
+  String get checkerNothingFoundNote =>
+      'That does not mean they are safe together. Labels leave interactions out, and often name medicines only by a group, such as “NSAIDs” or “combined hormonal contraceptives”, which this check cannot match.';
+
+  @override
+  String get checkerSearchOnline => 'Look this pair up online';
+
+  @override
+  String checkerSearchTerm(String first, String second) {
+    return '$first and $second interaction';
+  }
+
+  @override
+  String get checkerAskPharmacist =>
+      'Only a pharmacist or doctor who knows your situation can say whether these medicines are right for you together. Show them this list, or the packets.';
+
+  @override
+  String get checkerPickerPrompt =>
+      'Type the name of a medicine, a brand or an ingredient.';
+
+  @override
+  String get lookupMedicineCheck => 'Check with other medicines';
+
+  @override
   String get settingsLookup => 'Look something up';
 
   @override
   String get settingsLookupSubtitle =>
-      'Medicines and hygiene product notes, stored on this device.';
-
-  @override
-  String get hygieneTssTitle => 'Toxic shock syndrome';
-
-  @override
-  String get hygieneTssUrgent =>
-      'If you have a sudden high fever, a sunburn-like rash, vomiting, diarrhoea, muscle aches, dizziness or confusion while using a tampon or a menstrual cup: remove it and get urgent medical help.';
-
-  @override
-  String get hygieneTssBody =>
-      'Toxic shock syndrome is rare and life-threatening. It is caused by bacterial toxins, and it is associated with tampon and menstrual cup use, though it also happens to people who are not menstruating at all.';
-
-  @override
-  String get hygieneTamponsTitle => 'Tampons';
-
-  @override
-  String get hygieneTamponsBody =>
-      'General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says.';
-
-  @override
-  String get hygieneCupsTitle => 'Menstrual cups';
-
-  @override
-  String get hygieneCupsBody =>
-      'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products, so follow the instructions that came with yours.';
-
-  @override
-  String get hygieneExternalTitle => 'Pads and period underwear';
-
-  @override
-  String get hygieneExternalBody =>
-      'Worn outside the body. The link with toxic shock syndrome is to products worn inside it.';
+      'Medicines from US drug labelling, stored on this device.';
 
   @override
   String get nutritionTitle => 'Supplements';
@@ -1148,62 +1354,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'What exercise does about period pain, how weak the evidence for planning it by cycle phase is, and what is a reason to stop.';
 
   @override
-  String get companionLabel => 'Companion';
-
-  @override
-  String get companionDismiss => 'Dismiss';
-
-  @override
-  String get companionLineStillReading => 'The log is still being read.';
-
-  @override
-  String get companionLinePredictionPaused =>
-      'A pregnancy is recorded, so predictions are paused. Days can still be logged.';
-
-  @override
-  String get companionLineHeavyBleeding =>
-      'Heavy bleeding is recorded on several days. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia. A blood test is what settles it.';
-
-  @override
-  String get companionLineCramps =>
-      'Cramps are recorded for today. Guidance on period pain lists heat, painkillers and exercise among the measures that may help.';
-
-  @override
-  String get companionLineSleep =>
-      'Disturbed sleep is recorded for today. Sleep problems are among the symptoms commonly reported around a period.';
-
-  @override
-  String get companionLineLowEnergy =>
-      'Low energy is recorded for today. Tiredness is among the symptoms commonly reported before and during a period.';
-
-  @override
-  String get companionLinePeriodToday =>
-      'A period is logged for today. Menstruation is not named anywhere in the guidance behind this app as a reason to stop moving.';
-
-  @override
-  String get companionLineOverdue =>
-      'The predicted window has passed with no period logged. That is a data state, and nothing here guesses at the reason.';
-
-  @override
-  String get companionLineNothingLoggedRecently =>
-      'Nothing has been logged for a few days. The log is on the first tab, whenever there is something to put in it.';
-
-  @override
-  String get companionLineNoLogsYet =>
-      'Nothing is recorded yet. One period start date is enough to begin.';
-
-  @override
-  String get companionLineNoPredictionYet =>
-      'There is not enough history for a prediction yet. Insights holds what has been recorded so far.';
-
-  @override
-  String get companionLineTodayLogged =>
-      'Today is already logged. The day can be opened again and changed.';
-
-  @override
-  String get companionLineNothingToPointAt => 'Nothing to point at just now.';
-
-  @override
   String get conditionsTitle => 'Conditions and medication';
 
   @override
@@ -1259,6 +1409,53 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get conditionsMedicinesHeading => 'Medicines';
+
+  @override
+  String get conditionsMedicinesIntro =>
+      'Medicines you take, picked from the app\'s list of US medicines and kept on this device only. Each is compared with the others using their labels.';
+
+  @override
+  String get conditionsMedicinesEmpty => 'No medicines recorded.';
+
+  @override
+  String get conditionsMedicinesUnavailable =>
+      'The medicines list is not built into this version, so medicines cannot be recorded.';
+
+  @override
+  String get conditionsMedicineGone =>
+      'No longer in this app\'s list of medicines, so it is not compared.';
+
+  @override
+  String get conditionsConflictsHeading => 'Possible conflicts';
+
+  @override
+  String get conditionsConflictsIntro =>
+      'Their labels connect these medicines. That is not a finding about you: a pharmacist can tell you whether it matters.';
+
+  @override
+  String conditionsConflictsOthers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'The labels of the $count other pairs do not connect them in the ways this app checks for.',
+      one: 'The labels of the one other pair do not connect it in the ways this app checks for.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get conditionsConflictsNone =>
+      'Their labels connect none of these medicines in the ways this app checks for.';
+
+  @override
+  String get conditionsConflictLookUp => 'Look it up online';
+
+  @override
+  String get conditionsConflictLabels => 'What the labels say';
+
+  @override
   String get conditionHormonalContraceptionCombined => 'Combined pill';
 
   @override
@@ -1306,7 +1503,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsConditionsSubtitle =>
-      'Record long-term things that can change your cycle.';
+      'Record long-term things that can change your cycle, and the medicines you take.';
 
   @override
   String get learnTitle => 'Learn';
@@ -1320,6 +1517,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get learnYourRecordSection => 'Your record';
+
+  @override
+  String get learnHiddenPagesShown =>
+      'Supplements, Pain and movement, and Body composition are now listed in Learn.';
+
+  @override
+  String get learnHiddenPagesHidden =>
+      'Supplements, Pain and movement, and Body composition are hidden again.';
 
   @override
   String get settingsAppearance => 'Appearance';
@@ -1423,14 +1628,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLearnTabSubtitle =>
-      'Off by default. The reference pages are listed here in Settings either way.';
-
-  @override
-  String get settingsCompanion => 'Show the companion';
-
-  @override
-  String get settingsCompanionSubtitle =>
-      'Off by default. A control at the end of the navigation bar that offers one line about what is already logged.';
+      'Off by default. The reference pages, and conditions and medication, appear only when this is on.';
 
   @override
   String get settingsPrivacySection => 'Privacy';

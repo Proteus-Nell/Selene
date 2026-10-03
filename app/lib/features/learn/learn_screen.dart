@@ -12,7 +12,11 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:period_tracker/data/reference/medicines_bundled.dart';
+import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/features/conditions/conditions_screen.dart';
+import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
 import 'package:period_tracker/features/lookup/lookup_screen.dart';
 import 'package:period_tracker/features/movement/movement_screen.dart';
 import 'package:period_tracker/features/nutrition/nutrition_screen.dart';
@@ -27,19 +31,29 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// and a user looking for what the app says about iron had to guess which of
 /// two unrelated screens somebody had filed it under.
 ///
+/// This tab is now the only way to them, at the owner's direction: they are
+/// not listed in Settings, and Insights offers its two only while the tab is
+/// switched on. Turning the tab off hides the pages, not just a route to them.
+///
+/// Three of them, Supplements, Pain and movement, and Body composition, are
+/// kept back even here until the tab has been held for ten seconds, also at
+/// the owner's direction (`revealHold` in `router.dart`).
+///
 /// The subtitles are not decoration. Each one says what the page argues before
 /// anyone taps it, which matters most for the two that answer a popular
 /// question with "less than you would hope": somebody arriving at the movement
 /// page hoping to be told which days to train on should be able to see that
 /// they will not be.
-class LearnScreen extends StatelessWidget {
+class LearnScreen extends ConsumerWidget {
   /// Creates the learn screen.
   const LearnScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final revealed =
+        ref.watch(revealHiddenReferenceProvider).valueOrNull ?? false;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.learnTitle)),
@@ -64,24 +78,35 @@ class LearnScreen extends StatelessWidget {
               subtitle: l10n.settingsLookupSubtitle,
               destination: () => const LookupScreen(),
             ),
-            _LearnTile(
-              icon: Icons.eco_outlined,
-              title: l10n.settingsNutrition,
-              subtitle: l10n.settingsNutritionSubtitle,
-              destination: () => const NutritionScreen(),
-            ),
-            _LearnTile(
-              icon: Icons.directions_walk,
-              title: l10n.movementEntryTitle,
-              subtitle: l10n.movementEntrySubtitle,
-              destination: () => const MovementScreen(),
-            ),
-            _LearnTile(
-              icon: Icons.monitor_weight_outlined,
-              title: l10n.weightEntryTitle,
-              subtitle: l10n.weightEntrySubtitle,
-              destination: () => const WeightHormonesScreen(),
-            ),
+            // Not offered in a build without the medicines bundle: it would
+            // open onto a search with nothing to find.
+            if (medicinesFetched)
+              _LearnTile(
+                icon: Icons.compare_arrows,
+                title: l10n.checkerTitle,
+                subtitle: l10n.checkerEntrySubtitle,
+                destination: () => const InteractionCheckerScreen(),
+              ),
+            if (revealed) ...<Widget>[
+              _LearnTile(
+                icon: Icons.eco_outlined,
+                title: l10n.settingsNutrition,
+                subtitle: l10n.settingsNutritionSubtitle,
+                destination: () => const NutritionScreen(),
+              ),
+              _LearnTile(
+                icon: Icons.directions_walk,
+                title: l10n.movementEntryTitle,
+                subtitle: l10n.movementEntrySubtitle,
+                destination: () => const MovementScreen(),
+              ),
+              _LearnTile(
+                icon: Icons.monitor_weight_outlined,
+                title: l10n.weightEntryTitle,
+                subtitle: l10n.weightEntrySubtitle,
+                destination: () => const WeightHormonesScreen(),
+              ),
+            ],
             _Heading(l10n.learnYourRecordSection),
             // Conditions is the one row here that writes something. It sits
             // under its own heading rather than among the reading, because a

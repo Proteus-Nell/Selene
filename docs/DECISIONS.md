@@ -15,6 +15,15 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0004](#adr-0004-unencrypted-local-sqlite-with-zero-network-permission) | Unencrypted local SQLite with zero network permission | Accepted | 2026-08-17 |
 | [0005](#adr-0005-uv-with-python-311-wsl2-for-gpu-work-jdk-17-pinned-for-android-mlflow-local-only) | uv + Python 3.11, WSL2 for GPU, JDK 17 pinned, MLflow local-only | Accepted; clause 2 (WSL2 scope) narrowed by [0006](#adr-0006-pytorch-and-executorch-replace-tensorflow-and-litert-entirely) | 2026-08-17 |
 | [0006](#adr-0006-pytorch-and-executorch-replace-tensorflow-and-litert-entirely) | PyTorch and ExecuTorch replace TensorFlow and LiteRT entirely | Accepted | 2026-08-17 |
+| [0007](#adr-0007-named-cycle-phases-shown-by-default-ovulation-estimation-still-opt-in) | Named cycle phases shown by default, ovulation estimation still opt-in | Accepted | 2026-08-20 |
+| [0008](#adr-0008-app-lock-gates-the-interface-and-does-not-encrypt-the-database) | App lock gates the interface and does not encrypt the database | Accepted | 2026-08-20 |
+| [0009](#adr-0009-medicines-reference-data-is-generated-at-build-time-from-openfda) | Medicines reference data is generated at build time from openFDA | Accepted; allowlist superseded by [0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) | 2026-08-20 |
+| [0010](#adr-0010-long-term-conditions-are-recorded-not-modelled) | Long-term conditions are recorded, not modelled | Accepted | 2026-08-20 |
+| [0011](#adr-0011-export-v2-refuses-v1-files) | Export v2 refuses v1 files | Accepted | 2026-08-20 |
+| [0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) | The medicines reference covers every drug, one label each, chosen by rule | Accepted | 2026-10-02 |
+| [0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone) | The medicines bundle is compressed chunks and an index, searched on the phone | Accepted | 2026-10-02 |
+| [0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe) | The interaction checker compares label text, and never calls a pair safe | Accepted | 2026-10-02 |
+| [0015](#adr-0015-recorded-medicines-are-kept-as-a-setting-and-their-flags-only-inform) | Recorded medicines are kept as a setting, and their flags only inform | Accepted | 2026-10-02 |
 
 ---
 
@@ -342,7 +351,7 @@ copy.
 
 ## ADR-0009: Medicines reference data is generated at build time from openFDA
 
-**Status:** Accepted, 2026-08-20
+**Status:** Accepted, 2026-08-20. **The allowlist is superseded by [ADR-0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule)**: the reference covers every drug in openFDA's label export, one label each, chosen by rule. Generating the data at build time, and the zero network permission that protects, are unaffected and remain in force.
 **Deciders:** Project owner
 
 ### Context
@@ -454,6 +463,290 @@ Import stays a single code path. Anyone who updates without re-exporting is one
 device failure away from losing everything, and the re-export prompt is the only
 thing standing between them and that. If this is ever revisited, accepting v1 on
 import is a small change and the right one.
+
+---
+
+## ADR-0012: The medicines reference covers every drug, one label each, chosen by rule
+
+**Status:** Accepted, 2026-10-02. Supersedes the allowlist in [ADR-0009](#adr-0009-medicines-reference-data-is-generated-at-build-time-from-openfda); its build-time generation, and ADR-0004's zero network permission, stand. The bundle it leaves as the next step is [ADR-0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone).
+**Deciders:** Project owner
+
+### Context
+
+The Learn section is being rebuilt around a drugs A-Z and an interaction checker,
+modelled on Drugs.com's. ADR-0009 shipped thirteen allowlisted medicines, each
+fetched by a text search on its generic name, keeping the first hit. Checked
+against openFDA before any snapshot was committed, that picked the wrong product
+for four of the five checked: a combined pill for both emergency contraception
+and the progestogen-only pill, a zinc oxide diaper cream for zinc, and an
+injection for tranexamic acid tablets.
+
+Drugs.com's data cannot be used. Its content is licensed, its `robots.txt` bars
+automated access, and this project is to be open source. openFDA's bulk label
+export is public, needs no key, and can be redistributed.
+
+### Decision
+
+1. **Every drug, not a list.** Every human prescription and over-the-counter
+   drug that openFDA links to a current US product listing, from the bulk
+   export.
+2. **A drug is what it contains.** It is identified by its active substances,
+   its route, and whether it is prescription or over the counter. Never by a
+   name match.
+3. **One label each, chosen by rule.** The most complete safety sections, then
+   the original manufacturer over a repackager, then the reference (NDA or BLA)
+   label over a generic, then the newest (`rank` in `gen_medicines.py`).
+   Nothing is picked by hand, and nothing is written by hand: the app shows the
+   professional label, or the Drug Facts panel for an over-the-counter drug, as
+   published.
+4. Homeopathic products are left out. Kits, which list no substances or route,
+   take their substances from their generic name and their route from their
+   carton or their drug's usual route.
+5. The selection is committed as `artifacts/medicines/selection_v1.json`, one
+   drug per line, so that a refresh diffs per drug.
+
+### Runner-up and why rejected
+
+**Keep the allowlist and fix its queries.** Still a list chosen by hand, and
+every addition is another query to get right by hand.
+
+**License a drug database** (First Databank, Medi-Span, Lexicomp, DrugBank) for
+Drugs.com-style severity ratings. Incompatible with an open-source project, and
+not needed to show the regulator's own text.
+
+**Query openFDA from the phone.** Reverses ADR-0004, for the reasons ADR-0009
+gives.
+
+### Consequences
+
+- 5,843 drugs from 262,888 labels (export of 2026-10-02). Two thirds of the
+  labels are not linked to a current listing and are left out, which also
+  leaves out discontinued products.
+- Still US labelling and still a dated snapshot, and the app must keep saying
+  both.
+- The bundle the app reads (the label text, the A-Z index and its search) is
+  the next step. Until it lands, `medicines_v1.json` stays unpopulated and the
+  release gate in `RELEASE.md` stays open. Measured for that step: the safety
+  sections of every selected label are 59 MB of text, 4.6 MB compressed with
+  xz, and search covers 35,022 distinct generic and brand names.
+- `--check` in CI confirms the selection is well formed. It cannot tell an
+  edited value from a real one; only a fresh `--fetch` can.
+- Flags for conflicting medications recorded in Conditions are planned on top
+  of this, and will need their own ADR, since they extend ADR-0010.
+
+---
+
+## ADR-0013: The medicines bundle is compressed chunks and an index, searched on the phone
+
+**Status:** Accepted, 2026-10-02. Builds the bundle [ADR-0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) left as its next step.
+**Deciders:** Project owner
+
+### Context
+
+ADR-0012 chose one label for each of 5,843 drugs. Their safety sections are
+60 MB of text, which has to reach a phone that has no network permission
+(ADR-0004), so it ships inside the app. The A-Z was taken on one condition:
+that searching all of it stays quick. Compiled into Dart the way ADR-0009's
+thirteen medicines were, it would be a 60 MB source file, held in memory for as
+long as the app runs.
+
+### Decision
+
+1. **Assets, not code.** `app/assets/medicines/index.json.zlib` describes every
+   drug: its names, brands, substances and routes, the label that stands for
+   it, how many labels were filed for it, and where its text is. The text is
+   in `labels-NNN.jsonl.zlib`, one drug per line in key order, starting a new
+   chunk after each megabyte of text. Opening a drug decompresses one
+   megabyte, not sixty. `medicines_bundled.dart` keeps only the bundle's
+   checksum, its counts and the export date.
+2. **zlib**, through `dart:io`'s codec, which is the platform's own. No new
+   dependency.
+3. **Loaded when needed.** The index is decoded in a background isolate when
+   the lookup opens, and dropped when it closes. A drug's text is read when its
+   page opens, and the last chunk read is kept.
+4. **Searched on the phone, on every keystroke**, in one pass over a buffer
+   holding every name a drug can be found by. A name that is, or starts with,
+   the query ranks first. The drug's own name comes before a substance, and a
+   substance before a brand. Then more labels first, which puts the form most
+   widely sold first. On the machine this was built on, one word takes 3 to 8
+   ms and two words about 10. A test fails the search at 40 ms.
+5. **Every line names its drug.** The app refuses text that names another
+   drug, rather than showing one drug's warnings under another's name.
+   `gen_medicines.py --check` confirms in CI that every line is where the
+   index says, and that the bundle and the generated Dart agree.
+
+### Runner-up and why rejected
+
+**xz instead of zlib.** In the same one-megabyte chunks, 7.3 MB rather than
+12, but it needs `package:archive`, whose decoder is pure Dart where zlib's is
+native.
+
+**A prebuilt SQLite database with full-text search**, through the drift the app
+already uses. Indexed search, but SQLite keeps text uncompressed: 60 MB copied
+out of the APK onto the phone, beside the user's own records, while the APK
+still carries it too.
+
+**Dart constants**, as ADR-0009 shipped. A 60 MB source file, compiled in and
+resident in memory whenever the app runs.
+
+### Consequences
+
+- The APK grows by the size of the bundle, about 12 MB. Its files are already
+  compressed, so the APK's own compression saves nothing on them.
+- The index is 3 MB of JSON and takes 0.3 to 0.5 seconds to decode on a
+  development machine, so longer on a phone. The screen shows a progress bar
+  until it is ready, and the hygiene entries work meanwhile.
+- A refresh from openFDA rewrites most of the bundle, adding up to 12 MB to the
+  repository's history each time. Refresh for a release, not routinely. If the
+  history grows to matter, move `app/assets/medicines` to Git LFS.
+- The A-Z browse and the interaction checker build on this index.
+
+---
+
+## ADR-0014: The interaction checker compares label text, and never calls a pair safe
+
+**Status:** Accepted, 2026-10-02. Builds on [ADR-0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) and [ADR-0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone).
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for an interaction checker modelled on Drugs.com's, built from
+open data with nothing hand-written. Drugs.com's checker draws on a licensed
+database with severity ratings, and nothing like it is open. What is open is
+the label text the bundle already carries, and the FDA's established
+pharmacologic classes, which openFDA attaches to some labels.
+
+### Decision
+
+1. **Three findings for each pair, and no others:** an ingredient both
+   contain; an FDA class both are in; and each passage in one label's safety
+   sections that names the other, by one of its substances or one of its
+   classes, quoted as the label prints it. No severity, no verdict, no advice.
+2. **The names are worked out by the generator, from the data**
+   (`match_terms`). A substance is looked for under its full name, and under
+   its name without its salt ("naproxen" for "naproxen sodium") when what is
+   left is unambiguous, at least five characters long, and not itself a salt
+   word. A salt word is any word that ends eight or more substance names.
+   Only a substance openFDA lists on some label counts. A name read off a
+   kit's title, "DAY" or "COLD", would be found in nearly every label.
+3. **Classes come from `pharm_class_epc`.** They are merged over a drug's
+   labels, and carried from a label of one substance alone to every drug
+   containing that substance: most labels carry no class, a shop's ibuprofen
+   among them. A combination lends its classes to neither ingredient. 36% of
+   drugs end up with at least one class.
+4. **Some name matches do not count as mentions:**
+   - a match inside one of the label's own names, such as "estradiol" inside
+     "ethinyl estradiol" on the pill's label;
+   - an ingredient or class the two share, which is reported once, as shared;
+   - anything outside the safety sections, such as uses or purpose.
+
+   Where a name appears in several sections, the passage quoted comes from the
+   most telling one: drug interactions, then the Drug Facts lines about other
+   medicines, then contraindications, the boxed warning and the warnings.
+5. **Never "safe".** Where the labels connect a pair in none of these ways, the
+   screen says that this does not mean the two are safe together, and why.
+   `interaction_copy_test.dart` fails the build on reassuring or directive
+   wording.
+6. **The list is not kept.** The checker's list lives on its screen and is gone
+   when the reader leaves it.
+7. **Run on the phone, off the UI thread**, as regular expressions over the two
+   labels. Ten medicines, 45 pairs, take about a tenth of a second on a
+   development machine, labels included.
+
+### Runner-up and why rejected
+
+**A licensed interaction database** (First Databank, Medi-Span, Lexicomp,
+DrugBank). It would add severity ratings and far wider coverage, but it costs
+money, and the licence would have to allow bundling into an offline app. It
+could replace the matching later without changing the screens.
+
+**A table of mentions computed by the generator.** Once every substance and
+class is expanded, it runs to millions of pairs. Matching two labels on the
+phone takes milliseconds.
+
+**A table mapping group names to FDA classes**, for "NSAIDs", "combined
+hormonal contraceptives", "MAO inhibitors" and the like. It would catch what
+this misses, but it is hand-written, which the owner has ruled out for now.
+
+### Consequences
+
+- Labels often name medicines only by a group or an abbreviation, which this
+  matching cannot see. Tranexamic acid's label contraindicates "combined
+  hormonal contraceptives", and the checker does not connect it with the
+  combined pill. The screen names this limit wherever it finds nothing.
+- Matching is by whole words, so a word can be found in another sense:
+  "lactic" in "lactic acidosis", taken as the base of lactic acid. Every
+  mention is quoted, so the reader sees the words around it.
+- The classes are the FDA's own, including some that read oddly on a product:
+  levonorgestrel's include "Progestin-containing Intrauterine System", and so
+  do Plan B's.
+- The selection's schema went to 2 and its file to `selection_v2.json`. The
+  bundle's schema went to 2 as well, and the app refuses an older bundle,
+  which would have no names to look for.
+- Medication Guides, proposed alongside this step, are deferred.
+
+---
+
+## ADR-0015: Recorded medicines are kept as a setting, and their flags only inform
+
+**Status:** Accepted, 2026-10-02. Uses the matching of [ADR-0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe).
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for conflict flags in Conditions and medication: a notice that
+medicines a person takes might conflict, which only informs, with a way out to
+the web. Flags need the medicines kept between visits, which the checker
+deliberately does not do. A medicine list is among the most revealing things
+this app could hold: emergency contraception, HIV prevention, antidepressants.
+
+Two constraints decide where it lives:
+
+- **Exports.** Under ADR-0011 a build refuses backups in an older format. A new
+  table would mean export format v3, and every v2 backup a user holds would
+  stop restoring, for the second time in two releases.
+- **Deletion.** "Delete everything" has to remove the list, and the activity
+  log must not record it.
+
+### Decision
+
+1. **One setting, `recorded_medicines`:** a JSON list of `{key, name}`, in the
+   order added. Exports carry settings verbatim and imports restore them as
+   they are, so the format does not change. "Delete everything" empties the
+   settings table, and removing the last medicine deletes the row. Settings
+   writes are not logged.
+2. **Picked, not typed.** Each medicine comes from the bundled US list and is
+   kept by the bundle's key. Its name is kept too, so one that a later refresh
+   drops is still shown, marked as no longer compared.
+3. **The flags are computed when the screen opens**, with ADR-0014's matching
+   over every pair. A flagged pair shows what connects it, a sentence each,
+   and two ways on: the browser hand-off, which searches the two names after
+   the usual confirmation, and the checker, which quotes each mention. A flag
+   never says to stop or change anything, and `interaction_copy_test.dart`
+   fails the build on directive or reassuring wording. Where nothing connects,
+   the screen says so, and that this does not mean the medicines are safe
+   together.
+4. **Nothing reaches the prediction**, as with conditions (ADR-0010).
+
+### Runner-up and why rejected
+
+**A medicines table, with dates like conditions.** Typed, queryable, and spans
+would allow "taken from ... to ...". But it changes the export format to v3,
+which under ADR-0011 strands every v2 backup.
+
+**Flags against conditions too**, such as a recorded combined pill with
+rifampin. That needs a hand-written mapping from each condition to medicines,
+which the owner has ruled out for now.
+
+### Consequences
+
+- The list is stored unencrypted with everything else (ADR-0004), and is in
+  every export. Anyone who can read either can read it. PRIVACY.md says so.
+- A setting has no dates. The list is what someone takes now, not a history.
+- An older build that restores a backup with this setting keeps it, and
+  ignores it.
+- The flags inherit ADR-0014's limits. A label that names the other medicine
+  only by a group, such as "combined hormonal contraceptives", raises no flag.
 
 ---
 

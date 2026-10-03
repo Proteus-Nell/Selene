@@ -9,8 +9,9 @@
 /// database, handles the failure outcomes, and overrides it.
 ///
 /// Includes:
-///     - appDatabaseProvider and the three repository providers.
+///     - appDatabaseProvider and the four repository providers.
 ///     - The day-log, cycle, prediction and condition read providers.
+///     - The recorded medicines, and what their labels say about each other.
 ///     - One provider per stored preference.
 ///     - themeModeFromWireName: Resolves a stored theme mode.
 library;
@@ -22,8 +23,12 @@ import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/core/palette.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/data/reference/interactions.dart';
+import 'package:period_tracker/data/reference/medicine.dart';
+import 'package:period_tracker/data/reference/medicine_bundle.dart';
 import 'package:period_tracker/data/repositories/condition_repository.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
+import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 import 'package:period_tracker/data/repositories/prediction_repository.dart';
 import 'package:period_tracker/domain/cycles/condition_overlap.dart';
 import 'package:period_tracker/domain/models/condition.dart';
@@ -126,6 +131,40 @@ final FutureProvider<List<ConditionOverlap>> conditionOverlapsProvider =
       );
     });
 
+/// Reads and writes the medicines recorded under Conditions and medication.
+final Provider<MedicineListRepository> medicineListRepositoryProvider =
+    Provider<MedicineListRepository>(
+      (ref) =>
+          MedicineListRepository(ref.watch(appDatabaseProvider).settingsDao),
+    );
+
+/// The recorded medicines, in the order added, kept current as they change.
+final StreamProvider<List<RecordedMedicine>> recordedMedicinesProvider =
+    StreamProvider<List<RecordedMedicine>>(
+      (ref) => ref.watch(medicineListRepositoryProvider).watch(),
+    );
+
+/// What the recorded medicines' labels say about each other: the conflict
+/// flags under Conditions and medication (ADR-0014, ADR-0015).
+///
+/// Loads the medicines index and each recorded medicine's label, so only the
+/// screen that shows the flags watches it, and both are dropped when it
+/// closes. A medicine the bundle no longer lists is left out of the
+/// comparison; the screen says so under its name.
+final AutoDisposeFutureProvider<List<InteractionPair>>
+recordedInteractionsProvider =
+    FutureProvider.autoDispose<List<InteractionPair>>((
+      ref,
+    ) async {
+      final recorded = await ref.watch(recordedMedicinesProvider.future);
+      if (recorded.length < 2) return const <InteractionPair>[];
+      final index = await ref.watch(medicineIndexProvider.future);
+      final medicines = <MedicineEntry>[
+        for (final medicine in recorded) ?index.byKey(medicine.key),
+      ];
+      return ref.watch(medicineBundleProvider).interactions(medicines);
+    });
+
 /// Whether the flow control is collapsed to bleeding yes/no (AND-24).
 ///
 /// A stream, so that turning the toggle on in settings changes the day editor
@@ -203,18 +242,19 @@ final StreamProvider<bool> showOvulationWindowProvider = StreamProvider<bool>(
 ///
 /// **Off by default**, and unlike the ovulation window that default is a taste
 /// rather than a safety property: the reference pages make no claim about the
-/// reader, and every one of them is also listed in Settings. Turning the tab
-/// off hides a route to the reading, not the reading.
+/// reader. The tab is the only way to them, and to conditions and medication,
+/// so turning it off hides all of them, at the owner's direction.
 final StreamProvider<bool> showLearnTabProvider = StreamProvider<bool>(
   (ref) => ref.watch(appDatabaseProvider).settingsDao.watchShowLearnTab(),
 );
 
-/// Whether the companion sits at the end of the navigation bar (AND-37).
+/// Whether Learn lists Supplements, Pain and movement, and Body composition.
 ///
-/// **Off by default.** The companion restates what the log already holds and
-/// never guesses at a reason, so whether it is there at all is a preference.
-final StreamProvider<bool> showCompanionProvider = StreamProvider<bool>(
-  (ref) => ref.watch(appDatabaseProvider).settingsDao.watchShowCompanion(),
+/// **Off by default**, at the owner's direction, with no switch for it:
+/// holding the Learn tab for ten seconds turns it on, and again turns it off.
+final StreamProvider<bool> revealHiddenReferenceProvider = StreamProvider<bool>(
+  (ref) =>
+      ref.watch(appDatabaseProvider).settingsDao.watchRevealHiddenReference(),
 );
 
 /// The colour scheme the app is wearing (AND-39).

@@ -309,7 +309,7 @@ void main() {
       reason:
           'RELEASE.md no longer names docs/MOVEMENT_SOURCES.md, so a reference '
           'section full of [VERIFY] claims could ship without anyone being '
-          'asked about it. Nutrition, hygiene and body composition are gated '
+          'asked about it. Nutrition and body composition are gated '
           'there; this is too.',
     );
   });

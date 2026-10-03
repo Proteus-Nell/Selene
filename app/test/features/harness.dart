@@ -59,6 +59,13 @@ Widget harness(
   );
   addTearDown(container.dispose);
   return UncontrolledProviderScope(
+    // Keyed by its container, so that pumping a second harness in one test
+    // builds a second scope rather than handing the first one a new container.
+    // flutter_riverpod registers a scope with its container only when the
+    // scope mounts: a reused one leaves the new container to dispose its
+    // auto-dispose providers on a timer, which is still pending when the test
+    // ends.
+    key: ObjectKey(container),
     container: container,
     child: MaterialApp(
       theme: brightness == Brightness.dark ? AppTheme.dark() : AppTheme.light(),
@@ -172,9 +179,10 @@ Future<void> loadBundledFonts() async {
 
 /// Pumps a fixed number of frames rather than settling.
 ///
-/// `pumpAndSettle` never returns against the real shell: the companion in the
-/// bottom bar animates while it is idle, so the tree is never quiet. The smoke
-/// flow pumps for a fixed span for the same reason.
+/// For the tests that drive the real shell, and the smoke flow on a device.
+/// Something in the shell animating while idle would leave `pumpAndSettle`
+/// waiting forever, as the companion in the bottom bar once did. The shell
+/// settles today; a fixed span keeps those tests from depending on it.
 Future<void> pumpFor(WidgetTester tester, [int seconds = 1]) async {
   await tester.pump();
   for (var i = 0; i < seconds * 10; i++) {

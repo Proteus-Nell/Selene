@@ -8,17 +8,23 @@
 /// Includes:
 ///     - Routes: Every path, as a constant.
 ///     - buildRouter: The router itself.
-///     - AppScaffold: The shell, its bar and the companion dock.
+///     - AppScaffold: The shell and its navigation bar.
+///     - revealHold: How long the Learn tab is held to show or hide pages.
+///     - _HoldToReveal: Turns a held Learn tab into that toggle.
 ///     - _FadeThroughBranches: The cross-fade between branches.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:period_tracker/core/motion.dart';
+import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/features/calendar/calendar_screen.dart';
-import 'package:period_tracker/features/companion/companion_dock.dart';
+import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/insights/insights_screen.dart';
 import 'package:period_tracker/features/learn/learn_screen.dart';
 import 'package:period_tracker/features/log/log_screen.dart';
@@ -197,7 +203,6 @@ class AppScaffold extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final showLearn = ref.watch(showLearnTabProvider).valueOrNull ?? false;
-    final showCompanion = ref.watch(showCompanionProvider).valueOrNull ?? false;
     final branches = _visibleBranches(showLearn: showLearn);
     // The Learn branch can be the one in view when the preference is turned
     // off from Settings, which is itself a different tab, so in practice this
@@ -209,72 +214,139 @@ class AppScaffold extends ConsumerWidget {
       // on every prediction change, and a screen only does that while it is on
       // top.
       body: NotificationSync(child: shell),
-      // The companion shares the bar rather than floating above the content
-      // (AND-37). Everything inside this Scaffold's body is a screen somebody
-      // is reading, including the ones pushed on top of a branch, so the one
-      // place a persistent presence can sit without covering something is the
-      // furniture around them.
-      bottomNavigationBar: CompanionDock(
-        showCompanion: showCompanion,
-        navigationBar: NavigationBar(
-          selectedIndex: selected < 0 ? 0 : selected,
-          // Always the branch's initial location, not only when the tab
-          // already selected is tapped again. A stateful shell otherwise
-          // keeps each branch's navigation stack, so leaving Learn from
-          // inside "Look something up" and coming back later drops the
-          // reader into that page rather than the list they were expecting,
-          // and the same for Settings and Insights, which also have pages
-          // under them. Tapping a tab now means the same thing every time.
-          //
-          // What this gives up is resuming a sub-page after a glance at
-          // another tab. That is a real loss, and it is the smaller one:
-          // arriving somewhere you did not ask for is more disorienting than
-          // having to tap once more to get back.
-          onDestinationSelected: (index) {
-            // The tapped destination is an index into what is on screen, which
-            // is not the branch index once Learn is hidden.
-            final branch = branches[index];
-            // Empty the branch first, then switch to it. `goBranch` alone is
-            // not enough: it sets go_router's location, and the reference
-            // pages are pushed imperatively, so they outlive it and the
-            // reader lands back on whichever one they left.
-            _branchKeys[branch].currentState?.popUntil(
-              (route) => route.isFirst,
-            );
-            shell.goBranch(branch, initialLocation: true);
-          },
-          destinations: <NavigationDestination>[
-            NavigationDestination(
-              icon: const Icon(Icons.schedule_outlined),
-              selectedIcon: const Icon(Icons.schedule),
-              label: l10n.navLog,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.calendar_month_outlined),
-              selectedIcon: const Icon(Icons.calendar_month),
-              label: l10n.navCalendar,
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.insights_outlined),
-              selectedIcon: const Icon(Icons.insights),
-              label: l10n.navInsights,
-            ),
-            if (showLearn)
-              NavigationDestination(
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: selected < 0 ? 0 : selected,
+        // Always the branch's initial location, not only when the tab
+        // already selected is tapped again. A stateful shell otherwise
+        // keeps each branch's navigation stack, so leaving Learn from
+        // inside "Look something up" and coming back later drops the
+        // reader into that page rather than the list they were expecting,
+        // and the same for Settings and Insights, which also have pages
+        // under them. Tapping a tab now means the same thing every time.
+        //
+        // What this gives up is resuming a sub-page after a glance at
+        // another tab. That is a real loss, and it is the smaller one:
+        // arriving somewhere you did not ask for is more disorienting than
+        // having to tap once more to get back.
+        onDestinationSelected: (index) {
+          // The tapped destination is an index into what is on screen, which
+          // is not the branch index once Learn is hidden.
+          final branch = branches[index];
+          // Empty the branch first, then switch to it. `goBranch` alone is
+          // not enough: it sets go_router's location, and the reference
+          // pages are pushed imperatively, so they outlive it and the
+          // reader lands back on whichever one they left.
+          _branchKeys[branch].currentState?.popUntil(
+            (route) => route.isFirst,
+          );
+          shell.goBranch(branch, initialLocation: true);
+        },
+        destinations: <Widget>[
+          NavigationDestination(
+            icon: const Icon(Icons.schedule_outlined),
+            selectedIcon: const Icon(Icons.schedule),
+            label: l10n.navLog,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.calendar_month_outlined),
+            selectedIcon: const Icon(Icons.calendar_month),
+            label: l10n.navCalendar,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.insights_outlined),
+            selectedIcon: const Icon(Icons.insights),
+            label: l10n.navInsights,
+          ),
+          if (showLearn)
+            _HoldToReveal(
+              child: NavigationDestination(
                 icon: const Icon(Icons.menu_book_outlined),
                 selectedIcon: const Icon(Icons.menu_book),
                 label: l10n.navLearn,
               ),
-            NavigationDestination(
-              icon: const Icon(Icons.settings_outlined),
-              selectedIcon: const Icon(Icons.settings),
-              label: l10n.navSettings,
             ),
-          ],
-        ),
+          NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: l10n.navSettings,
+          ),
+        ],
       ),
     );
   }
+}
+
+/// How long the Learn tab is held to show or hide the three reference pages
+/// Learn keeps back.
+const Duration revealHold = Duration(seconds: 10);
+
+/// Turns a held Learn tab into a switch for the pages Learn keeps back.
+///
+/// Supplements, Pain and movement, and Body composition are not listed until
+/// the tab has been held for [revealHold], at the owner's direction; holding
+/// it as long again hides them. Ten seconds is long enough that nobody does
+/// it by accident, and the message afterwards says what changed.
+///
+/// A [Listener] rather than a gesture recogniser: it sees the press without
+/// competing for it, so the tab's tap and its tooltip work as they did.
+///
+/// Attributes:
+///     child (Widget): The Learn destination.
+class _HoldToReveal extends ConsumerStatefulWidget {
+  /// Wraps [child].
+  const _HoldToReveal({required this.child});
+
+  /// The Learn destination.
+  final Widget child;
+
+  @override
+  ConsumerState<_HoldToReveal> createState() => _HoldToRevealState();
+}
+
+/// State for [_HoldToReveal]: the hold in progress, if there is one.
+///
+/// Attributes:
+///     _hold (Timer?): Fires once the press has lasted [revealHold].
+class _HoldToRevealState extends ConsumerState<_HoldToReveal> {
+  /// Fires once the press has lasted [revealHold].
+  Timer? _hold;
+
+  @override
+  void dispose() {
+    _hold?.cancel();
+    super.dispose();
+  }
+
+  /// Flip the setting, and say which way it went.
+  Future<void> _toggle() async {
+    _hold = null;
+    // Read from the database rather than the provider: nothing on the tab
+    // being held watches it, so the provider may not have loaded yet.
+    final settings = ref.read(appDatabaseProvider).settingsDao;
+    final shown = await settings.readBool(
+      SettingKey.revealHiddenReference,
+      orElse: false,
+    );
+    await settings.writeBool(SettingKey.revealHiddenReference, value: !shown);
+    if (!mounted) return;
+    unawaited(HapticFeedback.mediumImpact());
+    final l10n = AppLocalizations.of(context);
+    showAppSnackBar(
+      context,
+      shown ? l10n.learnHiddenPagesHidden : l10n.learnHiddenPagesShown,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: (_) {
+      _hold?.cancel();
+      _hold = Timer(revealHold, _toggle);
+    },
+    onPointerUp: (_) => _hold?.cancel(),
+    onPointerCancel: (_) => _hold?.cancel(),
+    child: widget.child,
+  );
 }
 
 /// Map each visible destination onto the branch behind it.

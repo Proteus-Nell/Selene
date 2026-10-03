@@ -1485,12 +1485,6 @@ abstract class AppLocalizations {
   /// **'Medicines'**
   String get lookupMedicinesHeading;
 
-  /// No description provided for @lookupHygieneHeading.
-  ///
-  /// In en, this message translates to:
-  /// **'Tampons, cups and pads'**
-  String get lookupHygieneHeading;
-
   /// No description provided for @lookupMedicinesSource.
   ///
   /// In en, this message translates to:
@@ -1503,11 +1497,119 @@ abstract class AppLocalizations {
   /// **'This is United States labelling. Strengths, brand names and warnings can differ where you are, so check the packet in front of you.'**
   String get lookupMedicinesUsOnly;
 
-  /// Shown when the openFDA artifact has not been fetched. Says so plainly rather than rendering an empty list, which reads as a broken screen.
+  /// Shown when no medicines bundle has been built from openFDA. Says so plainly rather than rendering an empty list, which reads as a broken screen.
   ///
   /// In en, this message translates to:
-  /// **'The medicines reference is not built into this version. The other sections still work.'**
+  /// **'The medicines reference is not built into this version.'**
   String get lookupMedicinesUnavailable;
+
+  /// The progress bar's label for a screen reader, while the index of every medicine loads. A bar alone says nothing to someone who cannot see it.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening the medicines reference'**
+  String get lookupMedicinesLoading;
+
+  /// No description provided for @lookupMedicinesFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The medicines reference could not be opened.'**
+  String get lookupMedicinesFailed;
+
+  /// Under the medicines heading before anything is typed. Several thousand medicines listed unasked would be a list nobody reads.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the name of a medicine, a brand or an ingredient to search {count} medicines.'**
+  String lookupMedicinesPrompt(int count);
+
+  /// No description provided for @lookupMedicinesShowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the closest {shown} of {total}. Type more of the name to narrow it down.'**
+  String lookupMedicinesShowing(int shown, int total);
+
+  /// No description provided for @lookupMedicinesShowMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Show more'**
+  String get lookupMedicinesShowMore;
+
+  /// No description provided for @lookupBrowseHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Or browse them from A to Z'**
+  String get lookupBrowseHeading;
+
+  /// What a screen reader says for a letter in the A to Z grid. The letter alone would be read as a letter, not as a way in.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines starting with {letter}'**
+  String lookupBrowseLetter(String letter);
+
+  /// What a screen reader says for the # in the A to Z grid.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines starting with a number or a symbol'**
+  String get lookupBrowseOther;
+
+  /// No description provided for @lookupBrowseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines: {letter}'**
+  String lookupBrowseTitle(String letter);
+
+  /// Under a name in the A to Z that several medicines go by: ibuprofen tablets from a shop, on prescription, and by injection.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 medicine by this name} other{{count} medicines by this name}}'**
+  String lookupBrowseShared(int count);
+
+  /// No description provided for @lookupBrowseSharedIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'These go by the same name. They differ in what is in them, how they are taken, or whether they need a prescription.'**
+  String get lookupBrowseSharedIntro;
+
+  /// No description provided for @lookupMedicinePrescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Prescription'**
+  String get lookupMedicinePrescription;
+
+  /// No description provided for @lookupMedicineOverTheCounter.
+  ///
+  /// In en, this message translates to:
+  /// **'Over the counter'**
+  String get lookupMedicineOverTheCounter;
+
+  /// Brand names, cut short. One medicine can be sold under two thousand.
+  ///
+  /// In en, this message translates to:
+  /// **'{names} and {count, plural, =1{1 other name} other{{count} other names}}'**
+  String lookupMedicineOtherNames(String names, int count);
+
+  /// No description provided for @lookupMedicineLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'From the label filed by {manufacturer}, dated {date}.'**
+  String lookupMedicineLabel(String manufacturer, String date);
+
+  /// Under the label's source. One label stands for every product with the same ingredients, route and prescription status (ADR-0012), and a reader comparing it with their own box needs to know that.
+  ///
+  /// In en, this message translates to:
+  /// **'Each maker files its own label for a medicine. One is shown here, chosen by a fixed rule, and the label on your packet may differ.'**
+  String get lookupMedicineOneLabel;
+
+  /// The progress bar's label for a screen reader, while one medicine's label loads.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening this medicine\'s label'**
+  String get lookupMedicineLoading;
+
+  /// No description provided for @lookupMedicineFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This medicine\'s label could not be opened.'**
+  String get lookupMedicineFailed;
 
   /// No description provided for @lookupSectionPurpose.
   ///
@@ -1544,6 +1646,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'If pregnant or breastfeeding'**
   String get lookupSectionPregnancy;
+
+  /// The FDA's name for the most serious warning a label can carry. Kept as the label calls it, because the label's own text refers to it by this name.
+  ///
+  /// In en, this message translates to:
+  /// **'Boxed warning'**
+  String get lookupSectionBoxedWarning;
+
+  /// No description provided for @lookupSectionUses.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses'**
+  String get lookupSectionUses;
+
+  /// Section headings on a prescription label are the label's own, because its text refers to them by name: "see Warnings and Precautions (5.1)".
+  ///
+  /// In en, this message translates to:
+  /// **'Contraindications'**
+  String get lookupSectionContraindications;
+
+  /// No description provided for @lookupSectionWarningsAndPrecautions.
+  ///
+  /// In en, this message translates to:
+  /// **'Warnings and precautions'**
+  String get lookupSectionWarningsAndPrecautions;
+
+  /// No description provided for @lookupSectionPrecautions.
+  ///
+  /// In en, this message translates to:
+  /// **'Precautions'**
+  String get lookupSectionPrecautions;
+
+  /// No description provided for @lookupSectionInteractions.
+  ///
+  /// In en, this message translates to:
+  /// **'Drug interactions'**
+  String get lookupSectionInteractions;
+
+  /// No description provided for @lookupSectionSpecificPopulations.
+  ///
+  /// In en, this message translates to:
+  /// **'Use in specific populations'**
+  String get lookupSectionSpecificPopulations;
+
+  /// No description provided for @lookupSectionPregnancyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pregnancy'**
+  String get lookupSectionPregnancyLabel;
+
+  /// No description provided for @lookupSectionNursingMothers.
+  ///
+  /// In en, this message translates to:
+  /// **'Nursing mothers'**
+  String get lookupSectionNursingMothers;
+
+  /// No description provided for @lookupSectionAskDoctorOrPharmacist.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask a doctor or pharmacist'**
+  String get lookupSectionAskDoctorOrPharmacist;
+
+  /// No description provided for @lookupSectionWhenUsing.
+  ///
+  /// In en, this message translates to:
+  /// **'When using this product'**
+  String get lookupSectionWhenUsing;
 
   /// No description provided for @lookupSearchOnlineTitle.
   ///
@@ -1593,6 +1761,155 @@ abstract class AppLocalizations {
   /// **'No browser could be opened.'**
   String get lookupLeavingFailed;
 
+  /// No description provided for @checkerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check medicines together'**
+  String get checkerTitle;
+
+  /// No description provided for @checkerEntrySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What the US labels of two or more medicines say about each other.'**
+  String get checkerEntrySubtitle;
+
+  /// The checker's first paragraph. It says what the check reads and what it cannot conclude before anyone adds a medicine (ADR-0014).
+  ///
+  /// In en, this message translates to:
+  /// **'Add two or more medicines. For each pair, this shows whether they share an ingredient or an FDA drug class, and quotes any place where one label names the other. It reads the labels and nothing else, so it cannot tell you that a combination is safe.'**
+  String get checkerIntro;
+
+  /// No description provided for @checkerAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a medicine'**
+  String get checkerAdd;
+
+  /// Tooltip, and what a screen reader says, for the button that takes a medicine off a list.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}'**
+  String checkerRemove(String name);
+
+  /// No description provided for @checkerNeedTwo.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least two medicines to compare them.'**
+  String get checkerNeedTwo;
+
+  /// No description provided for @checkerFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} medicines can be compared at once.'**
+  String checkerFull(int count);
+
+  /// No description provided for @checkerAlreadyAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is already on the list.'**
+  String checkerAlreadyAdded(String name);
+
+  /// The progress bar's label for a screen reader, while the labels being compared load.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the labels'**
+  String get checkerLoading;
+
+  /// No description provided for @checkerFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The labels could not be read.'**
+  String get checkerFailed;
+
+  /// No description provided for @checkerPairTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second}'**
+  String checkerPairTitle(String first, String second);
+
+  /// Two medicines with the same ingredient can add up to more of it than either label allows on its own.
+  ///
+  /// In en, this message translates to:
+  /// **'Both contain {names}.'**
+  String checkerSharedSubstance(String names);
+
+  /// The FDA's established pharmacologic classes, by their own names: "Nonsteroidal Anti-inflammatory Drug".
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Both are in the FDA drug class {classes}.} other{Both are in the FDA drug classes {classes}.}}'**
+  String checkerSharedClass(int count, String classes);
+
+  /// Above a passage quoted from one label that names the other medicine. The words are as the label prints them.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”. From {section}:'**
+  String checkerMentionsName(String medicine, String words, String section);
+
+  /// Above a passage quoted from one label that names a class the other medicine is in.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”, an FDA drug class that includes {other}. From {section}:'**
+  String checkerMentionsClass(
+    String medicine,
+    String words,
+    String other,
+    String section,
+  );
+
+  /// A conflict flag's reason, where there is no room for the passage itself.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”.'**
+  String checkerMentionsNameShort(String medicine, String words);
+
+  /// No description provided for @checkerMentionsClassShort.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”, an FDA drug class that includes {other}.'**
+  String checkerMentionsClassShort(String medicine, String words, String other);
+
+  /// No description provided for @checkerNothingFoundPair.
+  ///
+  /// In en, this message translates to:
+  /// **'Neither label names the other, and they share no ingredient or FDA drug class.'**
+  String get checkerNothingFoundPair;
+
+  /// Shown wherever the labels connect a pair in none of the ways the check looks for. It must never read as a reassurance; interaction_copy_test bans the words that would make it one.
+  ///
+  /// In en, this message translates to:
+  /// **'That does not mean they are safe together. Labels leave interactions out, and often name medicines only by a group, such as “NSAIDs” or “combined hormonal contraceptives”, which this check cannot match.'**
+  String get checkerNothingFoundNote;
+
+  /// No description provided for @checkerSearchOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Look this pair up online'**
+  String get checkerSearchOnline;
+
+  /// What is put into the browser's search box for a pair. Named back to the user before the browser opens.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second} interaction'**
+  String checkerSearchTerm(String first, String second);
+
+  /// No description provided for @checkerAskPharmacist.
+  ///
+  /// In en, this message translates to:
+  /// **'Only a pharmacist or doctor who knows your situation can say whether these medicines are right for you together. Show them this list, or the packets.'**
+  String get checkerAskPharmacist;
+
+  /// No description provided for @checkerPickerPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the name of a medicine, a brand or an ingredient.'**
+  String get checkerPickerPrompt;
+
+  /// No description provided for @lookupMedicineCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check with other medicines'**
+  String get lookupMedicineCheck;
+
   /// No description provided for @settingsLookup.
   ///
   /// In en, this message translates to:
@@ -1602,62 +1919,8 @@ abstract class AppLocalizations {
   /// No description provided for @settingsLookupSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Medicines and hygiene product notes, stored on this device.'**
+  /// **'Medicines from US drug labelling, stored on this device.'**
   String get settingsLookupSubtitle;
-
-  /// No description provided for @hygieneTssTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Toxic shock syndrome'**
-  String get hygieneTssTitle;
-
-  /// PINNED — hygiene_copy_test.dart asserts this exactly. It describes symptoms and says what to do. It must never name a diagnosis, and must never be softened into a suggestion.
-  ///
-  /// In en, this message translates to:
-  /// **'If you have a sudden high fever, a sunburn-like rash, vomiting, diarrhoea, muscle aches, dizziness or confusion while using a tampon or a menstrual cup: remove it and get urgent medical help.'**
-  String get hygieneTssUrgent;
-
-  /// No description provided for @hygieneTssBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Toxic shock syndrome is rare and life-threatening. It is caused by bacterial toxins, and it is associated with tampon and menstrual cup use, though it also happens to people who are not menstruating at all.'**
-  String get hygieneTssBody;
-
-  /// No description provided for @hygieneTamponsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Tampons'**
-  String get hygieneTamponsTitle;
-
-  /// No description provided for @hygieneTamponsBody.
-  ///
-  /// In en, this message translates to:
-  /// **'General guidance is to use the lowest absorbency that suits the flow, and to change it as often as the packet says.'**
-  String get hygieneTamponsBody;
-
-  /// No description provided for @hygieneCupsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Menstrual cups'**
-  String get hygieneCupsTitle;
-
-  /// No description provided for @hygieneCupsBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Reusable devices worn internally to collect fluid rather than absorb it. Cases of toxic shock syndrome linked to cup use have been reported. How long a cup can be worn, and how it should be cleaned between uses, genuinely differ between products, so follow the instructions that came with yours.'**
-  String get hygieneCupsBody;
-
-  /// No description provided for @hygieneExternalTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Pads and period underwear'**
-  String get hygieneExternalTitle;
-
-  /// No description provided for @hygieneExternalBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Worn outside the body. The link with toxic shock syndrome is to products worn inside it.'**
-  String get hygieneExternalBody;
 
   /// No description provided for @nutritionTitle.
   ///
@@ -2007,96 +2270,6 @@ abstract class AppLocalizations {
   /// **'What exercise does about period pain, how weak the evidence for planning it by cycle phase is, and what is a reason to stop.'**
   String get movementEntrySubtitle;
 
-  /// The name of the small persistent control in the bottom bar. It is a control, so it needs a name a screen reader can announce; 'decoration' is not an option.
-  ///
-  /// In en, this message translates to:
-  /// **'Companion'**
-  String get companionLabel;
-
-  /// Closes the suggestion. The suggestion has to be dismissible from inside it, not only by the sheet's own gesture.
-  ///
-  /// In en, this message translates to:
-  /// **'Dismiss'**
-  String get companionDismiss;
-
-  /// Shown while the logs, prediction or conditions are still loading. Says so rather than picking a line from a state it has not seen yet.
-  ///
-  /// In en, this message translates to:
-  /// **'The log is still being read.'**
-  String get companionLineStillReading;
-
-  /// Restates a state the user entered themselves and a behaviour the app already has. It never infers a pregnancy; it reads a recorded condition.
-  ///
-  /// In en, this message translates to:
-  /// **'A pregnancy is recorded, so predictions are paused. Days can still be logged.'**
-  String get companionLinePredictionPaused;
-
-  /// Carries a health claim (COMPANION_SOURCES.md I1, I2). A statement about physiology, followed by the sentence that stops it being read as a conclusion about the reader.
-  ///
-  /// In en, this message translates to:
-  /// **'Heavy bleeding is recorded on several days. Heavy menstrual bleeding is a recognised cause of iron deficiency anaemia. A blood test is what settles it.'**
-  String get companionLineHeavyBleeding;
-
-  /// Carries a health claim (COMPANION_SOURCES.md P1). Reports what guidance lists rather than telling anyone to do any of it.
-  ///
-  /// In en, this message translates to:
-  /// **'Cramps are recorded for today. Guidance on period pain lists heat, painkillers and exercise among the measures that may help.'**
-  String get companionLineCramps;
-
-  /// Carries a health claim (COMPANION_SOURCES.md S1). Says the symptom is commonly reported, which is not the same as saying it is caused by the cycle.
-  ///
-  /// In en, this message translates to:
-  /// **'Disturbed sleep is recorded for today. Sleep problems are among the symptoms commonly reported around a period.'**
-  String get companionLineSleep;
-
-  /// Carries a health claim (COMPANION_SOURCES.md S2). Same shape as the sleep line and the same limit on it.
-  ///
-  /// In en, this message translates to:
-  /// **'Low energy is recorded for today. Tiredness is among the symptoms commonly reported before and during a period.'**
-  String get companionLineLowEnergy;
-
-  /// Carries a health claim (COMPANION_SOURCES.md M1), an absence claim borrowed from the movement reference. It tells nobody to move; it says no source tells anyone to stop.
-  ///
-  /// In en, this message translates to:
-  /// **'A period is logged for today. Menstruation is not named anywhere in the guidance behind this app as a reason to stop moving.'**
-  String get companionLinePeriodToday;
-
-  /// The line PLAN 6.3 is most specific about. A missed period is a data state, not a life event to comment on, and the second sentence is what keeps it one.
-  ///
-  /// In en, this message translates to:
-  /// **'The predicted window has passed with no period logged. That is a data state, and nothing here guesses at the reason.'**
-  String get companionLineOverdue;
-
-  /// An offer, never a nudge. No streak, no count, and no reason asked for: a gap may be pregnancy, loss, illness, or simply not wanting to think about it.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing has been logged for a few days. The log is on the first tab, whenever there is something to put in it.'**
-  String get companionLineNothingLoggedRecently;
-
-  /// The empty state, restating what onboarding already said rather than inventing a second version of it.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing is recorded yet. One period start date is enough to begin.'**
-  String get companionLineNoLogsYet;
-
-  /// Says what is missing and where the user's own figures are, because withholding a prediction must not read as withholding their history.
-  ///
-  /// In en, this message translates to:
-  /// **'There is not enough history for a prediction yet. Insights holds what has been recorded so far.'**
-  String get companionLineNoPredictionYet;
-
-  /// Deliberately no praise. Logging is not an achievement and this app does not congratulate anyone for it.
-  ///
-  /// In en, this message translates to:
-  /// **'Today is already logged. The day can be opened again and changed.'**
-  String get companionLineTodayLogged;
-
-  /// The fallback. It says nothing rather than manufacturing something, which is the whole reason the set is finite.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing to point at just now.'**
-  String get companionLineNothingToPointAt;
-
   /// No description provided for @conditionsTitle.
   ///
   /// In en, this message translates to:
@@ -2180,6 +2353,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 cycle logged while this was recorded} other{{count} cycles logged while this was recorded}}'**
   String conditionsOverlap(int count);
+
+  /// No description provided for @conditionsMedicinesHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines'**
+  String get conditionsMedicinesHeading;
+
+  /// No description provided for @conditionsMedicinesIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines you take, picked from the app\'s list of US medicines and kept on this device only. Each is compared with the others using their labels.'**
+  String get conditionsMedicinesIntro;
+
+  /// No description provided for @conditionsMedicinesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No medicines recorded.'**
+  String get conditionsMedicinesEmpty;
+
+  /// No description provided for @conditionsMedicinesUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The medicines list is not built into this version, so medicines cannot be recorded.'**
+  String get conditionsMedicinesUnavailable;
+
+  /// Under a recorded medicine that a later refresh of the US data no longer lists. Kept rather than deleted: the user recorded it.
+  ///
+  /// In en, this message translates to:
+  /// **'No longer in this app\'s list of medicines, so it is not compared.'**
+  String get conditionsMedicineGone;
+
+  /// No description provided for @conditionsConflictsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Possible conflicts'**
+  String get conditionsConflictsHeading;
+
+  /// Above the conflict flags. A flag only informs: it says the labels connect two medicines, never that the user should stop or change anything.
+  ///
+  /// In en, this message translates to:
+  /// **'Their labels connect these medicines. That is not a finding about you: a pharmacist can tell you whether it matters.'**
+  String get conditionsConflictsIntro;
+
+  /// Under the flags, when some pairs were not flagged. Without it, an unflagged pair beside flagged ones reads as cleared.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The labels of the one other pair do not connect it in the ways this app checks for.} other{The labels of the {count} other pairs do not connect them in the ways this app checks for.}}'**
+  String conditionsConflictsOthers(int count);
+
+  /// No description provided for @conditionsConflictsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Their labels connect none of these medicines in the ways this app checks for.'**
+  String get conditionsConflictsNone;
+
+  /// No description provided for @conditionsConflictLookUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Look it up online'**
+  String get conditionsConflictLookUp;
+
+  /// Opens the interaction checker on the flagged pair, where each mention is quoted: a name can be found in a sense the flag cannot show, "lactic" in "lactic acidosis".
+  ///
+  /// In en, this message translates to:
+  /// **'What the labels say'**
+  String get conditionsConflictLabels;
 
   /// No description provided for @conditionHormonalContraceptionCombined.
   ///
@@ -2274,7 +2513,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsConditionsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Record long-term things that can change your cycle.'**
+  /// **'Record long-term things that can change your cycle, and the medicines you take.'**
   String get settingsConditionsSubtitle;
 
   /// No description provided for @learnTitle.
@@ -2300,6 +2539,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your record'**
   String get learnYourRecordSection;
+
+  /// After the Learn tab has been held for ten seconds. Says what changed, since nothing on screen asked for it.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplements, Pain and movement, and Body composition are now listed in Learn.'**
+  String get learnHiddenPagesShown;
+
+  /// No description provided for @learnHiddenPagesHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplements, Pain and movement, and Body composition are hidden again.'**
+  String get learnHiddenPagesHidden;
 
   /// No description provided for @settingsAppearance.
   ///
@@ -2490,20 +2741,8 @@ abstract class AppLocalizations {
   /// No description provided for @settingsLearnTabSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Off by default. The reference pages are listed here in Settings either way.'**
+  /// **'Off by default. The reference pages, and conditions and medication, appear only when this is on.'**
   String get settingsLearnTabSubtitle;
-
-  /// No description provided for @settingsCompanion.
-  ///
-  /// In en, this message translates to:
-  /// **'Show the companion'**
-  String get settingsCompanion;
-
-  /// No description provided for @settingsCompanionSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Off by default. A control at the end of the navigation bar that offers one line about what is already logged.'**
-  String get settingsCompanionSubtitle;
 
   /// No description provided for @settingsPrivacySection.
   ///

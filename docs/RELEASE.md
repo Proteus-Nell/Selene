@@ -145,45 +145,47 @@ Checklist, in the order the failures actually happen:
 - [ ] Keystore backups still exist and still open
 - [ ] **Release notes carry the re-export warning** — see below
 - [ ] No claim in `docs/NUTRITION_SOURCES.md` is still marked `[VERIFY]`
-- [ ] The medicines artifact has actually been fetched — see below
-- [ ] No claim in `docs/HYGIENE_SOURCES.md` is still marked `[VERIFY]`
+- [ ] The medicines bundle comes from a recent openFDA export — see below
 - [ ] No claim in `docs/WEIGHT_SOURCES.md` is still marked `[VERIFY]`
 - [ ] No claim in `docs/MOVEMENT_SOURCES.md` is still marked `[VERIFY]` —
       including its three absence claims, which are cleared by reading the
       named guidance and finding no phase-based recommendation in it
-- [ ] No claim in `docs/COMPANION_SOURCES.md` is still marked `[VERIFY]` —
-      including its one absence claim, cleared by reading the physical activity
-      and period pain guidance and finding no instruction to stop. Three of the
-      six are shared with the nutrition and movement files: verify them once and
-      clear the marker in every file that carries them, or the three copies
-      start disagreeing
 
-### The medicines artifact (export format aside)
+### The medicines bundle
 
-`artifacts/medicines/medicines_v1.json` is committed **unpopulated** until
-someone runs the fetch. In that state the reference screen explains itself
-rather than showing an empty list, which is honest but is not the feature.
+The medicines reference is every drug in openFDA's label export, one label each
+(ADR-0012), packed into `app/assets/medicines` (ADR-0013). The bundle and the
+selection it was built from, `artifacts/medicines/selection_v2.json`, are
+committed, and the lookup shows the export's date. Refresh both before a
+release:
 
 ```bash
-python3 tools/scripts/gen_medicines.py --fetch
-python3 tools/scripts/gen_medicines.py --check   # should now pass
+python3 tools/scripts/gen_medicines.py --fetch   # downloads ~1.8 GB into data/
+python3 tools/scripts/gen_medicines.py --check   # should pass
 ```
 
 That needs network, on purpose: it is the one part of this project that talks to
-anything, and it runs on a developer machine or in CI, never on the phone. Commit
-both the artifact and the regenerated
-`app/lib/data/reference/medicines_bundled.dart` together — a snapshot committed
-without its Dart is a screen showing the previous snapshot under the new
-snapshot's date.
+anything, and it runs on a developer machine or in CI, never on the phone. The
+download is cached under `data/`, which is never committed. Commit
+`artifacts/medicines/selection_v2.json`, `app/assets/medicines/` and
+`app/lib/data/reference/medicines_bundled.dart` together; `--check` fails when
+they disagree.
+
+A refresh rewrites most of the bundle, and each one adds up to 12 MB to the
+repository's history. Refresh for a release, not on every change.
 
 Two things to check by eye after fetching, because no test can:
 
 - The `[VERIFY]` marker on the disclaimer in `gen_medicines.py`. Clearing it
   means opening <https://open.fda.gov/terms/> and confirming the wording is what
   they ask to be carried.
-- That the label text that came back is actually about the medicine you meant.
-  openFDA is queried by generic name and returns the first match; a query that
-  matched a combination product would put the wrong warnings on the screen.
+- The counts in the selection's `meta`. A large change in any of them between
+  two exports, the number of drugs most of all, means openFDA changed something
+  the rules depend on. Look at the rules before using the result.
+- The interaction checker's examples (ADR-0014). `medicines_test.dart` fails if
+  the pill's label stops naming rifampin, or two NSAIDs stop sharing a class,
+  but open the checker too: the pill with rifampin, ibuprofen with naproxen,
+  and levothyroxine with the pill should each quote the label.
 
 ### The re-export warning (export format v2)
 

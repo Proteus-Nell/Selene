@@ -77,17 +77,16 @@ enum SettingKey {
   /// Whether the Learn tab appears in the navigation bar (AND-39).
   ///
   /// Defaults to **off**, at the owner's direction: the reference pages are a
-  /// thing to go looking for rather than a fifth of the bar. Every page the tab
-  /// collects is also reachable from Settings, so turning it off hides a route
-  /// to the reading rather than the reading itself.
+  /// thing to go looking for rather than a fifth of the bar. The tab is the
+  /// only way to them and to conditions and medication, so turning it off
+  /// hides those pages too.
   showLearnTab('show_learn_tab'),
 
-  /// Whether the companion sits at the end of the navigation bar (AND-37).
+  /// Whether Learn lists Supplements, Pain and movement, and Body composition.
   ///
-  /// Defaults to **off**, at the owner's direction. The companion never asserts
-  /// anything the log does not already contain, so this is a preference about
-  /// whether anyone wants a presence there at all, not a safety gate.
-  showCompanion('show_companion'),
+  /// Defaults to **off**, at the owner's direction, and has no switch: it is
+  /// turned on and off again by holding the Learn tab for ten seconds.
+  revealHiddenReference('reveal_hidden_reference'),
 
   /// Fire dates of the notifications currently scheduled, comma separated.
   ///
@@ -135,7 +134,15 @@ enum SettingKey {
   /// Recorded so the app asks once. On Android 13+ a denial is close to final,
   /// so re-prompting spends the user's patience on a request that cannot
   /// succeed.
-  notificationPermissionAsked('notification_permission_asked');
+  notificationPermissionAsked('notification_permission_asked'),
+
+  /// The medicines recorded under Conditions and medication, as JSON.
+  ///
+  /// A list of `{"key": ..., "name": ...}`, in the order added
+  /// (`MedicineListRepository`). A setting rather than a table, so that it
+  /// travels in exports with no change to their format (ADR-0015). Absent
+  /// when none are recorded.
+  recordedMedicines('recorded_medicines');
 
   const SettingKey(this.wireName);
 
@@ -356,8 +363,7 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
 
   /// Whether the Learn tab appears in the navigation bar (AND-39).
   ///
-  /// Defaults to **off**. Every page it collects is also listed in Settings, so
-  /// this hides a route to the reference pages rather than the pages.
+  /// Defaults to **off**. The tab is the only way to the pages it collects.
   /// Returns:
   ///     `Future<bool>`: Whether the Learn tab is shown. False by default.
   Future<bool> readShowLearnTab() =>
@@ -370,20 +376,14 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   Stream<bool> watchShowLearnTab() =>
       watchBool(SettingKey.showLearnTab, orElse: false);
 
-  /// Whether the companion sits at the end of the navigation bar (AND-37).
+  /// Whether Learn lists the three reference pages it otherwise keeps back.
   ///
-  /// Defaults to **off**.
+  /// Defaults to **off**. Turned on and off by holding the Learn tab.
   /// Returns:
-  ///     `Future<bool>`: Whether the companion is shown. False by default.
-  Future<bool> readShowCompanion() =>
-      readBool(SettingKey.showCompanion, orElse: false);
-
-  /// Watches [readShowCompanion].
-  /// Returns:
-  ///     `Stream<bool>`: Whether the companion is shown. False by default.
+  ///     `Stream<bool>`: Whether they are listed. False by default.
   ///     Re-emitted on every write.
-  Stream<bool> watchShowCompanion() =>
-      watchBool(SettingKey.showCompanion, orElse: false);
+  Stream<bool> watchRevealHiddenReference() =>
+      watchBool(SettingKey.revealHiddenReference, orElse: false);
 
   /// Whether the app requires an unlock (AND-29). Defaults to **off**.
   ///
@@ -458,6 +458,14 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
       into(settings).insertOnConflictUpdate(
         SettingRow(settingKey: key, settingValue: value),
       );
+
+  /// Delete a stored setting, so that it reads as unset.
+  ///
+  /// Args:
+  ///     key (SettingKey): Which preference to delete.
+  Future<void> remove(SettingKey key) => (delete(
+    settings,
+  )..where((t) => t.settingKey.equals(key.wireName))).go();
 
   /// Replace every stored setting.
   ///

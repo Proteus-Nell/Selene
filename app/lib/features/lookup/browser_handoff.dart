@@ -5,13 +5,28 @@
 /// using no permission this app holds.
 ///
 /// Includes:
+///     - HandoffOutcome: What became of a hand-off.
 ///     - BrowserHandoff: The search base, the URL builder, and the
 ///       confirmation that has to precede a hand-off.
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+/// What became of a hand-off.
+enum HandoffOutcome {
+  /// The browser opened.
+  opened,
+
+  /// The reader chose not to leave the app.
+  declined,
+
+  /// They chose to, and no browser could be opened.
+  failed,
+}
 
 /// Browser hand-off: sends a search out, after saying what that means.
 ///
@@ -63,9 +78,10 @@ abstract final class BrowserHandoff {
   ///         phrase instead.
   ///
   /// Returns:
-  ///     `Future<bool>`: Whether the browser opened. False when the user
-  ///     declined.
-  static Future<bool> confirmAndOpen(
+  ///     `Future<HandoffOutcome>`: Whether the browser opened, the user
+  ///     declined, or no browser could be opened. The last two are told
+  ///     apart: a failure is worth reporting, and a choice is not.
+  static Future<HandoffOutcome> confirmAndOpen(
     BuildContext context, {
     String? term,
   }) async {
@@ -100,12 +116,37 @@ abstract final class BrowserHandoff {
         ],
       ),
     );
-    if (confirmed != true) return false;
+    if (confirmed != true) return HandoffOutcome.declined;
 
-    return launchUrl(
-      urlFor(term?.trim() ?? 'menstrual cycle health information'),
-      // See the class comment. Never inAppWebView.
-      mode: LaunchMode.externalApplication,
-    );
+    try {
+      final opened = await launchUrl(
+        urlFor(term?.trim() ?? 'menstrual cycle health information'),
+        // See the class comment. Never inAppWebView.
+        mode: LaunchMode.externalApplication,
+      );
+      return opened ? HandoffOutcome.opened : HandoffOutcome.failed;
+    } on PlatformException {
+      return HandoffOutcome.failed;
+    }
+  }
+
+  /// Ask first, open the browser, and say so if no browser could be opened.
+  ///
+  /// What every button that hands off calls. A device with no browser is
+  /// unusual but not impossible, and silence there looks like a dead button;
+  /// a reader who chose "Not now" is told nothing, because nothing went wrong.
+  ///
+  /// Args:
+  ///     context (BuildContext): Where the dialog, and any message, is shown.
+  ///     term (String?, optional): What to search for, as
+  ///         [confirmAndOpen] takes it.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once the browser has opened, the reader
+  ///     has declined, or the failure has been reported.
+  static Future<void> offer(BuildContext context, {String? term}) async {
+    final outcome = await confirmAndOpen(context, term: term);
+    if (outcome != HandoffOutcome.failed || !context.mounted) return;
+    showAppSnackBar(context, AppLocalizations.of(context).lookupLeavingFailed);
   }
 }

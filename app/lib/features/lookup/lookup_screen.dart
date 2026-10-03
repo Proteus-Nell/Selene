@@ -7,18 +7,16 @@
 /// Includes:
 ///     - LookupScreen: The screen itself.
 ///     - _LookupScreenState: The query, the matching, and the hand-off.
-///     - _HygieneCard: One curated hygiene entry.
-///     - _MedicineCard: One medicine's label sections, in a fixed order.
-///     - _hygieneTitle: A hygiene entry's heading.
-///     - _hygieneBody: A hygiene entry's text.
 library;
 
 import 'package:flutter/material.dart';
-import 'package:period_tracker/data/reference/hygiene.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
+import 'package:period_tracker/data/reference/medicine_bundle.dart';
 import 'package:period_tracker/data/reference/medicines_bundled.dart';
-import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/lookup/browser_handoff.dart';
+import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
+import 'package:period_tracker/features/lookup/medicine_browse.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Lookup screen: look something up, with somewhere to go if it is not here.
@@ -29,30 +27,39 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 /// typing a drug name into a search field has every reason to assume
 /// otherwise.
 ///
-/// Two sections with different provenance, and the screen keeps them apart:
-/// the medicines are a dated snapshot of a regulator's own text, and the
-/// hygiene entries are hand-written for this app. Presenting curated wording as
-/// though it came from a regulator would be borrowing an authority we do not
-/// have (ADR-0009).
-class LookupScreen extends StatefulWidget {
+/// The medicines are every drug in openFDA's label export, several thousand of
+/// them (ADR-0012), so they are searched, or browsed a letter at a time, and
+/// each opens onto its own page.
+class LookupScreen extends ConsumerStatefulWidget {
   /// Creates the lookup screen.
   const LookupScreen({super.key});
 
   @override
-  State<LookupScreen> createState() => _LookupScreenState();
+  ConsumerState<LookupScreen> createState() => _LookupScreenState();
 }
 
 /// State for [LookupScreen]: the query, and what currently matches it.
 ///
-/// The two getters recompute on every build rather than caching. The lists are
-/// a few dozen entries held in memory, so filtering them is cheaper than
-/// keeping a cache honest across a keystroke.
+/// The search is a pass over every drug's names, so its last result is kept,
+/// and a rebuild that changes neither the query nor the page reuses it.
 ///
 /// Attributes:
 ///     _query (TextEditingController): What has been typed so far.
-class _LookupScreenState extends State<LookupScreen> {
+///     _shown (int): How many medicines to list.
+///     _last (record?): The last search, and what it was run for.
+class _LookupScreenState extends ConsumerState<LookupScreen> {
+  /// How many more medicines each "Show more" lists.
+  static const int _page = 25;
+
   /// What has been typed so far.
   final TextEditingController _query = TextEditingController();
+
+  /// How many medicines to list. Back to one page whenever the query changes.
+  int _shown = _page;
+
+  /// The last search: the index and query and page size it ran for, and what
+  /// it found.
+  (MedicineIndex, String, int, MedicineSearch)? _last;
 
   @override
   void dispose() {
@@ -60,82 +67,55 @@ class _LookupScreenState extends State<LookupScreen> {
     super.dispose();
   }
 
-  /// Report whether an entry's terms match what has been typed.
-  ///
-  /// Substring rather than prefix, and over every search term rather than the
-  /// title alone: somebody looking for TSS will type "tss", and somebody
-  /// frightened by a fever will type "fever". A search that only matches
-  /// titles fails the person in the most hurry.
+  /// Search the medicines, or return the last search if nothing changed.
   ///
   /// Args:
-  ///     terms (`Iterable<String>`): Everything this entry can be found by.
+  ///     index (MedicineIndex): Every drug.
+  ///     query (String): What has been typed, trimmed and not empty.
   ///
   /// Returns:
-  ///     bool: True when any term contains the query, case-insensitively, or
-  ///     when nothing has been typed. An empty query shows everything rather
-  ///     than nothing.
-  bool _matches(Iterable<String> terms) {
-    final needle = _query.text.trim().toLowerCase();
-    if (needle.isEmpty) return true;
-    return terms.any((term) => term.toLowerCase().contains(needle));
+  ///     MedicineSearch: The best [_shown] matches, and how many there were.
+  MedicineSearch _medicines(MedicineIndex index, String query) {
+    final last = _last;
+    if (last != null &&
+        identical(last.$1, index) &&
+        last.$2 == query &&
+        last.$3 == _shown) {
+      return last.$4;
+    }
+    final found = index.search(query, limit: _shown);
+    _last = (index, query, _shown, found);
+    return found;
   }
-
-  /// The hygiene entries matching the current query.
-  ///
-  /// Returns:
-  ///     `List<HygieneEntry>`: Those whose search terms or heading match,
-  ///     in the order they are bundled in, which puts the urgent one first.
-  List<HygieneEntry> get _hygiene => <HygieneEntry>[
-    for (final entry in bundledHygieneEntries)
-      if (_matches(<String>[
-        ...entry.searchTerms,
-        _hygieneTitle(AppLocalizations.of(context), entry),
-      ]))
-        entry,
-  ];
-
-  /// The medicines matching the current query.
-  ///
-  /// Returns:
-  ///     `List<Medicine>`: Those whose generic or brand name matches. Empty
-  ///     when the artifact has never been fetched, which the screen reports
-  ///     in words rather than as an empty list.
-  List<Medicine> get _medicines => <Medicine>[
-    for (final medicine in bundledMedicines)
-      if (_matches(<String>[medicine.genericName, ...medicine.brandNames]))
-        medicine,
-  ];
 
   /// Hand the query off to a browser, after confirming.
   ///
-  /// The confirmation is [BrowserHandoff.confirmAndOpen]'s, not this screen's:
-  /// leaving the app is the one action here that reaches the network, and the
-  /// user is told before it happens rather than after.
+  /// The confirmation is [BrowserHandoff.offer]'s, not this screen's: leaving
+  /// the app is the one action here that reaches the network, and the user is
+  /// told before it happens rather than after.
   ///
   /// Returns:
-  ///     `Future<void>`: Completes once the browser has opened, or once the
-  ///     failure has been reported. A user who declined the confirmation gets
-  ///     neither.
-  Future<void> _handOff() async {
-    final opened = await BrowserHandoff.confirmAndOpen(
-      context,
-      term: _query.text.trim().isEmpty ? null : _query.text.trim(),
-    );
-    if (!mounted || opened) return;
-    // Only reported when the user asked for it and it did not happen. A device
-    // with no browser is unusual but not impossible, and silence there looks
-    // like a dead button.
-    showAppSnackBar(context, AppLocalizations.of(context).lookupLeavingFailed);
-  }
+  ///     `Future<void>`: Completes once the browser has opened, the user has
+  ///     declined, or the failure has been reported.
+  Future<void> _handOff() => BrowserHandoff.offer(
+    context,
+    term: _query.text.trim().isEmpty ? null : _query.text.trim(),
+  );
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final hygiene = _hygiene;
-    final medicines = _medicines;
+    final query = _query.text.trim();
+    // Not watched at all when no bundle was built: there is nothing to load,
+    // and the screen says so instead.
+    final index = medicinesFetched ? ref.watch(medicineIndexProvider) : null;
+    final loaded = index?.valueOrNull;
+    final medicines = loaded == null || query.isEmpty
+        ? MedicineSearch.none
+        : _medicines(loaded, query);
     final nothingMatched =
-        hygiene.isEmpty && medicines.isEmpty && medicinesFetched;
+        query.isNotEmpty && loaded != null && medicines.total == 0;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.lookupTitle)),
@@ -147,32 +127,30 @@ class _LookupScreenState extends State<LookupScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: _query,
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => setState(() => _shown = _page),
               decoration: InputDecoration(
                 labelText: l10n.lookupSearchHint,
                 prefixIcon: const Icon(Icons.search),
                 border: const OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 20),
-
-            if (hygiene.isNotEmpty) ...<Widget>[
-              Text(
-                l10n.lookupHygieneHeading,
-                style: theme.textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              // Separated rather than stacked flush. The cards carry no
-              // margin of their own (`cardTheme`), so without this the
-              // urgent entry and the ones under it share an edge and read as
-              // one block.
-              for (final entry in hygiene)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _HygieneCard(entry: entry),
+            if (medicinesFetched && query.isEmpty) ...<Widget>[
+              const SizedBox(height: 12),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.compare_arrows),
+                  title: Text(l10n.checkerTitle),
+                  subtitle: Text(l10n.checkerEntrySubtitle),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const InteractionCheckerScreen(),
+                    ),
+                  ),
                 ),
-              const SizedBox(height: 20),
+              ),
             ],
+            const SizedBox(height: 20),
 
             Text(
               l10n.lookupMedicinesHeading,
@@ -200,8 +178,59 @@ class _LookupScreenState extends State<LookupScreen> {
                 style: theme.textTheme.bodySmall,
               ),
               const SizedBox(height: 8),
-              for (final medicine in medicines)
-                _MedicineCard(medicine: medicine),
+              ...index!.when(
+                data: (reference) => query.isEmpty
+                    // Asked for, not listed: several thousand medicines
+                    // unasked would be a list nobody reads.
+                    ? <Widget>[
+                        Text(
+                          l10n.lookupMedicinesPrompt(reference.entries.length),
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          l10n.lookupBrowseHeading,
+                          style: theme.textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        MedicineLetters(index: reference),
+                      ]
+                    : <Widget>[
+                        for (final match in medicines.matches)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: MedicineTile(
+                              entry: match.entry,
+                              brand: match.brand,
+                            ),
+                          ),
+                        if (medicines.total >
+                            medicines.matches.length) ...<Widget>[
+                          Text(
+                            l10n.lookupMedicinesShowing(
+                              medicines.matches.length,
+                              medicines.total,
+                            ),
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          TextButton(
+                            onPressed: () => setState(() => _shown += _page),
+                            child: Text(l10n.lookupMedicinesShowMore),
+                          ),
+                        ],
+                      ],
+                error: (error, stack) => <Widget>[
+                  Text(
+                    l10n.lookupMedicinesFailed,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ],
+                loading: () => <Widget>[
+                  LinearProgressIndicator(
+                    semanticsLabel: l10n.lookupMedicinesLoading,
+                  ),
+                ],
+              ),
             ],
 
             if (nothingMatched) ...<Widget>[
@@ -240,210 +269,3 @@ class _LookupScreenState extends State<LookupScreen> {
     );
   }
 }
-
-/// A curated hygiene entry.
-///
-/// Hand-written for this app, unlike the medicine cards, which are a
-/// regulator's own text. Presenting the two alike would be borrowing an
-/// authority this app does not have (ADR-0009).
-///
-/// Attributes:
-///     entry (HygieneEntry): The entry to render.
-class _HygieneCard extends StatelessWidget {
-  /// Creates a hygiene card.
-  ///
-  /// Args:
-  ///     entry (HygieneEntry): The entry to render. An urgent one is styled
-  ///         differently and leads with the line that matters.
-  const _HygieneCard({required this.entry});
-
-  /// The entry to render.
-  final HygieneEntry entry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final urgent = entry.urgency == HygieneUrgency.urgent;
-
-    return Card(
-      // The urgent entry does not look like the rest of the page. A screen
-      // where the thing someone might need within the hour is styled like
-      // reference reading is a screen where they do not find it.
-      color: urgent ? theme.colorScheme.errorContainer : null,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                if (urgent) ...<Widget>[
-                  ExcludeSemantics(
-                    child: Icon(
-                      Icons.warning_amber_outlined,
-                      color: theme.colorScheme.onErrorContainer,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                Expanded(
-                  child: Text(
-                    _hygieneTitle(l10n, entry),
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (urgent) ...<Widget>[
-              // First, and in the emphasised style. Everything else on this
-              // card is context for it.
-              Text(
-                l10n.hygieneTssUrgent,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-            Text(_hygieneBody(l10n, entry)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One medicine's label sections, in a fixed order.
-///
-/// A dated snapshot of a regulator's own text, reproduced rather than
-/// paraphrased, with the disclaimer openFDA asks to travel with it printed at
-/// the foot of the screen.
-///
-/// Attributes:
-///     medicine (Medicine): The medicine to render.
-class _MedicineCard extends StatelessWidget {
-  /// Creates a medicine card.
-  ///
-  /// Args:
-  ///     medicine (Medicine): The medicine to render. Sections absent from
-  ///         its label are not shown.
-  const _MedicineCard({required this.medicine});
-
-  /// The medicine to render.
-  final Medicine medicine;
-
-  /// The sections shown, in reading order, with their headings.
-  ///
-  /// A fixed order rather than whatever the map iterates: a label that happens
-  /// to carry "stop use" before "what it is for" would otherwise render
-  /// backwards. Sections absent from a label are simply not shown.
-  static const List<String> _order = <String>[
-    'purpose',
-    'warnings',
-    'do_not_use',
-    'ask_doctor',
-    'stop_use',
-    'pregnancy_or_breast_feeding',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(medicine.genericName, style: theme.textTheme.titleSmall),
-            if (medicine.brandNames.isNotEmpty) ...<Widget>[
-              const SizedBox(height: 2),
-              Text(
-                medicine.brandNames.join(', '),
-                style: theme.textTheme.bodySmall,
-              ),
-            ],
-            for (final section in _order)
-              if (medicine.sections[section]
-                  case final String text) ...<Widget>[
-                const SizedBox(height: 12),
-                Text(
-                  _sectionHeading(l10n, section),
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(text, style: theme.textTheme.bodyMedium),
-              ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Return the heading for one label section.
-  ///
-  /// Args:
-  ///     l10n (AppLocalizations): The translations.
-  ///     section (String): The section's openFDA key.
-  ///
-  /// Returns:
-  ///     String: Its heading, in the user's language, or the raw key if the
-  ///     generator ever adds a section this switch does not know.
-  static String _sectionHeading(AppLocalizations l10n, String section) =>
-      switch (section) {
-        'purpose' => l10n.lookupSectionPurpose,
-        'warnings' => l10n.lookupSectionWarnings,
-        'do_not_use' => l10n.lookupSectionDoNotUse,
-        'ask_doctor' => l10n.lookupSectionAskDoctor,
-        'stop_use' => l10n.lookupSectionStopUse,
-        'pregnancy_or_breast_feeding' => l10n.lookupSectionPregnancy,
-        // Unreachable for anything in _order, and a visible fallback rather
-        // than a blank heading if the generator ever adds a section here.
-        _ => section,
-      };
-}
-
-/// Return a hygiene entry's heading.
-///
-/// The entries are bundled by key and translated here rather than carrying
-/// their own text, so the reference ships once and reads in every language.
-///
-/// Args:
-///     l10n (AppLocalizations): The translations.
-///     entry (HygieneEntry): The entry to name.
-///
-/// Returns:
-///     String: Its heading, or the raw key for an entry this switch does not
-///     know, which is visible rather than blank.
-String _hygieneTitle(AppLocalizations l10n, HygieneEntry entry) =>
-    switch (entry.key) {
-      'tss' => l10n.hygieneTssTitle,
-      'tampons' => l10n.hygieneTamponsTitle,
-      'cups' => l10n.hygieneCupsTitle,
-      'external' => l10n.hygieneExternalTitle,
-      _ => entry.key,
-    };
-
-/// Return a hygiene entry's text.
-///
-/// Args:
-///     l10n (AppLocalizations): The translations.
-///     entry (HygieneEntry): The entry to render.
-///
-/// Returns:
-///     String: Its body, or an empty string for an entry this switch does not
-///     know. Empty rather than the key, because a key where a paragraph
-///     belongs reads as corruption.
-String _hygieneBody(AppLocalizations l10n, HygieneEntry entry) =>
-    switch (entry.key) {
-      'tss' => l10n.hygieneTssBody,
-      'tampons' => l10n.hygieneTamponsBody,
-      'cups' => l10n.hygieneCupsBody,
-      'external' => l10n.hygieneExternalBody,
-      _ => '',
-    };
