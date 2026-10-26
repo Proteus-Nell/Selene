@@ -44,6 +44,7 @@ Selene/
 ├── tools/scripts/                    # Generators, release build and privacy checks
 ├── docs/                             # Plan, decisions (ADRs), privacy statement, release guide, sources
 ├── .github/workflows/flutter.yml     # CI: checks, tests and release APKs on every push
+├── LICENSE                           # MIT License
 ├── PRIVACY_POLICY.md                 # Privacy Policy
 └── README.md                         # Project overview (this file)
 ```
@@ -165,3 +166,14 @@ tools/scripts/release.sh
 | [`docs/ANDROID_TASKS.md`](docs/ANDROID_TASKS.md) | The Android work, broken into tasks |
 | [`docs/NUTRITION_SOURCES.md`](docs/NUTRITION_SOURCES.md), [`MOVEMENT_SOURCES.md`](docs/MOVEMENT_SOURCES.md), [`WEIGHT_SOURCES.md`](docs/WEIGHT_SOURCES.md) | The sources behind the reference pages in Learn |
 | [`PRIVACY_POLICY.md`](PRIVACY_POLICY.md) | The privacy policy |
+
+---
+
+## License
+
+Selene is released under the [MIT License](LICENSE).
+
+Two things bundled with it keep their own terms:
+
+- The Figtree font, under the SIL Open Font License 1.1 ([`app/assets/fonts/OFL.txt`](app/assets/fonts/OFL.txt)).
+- The drug labelling, from openFDA, under [openFDA's terms](https://open.fda.gov/terms/).
