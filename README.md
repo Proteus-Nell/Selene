@@ -1,2 +1,167 @@
-# Period-Tracker
+# Selene - Offline Period Tracker
 
+> **App:** Selene, a menstrual cycle tracker for Android that works entirely offline.\
+> **Platform:** Android, built with Flutter 3.47 and Dart. Distributed as a signed APK; there is no Play Store listing.\
+> **Prediction:** A Bayesian model that learns from your own logs on the phone, starting from population averages fitted in Python.\
+> **Privacy:** No internet permission at all. Nothing leaves the phone unless you export it, or confirm a search that opens in your browser. See the [Privacy Policy](PRIVACY_POLICY.md).\
+> **Medicines reference:** The safety sections of 5,835 US drug labels from openFDA, bundled into the app.\
+> **Github Link:** [Github Link](https://github.com/Proteus-Nell/Selene)
+
+## What the app does
+
+- **Logs** period days, flow, and physical, mental and emotional symptoms. Intercourse can be logged too, but only if you choose to.
+- **Predicts** the next period as a date range with a confidence level, never as a single date. The prediction starts from population averages and adjusts to your own cycles as you log them.
+- **Explains** what you logged: cycle phases on the calendar, insights from your own history, and conditions such as PMOS (formerly PCOS) or hormonal contraception recorded alongside it.
+- **Looks up medicines** from US drug labelling, searched or browsed A to Z. It compares two or more medicines by what their labels say about each other, and flags pairs among the medicines you record.
+- **Keeps it private:** no account, no sync, no analytics. An optional app lock asks for your fingerprint or PIN before showing anything.
+
+Selene is not a contraceptive and does not give medical advice. It never tells you when you cannot get pregnant, and its medicine pages show US labelling, which can differ from the packet in front of you.
+
+## Project Directory Structure
+
+```text
+Selene/
+├── app/                              # The Flutter app (Selene)
+│   ├── lib/
+│   │   ├── main.dart                 # Opens the database, then starts the app
+│   │   ├── core/                     # Clock, dates, theme, logging
+│   │   ├── data/                     # Database, repositories, export and import, medicines bundle reader
+│   │   ├── domain/                   # Cycle maths and the prediction model, in plain Dart
+│   │   ├── features/                 # One folder per screen: today, calendar, log, insights, learn, lookup...
+│   │   ├── notifications/            # Local reminders, re-registered after a restart
+│   │   ├── routing/                  # Navigation and the bottom bar
+│   │   ├── security/                 # The optional app lock
+│   │   └── l10n/                     # Every string the user reads (app_en.arb)
+│   ├── assets/medicines/             # The bundled openFDA labels, compressed
+│   ├── test/                         # Unit, widget, golden and end-to-end tests
+│   └── integration_test/             # The smoke flow, run on a device
+│
+├── research/                         # Python package `cyclecore`: priors, golden vectors, backtests
+├── artifacts/                        # What the Python side and the generators hand to the app
+│   ├── priors/priors_v1.json         # Population priors the app compiles in
+│   ├── golden/                       # Test vectors that keep the Python and Dart models identical
+│   └── medicines/selection_v2.json   # Which label stands for each drug
+├── tools/scripts/                    # Generators, release build and privacy checks
+├── docs/                             # Plan, decisions (ADRs), privacy statement, release guide, sources
+├── .github/workflows/flutter.yml     # CI: checks, tests and release APKs on every push
+├── PRIVACY_POLICY.md                 # Privacy Policy
+└── README.md                         # Project overview (this file)
+```
+- The prediction model exists twice: a Python reference in `research/`, and the Dart version the app runs. Golden test vectors fail the build if the two ever disagree ([ADR-0002](docs/DECISIONS.md)).
+- Everything the app needs ships inside it: the model's priors, the medicines reference and every string. Nothing is fetched at run time, because the release build has no way to fetch anything.
+
+---
+
+## Setup, Build & Directions
+
+The app can be built and tested without touching the Python side. Steps 4 and 5 are only needed to change the bundled data or to ship a release.
+
+### Step 1: Environment Setup
+You will need the Flutter SDK, a JDK and the Android SDK for the app. Python 3.11 and [uv](https://docs.astral.sh/uv/) are only needed for the research side.
+
+**Option A: FVM (Recommended)**
+
+```
+# The Flutter version is pinned in app/.fvmrc, and CI fails if the two drift
+cd app
+fvm install
+fvm flutter pub get
+```
+
+**Option B: Flutter on your PATH**
+
+- Install Flutter **3.47.0** directly, plus JDK 21 (CI uses Temurin 21) and the Android SDK, then:
+
+    ```
+    cd app
+    flutter pub get
+    ```
+
+**Research side (optional)**
+
+```
+cd research
+uv sync --group dev
+uv run pytest -q
+```
+
+### Step 2: Running the App
+```
+cd app
+flutter run
+```
+* **File Role:**
+
+    `lib/main.dart` opens the local database, handles a corrupt or newer-version file rather than crashing, and starts the app. Everything the user records is stored in that database, in the app's private storage on the phone.
+
+    * **Note**: debug builds declare the internet permission so that hot reload works. Release builds have it removed, and CI checks every release APK for it.
+* **Output:** A debug build running on a connected phone or emulator.
+
+### Step 3: Checks & Tests
+```
+cd app
+dart format --output=none --set-exit-if-changed lib test
+flutter analyze
+flutter test
+
+cd ..
+bash tools/scripts/check_no_datetime_now.sh
+python3 tools/scripts/gen_priors_dart.py --check
+python3 tools/scripts/gen_medicines.py --check
+```
+* **File Role:**
+
+    The same gates CI runs on every push and pull request:
+
+    - Formatting and the analyzer, where info-level findings fail too.
+    - Over a thousand unit, widget and golden tests, including copy rules that fail the build on wording the app has no basis for, such as calling a day "safe".
+    - No `DateTime.now()` outside `core/clock.dart`, so that every date in the app can be controlled in tests.
+    - The generated Dart matches the committed priors and medicines bundle.
+* **Output:** Pass or fail for each step. CI then also builds the release APKs, checks that none of them declares a network permission, and checks their size.
+
+### Step 4: Regenerating the Bundled Data
+Only needed when the priors or the medicines data change.
+
+```
+# Population priors, and the golden vectors that pin the Dart model to them
+cd research
+uv run cyclecore fit-priors
+uv run cyclecore export-golden
+cd ..
+python3 tools/scripts/gen_priors_dart.py
+
+# Medicines: downloads openFDA's label export (about 1.8 GB, kept under data/, never committed)
+python3 tools/scripts/gen_medicines.py --fetch
+```
+* **File Role:**
+
+    - `cyclecore fit-priors` fits the model's population priors and writes `artifacts/priors/priors_v1.json`. `export-golden` writes the test vectors from the Python reference.
+    - `gen_priors_dart.py` compiles the priors into `app/lib/domain/predict/priors_bundled.dart`.
+    - `gen_medicines.py --fetch` picks one label for each drug by fixed rules, and packs the labels' safety sections into compressed chunks with a search index. This is the only part of the project that uses the network, and it runs on a developer machine, never on the phone.
+* **Output:** Updated files under `artifacts/`, `app/assets/medicines/` and the generated Dart, committed together. `--check` fails while they disagree.
+
+### Step 5: Release Build
+```
+tools/scripts/new_keystore.sh ~/keys/period-tracker-release.jks   # once, ever
+tools/scripts/release.sh
+```
+* **File Role:**
+
+    `release.sh` builds one APK per CPU architecture and refuses to hand over anything unshippable: an APK signed with the debug key, or one that declares a network permission.
+
+    * **Note**: losing the keystore strands every installed copy, because Android refuses an update signed with a different key. Back it up before the first release. [`docs/RELEASE.md`](docs/RELEASE.md) has the full checklist.
+* **Output:** Signed APKs in `app/build/app/outputs/flutter-apk/`, named `app-<abi>-release.apk`.
+
+---
+
+## Documentation
+
+| Document | What it covers |
+| --- | --- |
+| [`docs/PLAN.md`](docs/PLAN.md) | The project plan: scope, model, privacy posture and milestones |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Architecture decision records, each with the alternatives it rejected |
+| [`docs/PRIVACY.md`](docs/PRIVACY.md) | The privacy statement shown inside the app, word for word |
+| [`docs/RELEASE.md`](docs/RELEASE.md) | Signing, release checks and refreshing the medicines data |
+| [`docs/ANDROID_TASKS.md`](docs/ANDROID_TASKS.md) | The Android work, broken into tasks |
+| [`docs/NUTRITION_SOURCES.md`](docs/NUTRITION_SOURCES.md), [`MOVEMENT_SOURCES.md`](docs/MOVEMENT_SOURCES.md), [`WEIGHT_SOURCES.md`](docs/WEIGHT_SOURCES.md) | The sources behind the reference pages in Learn |
+| [`PRIVACY_POLICY.md`](PRIVACY_POLICY.md) | The privacy policy |
