@@ -1,4 +1,4 @@
-# Selene - Offline Period Tracker
+# Selene
 
 > **App:** Selene, a menstrual cycle tracker for Android that works entirely offline.\
 > **Platform:** Android, built with Flutter 3.47 and Dart. Distributed as a signed APK; there is no Play Store listing.\
