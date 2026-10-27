@@ -17,6 +17,12 @@
 
 Selene is not a contraceptive and does not give medical advice. It never tells you when you cannot get pregnant, and its medicine pages show US labelling, which can differ from the packet in front of you.
 
+## Installing and updating
+
+Download the APK from the [latest release](https://github.com/Proteus-Nell/Selene/releases/latest): `selene-<version>-arm64-v8a.apk` suits nearly every phone. To update, install the newer APK over the old one; your data stays. Every release is signed with the same key and has a higher version code than the one before, which is what Android checks.
+
+An APK from anywhere else, such as a CI run, is signed with a different key, and Android will not let a release install over it. If that is what you have, save a backup in **Settings, Export a backup**, uninstall it, install the release, and use **Settings, Restore from a backup**. This is needed once. Each release's notes give the signing certificate's fingerprint, and `SHA256SUMS.txt` beside the APKs lets you check the download.
+
 ## Project Directory Structure
 
 ```text
@@ -43,7 +49,8 @@ Selene/
 │   └── medicines/selection_v2.json   # Which label stands for each drug
 ├── tools/scripts/                    # Generators, release build and privacy checks
 ├── docs/                             # Plan, decisions (ADRs), privacy statement, release guide, sources
-├── .github/workflows/flutter.yml     # CI: checks, tests and release APKs on every push
+├── .github/workflows/flutter.yml     # CI: checks, tests and test APKs on every push
+├── .github/workflows/release.yml     # Releases: signed APKs for a version tag, as a draft
 ├── LICENSE                           # MIT License
 ├── PRIVACY_POLICY.md                 # Privacy Policy
 └── README.md                         # Project overview (this file)
@@ -144,14 +151,15 @@ python3 tools/scripts/gen_medicines.py --fetch
 ### Step 5: Release Build
 ```
 tools/scripts/new_keystore.sh ~/keys/period-tracker-release.jks   # once, ever
-tools/scripts/release.sh
+tools/scripts/release_version.py set 1.1.0                        # a new version
+tools/scripts/release.sh                                          # or push the tag v1.1.0
 ```
 * **File Role:**
 
-    `release.sh` builds one APK per CPU architecture and refuses to hand over anything unshippable: an APK signed with the debug key, or one that declares a network permission.
+    `release_version.py` writes the version, with a version code derived from its name, so each release outranks the last. `release.sh` builds one APK per CPU architecture and refuses to hand over anything unshippable: an APK signed with the debug key, one with the wrong version code, or one that declares a network permission. Pushing a version tag runs the same script in the release workflow, with the key held in the repository's secrets, and leaves a draft release.
 
-    * **Note**: losing the keystore strands every installed copy, because Android refuses an update signed with a different key. Back it up before the first release. [`docs/RELEASE.md`](docs/RELEASE.md) has the full checklist.
-* **Output:** Signed APKs in `app/build/app/outputs/flutter-apk/`, named `app-<abi>-release.apk`.
+    * **Note**: losing the keystore strands every installed copy, because Android refuses an update signed with a different key. Back it up before the first release. [`docs/RELEASE.md`](docs/RELEASE.md) has the full checklist and the secrets the workflow needs.
+* **Output:** Signed APKs in `app/build/app/outputs/flutter-apk/`, named `app-<abi>-release.apk`, or a draft release named `Selene <version>`.
 
 ---
 

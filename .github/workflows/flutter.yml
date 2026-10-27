@@ -111,9 +111,11 @@ jobs:
 
       # Split per ABI, per docs/PLAN.md 3.7: a universal APK carries every
       # architecture's native libraries, and this app ships a native SQLite.
+      # One version code across the splits, as tools/scripts/release.sh builds
+      # them, so CI checks the configuration a release ships with.
       - name: Build release APKs
         working-directory: app
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi -Pforce-version-code-ignoring-abi=true
 
       # Every artifact that could be installed is checked, not just one. The
       # split builds are what actually get distributed, so checking a universal
@@ -169,9 +171,14 @@ jobs:
             fi
           done
 
-      - name: Upload release APKs
+      # Named for what they are. CI has no release key, so these are signed
+      # with a debug key each runner makes afresh: one will not install over
+      # another, nor over a release, nor take a release as an update. They are
+      # build verification only. Phones get APKs from GitHub Releases
+      # (.github/workflows/release.yml, docs/RELEASE.md section 6).
+      - name: Upload the test APKs
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apks
+          name: test-apks-debug-signed-not-for-phones
           path: app/build/app/outputs/flutter-apk/app-*-release.apk
           if-no-files-found: error

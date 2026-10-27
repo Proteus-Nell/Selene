@@ -25,6 +25,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe) | The interaction checker compares label text, and never calls a pair safe | Accepted | 2026-10-02 |
 | [0015](#adr-0015-recorded-medicines-are-kept-as-a-setting-and-their-flags-only-inform) | Recorded medicines are kept as a setting, and their flags only inform | Accepted | 2026-10-02 |
 | [0016](#adr-0016-a-late-period-moves-the-range-forward-and-lost-track-counts-from-the-last-period) | A late period moves the range forward, and lost track counts from the last period | Accepted | 2026-10-27 |
+| [0017](#adr-0017-releases-are-built-from-a-tag-with-the-key-in-repository-secrets-and-their-version-code-comes-from-the-name) | Releases are built from a tag, with the key in repository secrets, and their version code comes from the name | Accepted | 2026-10-27 |
 
 ---
 
@@ -862,6 +863,69 @@ golden vectors and calibration work.
   window has passed, it gets its own figures rather than "lost track".
 - `Prediction` carries `originalWindow80` and `daysLate`. It is never exported,
   so the export format does not change.
+
+---
+
+## ADR-0017: Releases are built from a tag, with the key in repository secrets, and their version code comes from the name
+
+**Status:** Accepted, 2026-10-27
+**Deciders:** Project owner
+
+### Context
+
+A newer build would not install over an older one. There were no releases, so
+the APKs being installed were CI artifacts, and CI signs with a debug key that
+every runner generates afresh: no two runs share a signature, and Android
+refuses an update signed by a different key. The version had also never moved
+from `1.0.0+1`, and Flutter adds `1000 × ABI` to each split APK's version code,
+so even a correctly signed 32-bit APK of a later release would be refused over
+the arm64 APK of an earlier one. The owner asked for GitHub Releases that
+update an existing install.
+
+### Decision
+
+1. **A tag `vX.Y.Z` on `main` runs `.github/workflows/release.yml`**, which
+   tests the commit, builds it with `tools/scripts/release.sh`, and leaves a
+   draft release: the APKs, `SHA256SUMS.txt`, and the signing certificate's
+   fingerprint in the notes. A person publishes it, after the upgrade check
+   that no workflow can do.
+2. **The release keystore is held in four repository secrets**, read only by
+   that workflow, which only a tag push triggers. It is written outside the
+   working tree for the build and deleted afterwards.
+3. **The version code is derived from the name**, `major × 10000 + minor × 100 +
+   patch`, by `tools/scripts/release_version.py`, which refuses a pubspec that
+   breaks the rule, a tag that does not match it, and a version no newer than
+   one already tagged.
+4. **Every APK of a release has that one code**, built with
+   `-Pforce-version-code-ignoring-abi=true`, and `release.sh` checks each APK
+   for it.
+5. **CI artifacts are named as test builds**, not installable ones. The first
+   release starts at code 10000, above anything an earlier build could have
+   had, but a copy installed from a CI artifact still has to be backed up,
+   uninstalled and restored once, because its signature differs.
+
+### Runner-up and why rejected
+
+**Building on the owner's machine and uploading by hand.** The key never leaves
+that machine, which is the stronger position: here, anyone who can change the
+release workflow on `main` can make it sign something else. Rejected as the
+default because a release is then only as reproducible as one laptop, and every
+check in `release.sh` depends on someone running it. It stays possible:
+`release.sh` is the same script either way, and `docs/RELEASE.md` section 6
+works without the secrets if the draft is created by hand.
+
+**A build number chosen by hand**, or the workflow's run number. Either can go
+backwards: a hand-chosen number by being forgotten, a run number when the
+workflow is renamed or re-created.
+
+### Consequences
+
+- The keystore is now in two places that must stay identical: the backups in
+  `docs/RELEASE.md` section 1, and the secrets. Replacing the secrets with a new
+  key strands every copy installed from an earlier release.
+- Minor and patch versions stop at 99.
+- Settings shows the version name alone, since the build number is derived
+  from it.
 
 ---
 

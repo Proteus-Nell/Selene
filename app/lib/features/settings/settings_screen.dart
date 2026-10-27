@@ -298,7 +298,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Divider(),
             _SectionHeading(l10n.settingsAboutSection),
             ListTile(
-              title: Text(l10n.settingsVersion(appVersion)),
+              title: Text(l10n.settingsVersion(appVersionName)),
               subtitle: Text(
                 l10n.settingsModelVersion(
                   priorsArtifactSha256.substring(0, 12),

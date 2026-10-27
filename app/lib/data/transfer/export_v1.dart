@@ -69,9 +69,17 @@ const String exportSchemaFingerprint =
 ///
 /// A plain constant rather than `package_info_plus`: reading it at runtime
 /// would add a platform plugin to the one part of the app that has to work when
-/// everything else has gone wrong. `export_v1_test.dart` asserts it matches
-/// `pubspec.yaml`, so it cannot drift silently.
-const String appVersion = '1.0.0+1';
+/// everything else has gone wrong. `transfer_test.dart` asserts it matches
+/// `pubspec.yaml`, so it cannot drift silently. Set both with
+/// `tools/scripts/release_version.py set <version>`.
+const String appVersion = '1.0.0+10000';
+
+/// The version as people are shown it: the name, without the build number.
+///
+/// The build number is derived from the name by
+/// `tools/scripts/release_version.py`, so in Settings it would only be a
+/// second figure that tells nobody anything.
+String get appVersionName => appVersion.split('+').first;
 
 /// Everything an export file carries.
 ///
