@@ -14,29 +14,33 @@ is only defensible if the user is told about it.
 
 ## What this app does with your data
 
-### Everything stays on this phone
+### We do not collect your information
 
-This app has no internet permission, and a check on every release refuses to build one that asks for it. There is no account to sign into, no sync, and it collects no analytics or crash reports. What you record stays here until you export it.
+The app has no internet permission, no account, no analytics, no advertising and no crash reporting, and a check on every release refuses to build one that asks for the internet. Everything you record stays on your phone, under your control, and none of it reaches us.
+
+### It leaves your phone only when you choose
+
+Two things send anything anywhere, and only when you ask. An export saves a backup file wherever you choose. A web search opens in your browser, after the app tells you exactly which words will be searched, and your browser may keep it in its history.
 
 ### The database is not encrypted
 
-Your data sits in this app's own storage. Other apps cannot read it on a phone that has not been tampered with, and Android's full-device encryption protects it while the phone is switched off. But it is stored as plain text, so anyone who picks up your unlocked phone, or takes a forensic copy of it, can read it. The app lock hides the screen. It does not encrypt the file underneath.
+The database is kept in the app's private storage. On a phone that has not been tampered with, other apps cannot read it, and Android's device encryption protects it while the phone is switched off. But the database itself is stored as plain text: anyone who has your unlocked phone, or a forensic copy of it, can read what you recorded. The optional app lock hides the screen. It does not encrypt the file underneath.
 
-### Nothing is backed up to the cloud
+### Nothing is copied off the phone
 
-Android's automatic backup is switched off for this app, so your cycle history is never copied to a Google account. If you lose the phone, the data is gone unless you exported it.
+Android's cloud backup and device-to-device transfer are switched off for the app, so your records are never copied to a Google account or to a new phone. If you lose the phone, they are gone unless you exported them.
 
 ### Deleting really deletes
 
-Deleting a day removes the row. Deleting everything removes every row and then reclaims the space, so the old entries are not left readable in the file. Nothing is kept behind a hidden flag.
+You can delete a single day, condition or medicine at any time. Delete everything removes every record and reclaims the space, so the deleted entries are not left readable in the file. Uninstalling the app deletes everything it stored on the phone.
 
-### The activity log holds no cycle content
+### The activity log holds nothing you recorded
 
-This app keeps a short log of what it did, such as "a prediction was computed" with a count of cycles. You can read it and clear it in Settings.
+The app keeps a short log of what it did, such as "a prediction was computed" with a count of cycles. It stays on the phone, only in memory, so it is cleared when the app stops. You can read it and clear it in Settings.
 
 ### Exports are yours to look after
 
-An exported backup is a plain readable file wherever you chose to put it, with no protection of its own. Anywhere you save it or send it is outside this app's control.
+An exported backup is a plain, readable file wherever you save it, with no protection of its own. Once it is saved, it is under your control and the control of wherever you keep or send it.
 
 ---
 

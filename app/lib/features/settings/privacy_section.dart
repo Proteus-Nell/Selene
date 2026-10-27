@@ -34,6 +34,7 @@ class PrivacySection extends StatelessWidget {
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _Paragraph(l10n.privacyOnDeviceTitle, l10n.privacyOnDeviceBody),
+        _Paragraph(l10n.privacySharingTitle, l10n.privacySharingBody),
         _Paragraph(l10n.privacyNotEncryptedTitle, l10n.privacyNotEncryptedBody),
         _Paragraph(l10n.privacyBackupTitle, l10n.privacyBackupBody),
         _Paragraph(l10n.privacyDeletionTitle, l10n.privacyDeletionBody),

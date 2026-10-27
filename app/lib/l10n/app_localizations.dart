@@ -187,37 +187,37 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingIntro.
   ///
   /// In en, this message translates to:
-  /// **'This app records your cycle on this device and predicts when your next period is likely to start. It has no internet permission, so nothing can be sent anywhere.'**
+  /// **'Selene records your cycle on your phone and predicts when your next period is likely to start. We do not collect any of it. The app has no internet permission, and nothing you record leaves your phone unless you choose to send it.'**
   String get onboardingIntro;
 
   /// No description provided for @onboardingWhatItIsNotTitle.
   ///
   /// In en, this message translates to:
-  /// **'What this app is not'**
+  /// **'What Selene is not'**
   String get onboardingWhatItIsNotTitle;
 
   /// No description provided for @onboardingNotContraception.
   ///
   /// In en, this message translates to:
-  /// **'This is a record of dates, not contraception. It cannot tell you when sex is unlikely to lead to pregnancy, and it must never be used to try.'**
+  /// **'Selene is not contraception. It cannot tell you when sex is unlikely to lead to pregnancy, and it must never be used to try.'**
   String get onboardingNotContraception;
 
   /// No description provided for @onboardingNotMedical.
   ///
   /// In en, this message translates to:
-  /// **'This is a record, not medical advice. If something about your cycle worries you, talk to a clinician.'**
+  /// **'Selene does not give medical advice. If something about your cycle worries you, talk to a doctor or nurse.'**
   String get onboardingNotMedical;
 
   /// No description provided for @onboardingNotDiagnostic.
   ///
   /// In en, this message translates to:
-  /// **'It works from the dates you record and nothing else. It knows nothing about your contraception, pregnancy, medication, illness or stress, so it cannot diagnose anything.'**
+  /// **'Predictions come from the dates you record and nothing else, so Selene cannot diagnose anything. Illness, stress, medicines and contraception can all move a period, and predictions do not account for them.'**
   String get onboardingNotDiagnostic;
 
   /// No description provided for @onboardingAlwaysARange.
   ///
   /// In en, this message translates to:
-  /// **'Predictions come as a range of days. Cycles vary enough that a single date would claim a precision this app does not have.'**
+  /// **'Predictions come as a range of days, never a single date, because cycles vary too much for one date to be accurate.'**
   String get onboardingAlwaysARange;
 
   /// No description provided for @onboardingAcknowledge.
@@ -487,7 +487,7 @@ abstract class AppLocalizations {
   /// Shown during onboarding, before the user has recorded anything. It names the most sensitive field the app holds rather than letting them find it themselves, and points at the app lock in the same breath.
   ///
   /// In en, this message translates to:
-  /// **'You can record intercourse, and whether it was protected. That is the most sensitive thing stored here. Recording it is optional, and what you record stays on this device and is never used to predict anything. The app lock in settings can ask for your fingerprint or PIN before anything shows.'**
+  /// **'You can record intercourse, and whether it was protected. It is the most sensitive thing Selene stores. Recording it is optional, it stays on your phone like everything else, none of it reaches us, and it is never used to predict anything. The app lock in Settings can ask for your fingerprint or PIN before anything shows.'**
   String get onboardingSensitiveBody;
 
   /// Heading over the symptoms felt in the body.
@@ -2801,14 +2801,26 @@ abstract class AppLocalizations {
   /// No description provided for @privacyOnDeviceTitle.
   ///
   /// In en, this message translates to:
-  /// **'Everything stays on this phone'**
+  /// **'We do not collect your information'**
   String get privacyOnDeviceTitle;
 
   /// No description provided for @privacyOnDeviceBody.
   ///
   /// In en, this message translates to:
-  /// **'This app has no internet permission, and a check on every release refuses to build one that asks for it. There is no account to sign into, no sync, and it collects no analytics or crash reports. What you record stays here until you export it.'**
+  /// **'The app has no internet permission, no account, no analytics, no advertising and no crash reporting, and a check on every release refuses to build one that asks for the internet. Everything you record stays on your phone, under your control, and none of it reaches us.'**
   String get privacyOnDeviceBody;
+
+  /// No description provided for @privacySharingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'It leaves your phone only when you choose'**
+  String get privacySharingTitle;
+
+  /// No description provided for @privacySharingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Two things send anything anywhere, and only when you ask. An export saves a backup file wherever you choose. A web search opens in your browser, after the app tells you exactly which words will be searched, and your browser may keep it in its history.'**
+  String get privacySharingBody;
 
   /// No description provided for @privacyNotEncryptedTitle.
   ///
@@ -2819,19 +2831,19 @@ abstract class AppLocalizations {
   /// No description provided for @privacyNotEncryptedBody.
   ///
   /// In en, this message translates to:
-  /// **'Your data sits in this app\'s own storage. Other apps cannot read it on a phone that has not been tampered with, and Android\'s full-device encryption protects it while the phone is switched off. But it is stored as plain text, so anyone who picks up your unlocked phone, or takes a forensic copy of it, can read it. The app lock hides the screen. It does not encrypt the file underneath.'**
+  /// **'The database is kept in the app\'s private storage. On a phone that has not been tampered with, other apps cannot read it, and Android\'s device encryption protects it while the phone is switched off. But the database itself is stored as plain text: anyone who has your unlocked phone, or a forensic copy of it, can read what you recorded. The optional app lock hides the screen. It does not encrypt the file underneath.'**
   String get privacyNotEncryptedBody;
 
   /// No description provided for @privacyBackupTitle.
   ///
   /// In en, this message translates to:
-  /// **'Nothing is backed up to the cloud'**
+  /// **'Nothing is copied off the phone'**
   String get privacyBackupTitle;
 
   /// No description provided for @privacyBackupBody.
   ///
   /// In en, this message translates to:
-  /// **'Android\'s automatic backup is switched off for this app, so your cycle history is never copied to a Google account. If you lose the phone, the data is gone unless you exported it.'**
+  /// **'Android\'s cloud backup and device-to-device transfer are switched off for the app, so your records are never copied to a Google account or to a new phone. If you lose the phone, they are gone unless you exported them.'**
   String get privacyBackupBody;
 
   /// No description provided for @privacyDeletionTitle.
@@ -2843,19 +2855,19 @@ abstract class AppLocalizations {
   /// No description provided for @privacyDeletionBody.
   ///
   /// In en, this message translates to:
-  /// **'Deleting a day removes the row. Deleting everything removes every row and then reclaims the space, so the old entries are not left readable in the file. Nothing is kept behind a hidden flag.'**
+  /// **'You can delete a single day, condition or medicine at any time. Delete everything removes every record and reclaims the space, so the deleted entries are not left readable in the file. Uninstalling the app deletes everything it stored on the phone.'**
   String get privacyDeletionBody;
 
   /// No description provided for @privacyLogsTitle.
   ///
   /// In en, this message translates to:
-  /// **'The activity log holds no cycle content'**
+  /// **'The activity log holds nothing you recorded'**
   String get privacyLogsTitle;
 
   /// No description provided for @privacyLogsBody.
   ///
   /// In en, this message translates to:
-  /// **'This app keeps a short log of what it did, such as \"a prediction was computed\" with a count of cycles. You can read it and clear it in Settings.'**
+  /// **'The app keeps a short log of what it did, such as \"a prediction was computed\" with a count of cycles. It stays on the phone, only in memory, so it is cleared when the app stops. You can read it and clear it in Settings.'**
   String get privacyLogsBody;
 
   /// No description provided for @privacyExportTitle.
@@ -2867,7 +2879,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyExportBody.
   ///
   /// In en, this message translates to:
-  /// **'An exported backup is a plain readable file wherever you chose to put it, with no protection of its own. Anywhere you save it or send it is outside this app\'s control.'**
+  /// **'An exported backup is a plain, readable file wherever you save it, with no protection of its own. Once it is saved, it is under your control and the control of wherever you keep or send it.'**
   String get privacyExportBody;
 
   /// No description provided for @bootstrapRecoveredTitle.
