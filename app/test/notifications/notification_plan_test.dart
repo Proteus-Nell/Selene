@@ -127,6 +127,52 @@ void main() {
     });
   });
 
+  group('with a window moved forward by a late period', () {
+    // First expected 25 to 29 June. On the 30th nothing has been logged, so
+    // the window shown has moved on to start today. The reminders belong to
+    // the window first predicted: scheduled from the moved one, "likely
+    // started" would fall due tomorrow every day, and the late notice would
+    // move five days ahead of every day it was asked about.
+    final moved = PredictionResult.predicted(
+      prediction: predictionFrom('2026-06-30', '2026-07-04').copyWith(
+        originalWindow80: CivilDateRange(day('2026-06-25'), day('2026-06-29')),
+        daysLate: 1,
+      ),
+      statistics: const CycleStatistics(completedCycles: 6),
+    );
+
+    test('does not ask again whether it started', () {
+      expect(
+        kindsIn(planFor(moved)),
+        isNot(contains(NotificationKind.likelyStarted)),
+      );
+      expect(
+        kindsIn(planFor(moved)),
+        isNot(contains(NotificationKind.windowOpening)),
+      );
+    });
+
+    test('keeps the late notice where the first window put it', () {
+      expect(
+        planFor(
+          moved,
+        ).firstWhere((p) => p.kind == NotificationKind.lateNotice).fireDate,
+        day('2026-07-04'),
+      );
+    });
+
+    test('keeps it there once no range is given at all', () {
+      final late = PredictionResult.laterThanExpected(
+        expectedWindow80: CivilDateRange(day('2026-06-25'), day('2026-06-29')),
+        daysLate: 1,
+        statistics: const CycleStatistics(completedCycles: 6),
+      );
+      final planned = planFor(late);
+      expect(kindsIn(planned), <NotificationKind>{NotificationKind.lateNotice});
+      expect(planned.single.fireDate, day('2026-07-04'));
+    });
+  });
+
   group('with no window to talk about', () {
     test('says nothing at all', () {
       // Each of these is a state where the app has just told the user it
@@ -138,7 +184,7 @@ void main() {
         ),
         const PredictionResult.lostTrack(
           statistics: CycleStatistics(completedCycles: 6),
-          daysSinceLastLog: 90,
+          daysSinceLastPeriod: 90,
         ),
         const PredictionResult.dataInconsistent(
           reason: DataInconsistency.clockWentBackwards,

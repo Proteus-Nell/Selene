@@ -317,6 +317,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         InsufficientData(:final populationPrior) => populationPrior.medianStart,
         TooIrregular() ||
         LostTrack() ||
+        LaterThanExpected() ||
         NoData() ||
         DataInconsistent() ||
         SuppressedByCondition() ||
@@ -330,15 +331,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   ///
   /// Returns:
   ///     CivilDateRange?: The window, or null. [TooIrregular], [LostTrack],
-  ///     [NoData] and [DataInconsistent] all return null on purpose: each is
-  ///     a state where drawing a window would be the app asserting something
-  ///     it has just said it cannot support.
+  ///     [LaterThanExpected], [NoData] and [DataInconsistent] all return null
+  ///     on purpose: each is a state where drawing a window would be the app
+  ///     asserting something it has just said it cannot support. A late
+  ///     period's window is the one moved forward past the days already gone.
   static CivilDateRange? _predictedWindow(PredictionResult? result) =>
       switch (result) {
         Predicted(:final prediction) => prediction.window80,
         InsufficientData(:final populationPrior) => populationPrior.window80,
         TooIrregular() ||
         LostTrack() ||
+        // Late enough that the moved range is too wide to draw. Drawing the
+        // window it was expected in instead would shade days already gone.
+        LaterThanExpected() ||
         NoData() ||
         // A recorded pregnancy is the one case here where the model has an
         // answer and it must not be drawn. Shading a predicted week onto the

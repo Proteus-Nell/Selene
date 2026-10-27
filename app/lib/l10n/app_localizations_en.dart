@@ -139,6 +139,48 @@ class AppLocalizationsEn extends AppLocalizations {
       'log a period start and this fills in';
 
   @override
+  String get logCountdownLater => 'later than expected';
+
+  @override
+  String logCountdownLaterCaption(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days past the expected range',
+      one: '1 day past the expected range',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get logCountdownLostTrack => 'lost track';
+
+  @override
+  String get logCountdownLostTrackCaption =>
+      'log your latest period start and this picks up again';
+
+  @override
+  String get logCountdownNoRange => 'no range';
+
+  @override
+  String get logCountdownNoRangeCaption =>
+      'your cycles vary too much for a useful one';
+
+  @override
+  String get logCountdownPaused => 'paused';
+
+  @override
+  String get logCountdownPausedCaption =>
+      'no prediction while a pregnancy is recorded';
+
+  @override
+  String get logCountdownCheckDates => 'check dates';
+
+  @override
+  String get logCountdownCheckDatesCaption =>
+      'the stored dates need a look before this fills in';
+
+  @override
   String logRingLabel(String summary) {
     return 'Your cycle as a ring. $summary';
   }
@@ -410,6 +452,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'About four out of five times start in this range.';
 
   @override
+  String get insightsLateRange =>
+      'It is later than expected, so this range has moved forward. A late period is harder to predict, so take it as a rough guide.';
+
+  @override
+  String get insightsLateNotLogged =>
+      'If it has started and is not logged yet, logging its first day updates this.';
+
+  @override
+  String get insightsLaterTitle => 'Later than expected';
+
+  @override
+  String insightsLaterBody(String start, String end) {
+    return 'It was expected between $start and $end. A new range would now be too wide to help, so none is shown. If it has started and is not logged yet, logging its first day updates this.';
+  }
+
+  @override
   String insightsHalfTheTime(String start, String end) {
     return 'About half the time it starts between $start and $end.';
   }
@@ -452,7 +510,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String insightsLostTrackBody(int days) {
-    return 'Nothing logged for $days days. That gap is too long to predict from, so nothing is shown here. Log a day and predictions start again.';
+    return 'Your last logged period started $days days ago. That is too long to predict from, so nothing is shown here. If one has come since, logging its first day starts predictions again.';
   }
 
   @override

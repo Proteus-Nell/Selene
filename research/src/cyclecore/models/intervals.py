@@ -7,12 +7,15 @@ portability rules:
   baked into `priors_v1.json` as a small table of constants.
 * everything else is pure arithmetic over that table, and is ported to Dart.
 
-That split is the whole reason the Dart port needs no special functions. See the
-portability rules in `bayes_filter`.
+`conditioned_windows` is the one exception. It moves the windows forward once a
+period is late, which needs quantiles at levels nobody can list in advance, so it
+uses the Student-t functions in `student_t`: plain arithmetic, ported to Dart step
+for step, and held to SciPy by the tests.
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Final
 
@@ -26,6 +29,7 @@ from cyclecore.models.bayes_filter import (
     predictive_quantile,
 )
 from cyclecore.models.personalize import RefitResult, refit_user
+from cyclecore.models.student_t import t_cdf, t_ppf
 
 __all__ = [
     "CONFIDENCE_HIGH_MAX_DAYS",
@@ -33,6 +37,7 @@ __all__ = [
     "CONFIDENCE_MEDIUM_MAX_DAYS",
     "QUANTILE_LEVELS",
     "PredictionWindows",
+    "conditioned_windows",
     "confidence_class",
     "student_t_quantiles",
     "windows_for_history",
@@ -140,6 +145,51 @@ def windows_from_state(
         hi50=days_from_log(predictive_quantile(fc, t_quantiles["p75"])),
         lo80=days_from_log(predictive_quantile(fc, t_quantiles["p10"])),
         hi80=days_from_log(predictive_quantile(fc, t_quantiles["p90"])),
+    )
+
+
+def conditioned_windows(
+    fc: Forecast,
+    elapsed_days: int,
+    student_t_df: float,
+) -> PredictionWindows:
+    """Windows for a cycle known to be at least `elapsed_days` long.
+
+    Once a period is due and has not come, the days already passed are evidence:
+    the next cycle is at least that long. Conditioning the forecast on it moves
+    the windows forward rather than leaving them in the past. In whole days, a
+    length of at least `elapsed_days` is a log length of at least
+    `log(elapsed_days - 0.5)`, because `days_from_log` rounds to the nearest day.
+
+    Args:
+        fc: The unconditioned predictive distribution, on the log scale.
+        elapsed_days: Days since the cycle in progress started. At least 1.
+        student_t_df: The model's degrees of freedom.
+
+    Returns:
+        The windows, each drawn from the forecast cut off below at
+        `elapsed_days`. Every bound is at least `elapsed_days`.
+
+    Raises:
+        ValueError: When `elapsed_days` is below 1, or so far beyond the forecast
+            that it leaves no probability to move into.
+    """
+    if elapsed_days < 1:
+        raise ValueError(f"elapsed_days must be at least 1, got {elapsed_days}")
+    below = t_cdf((math.log(elapsed_days - 0.5) - fc.mean) / fc.scale, student_t_df)
+    if below >= 1.0:
+        raise ValueError(f"no probability is left beyond {elapsed_days} days")
+
+    def day(level: float) -> int:
+        t = t_ppf(below + level * (1.0 - below), student_t_df)
+        return days_from_log(fc.mean + fc.scale * t)
+
+    return PredictionWindows(
+        median_days=day(0.50),
+        lo50=day(0.25),
+        hi50=day(0.75),
+        lo80=day(0.10),
+        hi80=day(0.90),
     )
 
 

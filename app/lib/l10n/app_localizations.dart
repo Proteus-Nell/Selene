@@ -322,6 +322,66 @@ abstract class AppLocalizations {
   /// **'log a period start and this fills in'**
   String get logCountdownNothingYetCaption;
 
+  /// No description provided for @logCountdownLater.
+  ///
+  /// In en, this message translates to:
+  /// **'later than expected'**
+  String get logCountdownLater;
+
+  /// No description provided for @logCountdownLaterCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day past the expected range} other{{days} days past the expected range}}'**
+  String logCountdownLaterCaption(int days);
+
+  /// No description provided for @logCountdownLostTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'lost track'**
+  String get logCountdownLostTrack;
+
+  /// No description provided for @logCountdownLostTrackCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'log your latest period start and this picks up again'**
+  String get logCountdownLostTrackCaption;
+
+  /// No description provided for @logCountdownNoRange.
+  ///
+  /// In en, this message translates to:
+  /// **'no range'**
+  String get logCountdownNoRange;
+
+  /// No description provided for @logCountdownNoRangeCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'your cycles vary too much for a useful one'**
+  String get logCountdownNoRangeCaption;
+
+  /// No description provided for @logCountdownPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'paused'**
+  String get logCountdownPaused;
+
+  /// No description provided for @logCountdownPausedCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'no prediction while a pregnancy is recorded'**
+  String get logCountdownPausedCaption;
+
+  /// No description provided for @logCountdownCheckDates.
+  ///
+  /// In en, this message translates to:
+  /// **'check dates'**
+  String get logCountdownCheckDates;
+
+  /// No description provided for @logCountdownCheckDatesCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'the stored dates need a look before this fills in'**
+  String get logCountdownCheckDatesCaption;
+
   /// No description provided for @logRingLabel.
   ///
   /// In en, this message translates to:
@@ -790,6 +850,30 @@ abstract class AppLocalizations {
   /// **'About four out of five times start in this range.'**
   String get insightsFourInFive;
 
+  /// No description provided for @insightsLateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'It is later than expected, so this range has moved forward. A late period is harder to predict, so take it as a rough guide.'**
+  String get insightsLateRange;
+
+  /// No description provided for @insightsLateNotLogged.
+  ///
+  /// In en, this message translates to:
+  /// **'If it has started and is not logged yet, logging its first day updates this.'**
+  String get insightsLateNotLogged;
+
+  /// No description provided for @insightsLaterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Later than expected'**
+  String get insightsLaterTitle;
+
+  /// No description provided for @insightsLaterBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It was expected between {start} and {end}. A new range would now be too wide to help, so none is shown. If it has started and is not logged yet, logging its first day updates this.'**
+  String insightsLaterBody(String start, String end);
+
   /// No description provided for @insightsHalfTheTime.
   ///
   /// In en, this message translates to:
@@ -859,7 +943,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsLostTrackBody.
   ///
   /// In en, this message translates to:
-  /// **'Nothing logged for {days} days. That gap is too long to predict from, so nothing is shown here. Log a day and predictions start again.'**
+  /// **'Your last logged period started {days} days ago. That is too long to predict from, so nothing is shown here. If one has come since, logging its first day starts predictions again.'**
   String insightsLostTrackBody(int days);
 
   /// No description provided for @insightsInconsistentTitle.

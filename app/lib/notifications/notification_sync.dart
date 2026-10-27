@@ -42,9 +42,13 @@ NotificationCopy buildNotificationCopy(
   PredictionResult result,
 ) {
   final l10n = AppLocalizations.of(context);
+  // The window as first predicted, which is the one the window notice is
+  // scheduled from (ADR-0016).
   final window = switch (result) {
-    Predicted(:final prediction) => prediction.window80,
-    InsufficientData(:final populationPrior) => populationPrior.window80,
+    Predicted(:final prediction) => prediction.expectedWindow80,
+    InsufficientData(:final populationPrior) =>
+      populationPrior.expectedWindow80,
+    LaterThanExpected(:final expectedWindow80) => expectedWindow80,
     TooIrregular() ||
     LostTrack() ||
     NoData() ||

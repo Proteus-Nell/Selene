@@ -147,7 +147,8 @@ abstract final class NotificationPlanner {
   ///     which covers [NoData], [TooIrregular], [LostTrack] and
   ///     [DataInconsistent]: each is a state where the app has just said it
   ///     cannot support a window, and a notification about one would
-  ///     contradict that.
+  ///     contradict that. [LaterThanExpected] keeps only its late notice,
+  ///     whose date comes from the window first predicted.
   static List<PlannedNotification> plan({
     required PredictionResult result,
     required CivilDate today,
@@ -156,9 +157,16 @@ abstract final class NotificationPlanner {
   }) {
     final planned = <PlannedNotification>[];
 
+    // The window as first predicted, never one moved forward. A late period
+    // moves the window a day at a time, and scheduling from it would move the
+    // "likely started" reminder to tomorrow every day and the late notice out
+    // of reach for good (ADR-0016). A period so late that no range is shown
+    // still has its late notice due from the window it was expected in.
     final window = switch (result) {
-      Predicted(:final prediction) => prediction.window80,
-      InsufficientData(:final populationPrior) => populationPrior.window80,
+      Predicted(:final prediction) => prediction.expectedWindow80,
+      InsufficientData(:final populationPrior) =>
+        populationPrior.expectedWindow80,
+      LaterThanExpected(:final expectedWindow80) => expectedWindow80,
       // SuppressedByCondition included deliberately: a notification is the
       // most intrusive surface in the app, and a lock-screen banner predicting
       // a period for someone who has recorded a pregnancy would be the worst

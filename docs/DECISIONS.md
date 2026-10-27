@@ -24,6 +24,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone) | The medicines bundle is compressed chunks and an index, searched on the phone | Accepted | 2026-10-02 |
 | [0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe) | The interaction checker compares label text, and never calls a pair safe | Accepted | 2026-10-02 |
 | [0015](#adr-0015-recorded-medicines-are-kept-as-a-setting-and-their-flags-only-inform) | Recorded medicines are kept as a setting, and their flags only inform | Accepted | 2026-10-02 |
+| [0016](#adr-0016-a-late-period-moves-the-range-forward-and-lost-track-counts-from-the-last-period) | A late period moves the range forward, and lost track counts from the last period | Accepted | 2026-10-27 |
 
 ---
 
@@ -752,6 +753,115 @@ which the owner has ruled out for now.
   ignores it.
 - The flags inherit ADR-0014's limits. A label that names the other medicine
   only by a group, such as "combined hormonal contraceptives", raises no flag.
+
+---
+
+## ADR-0016: A late period moves the range forward, and lost track counts from the last period
+
+**Status:** Accepted, 2026-10-27. Extends the golden-vector contract of [ADR-0002](#adr-0002-two-runtime-split-python-reference-dart-production-golden-vectors-as-the-contract).
+**Deciders:** Project owner
+
+### Context
+
+Someone who logged symptoms every day but no period saw "any day now" in the
+ring for as long as they kept logging. Two things combined:
+
+- **The countdown read the window as first predicted.** Once that window had
+  opened, every later day was "inside the expected range", including every day
+  after it had closed.
+- **Losing track was counted from the last log of any kind.** A headache logged
+  yesterday reset it, so the state that exists to stop a stale window being
+  shown never arrived.
+
+Someone who logged nothing at all was told "not yet, log a period start", which
+is also what the ring said to every irregular history and every recorded
+pregnancy. The owner chose three fixes: say the period is later than expected,
+count losing track from the last period, and move the range forward.
+
+### Decision
+
+1. **Lost track counts from the start of the last logged period:** day 61 of the
+   cycle in progress, the day the ring stops counting, and only once the window
+   first predicted has also passed, so that a cycle expected to run long is not
+   mistaken for a lost one. It replaces "60 days with no log of any kind". The
+   panel says when the last period started, and the ring has its own message,
+   "lost track".
+2. **Once the window has opened with no period logged, the windows move
+   forward.** The days gone by are evidence that the cycle is at least that
+   long, so the forecast is conditioned on it: in whole days, a length of at
+   least *k* is a log length of at least log(*k* - 0.5), and each quantile at
+   level *q* becomes the forecast's quantile at
+   `below + q (1 - below)`, where `below` is the forecast's probability under
+   that bound. No bound is ever before today. Quantiles at levels known only on
+   the day cannot come from the shipped table, so the Student-t distribution
+   function and its inverse are computed in plain arithmetic (`student_t.py`,
+   ported step for step to `student_t.dart`), held to SciPy by the Python tests,
+   and pinned across runtimes by a second golden file,
+   `conditioned_cases_v1.json`: 30 cases from five histories, floats to 1e-9
+   and days exactly. The move depends on the day, so it is applied to the
+   cached fit rather than cached, and the prediction is recomputed when the app
+   comes back on a new day.
+3. **Past the window first predicted, the app says the period is later than
+   expected**, and by how many days. The panel gives the moved range as a rough
+   guide, without "four out of five", a most likely day or a confidence label,
+   because the backtest below does not support them there.
+4. **A moved range as wide as the app refuses to show for an irregular history
+   (14 days) is not shown.** Past the window, `PredictionResult.laterThanExpected`
+   says when the period was expected instead. Inside the window, the window
+   first predicted stands, unmoved.
+5. **Reminders are scheduled from the window first predicted**, never from a
+   moved one, which would move "likely started" to tomorrow every day and keep
+   the late notice five days away for good.
+6. **The ring names every state without a window**: "no range" for a history
+   too irregular for one, "paused" while a pregnancy is recorded, and "check
+   dates" when the stored dates disagree.
+
+`cyclecore backtest-late` scores moved windows on the synthetic population,
+counting only cycles that reached each day without their period. Coverage of
+the 80% window, as first predicted and once moved:
+
+| Day | Regular cycles | Held | Irregular cycles | Held |
+| --- | --- | --- | --- | --- |
+| As first predicted | 12,414 | 85.7% | 4,190 | 68.8% |
+| Day after the window opened | 10,542 | 89.7% | 3,555 | 71.2% |
+| Day after its median | 4,713 | 86.4% | 1,932 | 65.0% |
+| Day after it closed | 1,090 | 59.1% | 829 | 58.3% |
+| 5 days after it closed | 457 | 15.8% | 587 | 63.4% |
+| 15 days after it closed | 403 | 90.8% | 358 | 88.8% |
+
+Inside the window, a moved range holds as well as the window first predicted.
+Past it, the cycles still going for a regular user are mostly a missed log, at
+about twice the usual length, which a single Student-t cannot put its mass on
+until the range is wide. The irregular rows include windows the app does not
+show, being wider than 14 days.
+
+### Runner-up and why rejected
+
+**No range at all past the window**, only "later than expected". The backtest
+supports it: a range moved five days past a regular user's window held the
+period one time in six. Rejected because the owner chose to move the range
+forward, and because it does help inside the window, where it drops days that
+have already gone. Past the window it is kept, but labelled for what it is. If
+it misleads in use, removing it is one condition in the repository.
+
+**A mixture model with a missed-log component**, putting mass at about twice
+the usual length. It is what the backtest points to, but it is a change to the
+model rather than to how its forecast is read, and it needs its own priors,
+golden vectors and calibration work.
+
+### Consequences
+
+- A second golden file is part of the contract, and the Dart port has two
+  special functions that only exist to read it. Neither changes the windows
+  first predicted, whose golden file is byte-identical.
+- Someone who logs only periods loses track a few days sooner than before,
+  because the count starts at the period's first day rather than its last.
+- A cycle around ten weeks long is already too irregular to show a window under
+  the 14-day rule, which counts days rather than a proportion of the cycle. That
+  is unchanged here. The protection in point 1 still applies to it: until its
+  window has passed, it gets its own figures rather than "lost track".
+- `Prediction` carries `originalWindow80` and `daysLate`. It is never exported,
+  so the export format does not change.
 
 ---
 

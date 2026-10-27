@@ -68,12 +68,16 @@ abstract final class CycleRules {
   /// 1 / 0.6745. Used by the modified z-score.
   static const double madToSigma = 1.4826; // 1 / 0.6745, unitless
 
-  /// Days without any log, with a cycle in progress, after which the app
-  /// stops extrapolating and says it has lost track.
+  /// Day of the cycle in progress past which the app stops extrapolating and
+  /// says it has lost track, once the window it predicted has passed as well.
   ///
-  /// Silently predicting from stale data is worse than admitting the gap: it
-  /// produces a confident wrong answer. See `docs/PLAN.md` 5.5.
-  static const int lostTrackAfterDays = 60; // days @ prediction.dart
+  /// Counted from the start of the last logged period, not from the last log
+  /// of any kind: logging symptoms every day used to hold a window open for a
+  /// period that was never logged (ADR-0016). The ring stops counting the day
+  /// of the cycle at the same point, so the two cannot disagree. Silently
+  /// predicting from stale data is worse than admitting the gap: it produces
+  /// a confident wrong answer. See `docs/PLAN.md` 5.5.
+  static const int lostTrackAfterDays = 60; // days @ prediction_repository
 
   /// Upper bound on median absolute deviation, in days, for cycles to count
   /// as regular.
