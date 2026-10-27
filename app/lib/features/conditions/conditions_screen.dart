@@ -13,8 +13,9 @@
 ///     - ConditionsScreen: The list, and the flow that adds to it.
 ///     - _ConditionTile: One record, its dates, and what it overlapped.
 ///     - _Medicines: The recorded medicines, and the flow that adds to them.
-///     - _Conflicts: The flags for the recorded medicines.
-///     - _ConflictFlag: One flagged pair.
+///     - _Conflicts: A card for every pair of recorded medicines.
+///     - _PairCard: One pair, flagged or not.
+///     - _spaced: The gap under a card in a list of them.
 ///     - conditionLabel: The user-facing name of a condition.
 ///     - _pickDate: The date picker both flows use.
 library;
@@ -85,12 +86,14 @@ class ConditionsScreen extends ConsumerWidget {
               Text(l10n.conditionsEmpty, style: theme.textTheme.bodyMedium)
             else
               for (final record in records)
-                _ConditionTile(
-                  record: record,
-                  cyclesOverlapped: overlaps
-                      .where((o) => o.condition == record.condition)
-                      .map((o) => o.cycles)
-                      .firstOrNull,
+                _spaced(
+                  _ConditionTile(
+                    record: record,
+                    cyclesOverlapped: overlaps
+                        .where((o) => o.condition == record.condition)
+                        .map((o) => o.cycles)
+                        .firstOrNull,
+                  ),
                 ),
             const SizedBox(height: 24),
             const _Medicines(),
@@ -360,33 +363,34 @@ class _Medicines extends ConsumerWidget {
           if (recorded.isEmpty)
             Text(l10n.conditionsMedicinesEmpty, style: body),
           for (final medicine in recorded)
-            Card(
-              child: ListTile(
-                title: Text(medicine.name),
-                subtitle: switch (index) {
-                  null => null,
-                  final index => Text(switch (index.byKey(medicine.key)) {
-                    final entry? => medicineKind(l10n, entry),
-                    null => l10n.conditionsMedicineGone,
-                  }),
-                },
-                trailing: IconButton(
-                  onPressed: () => ref
-                      .read(medicineListRepositoryProvider)
-                      .remove(medicine.key),
-                  icon: const Icon(Icons.close),
-                  tooltip: l10n.checkerRemove(medicine.name),
+            _spaced(
+              Card(
+                child: ListTile(
+                  title: Text(medicine.name),
+                  subtitle: switch (index) {
+                    null => null,
+                    final index => Text(switch (index.byKey(medicine.key)) {
+                      final entry? => medicineKind(l10n, entry),
+                      null => l10n.conditionsMedicineGone,
+                    }),
+                  },
+                  trailing: IconButton(
+                    onPressed: () => ref
+                        .read(medicineListRepositoryProvider)
+                        .remove(medicine.key),
+                    icon: const Icon(Icons.close),
+                    tooltip: l10n.checkerRemove(medicine.name),
+                  ),
                 ),
               ),
             ),
-          const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: () => _add(context, ref),
             icon: const Icon(Icons.add),
             label: Text(l10n.checkerAdd),
           ),
           if (recorded.length >= 2) ...<Widget>[
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             const _Conflicts(),
           ],
         ],
@@ -417,10 +421,15 @@ class _Medicines extends ConsumerWidget {
   }
 }
 
-/// The flags for the recorded medicines: one for each pair whose labels
-/// connect them, and a plain statement when none do.
+/// A card for every pair of recorded medicines: the pairs whose labels
+/// connect them first, flagged, then the rest.
+///
+/// Every pair can be looked up online, at the owner's direction, whether or
+/// not the labels connect it. A pair with nothing found here is not thereby
+/// cleared: the labels leave interactions out, and name many medicines only
+/// by a group this app cannot match.
 class _Conflicts extends ConsumerWidget {
-  /// Creates the flags.
+  /// Creates the section.
   const _Conflicts();
 
   @override
@@ -446,28 +455,19 @@ class _Conflicts extends ConsumerWidget {
               for (final pair in pairs)
                 if (pair.connected) pair,
             ];
-            if (flagged.isEmpty) {
-              // Said, rather than an empty section, and never as "no
-              // conflicts": the labels leave interactions out.
-              return <Widget>[
-                Text(l10n.conditionsConflictsNone, style: body),
-                const SizedBox(height: 4),
-                Text(l10n.checkerNothingFoundNote, style: body),
-              ];
-            }
-            final others = pairs.length - flagged.length;
+            final unflagged = <InteractionPair>[
+              for (final pair in pairs)
+                if (!pair.connected) pair,
+            ];
             return <Widget>[
-              Text(l10n.conditionsConflictsIntro, style: body),
-              const SizedBox(height: 8),
-              for (final pair in flagged) _ConflictFlag(pair: pair),
-              // An unflagged pair beside flagged ones reads as cleared unless
-              // something says otherwise.
-              if (others > 0) ...<Widget>[
-                const SizedBox(height: 8),
-                Text(l10n.conditionsConflictsOthers(others), style: body),
-                const SizedBox(height: 4),
-                Text(l10n.checkerNothingFoundNote, style: body),
+              if (flagged.isNotEmpty) ...<Widget>[
+                Text(l10n.conditionsConflictsIntro, style: body),
+                const SizedBox(height: 12),
               ],
+              for (final pair in <InteractionPair>[...flagged, ...unflagged])
+                _spaced(_PairCard(pair: pair), gap: 12),
+              if (unflagged.isNotEmpty)
+                Text(l10n.checkerNothingFoundNote, style: body),
             ];
           },
           error: (error, stack) => <Widget>[
@@ -482,22 +482,24 @@ class _Conflicts extends ConsumerWidget {
   }
 }
 
-/// One flagged pair: what connects them, and where to read more.
+/// One pair of recorded medicines, and where to read more about it.
+///
+/// A pair the labels connect is flagged, with what connects it, and opens
+/// the checker, where each mention is quoted in full. Any other pair says the
+/// labels do not connect it, and that the result is worth verifying. Either
+/// way it can be searched for in the browser, after the usual confirmation.
 ///
 /// It informs and nothing else, at the owner's direction. It never says to
-/// stop or change anything, and `interaction_copy_test.dart` holds it to
-/// that. Its two ways on are the browser, where the pair is searched for
-/// after the usual confirmation, and the checker, where each mention is
-/// quoted in full.
+/// stop or change anything, and `interaction_copy_test.dart` holds it to that.
 ///
 /// Attributes:
 ///     pair (InteractionPair): The pair.
-class _ConflictFlag extends StatelessWidget {
-  /// Creates the flag.
+class _PairCard extends StatelessWidget {
+  /// Creates the card.
   ///
   /// Args:
   ///     pair (InteractionPair): The pair.
-  const _ConflictFlag({required this.pair});
+  const _PairCard({required this.pair});
 
   /// The pair.
   final InteractionPair pair;
@@ -514,8 +516,10 @@ class _ConflictFlag extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                Icon(Icons.flag_outlined, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
+                if (pair.connected) ...<Widget>[
+                  Icon(Icons.flag_outlined, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                ],
                 Expanded(
                   child: Text(
                     l10n.checkerPairTitle(pair.first.name, pair.second.name),
@@ -524,12 +528,18 @@ class _ConflictFlag extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
+            if (!pair.connected)
+              Text(
+                l10n.checkerNothingFoundPair,
+                style: theme.textTheme.bodyMedium,
+              ),
             for (final reason in interactionReasons(l10n, pair))
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(reason, style: theme.textTheme.bodyMedium),
               ),
+            const SizedBox(height: 4),
             Wrap(
               spacing: 8,
               children: <Widget>[
@@ -538,16 +548,17 @@ class _ConflictFlag extends StatelessWidget {
                   icon: const Icon(Icons.open_in_new),
                   label: Text(l10n.conditionsConflictLookUp),
                 ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (context) => InteractionCheckerScreen(
-                        initial: <MedicineEntry>[pair.first, pair.second],
+                if (pair.connected)
+                  TextButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (context) => InteractionCheckerScreen(
+                          initial: <MedicineEntry>[pair.first, pair.second],
+                        ),
                       ),
                     ),
+                    child: Text(l10n.conditionsConflictLabels),
                   ),
-                  child: Text(l10n.conditionsConflictLabels),
-                ),
               ],
             ),
           ],
@@ -556,6 +567,20 @@ class _ConflictFlag extends StatelessWidget {
     );
   }
 }
+
+/// [card], with a gap under it.
+///
+/// The theme gives cards no margin, so that a card can sit flush where a
+/// layout wants it to. In a list, cards with no gap between them read as one
+/// block.
+///
+/// Args:
+///     card (Widget): The card.
+///     gap (double): The space under it. Defaults to 8.
+Widget _spaced(Widget card, {double gap = 8}) => Padding(
+  padding: EdgeInsets.only(bottom: gap),
+  child: card,
+);
 
 /// Return the user-facing name of a condition.
 ///

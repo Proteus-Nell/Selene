@@ -1868,10 +1868,10 @@ abstract class AppLocalizations {
   /// **'The {medicine} label mentions “{words}”, an FDA drug class that includes {other}.'**
   String checkerMentionsClassShort(String medicine, String words, String other);
 
-  /// No description provided for @checkerNothingFoundPair.
+  /// On every pair the labels do not connect, in the checker and under Conditions and medication, beside a way to look the pair up online. Worded by the owner. It must not read as a reassurance.
   ///
   /// In en, this message translates to:
-  /// **'Neither label names the other, and they share no ingredient or FDA drug class.'**
+  /// **'No labels connect these two medications, but you are advised to verify the results.'**
   String get checkerNothingFoundPair;
 
   /// Shown wherever the labels connect a pair in none of the ways the check looks for. It must never read as a reassurance; interaction_copy_test bans the words that would make it one.
@@ -2395,18 +2395,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Their labels connect these medicines. That is not a finding about you: a pharmacist can tell you whether it matters.'**
   String get conditionsConflictsIntro;
-
-  /// Under the flags, when some pairs were not flagged. Without it, an unflagged pair beside flagged ones reads as cleared.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{The labels of the one other pair do not connect it in the ways this app checks for.} other{The labels of the {count} other pairs do not connect them in the ways this app checks for.}}'**
-  String conditionsConflictsOthers(int count);
-
-  /// No description provided for @conditionsConflictsNone.
-  ///
-  /// In en, this message translates to:
-  /// **'Their labels connect none of these medicines in the ways this app checks for.'**
-  String get conditionsConflictsNone;
 
   /// No description provided for @conditionsConflictLookUp.
   ///

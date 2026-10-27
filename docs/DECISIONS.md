@@ -726,6 +726,11 @@ Two constraints decide where it lives:
    fails the build on directive or reassuring wording. Where nothing connects,
    the screen says so, and that this does not mean the medicines are safe
    together.
+
+   *Amended 2026-10-27, at the owner's direction:* every pair gets a card,
+   flagged or not. A pair the labels do not connect says "No labels connect
+   these two medications, but you are advised to verify the results.", with
+   the same browser hand-off as a flagged pair.
 4. **Nothing reaches the prediction**, as with conditions (ADR-0010).
 
 ### Runner-up and why rejected

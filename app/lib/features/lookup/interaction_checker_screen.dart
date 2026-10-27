@@ -139,19 +139,23 @@ class _InteractionCheckerScreenState
           children: <Widget>[
             Text(l10n.checkerIntro, style: theme.textTheme.bodyMedium),
             const SizedBox(height: 12),
+            // The theme gives cards no margin; in a list, cards with no gap
+            // between them read as one block.
             for (final medicine in _medicines)
-              Card(
-                child: ListTile(
-                  title: Text(medicine.name),
-                  subtitle: Text(medicineKind(l10n, medicine)),
-                  trailing: IconButton(
-                    onPressed: () => _remove(medicine),
-                    icon: const Icon(Icons.close),
-                    tooltip: l10n.checkerRemove(medicine.name),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Card(
+                  child: ListTile(
+                    title: Text(medicine.name),
+                    subtitle: Text(medicineKind(l10n, medicine)),
+                    trailing: IconButton(
+                      onPressed: () => _remove(medicine),
+                      icon: const Icon(Icons.close),
+                      tooltip: l10n.checkerRemove(medicine.name),
+                    ),
                   ),
                 ),
               ),
-            const SizedBox(height: 8),
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: OutlinedButton.icon(
@@ -185,17 +189,19 @@ class _InteractionCheckerScreenState
                     children: <Widget>[
                       // What the labels connect first, so the pairs that need
                       // reading are not below a list of pairs that do not.
-                      for (final pair in found)
-                        if (pair.connected) InteractionPairCard(pair: pair),
-                      for (final pair in unconnected)
-                        InteractionPairCard(pair: pair),
-                      if (unconnected.isNotEmpty) ...<Widget>[
-                        const SizedBox(height: 8),
+                      for (final pair in <InteractionPair>[
+                        ...found.where((pair) => pair.connected),
+                        ...unconnected,
+                      ])
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: InteractionPairCard(pair: pair),
+                        ),
+                      if (unconnected.isNotEmpty)
                         Text(
                           l10n.checkerNothingFoundNote,
                           style: theme.textTheme.bodyMedium,
                         ),
-                      ],
                     ],
                   );
                 },

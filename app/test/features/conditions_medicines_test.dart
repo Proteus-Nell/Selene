@@ -173,17 +173,22 @@ void main() {
       await pump(tester);
       final l10n = l10nOf(tester);
       await reveal(tester, find.text(l10n.checkerNothingFoundNote));
-      expect(find.text(l10n.conditionsConflictsNone), findsOneWidget);
+      // The pair is still there to be looked up, saying that no label connects
+      // it and that the result is worth verifying: never as cleared.
       expect(
         find.text(l10n.checkerPairTitle('ASPIRIN', 'TRANEXAMIC ACID')),
-        findsNothing,
+        findsOneWidget,
       );
+      expect(find.text(l10n.checkerNothingFoundPair), findsOneWidget);
+      expect(find.text(l10n.conditionsConflictsIntro), findsNothing);
+      expect(find.text(l10n.conditionsConflictLabels), findsNothing);
+      expect(find.byIcon(Icons.flag_outlined), findsNothing);
     });
 
-    testWidgets('beside others that are not flagged says those are not '
-        'cleared', (tester) async {
-      // Three medicines, three pairs, one flagged. Without a word about the
-      // other two, they would read as checked and fine.
+    testWidgets('comes before the pairs that are not flagged, each of which '
+        'can be looked up too', (tester) async {
+      // Three medicines, three pairs, one flagged. The other two are listed
+      // after it, each with the sentence and its own way to the browser.
       await record(const <String>[
         'aspirin.oral.otc',
         'ibuprofen.oral.otc',
@@ -192,11 +197,43 @@ void main() {
       await pump(tester);
       final l10n = l10nOf(tester);
       await reveal(tester, find.text(l10n.checkerNothingFoundNote));
+      final expected = <String>[
+        l10n.checkerPairTitle('ASPIRIN', 'IBUPROFEN'),
+        l10n.checkerPairTitle('ASPIRIN', 'TRANEXAMIC ACID'),
+        l10n.checkerPairTitle('IBUPROFEN', 'TRANEXAMIC ACID'),
+      ];
+      final titles = <String?>[
+        for (final text in tester.widgetList<Text>(find.byType(Text)))
+          if (expected.contains(text.data)) text.data,
+      ];
+      expect(titles, expected);
+      expect(find.text(l10n.checkerNothingFoundPair), findsNWidgets(2));
+      expect(find.text(l10n.conditionsConflictLookUp), findsNWidgets(3));
+      expect(find.text(l10n.conditionsConflictLabels), findsOneWidget);
+    });
+
+    testWidgets('that the labels do not connect can be looked up online', (
+      tester,
+    ) async {
+      await record(const <String>[
+        'aspirin.oral.otc',
+        'tranexamic-acid.oral.rx',
+      ]);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      await reveal(tester, find.text(l10n.conditionsConflictLookUp));
+      await tester.tap(find.text(l10n.conditionsConflictLookUp));
+      await tester.pumpAndSettle();
       expect(
-        find.text(l10n.checkerPairTitle('ASPIRIN', 'IBUPROFEN')),
+        find.text(
+          l10n.lookupLeavingWithTermBody(
+            'aspirin and tranexamic acid interaction',
+          ),
+        ),
         findsOneWidget,
       );
-      expect(find.text(l10n.conditionsConflictsOthers(2)), findsOneWidget);
+      await tester.tap(find.text(l10n.commonNotNow));
+      await tester.pumpAndSettle();
     });
 
     testWidgets('is not shown for one medicine alone', (tester) async {
