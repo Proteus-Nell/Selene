@@ -202,7 +202,7 @@ jobs:
           dist/*.apk dist/SHA256SUMS.txt
           --draft
           --verify-tag
-          --title "Selene ${NAME}"
+          --title "Selene V${NAME}"
           --notes-file notes.md
           --generate-notes
 

@@ -148,9 +148,15 @@ void main() {
             .listSync(recursive: true)
             .whereType<File>()
             .where((f) => f.path.endsWith('.dart'))) {
-      if (file.path.endsWith('common/snack.dart')) continue;
+      // Separators normalised before the comparison. Directory.listSync
+      // reports the platform's own, so on Windows the helper's own path is
+      // `lib\features\common\snack.dart`, the exemption below never matches,
+      // and the helper reports itself as the offender: this guard failed on
+      // every Windows run while passing in CI.
+      final path = file.path.replaceAll(r'\', '/');
+      if (path.endsWith('common/snack.dart')) continue;
       final source = file.readAsStringSync();
-      if (source.contains('showSnackBar(')) offenders.add(file.path);
+      if (source.contains('showSnackBar(')) offenders.add(path);
     }
     expect(
       offenders,

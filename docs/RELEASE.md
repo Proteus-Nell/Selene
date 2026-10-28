@@ -418,7 +418,7 @@ the key is: run `tools/scripts/release.sh`, copy each APK to
 and draft the release by hand:
 
 ```bash
-gh release create v1.1.0 --draft --title "Selene 1.1.0" --generate-notes \
+gh release create v1.1.0 --draft --title "Selene V1.1.0" --generate-notes \
   selene-1.1.0-*.apk SHA256SUMS.txt
 ```
 

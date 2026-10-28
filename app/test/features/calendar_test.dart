@@ -288,18 +288,18 @@ void main() {
     testWidgets('light', (tester) async {
       await seedHistory(db, const <int>[28, 28], endingDaysAgo: 2);
       await pumpCalendar(tester);
-      await expectLater(
+      await expectGolden(
         find.byType(CalendarScreen),
-        matchesGoldenFile('goldens/calendar_light.png'),
+        'goldens/calendar_light.png',
       );
     });
 
     testWidgets('dark', (tester) async {
       await seedHistory(db, const <int>[28, 28], endingDaysAgo: 2);
       await pumpCalendar(tester, brightness: Brightness.dark);
-      await expectLater(
+      await expectGolden(
         find.byType(CalendarScreen),
-        matchesGoldenFile('goldens/calendar_dark.png'),
+        'goldens/calendar_dark.png',
       );
     });
 
@@ -311,9 +311,9 @@ void main() {
       // layer, so the ancestor's filter never reaches the image: the first
       // version of this test produced a file byte-identical to the light
       // golden and would have "passed" forever.
-      await expectLater(
+      await expectGolden(
         find.byType(ColorFiltered),
-        matchesGoldenFile('goldens/calendar_greyscale.png'),
+        'goldens/calendar_greyscale.png',
       );
     });
   });
