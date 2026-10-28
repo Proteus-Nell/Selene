@@ -69,12 +69,32 @@ void main() {
   /// What the plugin sent Android, in order.
   late List<MethodCall> sent;
 
+  /// What Android answers when asked whether it allows exact alarms.
+  late bool exactAllowed;
+
+  /// Whether a schedule it allowed is then refused anyway, as Android does
+  /// when the permission is taken away between the two (ADR-0026).
+  late bool refuseExact;
+
   setUp(() {
     sent = <MethodCall>[];
+    exactAllowed = false;
+    refuseExact = false;
     FlutterLocalNotificationsPlatform.instance =
         AndroidFlutterLocalNotificationsPlugin();
     messenger.setMockMethodCallHandler(_plugin, (call) async {
       sent.add(call);
+      if (call.method == 'canScheduleExactNotifications') return exactAllowed;
+      if (refuseExact && call.method == 'zonedSchedule') {
+        final arguments = call.arguments as Map<Object?, Object?>;
+        final android =
+            arguments['platformSpecifics']! as Map<Object?, Object?>;
+        if (android['scheduleMode'] ==
+            AndroidScheduleMode.exactAllowWhileIdle.name) {
+          // The code the plugin's Android side throws with.
+          throw PlatformException(code: 'exact_alarms_not_permitted');
+        }
+      }
       return call.method == 'initialize' ? true : null;
     });
   });
@@ -120,9 +140,57 @@ void main() {
       expect(android['channelId'], NotificationChannelId.medicines.id);
       expect(android['channelName'], 'Medicine reminders');
       expect(android['category'], AndroidNotificationCategory.reminder.name);
-      // Inexact, as every notification here is: no exact-alarm permission.
+      // Roughly, because this phone does not allow exact alarms: the reminder
+      // still arrives, a little after its time (ADR-0026).
       expect(
         android['scheduleMode'],
+        AndroidScheduleMode.inexactAllowWhileIdle.name,
+      );
+    });
+
+    test('is scheduled for its minute once exact alarms are allowed', () async {
+      exactAllowed = true;
+      await gateway().scheduleDaily(_pill, copy: _copy, detailed: false);
+      expect(
+        specifics(only('zonedSchedule'))['scheduleMode'],
+        AndroidScheduleMode.exactAllowWhileIdle.name,
+      );
+    });
+
+    test('falls back to roughly when the permission goes away between the '
+        'question and the answer', () async {
+      // Android revokes SCHEDULE_EXACT_ALARM without telling the app, so the
+      // schedule can be refused after canScheduleExactNotifications said yes.
+      // Letting that throw would abandon every reminder after this one, which
+      // is worse than a late one.
+      exactAllowed = true;
+      refuseExact = true;
+      await gateway().scheduleDaily(_pill, copy: _copy, detailed: false);
+      final modes = <Object?>[
+        for (final call in sent.where((c) => c.method == 'zonedSchedule'))
+          ((call.arguments as Map<Object?, Object?>)['platformSpecifics']!
+              as Map<Object?, Object?>)['scheduleMode'],
+      ];
+      expect(modes, <String>[
+        AndroidScheduleMode.exactAllowWhileIdle.name,
+        AndroidScheduleMode.inexactAllowWhileIdle.name,
+      ]);
+    });
+
+    test('says nothing about the cycle exactly, even when it may', () async {
+      // The cycle's notices fire at an hour this app chose, not one the user
+      // named, so they stay inexact whatever the permission says.
+      exactAllowed = true;
+      await gateway().schedule(
+        PlannedNotification(
+          kind: NotificationKind.windowOpening,
+          fireDate: CivilDate(2099, 4, 30),
+        ),
+        copy: _copy,
+        detailed: false,
+      );
+      expect(
+        specifics(only('zonedSchedule'))['scheduleMode'],
         AndroidScheduleMode.inexactAllowWhileIdle.name,
       );
     });

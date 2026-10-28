@@ -18,12 +18,20 @@
          first time the phone restarts, silently. It grants no access to
          anything: it only lets the app be told the device booted.
 
-         Deliberately NOT here: SCHEDULE_EXACT_ALARM and USE_EXACT_ALARM. The
-         reminders are inexact by design (see LocalNotificationGateway), so
-         asking the user to grant an alarm permission in system settings would
-         be spending trust on precision a period reminder does not need. -->
+         SCHEDULE_EXACT_ALARM is what lets a medicine reminder arrive at the
+         minute it was set for, rather than whenever Android next happens to
+         wake the app (ADR-0026). On Android 14 and later it is denied until
+         the user grants it in system settings, so the app asks for it where a
+         reminder is set, and schedules inexactly while it is not held: a
+         refusal costs lateness, never the reminder itself.
+
+         Deliberately NOT here: USE_EXACT_ALARM, which is granted at install
+         and which the user cannot turn off again. It is meant for alarm
+         clocks and calendars, and taking it would hold a permission nobody
+         can revoke for reminders a user may never set. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />

@@ -510,6 +510,14 @@ class _MedicineReminders extends ConsumerWidget {
   /// it is when the permission is asked for too, if it has not been granted.
   /// Kept either way: once notifications are allowed, it arrives.
   ///
+  /// Steps:
+  ///     1. Ask for the time, and keep it.
+  ///     2. Ask for the notification permission, if it has not been asked.
+  ///     3. Ask about exact alarms, if they are not allowed (ADR-0026), which
+  ///        is what decides whether this reminder lands on its minute.
+  ///     4. Say what will actually happen, which is not the same sentence in
+  ///        all three cases.
+  ///
   /// Args:
   ///     context (BuildContext): What to open the picker over.
   ///     ref (WidgetRef): For the medicines and the scheduler.
@@ -540,18 +548,85 @@ class _MedicineReminders extends ConsumerWidget {
       time,
     ]);
     if (!context.mounted) return;
-    final granted = await ref
-        .read(notificationSchedulerProvider)
-        .requestPermissionForReminder();
+    final scheduler = ref.read(notificationSchedulerProvider);
+    final granted = await scheduler.requestPermissionForReminder();
+    if (!context.mounted) return;
+    if (!granted) {
+      // Nothing can arrive at all, so the minute it would have arrived on is
+      // not the thing to talk about.
+      showAppSnackBar(context, l10n.conditionsMedicineReminderBlocked);
+      return;
+    }
+
+    final onTime = await _offerExactReminders(context, ref, scheduler);
     if (!context.mounted) return;
     showAppSnackBar(
       context,
-      granted
+      onTime
           ? l10n.conditionsMedicineReminderSet(
               reminderTimeFormatter(context)(time),
             )
-          : l10n.conditionsMedicineReminderBlocked,
+          : l10n.conditionsMedicineReminderSetLate(
+              reminderTimeFormatter(context)(time),
+            ),
     );
+  }
+
+  /// Ask for the exact-alarm permission, where it is worth asking.
+  ///
+  /// The moment it is in context: a user who has just named a time has said
+  /// the time matters. Asked once (ADR-0026) — the row in Settings is where
+  /// it lives afterwards — and not at all on a phone that already allows it,
+  /// which includes every phone before Android 12.
+  ///
+  /// Granting it reschedules, because the reminder saved a moment ago was
+  /// queued with the platform inexactly and nothing re-queues it by itself.
+  ///
+  /// Args:
+  ///     context (BuildContext): What to open the dialog over.
+  ///     ref (WidgetRef): For the reschedule.
+  ///     scheduler (NotificationScheduler): Asked, and asked with.
+  ///
+  /// Returns:
+  ///     `Future<bool>`: Whether reminders will now arrive on their minute.
+  Future<bool> _offerExactReminders(
+    BuildContext context,
+    WidgetRef ref,
+    NotificationScheduler scheduler,
+  ) async {
+    if (!await scheduler.shouldRequestExactReminders()) {
+      return scheduler.exactRemindersAllowed();
+    }
+    if (!context.mounted) return false;
+
+    final l10n = AppLocalizations.of(context);
+    final wanted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.settingsExactRemindersTitle),
+        content: Text(l10n.settingsExactRemindersBody),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.commonNotNow),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.settingsExactRemindersAllow),
+          ),
+        ],
+      ),
+    );
+    if (!(wanted ?? false)) {
+      // Recorded without asking the platform, so the question does not come
+      // back by itself. Settings still offers it.
+      await scheduler.recordExactRemindersAsked();
+      return false;
+    }
+
+    final allowed = await scheduler.requestExactReminders();
+    if (allowed) ref.read(notificationPreferencesRevisionProvider.notifier).state++;
+    return allowed;
   }
 
   /// Keep [next] as this medicine's times.

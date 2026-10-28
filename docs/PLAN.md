@@ -142,7 +142,8 @@ Android requirements, each a common and costly mistake if skipped:
 - **Separate notification channels per type** (Android 8+). Putting everything on one channel means a user annoyed by the nudge mutes the predictions along with it. Channel granularity is the difference between "I turned off one thing" and "I turned off the app".
 - **Request `POST_NOTIFICATIONS` in context**, after the first cycle is logged and the value is visible, never at first launch. A first-launch prompt gets denied by reflex, and on Android 13+ re-asking after a denial is deliberately hard.
 - **Lock-screen privacy is the default, not an option.** Notifications use `VISIBILITY_SECRET` or generic text ("Period-Tracker") unless the user explicitly opts into detailed content. A banner reading "Your period is expected tomorrow", visible to anyone glancing at the phone, is a real data leak. It is **the one place where this project's otherwise airtight offline privacy story leaks by default**, which is exactly why it is easy to miss: it is a notification-design decision with a privacy consequence.
-- Inexact alarms, a `BOOT_COMPLETED` reschedule, and missed-reminder detection on next open, per risk R12.
+- A `BOOT_COMPLETED` reschedule, and missed-reminder detection on next open, per risk R12.
+- **Inexact alarms for the cycle's notices, exact ones for a medicine reminder** (ADR-0026, superseding ADR-0025 clause 8). The notices fire at an hour the app chose and announce a range, so the minute is meaningless; a dose time is a time the user named. `SCHEDULE_EXACT_ALARM` is asked for where a reminder is set and offered again in Settings, and a refusal makes reminders late rather than absent. `USE_EXACT_ALARM`, which cannot be revoked, is not taken.
 
 The **notification action button is the highest-leverage item in this section**: it collapses the most common logging event to one tap, costs very little to build, and needs no widget infrastructure.
 

@@ -1389,6 +1389,48 @@ abstract class AppLocalizations {
   /// **'Turn on reminders'**
   String get settingsNotificationPermissionAllow;
 
+  /// No description provided for @settingsExactRemindersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let reminders arrive on time?'**
+  String get settingsExactRemindersTitle;
+
+  /// Asked once, where a medicine reminder has just been set (ADR-0026). Says what the permission buys and what it does not touch.
+  ///
+  /// In en, this message translates to:
+  /// **'Android decides when a reminder actually goes off, and unless you allow it, one set for 08:00 can arrive minutes or longer afterwards. Allowing it opens a settings screen of Android\'s own, and nothing else changes: the reminder stays on your phone, as it was.'**
+  String get settingsExactRemindersBody;
+
+  /// No description provided for @settingsExactRemindersAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get settingsExactRemindersAllow;
+
+  /// No description provided for @settingsExactRemindersOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders arrive on time'**
+  String get settingsExactRemindersOn;
+
+  /// No description provided for @settingsExactRemindersOnSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicine reminders are set for the minute you chose.'**
+  String get settingsExactRemindersOnSubtitle;
+
+  /// No description provided for @settingsExactRemindersOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders may arrive late'**
+  String get settingsExactRemindersOff;
+
+  /// The row is tappable only in this state: the permission is granted on Android's own screen, and only Android can take it away again.
+  ///
+  /// In en, this message translates to:
+  /// **'A medicine reminder can arrive minutes or longer after the time you set. Tap to let Android deliver it on time.'**
+  String get settingsExactRemindersOffSubtitle;
+
   /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:
@@ -3328,6 +3370,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A reminder every day at {time}.'**
   String conditionsMedicineReminderSet(String time);
+
+  /// Said in place of conditionsMedicineReminderSet while exact alarms are not allowed (ADR-0026), so the reminder is scheduled roughly.
+  ///
+  /// In en, this message translates to:
+  /// **'A reminder every day at {time}, which may arrive a little after it.'**
+  String conditionsMedicineReminderSetLate(String time);
 
   /// Shown when a reminder is set but the phone does not let the app post notifications. The reminder is kept, and arrives once they are allowed.
   ///

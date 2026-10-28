@@ -33,7 +33,8 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0022](#adr-0022-medication-guides-carry-their-safety-sections-only-and-a-guide-whose-dosing-cannot-be-left-out-is-left-out-whole) | Medication Guides carry their safety sections only, and a guide whose dosing cannot be left out is left out whole | Accepted | 2026-10-28 |
 | [0023](#adr-0023-herbal-supplements-are-nccihs-public-domain-fact-sheets-compared-with-medicines-by-their-safety-section) | Herbal supplements are NCCIH's public-domain fact sheets, compared with medicines by their safety section | Accepted | 2026-10-28 |
 | [0024](#adr-0024-the-summary-for-a-doctor-is-a-pdf-the-app-writes-itself-with-csv-files-of-the-same-data-and-neither-holds-intercourse) | The summary for a doctor is a PDF the app writes itself, with CSV files of the same data, and neither holds intercourse | Accepted | 2026-10-28 |
-| [0025](#adr-0025-the-late-period-check-in-has-a-switch-of-its-own-and-medicine-reminders-repeat-every-day-in-the-phones-own-time-zone) | The late-period check-in has a switch of its own, and medicine reminders repeat every day in the phone's own time zone | Accepted | 2026-10-28 |
+| [0025](#adr-0025-the-late-period-check-in-has-a-switch-of-its-own-and-medicine-reminders-repeat-every-day-in-the-phones-own-time-zone) | The late-period check-in has a switch of its own, and medicine reminders repeat every day in the phone's own time zone | Accepted; clause 8 (inexact alarms) superseded by [0026](#adr-0026-medicine-reminders-are-scheduled-exactly-with-a-permission-asked-for-where-one-is-set) | 2026-10-28 |
+| [0026](#adr-0026-medicine-reminders-are-scheduled-exactly-with-a-permission-asked-for-where-one-is-set) | Medicine reminders are scheduled exactly, with a permission asked for where one is set | Accepted | 2026-10-29 |
 
 ---
 
@@ -1629,6 +1630,114 @@ nothing.
 - The Kotlin half is checked as source by `main_activity_test.dart` and built
   by CI, but run only on a phone: `docs/RELEASE.md` has the check.
 - The time zone database adds about 0.45 MB to each APK.
+
+---
+
+## ADR-0026: Medicine reminders are scheduled exactly, with a permission asked for where one is set
+
+**Status:** Accepted, 2026-10-29. Supersedes clause 8 of [ADR-0025](#adr-0025-the-late-period-check-in-has-a-switch-of-its-own-and-medicine-reminders-repeat-every-day-in-the-phones-own-time-zone), which made every notification inexact. Everything else in ADR-0025 stands.
+**Deciders:** Project owner
+
+### Context
+
+The owner asked to "prompt the users to grant the permission needed for
+getting the reminders exactly on-time".
+
+ADR-0025 clause 8 decided the opposite, and for a reason that held for the
+notifications that existed when it was written: the cycle's notices fire at
+09:00, an hour the *app* chose, where a few minutes either way mean nothing,
+so asking for an alarm permission would have been spending the user's trust on
+precision nobody needed.
+
+Medicine reminders broke that argument in the same ADR that introduced them.
+A dose time is a time the **user** named, and some medicines are timed by the
+hours since the last dose. `setAndAllowWhileIdle` is the inexact API, and
+Android's own documentation puts its alarms within roughly an hour of their
+time; in Doze it is batched with whatever else the system is waiting to do. A
+reminder for 08:00 that arrives at 08:40 is not the reminder that was set, and
+the app cannot tell the user it was late.
+
+The permission to fix it is `SCHEDULE_EXACT_ALARM`. On Android 12 and 13 it is
+granted at install and revocable; from Android 14 it is **denied** until the
+user grants it on a system settings screen, which only the user can reach.
+There is also `USE_EXACT_ALARM`, granted at install and not revocable at all.
+
+### Decision
+
+1. **Medicine reminders are scheduled exactly where the platform allows it**,
+   with `exactAllowWhileIdle`, and inexactly where it does not. A refusal
+   costs lateness, never the reminder: nothing is dropped, nothing is refused
+   to be saved, and the app does not withhold a feature to bargain for a
+   permission.
+2. **The cycle's notices stay inexact**, whatever the permission says. They
+   fire at an hour this app chose and announce a *range*; ADR-0025's reasoning
+   is still right about them. Exact alarms are a limited, battery-relevant
+   resource, and this app asks for them only where the minute is the point.
+3. **`SCHEDULE_EXACT_ALARM` is declared; `USE_EXACT_ALARM` is not.** Holding a
+   permission the user cannot revoke, for reminders they may never set, is the
+   trade this app does not make. The manifest test pins both halves.
+4. **The question is put where a reminder is set**, once, right after the
+   notification permission: a user who has just named a time has said the time
+   matters. It is not put at all on a phone that already allows exact alarms,
+   which includes every phone before Android 12.
+5. **A "not now" is recoverable.** Unlike `POST_NOTIFICATIONS`, this one is
+   granted on a settings screen rather than in a one-shot dialog, so a refusal
+   is not final and nothing stops it being offered again. Settings keeps a row
+   beside the medicine reminders that says which of the two is true now and
+   opens Android's screen when the answer is no. What the stored flag stops is
+   only the *unprompted* asking happening again.
+6. **Granting it reschedules.** Everything already queued with the platform
+   was queued inexactly, and Android re-queues nothing by itself.
+7. **The app says which it got.** Setting a reminder while exact alarms are
+   refused says the reminder "may arrive a little after" its time, rather than
+   claiming a precision it will not deliver.
+8. **A refused exact schedule falls back rather than throwing.** Android
+   revokes the permission without telling the app, so a schedule can be
+   refused after it has just been allowed. The gateway catches
+   `exact_alarms_not_permitted` and re-queues that reminder inexactly: letting
+   it throw would abandon every reminder after it in the same rebuild.
+
+### Runner-up and why rejected
+
+**`USE_EXACT_ALARM`.** No prompt, no settings screen, works on Android 14 out
+of the box. Rejected: it is granted at install and the user cannot turn it
+off, Google reserves it for alarm clocks and calendars, and it would hold a
+permanent alarm permission on the phone of someone who only ever logs days.
+
+**Asking at launch, or on the Settings screen alone.** A permission asked for
+out of context is the one that gets refused, and a row nobody scrolls to is a
+feature nobody finds. Asking where the time was just chosen is the only moment
+the reason is self-evident; the row exists for afterwards.
+
+**Asking every time a reminder is set, until granted.** It would eventually be
+granted by attrition. That is the pattern that teaches people to refuse by
+reflex, and the row makes it unnecessary.
+
+**Leaving it inexact and saying so.** Honest, cheap, and what ADR-0025 chose.
+Rejected now because the owner asked for the reminders to be on time, and
+because an inexact dose reminder is wrong in a way the user cannot see: it
+arrives, looking exactly like a reminder that arrived on time.
+
+**`alarmClock` mode** instead of `exactAllowWhileIdle`. It is the most
+privileged scheduling Android has, shows the next alarm in the status bar, and
+needs the same permission. A medicine reminder on the status bar alongside the
+morning alarm would announce itself to anyone who looks at the phone, which is
+the leak risk R16 exists for.
+
+### Consequences
+
+- An Android 14 user who grants nothing is exactly where ADR-0025 left them,
+  and is told so when they set a reminder.
+- The permission is visible in the APK's manifest, so it is named in
+  `docs/PRIVACY.md` and `PRIVACY_POLICY.md`; `privacy_text_test.dart` fails
+  until it is.
+- Whether a reminder arrives on its minute cannot be tested off a device.
+  `daily_reminder_test.dart` pins which mode crosses the method channel, and
+  the revocation fallback with it; `docs/RELEASE.md` has the check that a
+  reminder set a few minutes ahead actually arrives.
+- Android may still delay an exact alarm on a phone whose manufacturer kills
+  background work (risk R12). The battery note in Settings and the
+  missed-reminder banner both stay.
 
 ---
 

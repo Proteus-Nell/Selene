@@ -141,7 +141,7 @@ void main() {
   });
 
   group('permissions', () {
-    test('are only the two the app actually needs', () {
+    test('are only the three the app actually needs', () {
       final requested = permissions()
           .where((p) => nodeOf(p) != 'remove')
           .map(nameOf)
@@ -150,6 +150,7 @@ void main() {
       expect(requested, <String>{
         'android.permission.POST_NOTIFICATIONS',
         'android.permission.RECEIVE_BOOT_COMPLETED',
+        'android.permission.SCHEDULE_EXACT_ALARM',
       });
     });
 
@@ -167,12 +168,19 @@ void main() {
       expect(removed, contains('android.permission.ACCESS_WIFI_STATE'));
     });
 
-    test('do not ask for an exact alarm', () {
-      // The reminders are inexact by design. Asking the user to grant an alarm
-      // permission in system settings would be spending trust on precision a
-      // period reminder does not need.
+    test('ask for the exact alarm the user can take back, and not the other '
+        'one', () {
+      // A medicine reminder is set for a time the user chose, so it is
+      // scheduled for that minute where they have allowed it (ADR-0026).
+      // SCHEDULE_EXACT_ALARM is the one they grant, and can revoke, on
+      // Android's own screen.
+      //
+      // USE_EXACT_ALARM is granted at install and cannot be turned off again.
+      // It is meant for alarm clocks and calendars, and holding a permission
+      // nobody can revoke, for reminders a user may never set, is exactly the
+      // trade this app does not make.
       final all = permissions().map(nameOf).whereType<String>().toSet();
-      expect(all, isNot(contains('android.permission.SCHEDULE_EXACT_ALARM')));
+      expect(all, contains('android.permission.SCHEDULE_EXACT_ALARM'));
       expect(all, isNot(contains('android.permission.USE_EXACT_ALARM')));
     });
   });

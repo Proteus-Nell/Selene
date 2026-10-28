@@ -146,7 +146,7 @@ The fix is in your device's own settings.
 
 ## Permissions this app asks for
 
-Three, and nothing else:
+Four, and nothing else:
 
 - **`POST_NOTIFICATIONS`** — the runtime prompt, asked for after you have
   logged a cycle, or when you set a medicine reminder, whichever comes first.
@@ -159,6 +159,17 @@ Three, and nothing else:
   would silently stop after a reboot. It lets the app re-register those
   reminders. It does not let the app start itself for any other purpose, and it
   carries no access to your data.
+- **`SCHEDULE_EXACT_ALARM`** — what lets a medicine reminder go off at the
+  minute you set it for. Without it Android delivers reminders when it next
+  gets round to it, which can be an hour late, and a dose reminder that is an
+  hour late is the wrong reminder. On Android 14 and later you grant it
+  yourself, on Android's own "Alarms and reminders" screen; the app asks when
+  you set a reminder, and Settings offers it afterwards. Refuse it and
+  everything still works, with reminders arriving roughly rather than exactly,
+  and the app says so when you set one. You can take it back at any time in
+  your phone's settings, and the app will notice. It carries no access to your
+  data, and the app does not take `USE_EXACT_ALARM`, the version of this
+  permission that is granted at install and cannot be turned off again.
 - **`USE_BIOMETRIC`** — granted at install with no prompt. It lets the app show
   the system's own unlock prompt for the app lock described above. It gives the
   app no access to your fingerprint or face data: Android does the matching and
