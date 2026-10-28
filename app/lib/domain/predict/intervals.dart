@@ -25,6 +25,7 @@ import 'package:period_tracker/domain/models/prediction.dart';
 import 'package:period_tracker/domain/predict/bayes_filter.dart';
 import 'package:period_tracker/domain/predict/personalize.dart';
 import 'package:period_tracker/domain/predict/priors.dart';
+import 'package:period_tracker/domain/predict/student_t.dart';
 
 /// Confidence class: how tightly the model can pin the next cycle length.
 ///
@@ -227,7 +228,8 @@ final class HistoryPrediction {
 /// The half that is not ported is `student_t_quantiles`, which needs SciPy and
 /// runs offline; its output ships in `priors_v1.json` as
 /// [ModelPriors.quantiles]. That split is the entire reason this file is pure
-/// arithmetic.
+/// arithmetic. [conditionedWindows] is the one exception, and reads its
+/// quantiles from [StudentT] instead, because they depend on the day.
 abstract final class Intervals {
   /// Convert a posterior into day windows.
   ///
@@ -280,6 +282,71 @@ abstract final class Intervals {
       BayesFilter.predictiveQuantile(fc, quantiles[QuantileLevel.p90]),
     ),
   );
+
+  /// Windows for a cycle known to be at least [elapsedDays] long.
+  ///
+  /// Once a period is due and has not come, the days already passed are
+  /// evidence: the next cycle is at least that long. Conditioning the forecast
+  /// on it moves the windows forward rather than leaving them in the past. In
+  /// whole days, a length of at least [elapsedDays] is a log length of at
+  /// least `log(elapsedDays - 0.5)`, because [BayesFilter.daysFromLog] rounds
+  /// to the nearest day.
+  ///
+  /// Port of `conditioned_windows`, pinned to it by
+  /// `artifacts/golden/conditioned_cases_v1.json`.
+  ///
+  /// Args:
+  ///     fc (Forecast): The unconditioned predictive distribution.
+  ///     elapsedDays (int): Days since the cycle in progress started. At
+  ///         least 1.
+  ///     studentTDf (double): The model's degrees of freedom.
+  ///
+  /// Returns:
+  ///     PredictionWindows?: The windows, each drawn from the forecast cut off
+  ///     below at [elapsedDays], so that every bound is at least
+  ///     [elapsedDays]. Null when [elapsedDays] is so far beyond the forecast
+  ///     that no probability is left to move into, where the reference
+  ///     raises.
+  ///
+  /// Throws:
+  ///     ArgumentError: When [elapsedDays] is below 1.
+  static PredictionWindows? conditionedWindows(
+    Forecast fc,
+    int elapsedDays,
+    double studentTDf,
+  ) {
+    if (elapsedDays < 1) {
+      throw ArgumentError.value(
+        elapsedDays,
+        'elapsedDays',
+        'must be at least 1',
+      );
+    }
+    final below = StudentT.cdf(
+      (math.log(elapsedDays - 0.5) - fc.mean) / fc.scale,
+      studentTDf,
+    );
+    if (below >= 1.0) return null;
+    final levels = <double>[
+      for (final level in const <double>[0.50, 0.25, 0.75, 0.10, 0.90])
+        below + level * (1.0 - below),
+    ];
+    // A level within an ulp of the top rounds to 1, which has no quantile.
+    if (levels.any((level) => level >= 1.0)) return null;
+    final days = <int>[
+      for (final level in levels)
+        BayesFilter.daysFromLog(
+          BayesFilter.predictiveQuantile(fc, StudentT.ppf(level, studentTDf)),
+        ),
+    ];
+    return PredictionWindows(
+      medianDays: days[0],
+      lo50: days[1],
+      hi50: days[2],
+      lo80: days[3],
+      hi80: days[4],
+    );
+  }
 
   /// Run the full pipeline over a history, exactly as the app does.
   ///

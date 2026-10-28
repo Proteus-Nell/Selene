@@ -5,31 +5,37 @@
 /// without a platform.
 ///
 /// Includes:
-///     - NotificationChannelId: The two delivery channels.
+///     - NotificationChannelId: The three delivery channels.
 ///     - NotificationKind: What each notification is about.
 ///     - NotificationPreferences: What the user has turned on.
 ///     - PlannedNotification: One scheduled item.
+///     - DailyReminder: One medicine reminder, every day at its time.
 ///     - NotificationPlanner: The rules themselves.
 library;
 
 import 'package:meta/meta.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 import 'package:period_tracker/domain/cycles/cycle_rules.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 
-/// Notification channel: the two channels notifications go out on.
+/// Notification channel: the channels notifications go out on.
 ///
-/// Two, not one, and this is the whole reason the enum exists. Android lets a
-/// user mute a channel; if predictions and the logging nudge shared one, a
-/// user annoyed by the nudge would mute the predictions along with it. Channel
-/// granularity is the difference between "I turned off one thing" and "I
-/// turned off the app" (`docs/PLAN.md` 2.4.3, risk R15).
+/// Several, not one, and this is the whole reason the enum exists. Android
+/// lets a user mute a channel; if predictions and the logging nudge shared
+/// one, a user annoyed by the nudge would mute the predictions along with it.
+/// Channel granularity is the difference between "I turned off one thing" and
+/// "I turned off the app" (`docs/PLAN.md` 2.4.3, risk R15).
 enum NotificationChannelId {
   /// Everything about a predicted window. On by default.
   predictions('predictions'),
 
   /// The optional logging nudge. Off by default.
-  reminders('reminders');
+  reminders('reminders'),
+
+  /// Medicine reminders, at the times the user set. None until one is set
+  /// (ADR-0025).
+  medicines('medicines');
 
   const NotificationChannelId(this.id);
 
@@ -49,7 +55,8 @@ enum NotificationKind {
   /// Nothing has been logged for a while and a cycle is in progress.
   loggingNudge(NotificationChannelId.reminders, 1003),
 
-  /// The window closed a while ago with nothing logged.
+  /// The window closed a while ago with nothing logged: the late-period
+  /// check-in, which has a switch of its own (ADR-0025).
   lateNotice(NotificationChannelId.predictions, 1004);
 
   const NotificationKind(this.channel, this.id);
@@ -89,19 +96,63 @@ final class PlannedNotification {
   String toString() => '${kind.name} on ${fireDate.toIso8601()}';
 }
 
+/// One medicine reminder, every day at its time.
+///
+/// Attributes:
+///     id (int): The notification's id, unique among reminders and never one
+///         of [NotificationKind]'s.
+///     medicine (String): The medicine's name, as it was recorded.
+///     time (ReminderTime): When it goes off, in the phone's time zone.
+@immutable
+final class DailyReminder {
+  /// Creates a reminder.
+  const DailyReminder({
+    required this.id,
+    required this.medicine,
+    required this.time,
+  });
+
+  /// The notification's id.
+  final int id;
+
+  /// The medicine's name, as it was recorded.
+  final String medicine;
+
+  /// When it goes off, in the phone's time zone.
+  final ReminderTime time;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DailyReminder &&
+      other.id == id &&
+      other.medicine == medicine &&
+      other.time == time;
+
+  @override
+  int get hashCode => Object.hash(id, medicine, time);
+
+  @override
+  String toString() => '$medicine daily at ${time.wire} (#$id)';
+}
+
 /// The user's notification preferences, as the planner needs them.
 @immutable
 final class NotificationPreferences {
   /// Creates a preference set.
   const NotificationPreferences({
     this.predictionsEnabled = true,
+    this.lateCheckInEnabled = true,
     this.nudgeEnabled = false,
     this.leadDays = 2,
     this.lastNudge,
   });
 
-  /// Whether window, started and late notices are wanted. On by default.
+  /// Whether the window and started notices are wanted. On by default.
   final bool predictionsEnabled;
+
+  /// Whether the late-period check-in is wanted. On by default, as it was
+  /// when it came with [predictionsEnabled].
+  final bool lateCheckInEnabled;
 
   /// Whether the logging nudge is wanted. **Off** by default.
   final bool nudgeEnabled;
@@ -132,6 +183,40 @@ abstract final class NotificationPlanner {
   /// Days after the window opens before "likely started" fires.
   static const int likelyStartedAfterDays = 1;
 
+  /// The first medicine reminder's id. Well clear of [NotificationKind]'s.
+  static const int firstMedicineReminderId = 2000;
+
+  /// Plan a reminder for every time set on a recorded medicine.
+  ///
+  /// Args:
+  ///     medicines (`List<RecordedMedicine>`): The medicines recorded, in the
+  ///         order added.
+  ///     reminders (`Map<String, List<ReminderTime>>`): Each one's times, by
+  ///         its key.
+  ///
+  /// Returns:
+  ///     `List<DailyReminder>`: One per time, medicine by medicine and
+  ///     earliest first, numbered from [firstMedicineReminderId]. A time set
+  ///     on a medicine no longer recorded is not planned.
+  static List<DailyReminder> planMedicines(
+    List<RecordedMedicine> medicines,
+    Map<String, List<ReminderTime>> reminders,
+  ) {
+    final planned = <DailyReminder>[];
+    for (final medicine in medicines) {
+      for (final time in reminders[medicine.key] ?? const <ReminderTime>[]) {
+        planned.add(
+          DailyReminder(
+            id: firstMedicineReminderId + planned.length,
+            medicine: medicine.name,
+            time: time,
+          ),
+        );
+      }
+    }
+    return planned;
+  }
+
   /// Build the schedule a prediction earns.
   ///
   /// Args:
@@ -147,7 +232,8 @@ abstract final class NotificationPlanner {
   ///     which covers [NoData], [TooIrregular], [LostTrack] and
   ///     [DataInconsistent]: each is a state where the app has just said it
   ///     cannot support a window, and a notification about one would
-  ///     contradict that.
+  ///     contradict that. [LaterThanExpected] keeps only its late notice,
+  ///     whose date comes from the window first predicted.
   static List<PlannedNotification> plan({
     required PredictionResult result,
     required CivilDate today,
@@ -156,9 +242,16 @@ abstract final class NotificationPlanner {
   }) {
     final planned = <PlannedNotification>[];
 
+    // The window as first predicted, never one moved forward. A late period
+    // moves the window a day at a time, and scheduling from it would move the
+    // "likely started" reminder to tomorrow every day and the late notice out
+    // of reach for good (ADR-0016). A period so late that no range is shown
+    // still has its late notice due from the window it was expected in.
     final window = switch (result) {
-      Predicted(:final prediction) => prediction.window80,
-      InsufficientData(:final populationPrior) => populationPrior.window80,
+      Predicted(:final prediction) => prediction.expectedWindow80,
+      InsufficientData(:final populationPrior) =>
+        populationPrior.expectedWindow80,
+      LaterThanExpected(:final expectedWindow80) => expectedWindow80,
       // SuppressedByCondition included deliberately: a notification is the
       // most intrusive surface in the app, and a lock-screen banner predicting
       // a period for someone who has recorded a pregnancy would be the worst
@@ -189,6 +282,10 @@ abstract final class NotificationPlanner {
           ),
         );
       }
+    }
+    // The late-period check-in has a switch of its own, so someone can have it
+    // without the notices before the window, or those without it (ADR-0025).
+    if (preferences.lateCheckInEnabled && window != null) {
       final late = window.end.addDays(lateNoticeAfterDays);
       if (late > today) {
         planned.add(

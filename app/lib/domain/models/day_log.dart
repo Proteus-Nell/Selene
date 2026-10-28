@@ -15,6 +15,9 @@
 ///     - Symptom: The fixed symptom set.
 ///     - SymptomSeverity: How strongly one was felt.
 ///     - Intercourse: Whether intercourse was recorded, and if protected.
+///     - CervicalMucus: What cervical mucus was observed.
+///     - PdgStripResult: A home progesterone (PdG) test strip's result.
+///     - ProgesteroneUnit: The unit a blood test reported progesterone in.
 ///     - DayLog: The day itself.
 library;
 
@@ -210,6 +213,56 @@ enum Intercourse {
   unprotected,
 }
 
+/// Cervical mucus: what was observed, in the categories fertility-awareness
+/// charts use.
+///
+/// **Recorded only** (ADR-0020), with the same guarantee as [Intercourse]:
+/// nothing in `lib/domain/predict/` or `lib/domain/cycles/` may name it, and
+/// `record_only_isolation_test.dart` fails the build if anything does. These
+/// are fertility signs. A model reading them would be one step from a fertile
+/// window, which assumption A5 forbids this app from presenting.
+enum CervicalMucus {
+  /// None noticed; the vulva feels dry.
+  dry,
+
+  /// Thick and tacky, breaking rather than stretching.
+  sticky,
+
+  /// Smooth and white, like lotion.
+  creamy,
+
+  /// Thin, clear and wet.
+  watery,
+
+  /// Clear and slippery, stretching between the fingers like raw egg white.
+  eggWhite,
+}
+
+/// PdG strip result: what a home urine test for a progesterone metabolite
+/// showed.
+///
+/// Recorded only (ADR-0020). What a positive strip means depends on the brand
+/// and on when in the cycle it was taken, which the app does not try to judge.
+enum PdgStripResult {
+  /// The strip read negative.
+  negative,
+
+  /// The strip read positive.
+  positive,
+}
+
+/// Progesterone unit: the unit a blood test reported serum progesterone in.
+///
+/// Kept with the value rather than converted, because the value is the
+/// laboratory's and the app has no business restating it in other units.
+enum ProgesteroneUnit {
+  /// Nanograms per millilitre, common in the United States.
+  ngPerMl,
+
+  /// Nanomoles per litre, common elsewhere.
+  nmolPerL,
+}
+
 /// Day log: everything recorded for a single calendar day.
 ///
 /// This is the only user-entered data in the app. Cycles, statistics and
@@ -223,6 +276,16 @@ enum Intercourse {
 ///     symptoms (`Map<Symptom, SymptomSeverity>`): What was felt, and how
 ///         strongly. Defaults to empty.
 ///     intercourse (Intercourse?): What was recorded, or null for nothing.
+///     basalTemperatureCelsius (double?): Waking temperature, in degrees
+///         Celsius whatever unit it was entered in, or null.
+///     cervicalMucus (CervicalMucus?): What was observed, or null.
+///     pdgStrip (PdgStripResult?): A PdG strip's result, or null.
+///     progesteroneValue (double?): A blood test's progesterone, in
+///         [progesteroneUnit], or null. Set exactly when the unit is.
+///     progesteroneUnit (ProgesteroneUnit?): The unit it was reported in.
+///
+/// The last five are recorded only (ADR-0020): nothing predicts from them, and
+/// the prediction and cycle layers cannot name them.
 @freezed
 abstract class DayLog with _$DayLog {
   /// Creates a log entry for [date].
@@ -234,6 +297,16 @@ abstract class DayLog with _$DayLog {
   ///         empty.
   ///     intercourse (Intercourse?, optional): Defaults to null, meaning not
   ///         recorded.
+  ///     basalTemperatureCelsius (double?, optional): Defaults to null.
+  ///     cervicalMucus (CervicalMucus?, optional): Defaults to null.
+  ///     pdgStrip (PdgStripResult?, optional): Defaults to null.
+  ///     progesteroneValue (double?, optional): Defaults to null. Given
+  ///         exactly when [progesteroneUnit] is.
+  ///     progesteroneUnit (ProgesteroneUnit?, optional): Defaults to null.
+  @Assert(
+    '(progesteroneValue == null) == (progesteroneUnit == null)',
+    'a blood test value is meaningless without its unit',
+  )
   const factory DayLog({
     @CivilDateConverter() required CivilDate date,
     @Default(FlowIntensity.none) FlowIntensity flow,
@@ -244,6 +317,13 @@ abstract class DayLog with _$DayLog {
     // defaulting it would have the app assert something about the user's
     // private life that they never said.
     Intercourse? intercourse,
+    // The same rule for everything below: null is not recorded. Each is its
+    // own key in an export, in snake case like the envelope's own keys.
+    @JsonKey(name: 'basal_temperature_celsius') double? basalTemperatureCelsius,
+    @JsonKey(name: 'cervical_mucus') CervicalMucus? cervicalMucus,
+    @JsonKey(name: 'pdg_strip') PdgStripResult? pdgStrip,
+    @JsonKey(name: 'progesterone_value') double? progesteroneValue,
+    @JsonKey(name: 'progesterone_unit') ProgesteroneUnit? progesteroneUnit,
   }) = _DayLog;
 
   const DayLog._();
@@ -270,8 +350,17 @@ abstract class DayLog with _$DayLog {
       symptoms.values.every((s) => s == SymptomSeverity.none) &&
       // Counted, so that a day whose only content is an intercourse entry is
       // stored rather than deleted as empty. Without this the editor would
-      // accept the tap and then silently discard it on write.
-      intercourse == null;
+      // accept the tap and then silently discard it on write. The same holds
+      // for each of the measurements.
+      intercourse == null &&
+      !hasMeasurements;
+
+  /// Whether a temperature, mucus or progesterone result is recorded.
+  bool get hasMeasurements =>
+      basalTemperatureCelsius != null ||
+      cervicalMucus != null ||
+      pdgStrip != null ||
+      progesteroneValue != null;
 
   /// Return the severity recorded for one symptom.
   ///

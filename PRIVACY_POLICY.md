@@ -1,7 +1,7 @@
 # Privacy Policy
 
-**Last updated:** 26 October 2026\
-**Effective as of:** 26 October 2026
+**Last updated:** 28 October 2026\
+**Effective as of:** 27 October 2026
 
 Selene ("**Selene**", "**we**", "**us**" or "**our**") is a menstrual cycle tracker for Android, developed as an open-source project by [Proteus-Nell](https://github.com/Proteus-Nell). This Privacy Policy describes how Selene handles personal information when you use the Selene app or visit [this repository](https://github.com/Proteus-Nell/Selene) (together, the "**Service**").
 
@@ -40,6 +40,7 @@ We do not collect the information you record in the app. It is stored in a datab
 - **Intimate activity data**, only if you choose to record it: whether you had sex on a given day, and whether it was protected.
 - **Health condition data**, such as PMOS (formerly PCOS), endometriosis, pregnancy or hormonal contraception, with the dates each one applied.
 - **Medication data**, such as the medicines you record under Conditions and medication.
+- **Fertility signs**, only if you choose to record them: your basal body temperature, cervical mucus, and progesterone test results. They are kept as a record and never used to predict anything.
 - **Preferences**, such as your reminder, appearance and app lock settings.
 
 ### Third-party sources
@@ -52,7 +53,7 @@ The app does not collect anything about you, your phone or how you use it: no de
 
 The app keeps a short log of what it did, such as "a prediction was computed" with a count of cycles. The log holds nothing you recorded and stays on the phone. It is kept only in memory, so it is cleared when the app stops. You can read it and clear it in Settings.
 
-The app also includes US drug labelling from openFDA, which is copied into the app when it is built. Looking up a medicine reads that copy and sends nothing anywhere.
+The app also includes US drug labelling from openFDA, and the US National Center for Complementary and Integrative Health's fact sheets on herbs, which are copied into the app when it is built. Looking up a medicine or a herb reads that copy and sends nothing anywhere.
 
 ## Tracking and other technologies
 
@@ -81,13 +82,14 @@ On your phone, what you record stays until you delete it:
 - **Delete everything**, in Settings, removes every record and reclaims the space, so the deleted entries are not left readable in the file.
 - Uninstalling the app deletes everything it stored on the phone.
 
-A backup file you export stays wherever you saved it until you delete it.
+A file you export, a backup or a summary, stays wherever you saved it until you delete it.
 
 ## How we share your personal information
 
 We do not sell, share or disclose your personal information, because we never have it. Information leaves your phone only when you choose to send it:
 
-- **Exports.** You can export a backup file. It is a plain, readable file saved wherever you choose, with no protection of its own. Once it is saved, it is under your control and the control of wherever you keep or send it.
+- **Exports.** You can export a backup file, saved wherever you choose. It is a readable file unless you protect it with a passphrase when you export it, and then it opens only with that passphrase. Once it is saved, it is under your control and the control of wherever you keep or send it.
+- **A summary for a doctor.** You can save a summary of a span you choose, as a PDF or as spreadsheet files, wherever you choose. It holds your period dates, cycle lengths, symptoms, measurements, conditions and medicines, and never intercourse. It is a readable file, and once it is saved it is under your control, as an export is.
 - **Searching online.** Some screens offer to search the web for you: "Look it up online" for two medicines, for example. Before anything happens, the app tells you exactly which words will be searched. If you confirm, it opens your web browser at a [DuckDuckGo](https://duckduckgo.com/privacy) search. That request is made by your browser, not by the app, and is covered by the privacy policies of your browser and of DuckDuckGo. Your browser may keep the search in its history.
 
 ## Your choices
@@ -95,11 +97,11 @@ We do not sell, share or disclose your personal information, because we never ha
 All of these are available in the app itself, because your information is there and nowhere else.
 
 - **Access or update your information.** Everything you record can be seen and changed in the app.
-- **Export your information.** You can export everything you recorded as a readable file, from Settings.
+- **Export your information.** You can export everything you recorded as a readable file, from Settings, and protect it with a passphrase if you choose.
 - **Delete your information.** You can delete single entries, delete everything from Settings, or uninstall the app.
-- **Notifications.** Reminders are optional. The app asks for permission to send notifications once, and only after you have logged a cycle. Detail on the lock screen is off by default.
-- **App lock.** You can make the app ask for your fingerprint, face, PIN or pattern before showing anything. The lock hides the screen. It does not encrypt your data.
-- **Optional information.** You decide what to record. Intimate activity, conditions and medicines can all be left out entirely.
+- **Notifications.** Reminders are optional: before a period is due, if one is late, and for the medicines you set times on. The app asks for permission to send notifications after you have logged a cycle, or when you set a medicine reminder. Detail on the lock screen is off by default, and without it a medicine reminder does not name the medicine.
+- **App lock.** You can make the app ask for your fingerprint, face, PIN or pattern before showing anything. The lock hides the screen. The encryption described under Security is separate, and is on whether the lock is on or off.
+- **Optional information.** You decide what to record. Intimate activity, fertility signs, conditions and medicines can all be left out entirely.
 - **Do Not Track and Global Privacy Control.** Selene does not track you, so there is nothing for these signals to switch off.
 
 ## Other sites and services
@@ -109,10 +111,12 @@ The app can open web searches in your browser, as described above, and this repo
 ## Security
 
 - The database is kept in the app's private storage. On a phone that has not been tampered with, other apps cannot read it.
-- Android's device encryption protects it while the phone is switched off.
-- **The database itself is not encrypted.** Anyone who has your unlocked phone, or a forensic copy of it, can read what you recorded. The optional app lock hides the screen. It does not change this.
+- The database is encrypted, with a key held by Android's secure key store. The key never leaves the phone and is not in your exports, so a copy of the file on its own cannot be read.
+- Android's device encryption also protects the phone while it is switched off.
+- **Encryption does not protect an unlocked phone.** Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.
+- Scheduled reminders are kept by Android outside the encrypted file until they are due, and their wording can name the predicted dates.
 - Android's cloud backup and device-to-device transfer are switched off for the app, so your records are never copied to a Google account or to a new phone.
-- An exported backup is a plain, readable file wherever you save it.
+- An exported backup is a readable file wherever you save it, unless you protect it with a passphrase when you export it. A protected backup opens only with that passphrase, and nobody can recover a forgotten one.
 
 [`docs/PRIVACY.md`](docs/PRIVACY.md) describes these protections and their limits in more detail.
 

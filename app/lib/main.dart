@@ -31,8 +31,10 @@ import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/db/connection.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/data/db/database_key.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
+import 'package:period_tracker/data/transfer/protected_backup.dart';
 import 'package:period_tracker/notifications/background_action.dart';
 import 'package:period_tracker/notifications/notification_gateway.dart';
 import 'package:period_tracker/notifications/scheduler.dart';
@@ -64,10 +66,13 @@ Future<void> main() async {
   final outcome = await openAppDatabase(
     directory: await defaultDatabaseDirectory(),
     clock: clock,
+    keyStore: const KeystoreDatabaseKeyStore(),
     logger: logger,
   );
 
   switch (outcome) {
+    case DatabaseKeyUnavailable():
+      runApp(const KeyUnavailableApp());
     case DatabaseRefusedNewerSchema(
       :final storedVersion,
       :final supportedVersion,
@@ -112,6 +117,10 @@ Future<void> main() async {
 ///         plugin-backed gateway. Defaults to null, which builds the real
 ///         one. A test passes the no-op back in, because the plugin has no
 ///         platform behind it off-device.
+///     backupSealer (BackupSealer?, optional): Replaces the sealer for
+///         protected backups. Defaults to null, the real one. A headless
+///         test passes one with a low iteration count that runs on its own
+///         isolate, where it can wait for it.
 ///
 /// Returns:
 ///     `Future<Widget>`: The scope, wrapping [PeriodTrackerApp].
@@ -121,6 +130,7 @@ Future<Widget> buildAppScope({
   required RingLogger logger,
   File? quarantined,
   NotificationGateway? notificationGateway,
+  BackupSealer? backupSealer,
 }) async {
   // Read once here rather than watching: it changes exactly once per install,
   // and the screen that changes it navigates explicitly.
@@ -152,6 +162,8 @@ Future<Widget> buildAppScope({
             notificationGateway ??
             buildNotificationGateway(clock: clock, database: database),
       ),
+      if (backupSealer != null)
+        backupSealerProvider.overrideWithValue(backupSealer),
     ],
     child: const PeriodTrackerApp(),
   );

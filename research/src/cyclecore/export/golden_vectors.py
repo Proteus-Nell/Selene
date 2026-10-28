@@ -1,8 +1,10 @@
 """Export the cross-runtime golden vectors (task PY-A).
 
-This file produces the single artifact that keeps the Python reference and the Dart
-port honest (DECISIONS.md ADR-0002). Both `pytest` and `flutter test` assert
-against it: floats to `FLOAT_TOLERANCE`, day counts exactly.
+This file produces the artifacts that keep the Python reference and the Dart port
+honest (DECISIONS.md ADR-0002): `predictor_cases_v1.json` for the filter and its
+windows, and `conditioned_cases_v1.json` for the windows moved forward once a
+period is late (ADR-0016). Both `pytest` and `flutter test` assert against them:
+floats to `FLOAT_TOLERANCE`, day counts exactly.
 
 Case selection is the whole value here. A golden file covering only the happy path
 would pass while the port was broken in every way that matters, so the cases below
@@ -14,6 +16,7 @@ missed log, and an irregular history whose window should be refused.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -26,6 +29,7 @@ from cyclecore.models.bayes_filter import (
 )
 from cyclecore.models.intervals import (
     QUANTILE_LEVELS,
+    conditioned_windows,
     confidence_class,
     windows_for_history,
 )
@@ -34,18 +38,26 @@ from cyclecore.models.personalize import (
     DEFAULT_OBS_SD_GRID,
     PERSONALIZE_MIN_CYCLES,
 )
+from cyclecore.models.student_t import t_cdf, t_ppf
 
 __all__ = [
+    "CONDITIONED_SCHEMA_VERSION",
     "FLOAT_TOLERANCE",
     "GOLDEN_SCHEMA_VERSION",
     "GoldenCase",
+    "build_conditioned_payload",
     "build_golden_payload",
+    "conditioned_cases",
     "golden_cases",
+    "write_conditioned",
     "write_golden",
 ]
 
 GOLDEN_SCHEMA_VERSION = 1
 """Bump on any breaking change to the payload shape."""
+
+CONDITIONED_SCHEMA_VERSION = 1
+"""Bump on any breaking change to the conditioned cases' payload shape."""
 
 FLOAT_TOLERANCE = 1e-9
 """Absolute tolerance for float comparisons between runtimes.
@@ -287,6 +299,87 @@ def write_golden(
         The payload that was written.
     """
     payload = build_golden_payload(priors, t_quantiles)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return payload
+
+
+def conditioned_cases() -> list[tuple[GoldenCase, list[int]]]:
+    """Return the histories whose windows are moved forward, and the days to move them to.
+
+    Each history is paired with days from the 80% window's opening to well past
+    it: the day the window opens, its median, its last day, a few days late, and
+    weeks late. The cut-off is what the Dart port is most likely to get wrong, so
+    every case crosses it.
+    """
+    by_name = {case.name: case for case in golden_cases()}
+    return [
+        (by_name["regular_six_identical"], [27, 28, 29, 30, 34, 45, 63]),
+        (by_name["regular_six_varied"], [26, 29, 31, 33, 40, 62]),
+        (by_name["irregular_history"], [20, 22, 31, 38, 45, 60, 80]),
+        (by_name["short_cycles_at_lower_bound"], [14, 15, 17, 21, 40]),
+        (by_name["single_cycle_28"], [22, 28, 36, 50, 89]),
+    ]
+
+
+def build_conditioned_payload(
+    priors: FilterPriors,
+    t_quantiles: dict[str, float],
+) -> dict[str, Any]:
+    """Assemble the conditioned windows artifact.
+
+    Two kinds of case. The distribution function and its inverse at fixed points,
+    so a port that drifts in `student_t` is caught where it drifts; and windows
+    moved forward for real histories, compared to the day.
+    """
+    df = priors.student_t_df
+    cdf_points = [-60.0, -14.0, -4.5, -1.5, -0.25, 0.0, 0.4, 1.53, 3.0, 9.0, 120.0]
+    ppf_levels = [1e-6, 0.001, 0.1, 0.25, 0.5, 0.75, 0.9, 0.999, 0.99991]
+    cases = []
+    for case, days in conditioned_cases():
+        _, refit = windows_for_history(list(case.cycle_lengths), priors, t_quantiles)
+        final = filter_sequence(case.cycle_lengths, refit.priors)[-1]
+        fc = forecast(final, refit.priors)
+        for elapsed in days:
+            windows = conditioned_windows(fc, elapsed, df)
+            below = t_cdf((math.log(elapsed - 0.5) - fc.mean) / fc.scale, df)
+            cases.append(
+                {
+                    "name": f"{case.name}_day_{elapsed}",
+                    "forecast": {"mean": fc.mean, "var": fc.var},
+                    "elapsed_days": elapsed,
+                    "below": below,
+                    "day_windows": {
+                        "median": windows.median_days,
+                        "lo50": windows.lo50,
+                        "hi50": windows.hi50,
+                        "lo80": windows.lo80,
+                        "hi80": windows.hi80,
+                    },
+                }
+            )
+    return {
+        "schema_version": CONDITIONED_SCHEMA_VERSION,
+        "generated_by": "cyclecore.export.golden_vectors",
+        "float_tolerance": FLOAT_TOLERANCE,
+        "student_t_df": df,
+        "cdf": [{"t": t, "p": t_cdf(t, df)} for t in cdf_points],
+        "ppf": [{"p": level, "t": t_ppf(level, df)} for level in ppf_levels],
+        "cases": cases,
+    }
+
+
+def write_conditioned(
+    path: Path,
+    priors: FilterPriors,
+    t_quantiles: dict[str, float],
+) -> dict[str, Any]:
+    """Write the conditioned windows artifact to `path`, creating parent directories.
+
+    Returns:
+        The payload that was written.
+    """
+    payload = build_conditioned_payload(priors, t_quantiles)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return payload

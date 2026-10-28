@@ -7,7 +7,8 @@
 ///
 /// Includes:
 ///     - SettingsScreen: The screen itself.
-///     - _SettingsScreenState: The export, import and delete flows.
+///     - _SettingsScreenState: The export, import, summary and delete
+///       flows.
 ///     - _AppLockSetting: The lock toggle, and why it may be unavailable.
 ///     - _AppLockSettingState: What the device said when it was asked.
 ///     - _DisplaySettings: Preferences that change what is shown.
@@ -24,18 +25,27 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
+import 'package:period_tracker/core/result.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
+import 'package:period_tracker/data/summary/cycle_summary.dart';
+import 'package:period_tracker/data/summary/summary_csv.dart';
 import 'package:period_tracker/data/transfer/export_v1.dart';
 import 'package:period_tracker/data/transfer/import_v1.dart';
+import 'package:period_tracker/data/transfer/protected_backup.dart';
 import 'package:period_tracker/domain/predict/priors_bundled.dart';
 import 'package:period_tracker/features/appearance/appearance_screen.dart';
 import 'package:period_tracker/features/common/chip_motion.dart';
 import 'package:period_tracker/features/common/snack.dart';
+import 'package:period_tracker/features/conditions/conditions_screen.dart';
+import 'package:period_tracker/features/settings/backup_dialogs.dart';
 import 'package:period_tracker/features/settings/delete_everything_dialog.dart';
 import 'package:period_tracker/features/settings/log_viewer.dart';
 import 'package:period_tracker/features/settings/privacy_section.dart';
+import 'package:period_tracker/features/summary/summary_pdf.dart';
+import 'package:period_tracker/features/summary/summary_span_dialog.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
+import 'package:period_tracker/notifications/notification_plan.dart';
 import 'package:period_tracker/notifications/scheduler.dart';
 import 'package:period_tracker/security/app_lock.dart';
 
@@ -74,17 +84,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Write the whole database to a file the user chooses.
   ///
   /// Steps:
-  ///     1. Ask the user where it goes. There is no default and no fallback.
-  ///     2. Write the envelope there.
-  ///     3. Acknowledge the export format, which clears the re-export banner.
+  ///     1. Ask whether to protect it with a passphrase (ADR-0019).
+  ///     2. Ask the user where it goes. There is no default and no fallback.
+  ///     3. Write the envelope there, sealed if a passphrase was chosen.
+  ///     4. Acknowledge the export format, which clears the re-export banner.
   ///
   /// Returns:
   ///     `Future<void>`: Completes once the file is written and reported, or
-  ///     as soon as the user dismisses the directory picker. A failed write
-  ///     reports and does not acknowledge, so the banner stays up.
+  ///     as soon as the user cancels either question. A failed write reports
+  ///     and does not acknowledge, so the banner stays up.
   Future<void> _export() async {
     final l10n = AppLocalizations.of(context);
     final clock = ref.read(clockProvider);
+    final choice = await showProtectBackupDialog(context);
+    if (choice == null || !mounted) return;
+    final passphrase = choice.passphrase;
     // The user chooses where it goes. There is no default location and no
     // fallback to shared storage, so an export cannot happen by accident or
     // land somewhere the user did not pick (docs/PLAN.md 6.5).
@@ -93,20 +107,78 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     setState(() => _busy = true);
     try {
+      final sealer = ref.read(backupSealerProvider);
       final envelope = await ExportV1.writeTo(
-        File(p.join(directory, ExportV1.suggestedFileName(clock))),
+        File(
+          p.join(
+            directory,
+            passphrase == null
+                ? ExportV1.suggestedFileName(clock)
+                : ProtectedBackup.suggestedFileName(clock),
+          ),
+        ),
         database: ref.read(appDatabaseProvider),
         clock: clock,
         logger: ref.read(loggerProvider),
+        seal: passphrase == null
+            ? null
+            : (export) => sealer.seal(export, passphrase),
       );
       // A completed export is what clears the re-export banner. Navigating to
       // this screen does not, and neither does a failed write.
       await ref.read(appDatabaseProvider).settingsDao.acknowledgeExportFormat();
-      _report(l10n.settingsExportDone(envelope.dayLogs.length));
+      _report(
+        passphrase == null
+            ? l10n.settingsExportDone(envelope.dayLogs.length)
+            : l10n.settingsExportDoneProtected(envelope.dayLogs.length),
+      );
     } on FileSystemException {
       _report(l10n.settingsExportFailed);
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Open a protected backup with the passphrase it was sealed with.
+  ///
+  /// Asks again after a wrong passphrase, saying so, until the right one is
+  /// given or the user cancels.
+  ///
+  /// Args:
+  ///     text (String): The protected backup's contents.
+  ///
+  /// Returns:
+  ///     `Future<String?>`: The ordinary export inside, or null when the user
+  ///     cancelled or the file cannot be opened, which has been reported.
+  Future<String?> _openProtected(String text) async {
+    final l10n = AppLocalizations.of(context);
+    final sealer = ref.read(backupSealerProvider);
+    String? error;
+    while (true) {
+      if (!mounted) return null;
+      final passphrase = await showOpenBackupDialog(context, error: error);
+      if (passphrase == null || !mounted) return null;
+      setState(() => _busy = true);
+      final opened = await sealer.open(text, passphrase);
+      if (mounted) setState(() => _busy = false);
+      switch (opened) {
+        case Ok<String, ProtectedBackupRefusal>(:final value):
+          return value;
+        case Err<String, ProtectedBackupRefusal>(
+          error: ProtectedBackupRefusal.wrongPassphrase,
+        ):
+          error = l10n.settingsImportPassphraseWrong;
+        case Err<String, ProtectedBackupRefusal>(
+          error: ProtectedBackupRefusal.newerVersion,
+        ):
+          _report(l10n.settingsImportProtectedNewer);
+          return null;
+        case Err<String, ProtectedBackupRefusal>(
+          error: ProtectedBackupRefusal.damaged,
+        ):
+          _report(l10n.settingsImportProtectedDamaged);
+          return null;
+      }
     }
   }
 
@@ -134,8 +206,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (file == null || !mounted) return;
 
     // Inspected before anything is replaced, so the confirmation can say what
-    // is actually in the file rather than asking the user to trust it.
-    final text = await file.readAsString();
+    // is actually in the file rather than asking the user to trust it. A
+    // protected backup is opened first, and what is inside goes through the
+    // same inspection as any other export.
+    var text = await file.readAsString();
+    if (!mounted) return;
+    if (ProtectedBackup.isProtected(text)) {
+      final opened = await _openProtected(text);
+      if (opened == null || !mounted) return;
+      text = opened;
+    }
     final inspected = ImportV1.inspect(text);
     if (!mounted) return;
     if (inspected.isErr) {
@@ -188,6 +268,72 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  /// Make the summary for a doctor, or its spreadsheet files, and save them
+  /// in a folder the user chooses (ADR-0024).
+  ///
+  /// Steps:
+  ///     1. Ask how far back it should reach. The question says what the
+  ///        summary holds, and that intercourse is never in it.
+  ///     2. Ask where it goes. As with a backup, there is no default.
+  ///     3. Build it from the whole record, and write it there.
+  ///
+  /// Args:
+  ///     spreadsheet (bool): Whether to write the CSV files rather than the
+  ///         PDF.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once the files are written and reported,
+  ///     or as soon as the user backs out of either question.
+  Future<void> _summary({required bool spreadsheet}) async {
+    final l10n = AppLocalizations.of(context);
+    final span = await showSummarySpanDialog(context);
+    if (span == null || !mounted) return;
+    final directory = await getDirectoryPath();
+    if (directory == null || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      final clock = ref.read(clockProvider);
+      final summary = await CycleSummary.load(
+        span: span,
+        today: clock.today(),
+        cycles: ref.read(cycleRepositoryProvider),
+        conditions: ref.read(conditionRepositoryProvider),
+        medicines: ref.read(medicineListRepositoryProvider),
+      );
+      if (summary.days.isEmpty && summary.conditions.isEmpty) {
+        _report(l10n.settingsSummaryNothing);
+        return;
+      }
+      final fahrenheit = await ref
+          .read(appDatabaseProvider)
+          .settingsDao
+          .readBool(SettingKey.temperatureFahrenheit, orElse: false);
+      if (spreadsheet) {
+        final files = SummaryCsv.files(summary, fahrenheit: fahrenheit);
+        for (final MapEntry(key: name, value: content) in files.entries) {
+          await File(p.join(directory, name)).writeAsString(content);
+        }
+        _report(l10n.settingsSpreadsheetDone(files.length));
+      } else {
+        final bytes = summaryPdf(
+          summary,
+          l10n: l10n,
+          fahrenheit: fahrenheit,
+          made: clock.nowUtc(),
+        );
+        await File(
+          p.join(directory, summaryPdfFileName(summary)),
+        ).writeAsBytes(bytes);
+        _report(l10n.settingsSummaryDone);
+      }
+    } on FileSystemException {
+      _report(l10n.settingsSummaryFailed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   /// Delete everything, after a typed confirmation.
   ///
   /// The count of logged days is read first so the dialog can say how much is
@@ -235,6 +381,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: _busy ? null : _import,
             ),
             ListTile(
+              leading: const Icon(Icons.description_outlined),
+              title: Text(l10n.settingsSummary),
+              subtitle: Text(l10n.settingsSummarySubtitle),
+              onTap: _busy ? null : () => _summary(spreadsheet: false),
+            ),
+            ListTile(
+              leading: const Icon(Icons.table_chart_outlined),
+              title: Text(l10n.settingsSpreadsheet),
+              subtitle: Text(l10n.settingsSpreadsheetSubtitle),
+              onTap: _busy ? null : () => _summary(spreadsheet: true),
+            ),
+            ListTile(
               leading: Icon(
                 Icons.delete_forever,
                 color: theme.colorScheme.error,
@@ -246,6 +404,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Divider(),
             _SectionHeading(l10n.settingsRemindersSection),
             const _ReminderSettings(),
+            // Set where the medicines are, beside each one, and found from
+            // here too, where anyone looking for a reminder looks first.
+            ListTile(
+              leading: const Icon(Icons.medication_outlined),
+              title: Text(l10n.settingsMedicineReminders),
+              subtitle: Text(l10n.settingsMedicineRemindersSubtitle),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const ConditionsScreen(),
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Column(
@@ -298,7 +468,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Divider(),
             _SectionHeading(l10n.settingsAboutSection),
             ListTile(
-              title: Text(l10n.settingsVersion(appVersion)),
+              title: Text(l10n.settingsVersion(appVersionName)),
               subtitle: Text(
                 l10n.settingsModelVersion(
                   priorsArtifactSha256.substring(0, 12),
@@ -447,6 +617,8 @@ class _DisplaySettings extends ConsumerWidget {
     // Watched rather than loaded into state: the switch and the day editor read
     // the same stream, so they cannot disagree about what is set.
     final simplified = ref.watch(flowSimplifiedProvider).valueOrNull ?? false;
+    final fahrenheit =
+        ref.watch(temperatureFahrenheitProvider).valueOrNull ?? false;
     final phases = ref.watch(showCyclePhasesProvider).valueOrNull ?? true;
     final ovulation =
         ref.watch(showOvulationWindowProvider).valueOrNull ?? false;
@@ -459,6 +631,15 @@ class _DisplaySettings extends ConsumerWidget {
               settings.writeBool(SettingKey.flowSimplified, value: value),
           title: Text(l10n.settingsFlowSimplified),
           subtitle: Text(l10n.settingsFlowSimplifiedSubtitle),
+        ),
+        SwitchListTile(
+          value: fahrenheit,
+          onChanged: (value) => settings.writeBool(
+            SettingKey.temperatureFahrenheit,
+            value: value,
+          ),
+          title: Text(l10n.settingsTemperatureFahrenheit),
+          subtitle: Text(l10n.settingsTemperatureFahrenheitSubtitle),
         ),
         SwitchListTile(
           value: phases,
@@ -546,6 +727,7 @@ class _ReminderSettings extends ConsumerStatefulWidget {
 /// Attributes:
 ///     _enabled (bool?): Whether reminders are on. Null until read.
 ///     _leadDays (int?): How many days ahead to remind. Null until read.
+///     _lateCheckIn (bool): Whether the late-period check-in is on.
 ///     _nudge (bool): Whether the logging nudge is on.
 ///     _detailed (bool): Whether notifications may carry detail.
 class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
@@ -554,6 +736,9 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
 
   /// How many days ahead to remind, or null until the preference is read.
   int? _leadDays;
+
+  /// Whether the late-period check-in is on.
+  bool _lateCheckIn = true;
 
   /// Whether the logging nudge is on.
   bool _nudge = false;
@@ -580,7 +765,7 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
   /// Read the stored preferences once, defaulting rather than failing.
   ///
   /// Returns:
-  ///     `Future<void>`: Completes once all four are in state. A preference
+  ///     `Future<void>`: Completes once all five are in state. A preference
   ///     that was never written falls back to its default rather than
   ///     leaving the row blank.
   Future<void> _load() async {
@@ -592,6 +777,12 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
     final lead = await settings.readInt(
       SettingKey.reminderLeadDays,
       orElse: 2,
+    );
+    // As the reminders before a period were set, until it is set itself: it
+    // was part of them before it had a switch of its own (ADR-0025).
+    final lateCheckIn = await settings.readBool(
+      SettingKey.lateCheckInEnabled,
+      orElse: enabled,
     );
     // Both default to off, and are re-read as off. The nudge is the only
     // notification that is neither a prediction nor actionable, and lock-screen
@@ -609,6 +800,7 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
     setState(() {
       _enabled = enabled;
       _leadDays = lead;
+      _lateCheckIn = lateCheckIn;
       _nudge = nudge;
       _detailed = detailed;
     });
@@ -634,8 +826,34 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
           subtitle: Text(l10n.settingsReminderSubtitle),
           onChanged: (value) async {
             setState(() => _enabled = value);
+            // The check-in follows this switch until it is set itself. Set
+            // now to what its own switch shows, so that it does not quietly
+            // change with this one.
+            if (await settings.raw(SettingKey.lateCheckInEnabled) == null) {
+              await settings.writeBool(
+                SettingKey.lateCheckInEnabled,
+                value: _lateCheckIn,
+              );
+            }
             await settings.writeBool(
               SettingKey.reminderEnabled,
+              value: value,
+            );
+            _resync();
+          },
+        ),
+        SwitchListTile(
+          value: _lateCheckIn,
+          title: Text(l10n.settingsLateCheckIn),
+          subtitle: Text(
+            l10n.settingsLateCheckInSubtitle(
+              NotificationPlanner.lateNoticeAfterDays,
+            ),
+          ),
+          onChanged: (value) async {
+            setState(() => _lateCheckIn = value);
+            await settings.writeBool(
+              SettingKey.lateCheckInEnabled,
               value: value,
             );
             _resync();

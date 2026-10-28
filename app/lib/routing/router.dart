@@ -24,6 +24,7 @@ import 'package:period_tracker/core/motion.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/features/calendar/calendar_screen.dart';
+import 'package:period_tracker/features/common/day_rollover.dart';
 import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/insights/insights_screen.dart';
 import 'package:period_tracker/features/learn/learn_screen.dart';
@@ -212,8 +213,9 @@ class AppScaffold extends ConsumerWidget {
     return Scaffold(
       // Wrapped here rather than in a screen: the requirement is to reschedule
       // on every prediction change, and a screen only does that while it is on
-      // top.
-      body: NotificationSync(child: shell),
+      // top. The rollover is outside it, so a prediction recomputed for a new
+      // day reschedules too.
+      body: DayRollover(child: NotificationSync(child: shell)),
       bottomNavigationBar: NavigationBar(
         selectedIndex: selected < 0 ? 0 : selected,
         // Always the branch's initial location, not only when the tab

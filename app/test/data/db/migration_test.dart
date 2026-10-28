@@ -18,6 +18,7 @@ import 'package:period_tracker/domain/models/day_log.dart';
 
 import 'generated_migrations/schema.dart';
 import 'generated_migrations/schema_v1.dart';
+import 'generated_migrations/schema_v4.dart';
 
 void main() {
   late SchemaVerifier verifier;
@@ -108,6 +109,32 @@ void main() {
       isNull,
       reason: 'the v4 migration invented a value for a day written before it',
     );
+    // The same for the five v5 measurements.
+    expect(logs.single.hasMeasurements, isFalse);
+  });
+
+  test('a v4 database keeps its data, intercourse included, across the v5 '
+      'upgrade', () async {
+    final schema = await verifier.schemaAt(4);
+    final v4 = DatabaseAtV4(schema.newConnection());
+    await v4.customStatement(
+      'INSERT INTO day_logs (epoch_day, flow, intercourse) '
+      "VALUES (20000, 'light', 'protected')",
+    );
+    await v4.close();
+
+    final db = AppDatabase(schema.newConnection());
+    addTearDown(db.close);
+    await verifier.migrateAndValidate(db, AppDatabase.latestSchemaVersion);
+
+    final log = (await db.dayLogDao.allLogs()).single;
+    expect(log.flow, FlowIntensity.light);
+    expect(log.intercourse, Intercourse.protected);
+    expect(log.basalTemperatureCelsius, isNull);
+    expect(log.cervicalMucus, isNull);
+    expect(log.pdgStrip, isNull);
+    expect(log.progesteroneValue, isNull);
+    expect(log.progesteroneUnit, isNull);
   });
 
   test('a freshly created database matches its own snapshot', () async {

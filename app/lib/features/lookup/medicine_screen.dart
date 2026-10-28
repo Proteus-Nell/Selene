@@ -2,7 +2,9 @@
 ///
 /// One medicine's label, as published: what the medicine is, which label
 /// stands for it, and the label's safety sections in the order the label is
-/// read. Nothing on it is written for this app (ADR-0012).
+/// read. Below them, where the label has one, the safety sections of its
+/// Medication Guide, the leaflet written for patients (ADR-0022). Nothing on
+/// it is written for this app (ADR-0012).
 ///
 /// Includes:
 ///     - MedicineScreen: The screen.
@@ -11,6 +13,8 @@
 ///     - medicineBrands: Its brand names, cut short.
 ///     - medicineSectionHeading: A label section's heading.
 ///     - _Section: One section, under its heading.
+///     - _Guide: The Medication Guide's safety sections, folded away.
+///     - _part: One part of a guide's section, its list mark drawn.
 library;
 
 import 'package:flutter/material.dart';
@@ -20,6 +24,7 @@ import 'package:period_tracker/data/reference/medicine_bundle.dart';
 import 'package:period_tracker/data/reference/medicines_bundled.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
+import 'package:period_tracker/features/lookup/list_mark.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Medicine screen: one medicine's label.
@@ -51,6 +56,7 @@ class MedicineScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final small = theme.textTheme.bodySmall;
     final sections = ref.watch(medicineSectionsProvider(entry));
+    final guide = ref.watch(medicineGuideProvider(entry)).valueOrNull;
     final brands = medicineBrands(l10n, entry, first: brand, limit: 12);
     final date =
         entry.label.effectiveDate?.full(context) ?? entry.label.effectiveTime;
@@ -112,6 +118,10 @@ class MedicineScreen extends ConsumerWidget {
                 ),
               ],
             ),
+            if (guide != null && guide.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 24),
+              _Guide(guide: guide),
+            ],
             const SizedBox(height: 24),
             Text(medicinesDisclaimer, style: small),
           ],
@@ -176,6 +186,60 @@ class _Section extends StatelessWidget {
           : body,
     );
   }
+}
+
+/// The safety sections of a medicine's Medication Guide, folded away under a
+/// note that says what they are and what is left out.
+///
+/// Folded, because a guide is long and the label above it is what the page
+/// is for. The note is above the fold, so nobody opens it expecting to find
+/// how to take the medicine.
+///
+/// Attributes:
+///     guide (`List<GuideSection>`): The guide's safety sections.
+class _Guide extends StatelessWidget {
+  /// Creates the guide.
+  const _Guide({required this.guide});
+
+  /// The guide's safety sections, in its order.
+  final List<GuideSection> guide;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Card(
+      child: ExpansionTile(
+        title: Text(l10n.lookupGuideTitle, style: theme.textTheme.titleSmall),
+        subtitle: Text(l10n.lookupGuideNote, style: theme.textTheme.bodySmall),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          for (final section in guide) ...<Widget>[
+            const SizedBox(height: 12),
+            Semantics(
+              header: true,
+              child: Text(section.heading, style: theme.textTheme.titleSmall),
+            ),
+            for (final part in section.parts) ...<Widget>[
+              const SizedBox(height: 4),
+              _part(part, theme.textTheme.bodyMedium),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// One part of a guide's section: a paragraph, or a list item with its
+/// mark drawn, since the bundled font has the bullet and not the black
+/// circle or the hollow bullet that guides also print.
+Widget _part(String part, TextStyle? style) {
+  final depth = part.isEmpty ? null : markDepth(part[0]);
+  return depth == null
+      ? Text(part, style: style)
+      : ListItem(depth: depth, text: part.substring(1).trim(), style: style);
 }
 
 /// Say how a medicine is taken, and whether it needs a prescription.

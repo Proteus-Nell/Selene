@@ -17,10 +17,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/core/palette.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/features/log/log_screen.dart';
 import 'package:period_tracker/features/today/cycle_ring.dart';
 
 import 'harness.dart';
+
+/// Six cycles of 28 days: a window first predicted on days 28 to 30.
+const List<int> _sixRegular = <int>[28, 28, 28, 28, 28, 28];
 
 void main() {
   late AppDatabase db;
@@ -70,6 +74,89 @@ void main() {
       final l10n = l10nOf(tester);
       expect(find.text(l10n.logCountdownNothingYet), findsOneWidget);
       expect(find.text(l10n.logCountdownNothingYetCaption), findsOneWidget);
+    });
+
+    // Six cycles of 28 days put the window first predicted on days 28 to 30 of
+    // the cycle, the 27th to the 29th day after it started (the golden case
+    // regular_six_identical). Each test below moves the last start back to
+    // land today somewhere against that window.
+
+    testWidgets('is "any day now" inside the window, moved or not', (
+      tester,
+    ) async {
+      // Day 29: past the window's first day, so the range has moved forward.
+      // The countdown still reads the window first predicted.
+      await seedHistory(db, _sixRegular, endingDaysAgo: 25);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      expect(find.text(l10n.logCountdownNow), findsOneWidget);
+      expect(find.text(l10n.logCountdownNowCaption), findsOneWidget);
+    });
+
+    testWidgets('says it is later than expected once past the window', (
+      tester,
+    ) async {
+      // Day 34, four days past the window's last day.
+      await seedHistory(db, _sixRegular, endingDaysAgo: 30);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      expect(find.text(l10n.logCountdownLater), findsOneWidget);
+      expect(find.text(l10n.logCountdownLaterCaption(4)), findsOneWidget);
+      expect(find.text(l10n.logCountdownNow), findsNothing);
+      // The panel under it gives the moved range as a rough guide, and does
+      // not claim four in five for it.
+      expect(find.text(l10n.insightsLateRange), findsOneWidget);
+      expect(find.text(l10n.insightsFourInFive), findsNothing);
+    });
+
+    testWidgets('still says how late once no range is left to give', (
+      tester,
+    ) async {
+      // Day 51. A range moved this far would be too wide to draw.
+      await seedHistory(db, _sixRegular, endingDaysAgo: 47);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      expect(find.text(l10n.logCountdownLater), findsOneWidget);
+      expect(find.text(l10n.logCountdownLaterCaption(21)), findsOneWidget);
+      expect(find.text(l10n.insightsLaterTitle), findsOneWidget);
+    });
+
+    testWidgets('admits it lost track, even with something logged every day', (
+      tester,
+    ) async {
+      // The case that used to read "any day now" for as long as it went on: a
+      // symptom logged every day, and no period logged in ten weeks.
+      final lastStart = await seedHistory(db, _sixRegular, endingDaysAgo: 67);
+      final today = testClock.today();
+      await db.dayLogDao.saveAll(<DayLog>[
+        for (var day = lastStart.addDays(4); day <= today; day = day.addDays(1))
+          DayLog(
+            date: day,
+            symptoms: const <Symptom, SymptomSeverity>{
+              Symptom.headache: SymptomSeverity.mild,
+            },
+          ),
+      ]);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      expect(find.text(l10n.logCountdownLostTrack), findsOneWidget);
+      expect(find.text(l10n.logCountdownLostTrackCaption), findsOneWidget);
+      expect(find.text(l10n.logCountdownNow), findsNothing);
+      expect(find.text(l10n.insightsLostTrackTitle), findsOneWidget);
+    });
+
+    testWidgets('does not ask for a first period from someone who has logged '
+        'many', (tester) async {
+      // Too irregular for a range is not the same as nothing logged.
+      await seedHistory(
+        db,
+        const <int>[26, 34, 26, 34, 26, 34],
+        endingDaysAgo: 3,
+      );
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      expect(find.text(l10n.logCountdownNoRange), findsOneWidget);
+      expect(find.text(l10n.logCountdownNothingYetCaption), findsNothing);
     });
   });
 

@@ -8,6 +8,7 @@ import 'package:period_tracker/core/clock.dart';
 import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/data/transfer/protected_backup.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/features/calendar/day_cell.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
@@ -94,6 +95,33 @@ Future<void> _tapWithIo(WidgetTester tester, Finder finder) async {
   await _settle(tester);
 }
 
+/// Waits until the screen has stopped working, up to a bound.
+///
+/// Settings disables its rows while an export or an import runs, and shows a
+/// progress bar. The last steps of an export finish on the real event loop,
+/// so this alternates the two clocks, as [_settle] does, until the bar goes.
+Future<void> _waitForIdle(WidgetTester tester) async {
+  for (var round = 0; round < 40; round++) {
+    if (find.byType(LinearProgressIndicator).evaluate().isEmpty) return;
+    await _settle(tester, 1);
+  }
+  fail('the screen was still busy after the export');
+}
+
+/// Scrolls the screen's list until [finder] is built and on screen.
+///
+/// The list builds lazily, so a row scrolled out of view is not merely hidden
+/// but absent, and a finder for it finds nothing. [delta] is positive to
+/// scroll down the list and negative to scroll back up it.
+Future<void> _scrollTo(WidgetTester tester, Finder finder, double delta) async {
+  await tester.scrollUntilVisible(
+    finder,
+    delta,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await _pumpFor(tester);
+}
+
 /// Reads the day logs, on the real event loop.
 ///
 /// Every assertion about stored state goes through here rather than awaiting
@@ -112,7 +140,13 @@ AppLocalizations _l10n(WidgetTester tester) =>
 /// The one test that runs the whole app in sequence. Every piece below is unit
 /// tested somewhere else; what this adds is that they still fit together, which
 /// is the failure no amount of unit testing catches.
-Future<void> runSmokeFlow(WidgetTester tester) async {
+///
+/// Args:
+///     tester (WidgetTester): The tester.
+///     passphrase (String?, optional): Protects the backup with this, and
+///         opens it with it, through the same screens (ADR-0019). Defaults to
+///         null, a backup without one.
+Future<void> runSmokeFlow(WidgetTester tester, {String? passphrase}) async {
   final directory = Directory.systemTemp.createTempSync('period_e2e');
   addTearDown(() {
     if (directory.existsSync()) directory.deleteSync(recursive: true);
@@ -134,6 +168,9 @@ Future<void> runSmokeFlow(WidgetTester tester) async {
       // notifications/; here the point is the flow, and a real plugin has no
       // platform behind it off-device.
       notificationGateway: const NoopNotificationGateway(),
+      // The real count is meant to take seconds, on another isolate. Here the
+      // point is that the screens and the format fit together.
+      backupSealer: const BackupSealer(iterations: 1000, inBackground: false),
     ),
   );
   await _pumpFor(tester);
@@ -167,7 +204,25 @@ Future<void> runSmokeFlow(WidgetTester tester) async {
   // 4. Export to the chosen directory.
   await tester.tap(find.text(_l10n(tester).navSettings));
   await _pumpFor(tester);
-  await _tapWithIo(tester, find.text(_l10n(tester).settingsExport));
+  await tester.tap(find.text(_l10n(tester).settingsExport));
+  await _settle(tester);
+  if (passphrase == null) {
+    await _tapWithIo(
+      tester,
+      find.text(_l10n(tester).settingsExportWithoutPassphrase),
+    );
+  } else {
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), passphrase);
+    await tester.enterText(fields.at(1), passphrase);
+    await _pumpFor(tester);
+    await _tapWithIo(
+      tester,
+      find.text(_l10n(tester).settingsExportWithPassphrase),
+    );
+  }
+
+  await _waitForIdle(tester);
 
   final written = directory
       .listSync()
@@ -176,8 +231,22 @@ Future<void> runSmokeFlow(WidgetTester tester) async {
       .toList();
   expect(written, hasLength(1), reason: 'export wrote no file');
   picker.file = written.single;
+  final contents = await tester.runAsync(written.single.readAsString);
+  expect(
+    ProtectedBackup.isProtected(contents!),
+    passphrase != null,
+    reason: 'the backup was not protected as chosen',
+  );
 
-  // 5. Delete everything, with the typed confirmation.
+  // 5. Delete everything, with the typed confirmation. Scrolled to rather
+  //    than assumed on screen: a longer line above it once moved it off the
+  //    bottom, and a tap there lands on nothing. The export's confirmation is
+  //    cleared first for the same reason: it sits over the bottom of the list.
+  ScaffoldMessenger.of(
+    tester.element(find.byType(Scaffold).first),
+  ).removeCurrentSnackBar();
+  await _pumpFor(tester);
+  await _scrollTo(tester, find.text(_l10n(tester).settingsDeleteAll), 200);
   await tester.tap(find.text(_l10n(tester).settingsDeleteAll));
   await _settle(tester);
   await tester.enterText(
@@ -191,8 +260,35 @@ Future<void> runSmokeFlow(WidgetTester tester) async {
   await _settle(tester);
   expect(await _storedLogs(tester, db), isEmpty);
 
-  // 6. Restore from the backup, confirming the replacement.
+  // 6. Restore from the backup, confirming the replacement. A protected one
+  //    asks for its passphrase first.
+  await _scrollTo(tester, find.text(_l10n(tester).settingsImport), -200);
   await _tapWithIo(tester, find.text(_l10n(tester).settingsImport));
+  if (passphrase != null) {
+    expect(
+      find.text(_l10n(tester).settingsImportPassphraseTitle),
+      findsOneWidget,
+    );
+    // A wrong one first: it is refused, said so, and asked for again.
+    await tester.enterText(find.byType(TextField), '${passphrase}x');
+    await _pumpFor(tester);
+    await _tapWithIo(
+      tester,
+      find.text(_l10n(tester).settingsImportPassphraseOpen),
+    );
+    await _waitForIdle(tester);
+    expect(
+      find.text(_l10n(tester).settingsImportPassphraseWrong),
+      findsOneWidget,
+    );
+    expect(await _storedLogs(tester, db), isEmpty);
+    await tester.enterText(find.byType(TextField), passphrase);
+    await _pumpFor(tester);
+    await _tapWithIo(
+      tester,
+      find.text(_l10n(tester).settingsImportPassphraseOpen),
+    );
+  }
   await _tapWithIo(
     tester,
     find.widgetWithText(FilledButton, _l10n(tester).settingsImport),

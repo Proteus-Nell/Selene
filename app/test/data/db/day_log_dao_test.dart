@@ -136,6 +136,36 @@ void main() {
       await db.dayLogDao.saveAll(<DayLog>[logAt(20000)]);
       expect((await db.dayLogDao.logFor(day(20000)))!.intercourse, isNull);
     });
+
+    test('keeps every measurement it is given (ADR-0020)', () async {
+      final measured = logAt(20000).copyWith(
+        basalTemperatureCelsius: 36.55,
+        cervicalMucus: CervicalMucus.eggWhite,
+        pdgStrip: PdgStripResult.positive,
+        progesteroneValue: 12.4,
+        progesteroneUnit: ProgesteroneUnit.ngPerMl,
+      );
+      await db.dayLogDao.save(measured);
+      expect(await db.dayLogDao.logFor(day(20000)), measured);
+    });
+
+    test('an edit that clears a measurement writes the null', () async {
+      // The same silent failure the intercourse test above guards against,
+      // for each of the five columns that arrived with v5.
+      await db.dayLogDao.save(
+        logAt(20000).copyWith(
+          basalTemperatureCelsius: 36.55,
+          cervicalMucus: CervicalMucus.creamy,
+          pdgStrip: PdgStripResult.negative,
+          progesteroneValue: 40.1,
+          progesteroneUnit: ProgesteroneUnit.nmolPerL,
+        ),
+      );
+      await db.dayLogDao.save(logAt(20000));
+      final cleared = (await db.dayLogDao.logFor(day(20000)))!;
+      expect(cleared.hasMeasurements, isFalse);
+      expect(cleared.progesteroneUnit, isNull);
+    });
   });
 
   group('deletion', () {

@@ -9,12 +9,52 @@
 // request, so spending two on the same question is not a cosmetic bug.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
+import 'package:period_tracker/notifications/notification_gateway.dart';
+import 'package:period_tracker/notifications/notification_plan.dart';
 import 'package:period_tracker/notifications/notification_sync.dart';
+import 'package:period_tracker/notifications/scheduler.dart';
 
 import '../features/harness.dart';
+
+/// Keeps the medicine reminders scheduled on it, as the platform would.
+class _Platform implements NotificationGateway {
+  /// The medicine reminders queued now.
+  final List<DailyReminder> daily = <DailyReminder>[];
+
+  @override
+  Future<void> initialize(NotificationCopy copy) async {}
+
+  @override
+  Future<bool> requestPermission() async => false;
+
+  @override
+  Future<void> cancelAll() async => daily.clear();
+
+  @override
+  Future<void> schedule(
+    PlannedNotification notification, {
+    required NotificationCopy copy,
+    required bool detailed,
+  }) async {}
+
+  @override
+  Future<void> scheduleDaily(
+    DailyReminder reminder, {
+    required NotificationCopy copy,
+    required bool detailed,
+  }) async => daily.add(reminder);
+
+  @override
+  Future<List<int>> pendingIds() async => <int>[
+    for (final reminder in daily) reminder.id,
+  ];
+}
 
 /// Writes a bleeding day [daysAgo] before the test clock's today.
 Future<void> _log(AppDatabase database, int daysAgo) async {
@@ -100,5 +140,45 @@ void main() {
     await _log(database, 0);
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets('a medicine reminder reaches the platform as soon as it is set, '
+      'and leaves it when taken off', (tester) async {
+    // Nothing about the prediction changes when a reminder does, so without a
+    // trigger of its own it would wait for the next logged day to be
+    // scheduled, and a removed one would keep going off until then.
+    final database = memoryDatabase();
+    addTearDown(database.close);
+    final platform = _Platform();
+    const pill = RecordedMedicine(key: 'pill.oral.rx', name: 'PILL');
+    await database.settingsDao.writeRaw(
+      SettingKey.recordedMedicines.wireName,
+      MedicineListRepository.encode(const <RecordedMedicine>[pill]),
+    );
+    final medicines = MedicineListRepository(database.settingsDao);
+
+    await tester.pumpWidget(
+      harness(
+        const NotificationSync(child: Scaffold(body: SizedBox.shrink())),
+        database: database,
+        overrides: <Override>[
+          notificationGatewayProvider.overrideWithValue(platform),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(platform.daily, isEmpty);
+
+    await medicines.setReminders(pill.key, const <ReminderTime>[
+      ReminderTime(8, 0),
+    ]);
+    await tester.pumpAndSettle();
+    expect(platform.daily, const <DailyReminder>[
+      DailyReminder(id: 2000, medicine: 'PILL', time: ReminderTime(8, 0)),
+    ]);
+
+    await medicines.remove(pill.key);
+    await tester.pumpAndSettle();
+    expect(platform.daily, isEmpty);
   });
 }

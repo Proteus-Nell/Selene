@@ -1,7 +1,8 @@
 /// Notification rescheduling, wired into the widget tree.
 ///
-/// Rebuilds the notification schedule whenever the prediction changes, and
-/// asks for the permission once, in context, after a cycle has been logged.
+/// Rebuilds the notification schedule whenever the prediction or a medicine
+/// reminder changes, and asks for the permission once, in context, after a
+/// cycle has been logged.
 /// Wrapped around the shell rather than a screen, because the requirement is
 /// to reschedule on every prediction change and a screen only does that while
 /// it is on top.
@@ -16,6 +17,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
+import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 import 'package:period_tracker/features/common/formatting.dart';
@@ -42,9 +44,13 @@ NotificationCopy buildNotificationCopy(
   PredictionResult result,
 ) {
   final l10n = AppLocalizations.of(context);
+  // The window as first predicted, which is the one the window notice is
+  // scheduled from (ADR-0016).
   final window = switch (result) {
-    Predicted(:final prediction) => prediction.window80,
-    InsufficientData(:final populationPrior) => populationPrior.window80,
+    Predicted(:final prediction) => prediction.expectedWindow80,
+    InsufficientData(:final populationPrior) =>
+      populationPrior.expectedWindow80,
+    LaterThanExpected(:final expectedWindow80) => expectedWindow80,
     TooIrregular() ||
     LostTrack() ||
     NoData() ||
@@ -57,6 +63,8 @@ NotificationCopy buildNotificationCopy(
         l10n.notificationChannelPredictionsDescription,
     channelRemindersName: l10n.notificationChannelReminders,
     channelRemindersDescription: l10n.notificationChannelRemindersDescription,
+    channelMedicinesName: l10n.notificationChannelMedicines,
+    channelMedicinesDescription: l10n.notificationChannelMedicinesDescription,
     genericTitle: l10n.notificationGenericTitle,
     genericBody: l10n.notificationGenericBody,
     windowOpeningTitle: l10n.notificationWindowOpeningTitle,
@@ -73,6 +81,9 @@ NotificationCopy buildNotificationCopy(
     lateNoticeTitle: l10n.notificationLateNoticeTitle,
     lateNoticeBody: l10n.notificationLateNoticeBody,
     logAction: l10n.notificationLogAction,
+    medicineTitle: l10n.notificationMedicineTitle,
+    medicineBody: l10n.notificationMedicineBody,
+    formatTime: reminderTimeFormatter(context),
   );
 }
 
@@ -248,6 +259,20 @@ class _NotificationSyncState extends ConsumerState<NotificationSync> {
       final result = ref.read(predictionProvider).valueOrNull;
       if (result != null) unawaited(_sync(result));
     });
+
+    // Nor do the medicine reminders, and they change from more than one place:
+    // a time set or taken off, a medicine removed with its times, an import,
+    // and deleting everything. Watched here so that none of those has to
+    // remember to ask. The first value is the one already read when the
+    // schedule was first built, so only a change after it reschedules.
+    ref.listen<AsyncValue<Map<String, List<ReminderTime>>>>(
+      medicineRemindersProvider,
+      (previous, next) {
+        if (previous?.valueOrNull == null || !next.hasValue) return;
+        final result = ref.read(predictionProvider).valueOrNull;
+        if (result != null) unawaited(_sync(result));
+      },
+    );
 
     if (!_missedReminder) return widget.child;
     final l10n = AppLocalizations.of(context);

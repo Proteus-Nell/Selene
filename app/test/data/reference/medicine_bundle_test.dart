@@ -31,6 +31,29 @@ void main() {
     ]);
   });
 
+  test("reads a drug's Medication Guide, from the same line", () async {
+    final bundle = fixtureBundle(fixtureDrugs);
+    final guide = await bundle.guide(await entry(bundle, 'ibuprofen.oral.rx'));
+    expect(guide.map((section) => section.heading), <String>[
+      fixtureGuideImportant,
+      'Who should not take ibuprofen tablets?',
+    ]);
+    // The bullets the guide printed, put back on lines of their own.
+    expect(guide.first.parts, <String>[
+      'Ibuprofen can cause serious side effects, including:',
+      '• increased risk of a heart attack or stroke',
+      '• stomach bleeding',
+    ]);
+  });
+
+  test('reads none for a drug without one', () async {
+    final bundle = fixtureBundle(fixtureDrugs);
+    expect(
+      await bundle.guide(await entry(bundle, 'ibuprofen.oral.otc')),
+      isEmpty,
+    );
+  });
+
   test('refuses text that belongs to another drug', () async {
     final assets = MemoryAssets(
       fixtureFiles(fixtureDrugs, records: shifted(fixtureDrugs)),

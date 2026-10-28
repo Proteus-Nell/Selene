@@ -1,0 +1,299 @@
+{
+  "schema_version": 1,
+  "about": "Group names the interaction checker matches on labels, and the drugs each one covers (ADR-0021). Hand-written, and every member is taken from the source it cites. tools/scripts/gen_medicine_groups.py resolves the members against the committed medicines bundle, checks the table against it, and writes app/lib/data/reference/medicine_groups_bundled.dart. Phrases are written singular: a plural is matched too.",
+  "sources": {
+    "epc-nsaid": {
+      "title": "Established pharmacologic class: Nonsteroidal Anti-inflammatory Drug [EPC]",
+      "publisher": "U.S. Food and Drug Administration, through the National Library of Medicine's RxClass",
+      "url": "https://rxnav.nlm.nih.gov/REST/rxclass/classMembers.json?classId=N0000175722&relaSource=FDASPL&rela=has_EPC&ttys=IN",
+      "retrieved": "2026-10-28"
+    },
+    "fda-nsaids-pregnancy": {
+      "title": "FDA recommends avoiding use of NSAIDs in pregnancy at 20 weeks or later",
+      "note": "Table 1 lists the NSAIDs the communication covers.",
+      "publisher": "U.S. Food and Drug Administration",
+      "url": "https://www.fda.gov/drugs/drug-safety-and-availability/fda-recommends-avoiding-use-nsaids-pregnancy-20-weeks-or-later-because-they-can-result-low-amniotic",
+      "date": "2020-10-15",
+      "retrieved": "2026-10-28"
+    },
+    "fda-owh-depression": {
+      "title": "Depression Medicines",
+      "publisher": "U.S. Food and Drug Administration, Office of Women's Health",
+      "url": "https://www.fda.gov/consumers/womens-health-topics/depression-medicines",
+      "date": "2019-11-18",
+      "retrieved": "2026-10-28"
+    },
+    "fluvoxamine-label": {
+      "title": "Fluvoxamine Maleate Tablets, prescribing information",
+      "note": "Section 11: \"Fluvoxamine maleate is a selective serotonin (5-HT) reuptake inhibitor (SSRI)\".",
+      "publisher": "ANI Pharmaceuticals, Inc., FDA-approved labeling on DailyMed",
+      "url": "https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=7ecd83ec-88f5-4f85-9cc2-9068375d8820",
+      "retrieved": "2026-10-28"
+    },
+    "epc-snri": {
+      "title": "Established pharmacologic class: Serotonin and Norepinephrine Reuptake Inhibitor [EPC]",
+      "publisher": "U.S. Food and Drug Administration, through the National Library of Medicine's RxClass",
+      "url": "https://rxnav.nlm.nih.gov/REST/rxclass/classMembers.json?classId=N0000175749&relaSource=FDASPL&rela=has_EPC&ttys=IN",
+      "retrieved": "2026-10-28"
+    },
+    "epc-maoi": {
+      "title": "Established pharmacologic class: Monoamine Oxidase Inhibitor [EPC]",
+      "publisher": "U.S. Food and Drug Administration, through the National Library of Medicine's RxClass",
+      "url": "https://rxnav.nlm.nih.gov/REST/rxclass/classMembers.json?classId=N0000175744&relaSource=FDASPL&rela=has_EPC&ttys=IN",
+      "retrieved": "2026-10-28"
+    },
+    "epc-tca": {
+      "title": "Established pharmacologic class: Tricyclic Antidepressant [EPC]",
+      "publisher": "U.S. Food and Drug Administration, through the National Library of Medicine's RxClass",
+      "url": "https://rxnav.nlm.nih.gov/REST/rxclass/classMembers.json?classId=N0000175752&relaSource=FDASPL&rela=has_EPC&ttys=IN",
+      "retrieved": "2026-10-28"
+    },
+    "epc-triptan": {
+      "title": "Established pharmacologic class: Serotonin-1b and Serotonin-1d Receptor Agonist [EPC]",
+      "publisher": "U.S. Food and Drug Administration, through the National Library of Medicine's RxClass",
+      "url": "https://rxnav.nlm.nih.gov/REST/rxclass/classMembers.json?classId=N0000175765&relaSource=FDASPL&rela=has_EPC&ttys=IN",
+      "retrieved": "2026-10-28"
+    },
+    "epc-estrogen": {
+      "title": "Established pharmacologic class: Estrogen [EPC]",
+      "publisher": "U.S. Food and Drug Administration, through the National Library of Medicine's RxClass",
+      "url": "https://rxnav.nlm.nih.gov/REST/rxclass/classMembers.json?classId=N0000175825&relaSource=FDASPL&rela=has_EPC&ttys=IN",
+      "retrieved": "2026-10-28"
+    },
+    "epc-progestin": {
+      "title": "Established pharmacologic class: Progestin [EPC]",
+      "publisher": "U.S. Food and Drug Administration, through the National Library of Medicine's RxClass",
+      "url": "https://rxnav.nlm.nih.gov/REST/rxclass/classMembers.json?classId=N0000175602&relaSource=FDASPL&rela=has_EPC&ttys=IN",
+      "retrieved": "2026-10-28"
+    },
+    "fda-chc-guidance": {
+      "title": "Labeling for Combined Hormonal Contraceptives, draft guidance for industry",
+      "note": "\"combined hormonal contraceptives (CHCs) that contain estrogen and progestin. CHCs include combined oral contraceptives (COCs), as well as non-oral products such as transdermal systems and vaginal rings.\"",
+      "publisher": "U.S. Food and Drug Administration",
+      "url": "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/labeling-combined-hormonal-contraceptives-guidance-industry",
+      "date": "2017-12-29",
+      "retrieved": "2026-10-28"
+    },
+    "fda-owh-birth-control": {
+      "title": "Birth Control",
+      "note": "The combined pill \"has two hormones (estrogen and a progestin)\"; the mini pill \"has one hormone, a progestin\", and \"One version of the pill, norgestrel, is available over-the-counter\"; the hormonal IUD is \"a T-shaped device containing a progestin\"; the implant is \"a thin, matchstick-sized rod that contains a progestin hormone\".",
+      "publisher": "U.S. Food and Drug Administration, Office of Women's Health",
+      "url": "https://www.fda.gov/consumers/womens-health-topics/birth-control",
+      "date": "2024-05-10",
+      "retrieved": "2026-10-28"
+    },
+    "tilia-fe-label": {
+      "title": "Tilia Fe (Norethindrone Acetate and Ethinyl Estradiol Tablets, USP and Ferrous Fumarate Tablets), prescribing information",
+      "note": "The bundle lists its ingredients by their abbreviations, \"EE\" and \"NDAC\".",
+      "publisher": "Mayne Pharma Inc., FDA-approved labeling on DailyMed",
+      "url": "https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=cebfb589-1b34-4f51-a0c8-c2c0cf4c7145",
+      "retrieved": "2026-10-28"
+    },
+    "nexplanon-label": {
+      "title": "Nexplanon (etonogestrel implant), prescribing information",
+      "note": "The only contraceptive implant in the bundle.",
+      "publisher": "Organon LLC, FDA-approved labeling on DailyMed",
+      "url": "https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=487f8a62-e142-457c-97cc-2e398fde7594",
+      "retrieved": "2026-10-28"
+    }
+  },
+  "contraception": {
+    "about": "A drug is a hormonal contraceptive when its own label's uses say it prevents pregnancy, and it contains an estrogen or a progestin. With an estrogen it is combined, since no contraceptive is an estrogen alone; with a progestin and no estrogen it is progestin-only. Only the label's indications and Drug Facts purpose are read, so a drug that mentions contraception elsewhere is not one.",
+    "indication": "contracept|prevent(?:ion of)? pregnancy|chance of pregnancy",
+    "estrogens": [
+      {
+        "source": "epc-estrogen",
+        "substances": ["estetrol", "estradiol", "estrogens, conjugated", "ethinyl estradiol"]
+      },
+      {
+        "source": "tilia-fe-label",
+        "substances": ["ee"]
+      }
+    ],
+    "progestins": [
+      {
+        "source": "epc-progestin",
+        "substances": ["desogestrel", "dienogest", "drospirenone", "ethynodiol", "etonogestrel", "levonorgestrel", "medroxyprogesterone", "megestrol", "norelgestromin", "norethindrone", "norgestimate"],
+        "absent": ["17-alpha-hydroxyprogesterone", "segesterone"]
+      },
+      {
+        "source": "fda-owh-birth-control",
+        "substances": ["norgestrel"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "NSAIDs",
+      "phrases": ["NSAID", "nonsteroidal anti-inflammatory drug", "non-steroidal anti-inflammatory drug", "nonsteroidal antiinflammatory drug", "nonsteroidal anti-inflammatory agent"],
+      "members": [
+        {
+          "source": "epc-nsaid",
+          "class": "Nonsteroidal Anti-inflammatory Drug",
+          "substances": ["aspirin", "bromfenac", "celecoxib", "diclofenac", "diflunisal", "etodolac", "fenoprofen", "flurbiprofen", "ibuprofen", "indomethacin", "ketoprofen", "ketorolac", "meloxicam", "nabumetone", "naproxen", "nepafenac", "oxaprozin", "piroxicam", "sulindac", "tolmetin"]
+        },
+        {
+          "source": "fda-nsaids-pregnancy",
+          "substances": ["aspirin", "celecoxib", "diclofenac", "diflunisal", "etodolac", "fenoprofen", "flurbiprofen", "ibuprofen", "indomethacin", "ketoprofen", "ketorolac", "meclofenamate", "mefenamic acid", "meloxicam", "nabumetone", "naproxen", "oxaprozin", "piroxicam", "sulindac", "tolmetin", "salsalate"],
+          "absent": ["choline magnesium trisalicylate"]
+        }
+      ]
+    },
+    {
+      "name": "SSRIs",
+      "phrases": ["SSRI", "selective serotonin reuptake inhibitor", "selective serotonin re-uptake inhibitor"],
+      "members": [
+        {
+          "source": "fda-owh-depression",
+          "substances": ["citalopram", "escitalopram", "fluoxetine", "paroxetine", "sertraline", "vilazodone", "vortioxetine"]
+        },
+        {
+          "source": "fluvoxamine-label",
+          "substances": ["fluvoxamine"]
+        }
+      ]
+    },
+    {
+      "name": "SNRIs",
+      "phrases": ["SNRI", "serotonin and norepinephrine reuptake inhibitor", "serotonin norepinephrine reuptake inhibitor", "serotonin and noradrenaline reuptake inhibitor"],
+      "members": [
+        {
+          "source": "epc-snri",
+          "class": "Serotonin and Norepinephrine Reuptake Inhibitor",
+          "substances": ["desvenlafaxine", "duloxetine", "levomilnacipran", "milnacipran", "venlafaxine"]
+        },
+        {
+          "source": "fda-owh-depression",
+          "substances": ["desvenlafaxine", "duloxetine", "levomilnacipran", "venlafaxine"]
+        }
+      ]
+    },
+    {
+      "name": "MAOIs",
+      "phrases": ["MAOI", "MAO inhibitor", "monoamine oxidase inhibitor"],
+      "members": [
+        {
+          "source": "epc-maoi",
+          "class": "Monoamine Oxidase Inhibitor",
+          "substances": ["isocarboxazid", "phenelzine", "rasagiline", "selegiline", "tranylcypromine"],
+          "absent": ["safinamide"]
+        },
+        {
+          "source": "fda-owh-depression",
+          "substances": ["isocarboxazid", "phenelzine", "selegiline", "tranylcypromine"]
+        }
+      ]
+    },
+    {
+      "name": "tricyclic antidepressants",
+      "phrases": ["tricyclic antidepressant", "TCA"],
+      "members": [
+        {
+          "source": "epc-tca",
+          "class": "Tricyclic Antidepressant",
+          "substances": ["amitriptyline", "amoxapine", "clomipramine", "desipramine", "doxepin", "imipramine", "nortriptyline", "protriptyline", "trimipramine"]
+        },
+        {
+          "source": "fda-owh-depression",
+          "substances": ["amitriptyline", "amoxapine", "desipramine", "doxepin", "imipramine", "nortriptyline", "protriptyline", "trimipramine"]
+        }
+      ]
+    },
+    {
+      "name": "triptans",
+      "phrases": ["triptan", "tryptan"],
+      "members": [
+        {
+          "source": "epc-triptan",
+          "class": "Serotonin-1b and Serotonin-1d Receptor Agonist",
+          "substances": ["almotriptan", "eletriptan", "frovatriptan", "naratriptan", "rizatriptan", "sumatriptan", "zolmitriptan"]
+        }
+      ]
+    },
+    {
+      "name": "combined hormonal contraceptives",
+      "phrases": ["combined hormonal contraceptive", "combination hormonal contraceptive", "combined hormonal contraception", "estrogen-containing contraceptive", "estrogen-containing hormonal contraceptive"],
+      "members": [
+        {
+          "source": "fda-chc-guidance",
+          "contraceptive": "combined"
+        }
+      ]
+    },
+    {
+      "name": "combined oral contraceptives",
+      "phrases": ["combined oral contraceptive", "combination oral contraceptive", "COC", "estrogen-containing oral contraceptive"],
+      "members": [
+        {
+          "source": "fda-chc-guidance",
+          "contraceptive": "combined",
+          "routes": ["ORAL"]
+        }
+      ]
+    },
+    {
+      "name": "oral contraceptives",
+      "phrases": ["oral contraceptive", "birth control pill"],
+      "members": [
+        {
+          "source": "fda-owh-birth-control",
+          "contraceptive": "any",
+          "routes": ["ORAL"]
+        }
+      ]
+    },
+    {
+      "name": "hormonal contraceptives",
+      "phrases": ["hormonal contraceptive", "hormonal contraception", "hormonal birth control"],
+      "members": [
+        {
+          "source": "fda-owh-birth-control",
+          "contraceptive": "any"
+        }
+      ]
+    },
+    {
+      "name": "progestin-only contraceptives",
+      "phrases": ["progestin-only contraceptive"],
+      "members": [
+        {
+          "source": "fda-owh-birth-control",
+          "contraceptive": "progestin-only"
+        }
+      ]
+    },
+    {
+      "name": "progestin-only pills",
+      "phrases": ["progestin-only pill", "progestin-only oral contraceptive"],
+      "members": [
+        {
+          "source": "fda-owh-birth-control",
+          "contraceptive": "progestin-only",
+          "routes": ["ORAL"]
+        }
+      ]
+    }
+  ],
+  "conditions": [
+    {
+      "condition": "hormonalContraceptionCombined",
+      "source": "fda-owh-birth-control",
+      "kind": {"contraceptive": "combined", "routes": ["ORAL"]}
+    },
+    {
+      "condition": "hormonalContraceptionProgestogen",
+      "source": "fda-owh-birth-control",
+      "kind": {"contraceptive": "progestin-only", "routes": ["ORAL"]}
+    },
+    {
+      "condition": "hormonalIud",
+      "source": "fda-owh-birth-control",
+      "kind": {"contraceptive": "progestin-only", "routes": ["INTRAUTERINE"]}
+    },
+    {
+      "condition": "contraceptiveImplant",
+      "source": "nexplanon-label",
+      "kind": {"contraceptive": "progestin-only", "routes": ["SUBCUTANEOUS"], "substances": ["etonogestrel"]}
+    }
+  ]
+}

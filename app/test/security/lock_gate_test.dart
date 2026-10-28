@@ -4,9 +4,11 @@
 //
 //   * the lock is OFF by default, so no existing user meets a lock screen they
 //     did not ask for after updating;
-//   * it says, on the screen and in PRIVACY.md, that it does not encrypt
-//     anything. A lock a user mistakes for encryption is worse than no lock —
-//     it buys a false sense of safety for the price of a few taps.
+//   * it says, on the screen and in PRIVACY.md, that it only hides the screen
+//     and does not itself encrypt anything. The database is encrypted either
+//     way (ADR-0018), and a lock a user mistakes for that encryption is worse
+//     than no lock — it buys a false sense of safety for the price of a few
+//     taps.
 
 import 'dart:io';
 
@@ -155,8 +157,12 @@ void main() {
       expect(tester.widget<SwitchListTile>(tile).value, isFalse);
     });
 
-    testWidgets('says it does not encrypt, on the screen', (tester) async {
-      // Under the switch whether it is on or off, not behind a link.
+    testWidgets('says it only hides the screen, on the screen', (
+      tester,
+    ) async {
+      // Under the switch whether it is on or off, not behind a link. A lock
+      // taken for the encryption would be trusted for something it does not
+      // do, so the note says what it does and that the encryption is separate.
       await pumpSettings(tester);
       final note = find.text(l10nOf(tester).settingsAppLockNotEncrypted);
       await tester.scrollUntilVisible(note, 120);
@@ -164,7 +170,8 @@ void main() {
       expect(note, findsOneWidget);
 
       final copy = l10nOf(tester).settingsAppLockNotEncrypted.toLowerCase();
-      expect(copy, contains('not encrypt'));
+      expect(copy, contains('only hides the screen'));
+      expect(copy, contains('whether the lock is on or off'));
     });
 
     testWidgets('turning it on writes the preference', (tester) async {

@@ -56,11 +56,25 @@ enum SettingKey {
   /// Epoch day the logging nudge last fired, for its one-per-seven-days cap.
   lastNudgeEpochDay('last_nudge_epoch_day'),
 
+  /// Whether the late-period check-in is enabled: one notification once the
+  /// predicted window has passed with nothing logged (ADR-0025).
+  ///
+  /// Until it is written it follows [reminderEnabled], which it was part of
+  /// before it had a switch of its own, so nobody's notifications change on
+  /// update.
+  lateCheckInEnabled('late_check_in_enabled'),
+
   /// Whether the flow control is collapsed to bleeding yes/no (AND-24).
   ///
   /// Display only. Recorded intensities are never modified by it, so switching
   /// it back reveals them unchanged.
   flowSimplified('flow_simplified'),
+
+  /// Whether temperatures are shown and entered in degrees Fahrenheit.
+  ///
+  /// Display only, like [flowSimplified]: temperatures are stored in Celsius
+  /// whatever this says (ADR-0020), so switching it changes no recorded value.
+  temperatureFahrenheit('temperature_fahrenheit'),
 
   /// Whether the calendar names the cycle phase (AND-25).
   ///
@@ -142,7 +156,15 @@ enum SettingKey {
   /// (`MedicineListRepository`). A setting rather than a table, so that it
   /// travels in exports with no change to their format (ADR-0015). Absent
   /// when none are recorded.
-  recordedMedicines('recorded_medicines');
+  recordedMedicines('recorded_medicines'),
+
+  /// The times of day each recorded medicine is to be reminded of, as JSON.
+  ///
+  /// An object from a medicine's key to its times, `{"key": ["08:00"]}`
+  /// (`MedicineListRepository`). Like the medicines, a setting, so it travels
+  /// in exports with no change to their format (ADR-0025). Absent when none
+  /// are set.
+  medicineReminders('medicine_reminders');
 
   const SettingKey(this.wireName);
 
@@ -327,6 +349,15 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   Stream<bool> watchFlowSimplified() =>
       watchBool(SettingKey.flowSimplified, orElse: false);
 
+  /// Whether temperatures are shown in degrees Fahrenheit.
+  ///
+  /// Defaults to **off**, Celsius.
+  /// Returns:
+  ///     `Stream<bool>`: Whether Fahrenheit is chosen. Re-emitted on every
+  ///     write.
+  Stream<bool> watchTemperatureFahrenheit() =>
+      watchBool(SettingKey.temperatureFahrenheit, orElse: false);
+
   /// Whether the calendar names the cycle phase (AND-25).
   ///
   /// Defaults to **on**. Phase names restate dates the user logged rather than
@@ -405,16 +436,18 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   /// Whether the user still needs telling that their old backups will not
   /// restore (AND-28, ADR-0011).
   ///
-  /// True only when the acknowledged format is older than the one this build
-  /// writes. A database created by this build acknowledges the current format
-  /// at onCreate, so a fresh install is never warned about backups it has
-  /// never taken.
+  /// True only when the acknowledged format is older than the oldest one this
+  /// build restores. Not merely older than the one it writes: a v3 backup
+  /// still restores in a build that writes v4 (ADR-0020), and warning about it
+  /// would tell people their backups are lost when they are not. A database
+  /// created by this build acknowledges the current format at onCreate, so a
+  /// fresh install is never warned about backups it has never taken.
   /// Returns:
   ///     `Future<bool>`: True while the acknowledged format is older than
-  ///     the one this build writes.
+  ///     the oldest one this build restores.
   Future<bool> needsReExportPrompt() async =>
       await readInt(SettingKey.exportFormatAcknowledged, orElse: 0) <
-      exportSchemaVersion;
+      oldestRestorableExportVersion;
 
   /// Watch [needsReExportPrompt], for the screen that shows it.
   ///
@@ -432,7 +465,7 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
         .map(
           (row) =>
               (int.tryParse(row?.settingValue ?? '') ?? 0) <
-              exportSchemaVersion,
+              oldestRestorableExportVersion,
         )
         .distinct();
   }

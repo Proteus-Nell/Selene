@@ -64,6 +64,17 @@ void main() {
     }
   });
 
+  test('nor does the body of a medicine reminder, which is shown with it', () {
+    // Not the generic body: that one says to open the app to see what the
+    // notification is about, and the app has nothing to show for a reminder
+    // someone set themselves (ADR-0025). So it is held to the same words.
+    final body = string('notificationMedicineBody');
+    for (final leak in _leaks) {
+      expect(body, isNot(contains(leak)), reason: 'the body contains "$leak"');
+    }
+    expect(body, isNot(contains('{medicine}')));
+  });
+
   test('the app name itself does not name the subject', () {
     // It sits under the launcher icon and in the task switcher, which is the
     // same audience again.

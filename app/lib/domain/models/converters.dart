@@ -9,6 +9,7 @@
 ///     - CivilDateConverter: A required date.
 ///     - NullableCivilDateConverter: An optional date.
 ///     - CivilDateRangeConverter: A range, as a start and end object.
+///     - NullableCivilDateRangeConverter: An optional range.
 library;
 
 import 'package:json_annotation/json_annotation.dart';
@@ -65,4 +66,22 @@ class CivilDateRangeConverter
     'start': object.start.toIso8601(),
     'end': object.end.toIso8601(),
   };
+}
+
+/// Nullable civil date range converter: a start and end object, or null.
+///
+/// Null round-trips as null, so a prediction whose windows never moved does
+/// not gain an original window it never had.
+class NullableCivilDateRangeConverter
+    implements JsonConverter<CivilDateRange?, Map<String, dynamic>?> {
+  /// Creates the converter.
+  const NullableCivilDateRangeConverter();
+
+  @override
+  CivilDateRange? fromJson(Map<String, dynamic>? json) =>
+      json == null ? null : const CivilDateRangeConverter().fromJson(json);
+
+  @override
+  Map<String, dynamic>? toJson(CivilDateRange? object) =>
+      object == null ? null : const CivilDateRangeConverter().toJson(object);
 }

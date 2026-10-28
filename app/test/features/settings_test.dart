@@ -177,25 +177,23 @@ void main() {
       final l10n = l10nOf(tester);
       expect(find.text(l10n.privacyOnDeviceBody), findsOneWidget);
       // The paragraph that matters most is the one that admits a limit.
-      expect(find.text(l10n.privacyNotEncryptedBody), findsOneWidget);
+      expect(find.text(l10n.privacyEncryptedBody), findsOneWidget);
     });
 
-    testWidgets('says plainly that the database is not encrypted', (
-      tester,
-    ) async {
+    testWidgets('says what the encryption does not protect', (tester) async {
       await pumpSettings(tester);
       final l10n = l10nOf(tester);
-      final text = l10n.privacyNotEncryptedBody.toLowerCase();
-      expect(text, contains('plain text'));
-      expect(text, contains('unlocked phone'));
-      // Not "no app lock" any more. AND-29 built one, so that sentence had
-      // become false while this test went on passing — the assertion was
-      // pinning the words rather than the claim. The claim is that the app
-      // does not oversell what "private" buys, and the honest limit now is
-      // that the lock covers the screen and not the file.
-      expect(text, contains('does not encrypt'));
-      // And it does not let the word "private" do work it has not earned.
-      expect(l10n.privacyNotEncryptedTitle.toLowerCase(), contains('not '));
+      final text = l10n.privacyEncryptedBody.toLowerCase();
+      // The claim, and its limit in the same paragraph. The earlier version of
+      // this test pinned "plain text", which was the honest limit until
+      // ADR-0018 made it false; what it was standing for is that the app does
+      // not oversell what it protects.
+      expect(text, contains('encrypted'));
+      expect(text, contains('not in your exports'));
+      expect(text, contains('does not protect an unlocked phone'));
+      expect(text, contains('app lock'));
+      // The one thing kept outside the file is named rather than glossed.
+      expect(text, contains('outside the encrypted file'));
     });
   });
 
@@ -285,9 +283,12 @@ void main() {
       );
       final before = container.read(notificationPreferencesRevisionProvider);
 
-      await tester.tap(
-        find.widgetWithText(SwitchListTile, l10n.settingsReminderEnabled),
+      final reminders = find.widgetWithText(
+        SwitchListTile,
+        l10n.settingsReminderEnabled,
       );
+      await scrollSettingsTo(tester, reminders);
+      await tester.tap(reminders);
       await tester.pumpAndSettle();
 
       expect(
@@ -301,12 +302,15 @@ void main() {
     ) async {
       await pumpSettings(tester);
       final l10n = l10nOf(tester);
+      final reminders = find.widgetWithText(
+        SwitchListTile,
+        l10n.settingsReminderEnabled,
+      );
+      await scrollSettingsTo(tester, reminders);
       // The switch alone does not say when anything would arrive.
       expect(find.text(l10n.settingsReminderSubtitle), findsOneWidget);
 
-      await tester.tap(
-        find.widgetWithText(SwitchListTile, l10n.settingsReminderEnabled),
-      );
+      await tester.tap(reminders);
       await tester.pumpAndSettle();
       expect(
         await db.settingsDao.readBool(
@@ -326,6 +330,13 @@ void main() {
       // real data leak (risk R16).
       await pumpSettings(tester);
       final l10n = l10nOf(tester);
+      await scrollSettingsTo(
+        tester,
+        find.widgetWithText(
+          SwitchListTile,
+          l10n.settingsDetailedNotifications,
+        ),
+      );
       for (final title in <String>[
         l10n.settingsNudgeEnabled,
         l10n.settingsDetailedNotifications,
@@ -342,18 +353,100 @@ void main() {
       }
     });
 
+    testWidgets('give the late-period check-in a switch of its own, set as '
+        'the reminders before a period were until it is used', (tester) async {
+      // It came with those reminders before it had a switch (ADR-0025), so
+      // someone who had turned them off finds it off too.
+      await db.settingsDao.writeBool(SettingKey.reminderEnabled, value: false);
+      await pumpSettings(tester);
+      final l10n = l10nOf(tester);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(SettingsScreen)),
+      );
+      final checkIn = find.widgetWithText(
+        SwitchListTile,
+        l10n.settingsLateCheckIn,
+      );
+      await scrollSettingsTo(tester, checkIn);
+      expect(tester.widget<SwitchListTile>(checkIn).value, isFalse);
+      expect(find.text(l10n.settingsLateCheckInSubtitle(5)), findsOneWidget);
+
+      final before = container.read(notificationPreferencesRevisionProvider);
+      await tester.tap(checkIn);
+      await tester.pumpAndSettle();
+      expect(tester.widget<SwitchListTile>(checkIn).value, isTrue);
+      expect(
+        await db.settingsDao.readBool(
+          SettingKey.lateCheckInEnabled,
+          orElse: false,
+        ),
+        isTrue,
+      );
+      // And the reminders before a period stay as they were.
+      expect(
+        await db.settingsDao.readBool(
+          SettingKey.reminderEnabled,
+          orElse: true,
+        ),
+        isFalse,
+      );
+      expect(
+        container.read(notificationPreferencesRevisionProvider),
+        greaterThan(before),
+      );
+    });
+
+    testWidgets('keep the late-period check-in as its switch shows when the '
+        'reminders before a period are turned off', (tester) async {
+      // Until it is set it follows those reminders, so turning them off would
+      // otherwise turn it off too, under a switch still showing it on.
+      await pumpSettings(tester);
+      final l10n = l10nOf(tester);
+      final reminders = find.widgetWithText(
+        SwitchListTile,
+        l10n.settingsReminderEnabled,
+      );
+      await scrollSettingsTo(tester, reminders);
+      await tester.tap(reminders);
+      await tester.pumpAndSettle();
+
+      final checkIn = find.widgetWithText(
+        SwitchListTile,
+        l10n.settingsLateCheckIn,
+      );
+      await scrollSettingsTo(tester, checkIn);
+      expect(tester.widget<SwitchListTile>(checkIn).value, isTrue);
+      expect(
+        await db.settingsDao.readBool(
+          SettingKey.lateCheckInEnabled,
+          orElse: false,
+        ),
+        isTrue,
+      );
+    });
+
+    testWidgets('say where medicine reminders are set, and go there', (
+      tester,
+    ) async {
+      await pumpSettings(tester);
+      final l10n = l10nOf(tester);
+      final row = find.text(l10n.settingsMedicineReminders);
+      await scrollSettingsTo(tester, row);
+      expect(find.text(l10n.settingsMedicineRemindersSubtitle), findsOneWidget);
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.conditionsTitle), findsWidgets);
+    });
+
     testWidgets('warn that some phones kill scheduled reminders', (
       tester,
     ) async {
       // Risk R12. Saying so is cheaper than the user concluding the app is
       // broken.
       await pumpSettings(tester);
-      await tester.drag(find.byType(ListView), const Offset(0, -260));
-      await tester.pumpAndSettle();
-      expect(
-        find.text(l10nOf(tester).settingsBatteryNoteTitle),
-        findsOneWidget,
-      );
+      final note = find.text(l10nOf(tester).settingsBatteryNoteTitle);
+      await scrollSettingsTo(tester, note);
+      expect(note, findsOneWidget);
     });
   });
 

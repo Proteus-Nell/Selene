@@ -583,32 +583,70 @@ typedef _Countdown = ({String headline, String caption});
 /// number here would be a bare date in disguise, which is the one presentation
 /// `docs/PLAN.md` 6.2 rules out.
 ///
+/// Measured against the window the period was first expected in, not the one
+/// moved forward once it is late: a moved window always starts today or later,
+/// so counting from it would say "any day now" for as long as the period
+/// stayed away, which is the very thing ADR-0016 fixes.
+///
 /// Args:
 ///     context (BuildContext): For the translations and the clock.
 ///     result (PredictionResult?): The model's current belief.
 ///
 /// Returns:
-///     _Countdown: The two lines. "Nothing yet" when no window exists, "now"
-///     once the window has opened, and a range of days otherwise.
+///     _Countdown: The two lines. A range of days before the window opens,
+///     "any day now" inside it, "later than expected" past it, and for every
+///     state with no window, what that state is in a few words.
 _Countdown _countdown(BuildContext context, PredictionResult? result) {
   final l10n = AppLocalizations.of(context);
-  final window = switch (result) {
-    Predicted(:final prediction) => prediction.window80,
-    InsufficientData(:final populationPrior) => populationPrior.window80,
-    _ => null,
-  };
-  if (window == null) {
-    return (
-      headline: l10n.logCountdownNothingYet,
-      caption: l10n.logCountdownNothingYetCaption,
-    );
+  final Prediction prediction;
+  switch (result) {
+    case Predicted(prediction: final shown) ||
+        InsufficientData(populationPrior: final shown):
+      prediction = shown;
+    case LaterThanExpected(:final daysLate):
+      return (
+        headline: l10n.logCountdownLater,
+        caption: l10n.logCountdownLaterCaption(daysLate),
+      );
+    case LostTrack():
+      return (
+        headline: l10n.logCountdownLostTrack,
+        caption: l10n.logCountdownLostTrackCaption,
+      );
+    case TooIrregular():
+      return (
+        headline: l10n.logCountdownNoRange,
+        caption: l10n.logCountdownNoRangeCaption,
+      );
+    case SuppressedByCondition():
+      return (
+        headline: l10n.logCountdownPaused,
+        caption: l10n.logCountdownPausedCaption,
+      );
+    case DataInconsistent():
+      return (
+        headline: l10n.logCountdownCheckDates,
+        caption: l10n.logCountdownCheckDatesCaption,
+      );
+    case NoData() || null:
+      return (
+        headline: l10n.logCountdownNothingYet,
+        caption: l10n.logCountdownNothingYetCaption,
+      );
   }
+  final window = prediction.expectedWindow80;
   final today = ProviderScope.containerOf(
     context,
     listen: false,
   ).read(clockProvider).today();
   final from = today.daysBetween(window.start);
   final to = today.daysBetween(window.end);
+  if (to < 0) {
+    return (
+      headline: l10n.logCountdownLater,
+      caption: l10n.logCountdownLaterCaption(-to),
+    );
+  }
   if (from <= 0) {
     return (
       headline: l10n.logCountdownNow,

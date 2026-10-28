@@ -135,7 +135,9 @@ void main() {
           'irregular ${statistics.completedCycles}',
         DataInconsistent(:final reason) => 'inconsistent ${reason.name}',
         NoData() => 'nothing logged',
-        LostTrack(:final daysSinceLastLog) => 'lost track $daysSinceLastLog',
+        LostTrack(:final daysSinceLastPeriod) =>
+          'lost track $daysSinceLastPeriod',
+        LaterThanExpected(:final daysLate) => 'late by $daysLate',
         SuppressedByCondition(:final condition) =>
           'suppressed by ${condition.name}',
       };
@@ -179,10 +181,23 @@ void main() {
         describe(
           const PredictionResult.lostTrack(
             statistics: CycleStatistics.empty,
-            daysSinceLastLog: 74,
+            daysSinceLastPeriod: 74,
           ),
         ),
         'lost track 74',
+      );
+      expect(
+        describe(
+          PredictionResult.laterThanExpected(
+            expectedWindow80: CivilDateRange(
+              CivilDate.parseIso8601('2026-06-01'),
+              CivilDate.parseIso8601('2026-06-05'),
+            ),
+            daysLate: 12,
+            statistics: CycleStatistics.empty,
+          ),
+        ),
+        'late by 12',
       );
     });
   });

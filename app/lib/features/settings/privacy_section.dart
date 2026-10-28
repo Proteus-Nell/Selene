@@ -1,9 +1,9 @@
 /// The privacy statement section.
 ///
 /// Renders the whole privacy text inside Settings rather than behind a link,
-/// because the paragraph that matters most is the one saying the database is
-/// not encrypted, and a promise the user has to go looking for is not a
-/// promise.
+/// because the paragraph that matters most is the one saying what the
+/// encryption does not protect, and a limit the user has to go looking for is
+/// not a stated limit.
 ///
 /// Includes:
 ///     - PrivacySection: The expandable section.
@@ -17,9 +17,8 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 ///
 /// The same text as `docs/PRIVACY.md`, and `privacy_text_test.dart` fails if
 /// the two drift apart. It is here rather than behind a link because the
-/// paragraph that matters most is the one saying the database is **not**
-/// encrypted, and a promise the user has to go looking for is not a promise
-/// (DECISIONS.md ADR-0004).
+/// paragraph that matters most is the one saying what the encryption does
+/// **not** protect: an unlocked phone (DECISIONS.md ADR-0018).
 class PrivacySection extends StatelessWidget {
   /// Creates the privacy section.
   const PrivacySection({super.key});
@@ -34,7 +33,8 @@ class PrivacySection extends StatelessWidget {
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         _Paragraph(l10n.privacyOnDeviceTitle, l10n.privacyOnDeviceBody),
-        _Paragraph(l10n.privacyNotEncryptedTitle, l10n.privacyNotEncryptedBody),
+        _Paragraph(l10n.privacySharingTitle, l10n.privacySharingBody),
+        _Paragraph(l10n.privacyEncryptedTitle, l10n.privacyEncryptedBody),
         _Paragraph(l10n.privacyBackupTitle, l10n.privacyBackupBody),
         _Paragraph(l10n.privacyDeletionTitle, l10n.privacyDeletionBody),
         _Paragraph(l10n.privacyLogsTitle, l10n.privacyLogsBody),

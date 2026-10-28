@@ -134,29 +134,187 @@ void main() {
     });
   });
 
-  group('after a long silence', () {
+  group('once the window has opened with no period logged', () {
+    /// The prediction as it stood [daysEarlier] days ago, before the window
+    /// opened, for comparing against. The logs end well before then, so the
+    /// earlier clock is not one that went backwards.
+    Future<Prediction> asFirstPredicted({required int daysEarlier}) async {
+      final earlier = PredictionRepository(
+        database: db,
+        cycles: CycleRepository(
+          database: db,
+          clock: FixedClock(clock.today().addDays(-daysEarlier)),
+        ),
+      );
+      return (await earlier.current() as Predicted).prediction;
+    }
+
+    test('moves the windows forward past the days already gone', () async {
+      // Day 29 of a 28-day history: inside the window, and past its first day.
+      final lastStart = await logRegularHistory(
+        completedCycles: 7,
+        endingDaysAgo: 25,
+      );
+      expect(lastStart.daysBetween(clock.today()), 28);
+      final original = await asFirstPredicted(daysEarlier: 20);
+      final moved = (await predictions.current() as Predicted).prediction;
+
+      expect(moved.window80.start, greaterThanOrEqualTo(clock.today()));
+      expect(moved.window50.start, greaterThanOrEqualTo(clock.today()));
+      expect(moved.medianStart, greaterThanOrEqualTo(clock.today()));
+      expect(moved.isCoherent, isTrue);
+      expect(moved.originalWindow80, original.window80);
+      expect(moved.expectedWindow80, original.window80);
+      // Inside the window first predicted, so not late yet.
+      expect(moved.isLate, isFalse);
+      expect(original.originalWindow80, isNull);
+    });
+
+    test(
+      'says how late once past the window, and keeps the range ahead',
+      () async {
+        await logRegularHistory(completedCycles: 7, endingDaysAgo: 30);
+        final moved = (await predictions.current() as Predicted).prediction;
+        final expectedEnd = moved.expectedWindow80.end;
+        expect(clock.today(), greaterThan(expectedEnd));
+        expect(moved.daysLate, expectedEnd.daysBetween(clock.today()));
+        expect(moved.isLate, isTrue);
+        expect(moved.window80.start, greaterThanOrEqualTo(clock.today()));
+        // Wider than the window it moved from: lateness is uncertainty.
+        expect(
+          moved.window80.lengthInDays,
+          greaterThan(moved.expectedWindow80.lengthInDays),
+        );
+      },
+    );
+
+    test('gives no range once a moved one would be too wide to help', () async {
+      // Day 51 of a 28-day history. The range moved forward this far is wider
+      // than the app will draw for an irregular history, so it is not drawn
+      // for a late period either; the window it was expected in still is.
+      await logRegularHistory(completedCycles: 7, endingDaysAgo: 47);
+      final original = await asFirstPredicted(daysEarlier: 40);
+      final result = await predictions.current();
+      expect(result, isA<LaterThanExpected>());
+      final late = result as LaterThanExpected;
+      expect(late.expectedWindow80, original.window80);
+      expect(
+        late.daysLate,
+        original.window80.end.daysBetween(clock.today()),
+      );
+      expect(late.statistics.completedCycles, 7);
+    });
+
+    test('moves a cached fit to the same days as a fresh one', () async {
+      // The move depends on the day, so it is applied on top of the cache
+      // rather than stored in it. A hit rebuilds the forecast from the stored
+      // posterior; this pins that the rebuilt one is the one the miss used.
+      await logRegularHistory(completedCycles: 7, endingDaysAgo: 27);
+      final miss = await predictions.current();
+      expect(await predictions.cachedPosterior(), isNotNull);
+      final hit = await predictions.current();
+      expect(hit, miss);
+      expect((hit as Predicted).prediction.originalWindow80, isNotNull);
+    });
+
+    test('moves a population prior forward too', () async {
+      await logRegularHistory(completedCycles: 2, endingDaysAgo: 28);
+      final result = await predictions.current();
+      expect(result, isA<InsufficientData>());
+      final prior = (result as InsufficientData).populationPrior;
+      expect(prior.originalWindow80, isNotNull);
+      expect(prior.window80.start, greaterThanOrEqualTo(clock.today()));
+    });
+
+    test('leaves the windows alone before the window opens', () async {
+      await logRegularHistory(completedCycles: 7, endingDaysAgo: 10);
+      final prediction = (await predictions.current() as Predicted).prediction;
+      expect(prediction.originalWindow80, isNull);
+      expect(prediction.daysLate, 0);
+    });
+  });
+
+  group('after a long time without a period', () {
     test('admits it lost track instead of extrapolating', () async {
-      await logRegularHistory(
+      final lastStart = await logRegularHistory(
         completedCycles: 3,
         endingDaysAgo: CycleRules.lostTrackAfterDays + 5,
       );
       final result = await predictions.current();
       expect(result, isA<LostTrack>());
       final lost = result as LostTrack;
-      expect(lost.daysSinceLastLog, CycleRules.lostTrackAfterDays + 5);
+      expect(lost.daysSinceLastPeriod, lastStart.daysBetween(clock.today()));
       // Losing track must not lose the user their history.
       expect(lost.statistics.completedCycles, 3);
     });
 
-    test('still predicts exactly on the threshold', () async {
-      // "no logs for 60+ days" is read as strictly more than 60, so the
-      // boundary day itself still predicts. Pinning it stops the rule drifting
-      // by a day unnoticed.
+    test(
+      'counts from the last period, not from the last log of any kind',
+      () async {
+        // Someone who logs a symptom every day but has not logged a period in
+        // ten weeks. Counting from any log, this was "any day now" for as long
+        // as the logging went on.
+        final lastStart = await logRegularHistory(
+          completedCycles: 6,
+          endingDaysAgo: 67,
+        );
+        for (
+          var day = lastStart.addDays(4);
+          day <= clock.today();
+          day = day.addDays(1)
+        ) {
+          await cycles.add(
+            DayLog(
+              date: day,
+              symptoms: const <Symptom, SymptomSeverity>{
+                Symptom.headache: SymptomSeverity.mild,
+              },
+            ),
+          );
+        }
+        expect(await cycles.daysSinceLastLog(), 0);
+        final result = await predictions.current();
+        expect(result, isA<LostTrack>());
+        expect(
+          (result as LostTrack).daysSinceLastPeriod,
+          lastStart.daysBetween(clock.today()),
+        );
+      },
+    );
+
+    test('does not mistake a long cycle for a lost one', () async {
+      // Cycles of about nine weeks. Day 62 is past the count but inside the
+      // window this history predicts, so the window still stands.
+      final lastStart = await logHistory(
+        const <int>[60, 61, 59, 60, 61, 60, 59],
+        endingDaysAgo: 58,
+      );
+      expect(
+        lastStart.daysBetween(clock.today()) + 1,
+        greaterThan(CycleRules.lostTrackAfterDays),
+      );
+      final result = await predictions.current();
+      expect(result, isA<Predicted>());
+      final prediction = (result as Predicted).prediction;
+      expect(prediction.expectedWindow80.end, greaterThan(clock.today()));
+      expect(prediction.isLate, isFalse);
+    });
+
+    test('still predicts on the last day of the count', () async {
+      // Day 60 of the cycle predicts, day 61 does not: the same day the ring
+      // stops counting, pinned so the two cannot drift a day apart.
       await logRegularHistory(
         completedCycles: 3,
-        endingDaysAgo: CycleRules.lostTrackAfterDays,
+        endingDaysAgo: CycleRules.lostTrackAfterDays - 4,
       );
       expect(await predictions.current(), isNot(isA<LostTrack>()));
+
+      await db.dayLogDao.deleteEverything();
+      await logRegularHistory(
+        completedCycles: 3,
+        endingDaysAgo: CycleRules.lostTrackAfterDays - 3,
+      );
+      expect(await predictions.current(), isA<LostTrack>());
     });
   });
 

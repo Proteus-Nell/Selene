@@ -20,6 +20,7 @@
 ///     - medicinesFetched: Whether a bundle has been built at all.
 ///     - medicinesSnapshotDate: The date of the openFDA export.
 ///     - medicinesCount: How many drugs the bundle holds.
+///     - medicinesGuideCount: How many of them have a Medication Guide.
 ///     - medicinesChunkCount: How many compressed text chunks it has.
 ///     - medicinesJurisdiction: Where the labelling applies.
 ///     - medicinesDisclaimer: What the screen says about the source.
@@ -30,7 +31,7 @@ library;
 /// A drift guard, not a security boundary: `gen_medicines.py --check` fails CI
 /// if the bundle and this file stop matching.
 const String medicinesBundleSha256 =
-    '0a1f81dd94da06f375c2b3027b4fc9172dba9a9996bbaed1c76a5c34e7e926db';
+    '4f719f8156628f713375f3f84b021c54abcb18980ca573697623829b98d20c50';
 
 /// Whether a bundle has been built from openFDA at all.
 ///
@@ -47,13 +48,16 @@ const bool medicinesFetched = true;
 // Nullable whichever state this file is generated in, so that the code reading
 // it compiles in both.
 // ignore: unnecessary_nullable_for_final_variable_declarations
-const String? medicinesSnapshotDate = '2026-10-02';
+const String? medicinesSnapshotDate = '2026-10-28';
 
 /// How many drugs the bundle holds.
-const int medicinesCount = 5835;
+const int medicinesCount = 5687;
+
+/// How many of them carry the safety sections of their Medication Guide.
+const int medicinesGuideCount = 506;
 
 /// How many compressed text chunks the label sections are split into.
-const int medicinesChunkCount = 60;
+const int medicinesChunkCount = 62;
 
 /// The jurisdiction this labelling comes from.
 ///

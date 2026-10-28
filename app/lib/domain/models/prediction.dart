@@ -179,6 +179,13 @@ Map<String, dynamic> _basisToJson(PredictionBasis basis) => basis.toJson();
 /// implies a precision the model does not have, and that rule is enforced here
 /// in the type rather than in review. See `docs/PLAN.md` 6.2.
 ///
+/// Once a period is due and has not come, the windows move forward: the days
+/// already passed are evidence that the cycle is at least that long, and a
+/// range reaching back into them would be claiming days that are already
+/// known not to have been the start (ADR-0016). [originalWindow80] keeps the
+/// window as it was first predicted, which is what lateness is measured
+/// against and what reminders are scheduled from.
+///
 /// Attributes:
 ///     medianStart (CivilDate): The single most likely start date.
 ///     window50 (CivilDateRange): The 50% predictive interval.
@@ -186,6 +193,11 @@ Map<String, dynamic> _basisToJson(PredictionBasis basis) => basis.toJson();
 ///         [window50], which an assertion enforces.
 ///     confidence (Confidence): The band [window80] falls in.
 ///     basis (PredictionBasis): What the prediction was computed from.
+///     originalWindow80 (CivilDateRange?): The 80% window as first
+///         predicted, when the windows above have moved forward from it.
+///         Null when they have not moved.
+///     daysLate (int): Days the prediction's day is past the end of the
+///         window as first predicted. Zero when it is not past it.
 @freezed
 abstract class Prediction with _$Prediction {
   /// Creates a prediction.
@@ -196,6 +208,11 @@ abstract class Prediction with _$Prediction {
   ///     window80 (CivilDateRange): The 80% interval.
   ///     confidence (Confidence): The band [window80] falls in.
   ///     basis (PredictionBasis): What the prediction was computed from.
+  ///     originalWindow80 (CivilDateRange?, optional): The 80% window as
+  ///         first predicted, when the windows have moved forward from it.
+  ///         Defaults to null.
+  ///     daysLate (int, optional): Days past the end of the window as first
+  ///         predicted. Defaults to 0.
   ///
   /// Throws:
   ///     AssertionError: In debug builds, if [window80] is narrower than
@@ -219,6 +236,8 @@ abstract class Prediction with _$Prediction {
     // on the way back in. Nested freezed models need this spelled out.
     @JsonKey(fromJson: PredictionBasis.fromJson, toJson: _basisToJson)
     required PredictionBasis basis,
+    @NullableCivilDateRangeConverter() CivilDateRange? originalWindow80,
+    @Default(0) int daysLate,
   }) = _Prediction;
 
   const Prediction._();
@@ -235,6 +254,16 @@ abstract class Prediction with _$Prediction {
 
   /// Width of the 80% window in days. The headline uncertainty figure.
   int get uncertaintyDays => window80.lengthInDays;
+
+  /// The 80% window the period was first expected in.
+  ///
+  /// The same as [window80] until the windows move forward. Lateness is
+  /// measured against this, and reminders are scheduled from it, so that a
+  /// window moving a day at a time cannot keep moving a reminder with it.
+  CivilDateRange get expectedWindow80 => originalWindow80 ?? window80;
+
+  /// Whether the period is later than the window it was first expected in.
+  bool get isLate => daysLate > 0;
 
   /// Whether [medianStart] sits inside both windows, as it always should.
   bool get isCoherent =>
@@ -259,6 +288,9 @@ abstract class Prediction with _$Prediction {
 ///   than an extrapolation. Predicting from data two months stale gives a
 ///   confident wrong answer, which is the failure mode this project is most
 ///   concerned with (`docs/PLAN.md` 5.5).
+/// * [LaterThanExpected] still carries the window the period was expected in,
+///   so a period late enough that no useful range is left still says how late
+///   it is, rather than going quiet.
 ///
 /// In other words, "show the user nothing" is not representable in this type.
 /// The one case that carries no prediction at all, [NoData], is the state
@@ -291,14 +323,37 @@ sealed class PredictionResult with _$PredictionResult {
   /// alongside typical cycle lengths clearly labelled as typical.
   const factory PredictionResult.noData() = NoData;
 
-  /// No logs for long enough that the app should admit it has lost track.
+  /// No period logged for long enough that the app should admit it has lost
+  /// track.
+  ///
+  /// Measured from the start of the last logged period, not from the last log
+  /// of any kind: someone who logs symptoms every day but has not logged a
+  /// period in months is exactly who an extrapolated window would mislead
+  /// (ADR-0016). And only once the window first predicted has also passed, so
+  /// that a long cycle is not mistaken for a lost one.
   ///
   /// [statistics] is required for the same reason as in [TooIrregular]: losing
   /// track must not lose the user their own history.
   const factory PredictionResult.lostTrack({
     required CycleStatistics statistics,
-    required int daysSinceLastLog,
+    required int daysSinceLastPeriod,
   }) = LostTrack;
+
+  /// The period is later than expected, and so late that no useful range is
+  /// left to give.
+  ///
+  /// A late period moves the range forward, and the further it moves the
+  /// wider it gets. Once it is as wide as a range the app refuses to show for
+  /// an irregular history, it is not shown here either (`docs/PLAN.md` 6.2).
+  /// What the user gets instead is the window the period was expected in, and
+  /// how far past it today is.
+  ///
+  /// [statistics] is required for the same reason as in [TooIrregular].
+  const factory PredictionResult.laterThanExpected({
+    required CivilDateRange expectedWindow80,
+    required int daysLate,
+    required CycleStatistics statistics,
+  }) = LaterThanExpected;
 
   /// Cycle variability is too high for a useful window.
   ///

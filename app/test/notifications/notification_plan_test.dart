@@ -6,6 +6,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 import 'package:period_tracker/domain/cycles/cycle_rules.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 import 'package:period_tracker/notifications/notification_plan.dart';
@@ -114,16 +115,97 @@ void main() {
       expect(planFor(passed), isEmpty);
     });
 
-    test('is silent when predictions are switched off', () {
+    test('is silent when its reminders and the check-in are both off', () {
       expect(
         planFor(
           result,
           preferences: const NotificationPreferences(
             predictionsEnabled: false,
+            lateCheckInEnabled: false,
           ),
         ),
         isEmpty,
       );
+    });
+
+    test('keeps the late-period check-in when only the reminders before a '
+        'period are off', () {
+      // Two switches since ADR-0025: someone can want to hear only if a period
+      // is late, and not before every one.
+      expect(
+        kindsIn(
+          planFor(
+            result,
+            preferences: const NotificationPreferences(
+              predictionsEnabled: false,
+            ),
+          ),
+        ),
+        <NotificationKind>{NotificationKind.lateNotice},
+      );
+    });
+
+    test('leaves the late-period check-in out when it is off', () {
+      expect(
+        kindsIn(
+          planFor(
+            result,
+            preferences: const NotificationPreferences(
+              lateCheckInEnabled: false,
+            ),
+          ),
+        ),
+        <NotificationKind>{
+          NotificationKind.windowOpening,
+          NotificationKind.likelyStarted,
+        },
+      );
+    });
+  });
+
+  group('with a window moved forward by a late period', () {
+    // First expected 25 to 29 June. On the 30th nothing has been logged, so
+    // the window shown has moved on to start today. The reminders belong to
+    // the window first predicted: scheduled from the moved one, "likely
+    // started" would fall due tomorrow every day, and the late notice would
+    // move five days ahead of every day it was asked about.
+    final moved = PredictionResult.predicted(
+      prediction: predictionFrom('2026-06-30', '2026-07-04').copyWith(
+        originalWindow80: CivilDateRange(day('2026-06-25'), day('2026-06-29')),
+        daysLate: 1,
+      ),
+      statistics: const CycleStatistics(completedCycles: 6),
+    );
+
+    test('does not ask again whether it started', () {
+      expect(
+        kindsIn(planFor(moved)),
+        isNot(contains(NotificationKind.likelyStarted)),
+      );
+      expect(
+        kindsIn(planFor(moved)),
+        isNot(contains(NotificationKind.windowOpening)),
+      );
+    });
+
+    test('keeps the late notice where the first window put it', () {
+      expect(
+        planFor(
+          moved,
+        ).firstWhere((p) => p.kind == NotificationKind.lateNotice).fireDate,
+        day('2026-07-04'),
+      );
+    });
+
+    test('keeps it there once no range is given at all', () {
+      final late = PredictionResult.laterThanExpected(
+        expectedWindow80: CivilDateRange(day('2026-06-25'), day('2026-06-29')),
+        daysLate: 1,
+        statistics: const CycleStatistics(completedCycles: 6),
+      );
+      final planned = planFor(late);
+      expect(kindsIn(planned), <NotificationKind>{NotificationKind.lateNotice});
+      expect(planned.single.fireDate, day('2026-07-04'));
     });
   });
 
@@ -138,7 +220,7 @@ void main() {
         ),
         const PredictionResult.lostTrack(
           statistics: CycleStatistics(completedCycles: 6),
-          daysSinceLastLog: 90,
+          daysSinceLastPeriod: 90,
         ),
         const PredictionResult.dataInconsistent(
           reason: DataInconsistency.clockWentBackwards,
@@ -289,6 +371,94 @@ void main() {
         ),
         isFalse,
       );
+    });
+  });
+
+  group('medicine reminders', () {
+    const pill = RecordedMedicine(key: 'pill.oral.rx', name: 'PILL');
+    const iron = RecordedMedicine(key: 'iron.oral.otc', name: 'IRON');
+
+    test('are one for each time set, medicine by medicine, earliest first', () {
+      expect(
+        NotificationPlanner.planMedicines(
+          const <RecordedMedicine>[pill, iron],
+          const <String, List<ReminderTime>>{
+            'iron.oral.otc': <ReminderTime>[ReminderTime(13, 0)],
+            'pill.oral.rx': <ReminderTime>[
+              ReminderTime(8, 0),
+              ReminderTime(20, 30),
+            ],
+          },
+        ),
+        const <DailyReminder>[
+          DailyReminder(id: 2000, medicine: 'PILL', time: ReminderTime(8, 0)),
+          DailyReminder(
+            id: 2001,
+            medicine: 'PILL',
+            time: ReminderTime(20, 30),
+          ),
+          DailyReminder(id: 2002, medicine: 'IRON', time: ReminderTime(13, 0)),
+        ],
+      );
+    });
+
+    test("never take an id the cycle's notices use", () {
+      // A shared id would let a medicine reminder replace a period notice on
+      // the platform, or the other way round.
+      final ids = NotificationKind.values.map((kind) => kind.id).toSet();
+      expect(
+        ids.every((id) => id < NotificationPlanner.firstMedicineReminderId),
+        isTrue,
+      );
+    });
+
+    test('are none for a medicine no longer recorded', () {
+      expect(
+        NotificationPlanner.planMedicines(
+          const <RecordedMedicine>[iron],
+          const <String, List<ReminderTime>>{
+            'gone.oral.rx': <ReminderTime>[ReminderTime(8, 0)],
+          },
+        ),
+        isEmpty,
+      );
+    });
+
+    test('go out on a channel of their own', () {
+      // So that muting the cycle's notices does not mute a medicine, nor the
+      // other way round (risk R15).
+      expect(NotificationChannelId.medicines.id, 'medicines');
+      for (final kind in NotificationKind.values) {
+        expect(kind.channel, isNot(NotificationChannelId.medicines));
+      }
+    });
+
+    test('compare by value and print readably', () {
+      const reminder = DailyReminder(
+        id: 2000,
+        medicine: 'PILL',
+        time: ReminderTime(8, 0),
+      );
+      expect(
+        reminder,
+        const DailyReminder(
+          id: 2000,
+          medicine: 'PILL',
+          time: ReminderTime(8, 0),
+        ),
+      );
+      expect(
+        reminder,
+        isNot(
+          const DailyReminder(
+            id: 2001,
+            medicine: 'PILL',
+            time: ReminderTime(8, 0),
+          ),
+        ),
+      );
+      expect(reminder.hashCode, isNotNull);
+      expect(reminder.toString(), contains('08:00'));
     });
   });
 

@@ -61,19 +61,82 @@ class PeriodTrackerApp extends ConsumerWidget {
 /// in this state there is no database to hold: opening the file read-write
 /// would drop whatever the newer schema knows about. The only honest thing to
 /// render is an explanation.
+///
+/// Attributes:
+///     storedVersion (int): Schema version found in the file.
+///     supportedVersion (int): Newest version this build understands.
 class UnreadableDataApp extends StatelessWidget {
-  /// Creates the screen for a stored schema of [storedVersion].
+  /// Creates the explanation for a file from a newer build.
+  ///
+  /// Args:
+  ///     storedVersion (int): Schema version found in the file.
+  ///     supportedVersion (int): Newest version this build understands.
   const UnreadableDataApp({
     required this.storedVersion,
     required this.supportedVersion,
     super.key,
   });
 
-  /// Schema version found on the device.
+  /// Schema version found in the file.
   final int storedVersion;
 
   /// Newest version this build understands.
   final int supportedVersion;
+
+  @override
+  Widget build(BuildContext context) => _BootstrapMessageApp(
+    icon: Icons.system_update,
+    title: (l10n) => l10n.bootstrapNewerSchemaTitle,
+    body: (l10n) =>
+        l10n.bootstrapNewerSchemaBody(storedVersion, supportedVersion),
+  );
+}
+
+/// Shown when the key that unlocks the database could not be read.
+///
+/// The same reasoning as [UnreadableDataApp]: there is no database to hold,
+/// because opening one would mean making a new key, and the file already on
+/// the phone could then never be opened again (ADR-0018). Nothing is written,
+/// and the next launch tries again.
+class KeyUnavailableApp extends StatelessWidget {
+  /// Creates the explanation.
+  const KeyUnavailableApp({super.key});
+
+  @override
+  Widget build(BuildContext context) => _BootstrapMessageApp(
+    icon: Icons.lock_outline,
+    title: (l10n) => l10n.bootstrapKeyUnavailableTitle,
+    body: (l10n) => l10n.bootstrapKeyUnavailableBody,
+  );
+}
+
+/// A whole app that says one thing: why there is nothing else to show.
+///
+/// Attributes:
+///     icon (IconData): Above the title.
+///     title (String Function(AppLocalizations)): The headline.
+///     body (String Function(AppLocalizations)): The explanation.
+class _BootstrapMessageApp extends StatelessWidget {
+  /// Creates the message app.
+  ///
+  /// Args:
+  ///     icon (IconData): Above the title.
+  ///     title (String Function(AppLocalizations)): The headline.
+  ///     body (String Function(AppLocalizations)): The explanation.
+  const _BootstrapMessageApp({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  /// Above the title.
+  final IconData icon;
+
+  /// The headline, read from the localisations once they exist.
+  final String Function(AppLocalizations) title;
+
+  /// The explanation, read the same way.
+  final String Function(AppLocalizations) body;
 
   @override
   Widget build(BuildContext context) {
@@ -96,24 +159,18 @@ class UnreadableDataApp extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       Icon(
-                        Icons.system_update,
+                        icon,
                         size: 48,
                         color: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        l10n.bootstrapNewerSchemaTitle,
+                        title(l10n),
                         style: Theme.of(context).textTheme.headlineSmall,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 12),
-                      Text(
-                        l10n.bootstrapNewerSchemaBody(
-                          storedVersion,
-                          supportedVersion,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      Text(body(l10n), textAlign: TextAlign.center),
                     ],
                   ),
                 ),

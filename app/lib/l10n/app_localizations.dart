@@ -187,37 +187,37 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingIntro.
   ///
   /// In en, this message translates to:
-  /// **'This app records your cycle on this device and predicts when your next period is likely to start. It has no internet permission, so nothing can be sent anywhere.'**
+  /// **'Selene records your cycle on your phone and predicts when your next period is likely to start. We do not collect any of it. The app has no internet permission, and nothing you record leaves your phone unless you choose to send it.'**
   String get onboardingIntro;
 
   /// No description provided for @onboardingWhatItIsNotTitle.
   ///
   /// In en, this message translates to:
-  /// **'What this app is not'**
+  /// **'What Selene is not'**
   String get onboardingWhatItIsNotTitle;
 
   /// No description provided for @onboardingNotContraception.
   ///
   /// In en, this message translates to:
-  /// **'This is a record of dates, not contraception. It cannot tell you when sex is unlikely to lead to pregnancy, and it must never be used to try.'**
+  /// **'Selene is not contraception. It cannot tell you when sex is unlikely to lead to pregnancy, and it must never be used to try.'**
   String get onboardingNotContraception;
 
   /// No description provided for @onboardingNotMedical.
   ///
   /// In en, this message translates to:
-  /// **'This is a record, not medical advice. If something about your cycle worries you, talk to a clinician.'**
+  /// **'Selene does not give medical advice. If something about your cycle worries you, talk to a doctor or nurse.'**
   String get onboardingNotMedical;
 
   /// No description provided for @onboardingNotDiagnostic.
   ///
   /// In en, this message translates to:
-  /// **'It works from the dates you record and nothing else. It knows nothing about your contraception, pregnancy, medication, illness or stress, so it cannot diagnose anything.'**
+  /// **'Predictions come from the dates you record and nothing else, so Selene cannot diagnose anything. Illness, stress, medicines and contraception can all move a period, and predictions do not account for them.'**
   String get onboardingNotDiagnostic;
 
   /// No description provided for @onboardingAlwaysARange.
   ///
   /// In en, this message translates to:
-  /// **'Predictions come as a range of days. Cycles vary enough that a single date would claim a precision this app does not have.'**
+  /// **'Predictions come as a range of days, never a single date, because cycles vary too much for one date to be accurate.'**
   String get onboardingAlwaysARange;
 
   /// No description provided for @onboardingAcknowledge.
@@ -321,6 +321,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'log a period start and this fills in'**
   String get logCountdownNothingYetCaption;
+
+  /// No description provided for @logCountdownLater.
+  ///
+  /// In en, this message translates to:
+  /// **'later than expected'**
+  String get logCountdownLater;
+
+  /// No description provided for @logCountdownLaterCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day past the expected range} other{{days} days past the expected range}}'**
+  String logCountdownLaterCaption(int days);
+
+  /// No description provided for @logCountdownLostTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'lost track'**
+  String get logCountdownLostTrack;
+
+  /// No description provided for @logCountdownLostTrackCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'log your latest period start and this picks up again'**
+  String get logCountdownLostTrackCaption;
+
+  /// No description provided for @logCountdownNoRange.
+  ///
+  /// In en, this message translates to:
+  /// **'no range'**
+  String get logCountdownNoRange;
+
+  /// No description provided for @logCountdownNoRangeCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'your cycles vary too much for a useful one'**
+  String get logCountdownNoRangeCaption;
+
+  /// No description provided for @logCountdownPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'paused'**
+  String get logCountdownPaused;
+
+  /// No description provided for @logCountdownPausedCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'no prediction while a pregnancy is recorded'**
+  String get logCountdownPausedCaption;
+
+  /// No description provided for @logCountdownCheckDates.
+  ///
+  /// In en, this message translates to:
+  /// **'check dates'**
+  String get logCountdownCheckDates;
+
+  /// No description provided for @logCountdownCheckDatesCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'the stored dates need a look before this fills in'**
+  String get logCountdownCheckDatesCaption;
 
   /// No description provided for @logRingLabel.
   ///
@@ -442,6 +502,132 @@ abstract class AppLocalizations {
   /// **'Anything else today?'**
   String get logSymptomsTitle;
 
+  /// No description provided for @logMeasurementsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature, mucus and progesterone'**
+  String get logMeasurementsTitle;
+
+  /// No description provided for @logMeasurementsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional, and only a record. Selene does not use any of these to predict anything or to estimate ovulation.'**
+  String get logMeasurementsHint;
+
+  /// No description provided for @logTemperatureLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Basal body temperature'**
+  String get logTemperatureLabel;
+
+  /// No description provided for @logTemperatureCelsius.
+  ///
+  /// In en, this message translates to:
+  /// **'°C'**
+  String get logTemperatureCelsius;
+
+  /// No description provided for @logTemperatureFahrenheit.
+  ///
+  /// In en, this message translates to:
+  /// **'°F'**
+  String get logTemperatureFahrenheit;
+
+  /// No description provided for @logTemperatureInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a temperature between {low} and {high}.'**
+  String logTemperatureInvalid(String low, String high);
+
+  /// No description provided for @logMucusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cervical mucus'**
+  String get logMucusTitle;
+
+  /// No description provided for @logMucusDry.
+  ///
+  /// In en, this message translates to:
+  /// **'Dry'**
+  String get logMucusDry;
+
+  /// No description provided for @logMucusSticky.
+  ///
+  /// In en, this message translates to:
+  /// **'Sticky'**
+  String get logMucusSticky;
+
+  /// No description provided for @logMucusCreamy.
+  ///
+  /// In en, this message translates to:
+  /// **'Creamy'**
+  String get logMucusCreamy;
+
+  /// No description provided for @logMucusWatery.
+  ///
+  /// In en, this message translates to:
+  /// **'Watery'**
+  String get logMucusWatery;
+
+  /// No description provided for @logMucusEggWhite.
+  ///
+  /// In en, this message translates to:
+  /// **'Egg white'**
+  String get logMucusEggWhite;
+
+  /// No description provided for @logProgesteroneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Progesterone'**
+  String get logProgesteroneTitle;
+
+  /// No description provided for @logPdgStripLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Home PdG strip'**
+  String get logPdgStripLabel;
+
+  /// No description provided for @logPdgNegative.
+  ///
+  /// In en, this message translates to:
+  /// **'Negative'**
+  String get logPdgNegative;
+
+  /// No description provided for @logPdgPositive.
+  ///
+  /// In en, this message translates to:
+  /// **'Positive'**
+  String get logPdgPositive;
+
+  /// No description provided for @logProgesteroneBloodLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Blood test result'**
+  String get logProgesteroneBloodLabel;
+
+  /// No description provided for @logProgesteroneUnitLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get logProgesteroneUnitLabel;
+
+  /// No description provided for @logProgesteroneNgPerMl.
+  ///
+  /// In en, this message translates to:
+  /// **'ng/mL'**
+  String get logProgesteroneNgPerMl;
+
+  /// No description provided for @logProgesteroneNmolPerL.
+  ///
+  /// In en, this message translates to:
+  /// **'nmol/L'**
+  String get logProgesteroneNmolPerL;
+
+  /// No description provided for @logProgesteroneInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the result as a number above zero.'**
+  String get logProgesteroneInvalid;
+
   /// No description provided for @logIntercourseTitle.
   ///
   /// In en, this message translates to:
@@ -487,7 +673,7 @@ abstract class AppLocalizations {
   /// Shown during onboarding, before the user has recorded anything. It names the most sensitive field the app holds rather than letting them find it themselves, and points at the app lock in the same breath.
   ///
   /// In en, this message translates to:
-  /// **'You can record intercourse, and whether it was protected. That is the most sensitive thing stored here. Recording it is optional, and what you record stays on this device and is never used to predict anything. The app lock in settings can ask for your fingerprint or PIN before anything shows.'**
+  /// **'You can record intercourse, and whether it was protected. It is the most sensitive thing Selene stores. Recording it is optional, it stays on your phone like everything else, none of it reaches us, and it is never used to predict anything. The app lock in Settings can ask for your fingerprint or PIN before anything shows.'**
   String get onboardingSensitiveBody;
 
   /// Heading over the symptoms felt in the body.
@@ -790,6 +976,30 @@ abstract class AppLocalizations {
   /// **'About four out of five times start in this range.'**
   String get insightsFourInFive;
 
+  /// No description provided for @insightsLateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'It is later than expected, so this range has moved forward. A late period is harder to predict, so take it as a rough guide.'**
+  String get insightsLateRange;
+
+  /// No description provided for @insightsLateNotLogged.
+  ///
+  /// In en, this message translates to:
+  /// **'If it has started and is not logged yet, logging its first day updates this.'**
+  String get insightsLateNotLogged;
+
+  /// No description provided for @insightsLaterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Later than expected'**
+  String get insightsLaterTitle;
+
+  /// No description provided for @insightsLaterBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It was expected between {start} and {end}. A new range would now be too wide to help, so none is shown. If it has started and is not logged yet, logging its first day updates this.'**
+  String insightsLaterBody(String start, String end);
+
   /// No description provided for @insightsHalfTheTime.
   ///
   /// In en, this message translates to:
@@ -859,7 +1069,7 @@ abstract class AppLocalizations {
   /// No description provided for @insightsLostTrackBody.
   ///
   /// In en, this message translates to:
-  /// **'Nothing logged for {days} days. That gap is too long to predict from, so nothing is shown here. Log a day and predictions start again.'**
+  /// **'Your last logged period started {days} days ago. That is too long to predict from, so nothing is shown here. If one has come since, logging its first day starts predictions again.'**
   String insightsLostTrackBody(int days);
 
   /// No description provided for @insightsInconsistentTitle.
@@ -1080,13 +1290,13 @@ abstract class AppLocalizations {
   /// No description provided for @notificationLateNoticeTitle.
   ///
   /// In en, this message translates to:
-  /// **'The predicted window has passed'**
+  /// **'Later than expected'**
   String get notificationLateNoticeTitle;
 
-  /// No description provided for @notificationLateNoticeBody.
+  /// The late-period check-in (ADR-0025), in the words the app uses for a late period. Informational only, and never about pregnancy.
   ///
   /// In en, this message translates to:
-  /// **'Nothing has been logged since the window closed. Cycles vary, and a prediction can simply be wrong.'**
+  /// **'The expected range has passed with no period logged. Cycles vary, and a prediction can simply be wrong.'**
   String get notificationLateNoticeBody;
 
   /// No description provided for @notificationLogAction.
@@ -1094,6 +1304,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Started today'**
   String get notificationLogAction;
+
+  /// No description provided for @notificationChannelMedicines.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicine reminders'**
+  String get notificationChannelMedicines;
+
+  /// No description provided for @notificationChannelMedicinesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'At the times you set on each medicine. None unless you set one.'**
+  String get notificationChannelMedicinesDescription;
+
+  /// Shown only when lock-screen detail is on. Without it the title is the app's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Time for {medicine}'**
+  String notificationMedicineTitle(String medicine);
+
+  /// Shown with lock-screen detail on or off, so it names neither the medicine nor anything about a cycle. The time is written the way the phone writes times.
+  ///
+  /// In en, this message translates to:
+  /// **'The reminder you set for {time}.'**
+  String notificationMedicineBody(String time);
 
   /// No description provided for @logMissedReminder.
   ///
@@ -1176,7 +1410,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsExportSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Writes a file to a location you choose. Nothing else backs this app up.'**
+  /// **'Writes a file to a location you choose, protected by a passphrase if you like. Nothing else backs this app up.'**
   String get settingsExportSubtitle;
 
   /// No description provided for @settingsExportDone.
@@ -1190,6 +1424,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The backup could not be written.'**
   String get settingsExportFailed;
+
+  /// No description provided for @settingsExportDoneProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'Protected backup written: {count} days.'**
+  String settingsExportDoneProtected(int count);
+
+  /// No description provided for @settingsExportProtectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect this backup with a passphrase?'**
+  String get settingsExportProtectTitle;
+
+  /// No description provided for @settingsExportProtectBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Without one, the backup is a readable file, and anyone who gets hold of it can read what you recorded. With one, it opens only with the passphrase. Nobody can recover a forgotten passphrase, not even you, so keep it somewhere safe.'**
+  String get settingsExportProtectBody;
+
+  /// No description provided for @settingsExportPassphraseLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Passphrase'**
+  String get settingsExportPassphraseLabel;
+
+  /// No description provided for @settingsExportPassphraseConfirmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'The same passphrase again'**
+  String get settingsExportPassphraseConfirmLabel;
+
+  /// No description provided for @settingsExportPassphraseTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at least {count} characters. A few unrelated words are easier to remember than a short password.'**
+  String settingsExportPassphraseTooShort(int count);
+
+  /// No description provided for @settingsExportPassphraseMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The two passphrases are not the same.'**
+  String get settingsExportPassphraseMismatch;
+
+  /// No description provided for @settingsExportWithoutPassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Save without one'**
+  String get settingsExportWithoutPassphrase;
+
+  /// No description provided for @settingsExportWithPassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect and save'**
+  String get settingsExportWithPassphrase;
+
+  /// No description provided for @settingsPassphraseShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show passphrase'**
+  String get settingsPassphraseShow;
+
+  /// No description provided for @settingsPassphraseHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide passphrase'**
+  String get settingsPassphraseHide;
+
+  /// No description provided for @settingsImportPassphraseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup is protected'**
+  String get settingsImportPassphraseTitle;
+
+  /// No description provided for @settingsImportPassphraseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the passphrase it was saved with.'**
+  String get settingsImportPassphraseBody;
+
+  /// No description provided for @settingsImportPassphraseOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get settingsImportPassphraseOpen;
+
+  /// No description provided for @settingsImportPassphraseWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'That passphrase does not open this backup.'**
+  String get settingsImportPassphraseWrong;
+
+  /// No description provided for @settingsImportProtectedNewer.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup was protected by a newer version of Selene. Update the app to open it.'**
+  String get settingsImportProtectedNewer;
+
+  /// No description provided for @settingsImportProtectedDamaged.
+  ///
+  /// In en, this message translates to:
+  /// **'This protected backup is damaged and cannot be opened.'**
+  String get settingsImportProtectedDamaged;
 
   /// No description provided for @settingsImport.
   ///
@@ -1220,6 +1556,351 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restored {count} days from a backup taken on {date}.'**
   String settingsImportDone(int count, String date);
+
+  /// No description provided for @settingsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary for a doctor'**
+  String get settingsSummary;
+
+  /// The PDF summary (ADR-0024). Nothing is sent anywhere: it is written to a folder the user picks.
+  ///
+  /// In en, this message translates to:
+  /// **'A PDF of your periods, cycles, symptoms, conditions and medicines over a span you choose, saved where you choose.'**
+  String get settingsSummarySubtitle;
+
+  /// No description provided for @settingsSpreadsheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Export as spreadsheet files'**
+  String get settingsSpreadsheet;
+
+  /// No description provided for @settingsSpreadsheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The same as CSV files, to open in a spreadsheet and work with yourself.'**
+  String get settingsSpreadsheetSubtitle;
+
+  /// No description provided for @summarySpanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How far back?'**
+  String get summarySpanTitle;
+
+  /// Before a summary or spreadsheet is made. It must say that intercourse is left out, since the file is for someone else to read.
+  ///
+  /// In en, this message translates to:
+  /// **'It covers period dates, cycle lengths, symptoms, temperature, mucus and progesterone, conditions and medicines. Intercourse is never included.'**
+  String get summarySpanBody;
+
+  /// No description provided for @summarySpanThreeMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'The last 3 months'**
+  String get summarySpanThreeMonths;
+
+  /// No description provided for @summarySpanSixMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'The last 6 months'**
+  String get summarySpanSixMonths;
+
+  /// No description provided for @summarySpanYear.
+  ///
+  /// In en, this message translates to:
+  /// **'The last year'**
+  String get summarySpanYear;
+
+  /// No description provided for @summarySpanEverything.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything'**
+  String get summarySpanEverything;
+
+  /// No description provided for @settingsSummaryDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved the summary in the folder you chose.'**
+  String get settingsSummaryDone;
+
+  /// No description provided for @settingsSpreadsheetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Saved 1 file in the folder you chose.} other{Saved {count} files in the folder you chose.}}'**
+  String settingsSpreadsheetDone(int count);
+
+  /// No description provided for @settingsSummaryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'It could not be saved there. Try another folder.'**
+  String get settingsSummaryFailed;
+
+  /// No description provided for @settingsSummaryNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is logged in that span, so there is nothing to summarise.'**
+  String get settingsSummaryNothing;
+
+  /// No description provided for @summaryPdfTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cycle summary'**
+  String get summaryPdfTitle;
+
+  /// No description provided for @summaryPdfSpan.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} to {to}'**
+  String summaryPdfSpan(String from, String to);
+
+  /// Under the PDF summary's title. It says whose record it is and what it is not, for the doctor reading it.
+  ///
+  /// In en, this message translates to:
+  /// **'Made with Selene on {date}, from what the person it belongs to logged in the app. It is a personal record, not a clinical measurement and not a diagnosis.'**
+  String summaryPdfAbout(String date);
+
+  /// No description provided for @summaryPdfCyclesHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Periods and cycles'**
+  String get summaryPdfCyclesHeading;
+
+  /// No description provided for @summaryPdfCyclesUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Some logged days contradict each other, so the cycles could not be worked out from them. The logged days are in the spreadsheet export.'**
+  String get summaryPdfCyclesUnknown;
+
+  /// No description provided for @summaryPdfNoPeriods.
+  ///
+  /// In en, this message translates to:
+  /// **'No period started in this span.'**
+  String get summaryPdfNoPeriods;
+
+  /// No description provided for @summaryPdfPeriodsStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 period started in this span.} other{{count} periods started in this span.}}'**
+  String summaryPdfPeriodsStarted(int count);
+
+  /// No description provided for @summaryPdfCycleLength.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Cycle length in days, from one period\'s start to the next: {median}, over 1 complete cycle.} other{Cycle length in days, from one period\'s start to the next: median {median}, from {shortest} to {longest}, over {count} complete cycles.}}'**
+  String summaryPdfCycleLength(
+    int count,
+    String median,
+    String shortest,
+    String longest,
+  );
+
+  /// No description provided for @summaryPdfBleeding.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Days of bleeding: {median}, for 1 period.} other{Days of bleeding: median {median}, from {shortest} to {longest}, over {count} periods.}}'**
+  String summaryPdfBleeding(
+    int count,
+    String median,
+    String shortest,
+    String longest,
+  );
+
+  /// No description provided for @summaryPdfNotCounted.
+  ///
+  /// In en, this message translates to:
+  /// **'A cycle with a note is left out of the median, as the app leaves it out of its predictions.'**
+  String get summaryPdfNotCounted;
+
+  /// No description provided for @summaryPdfColumnStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Period started'**
+  String get summaryPdfColumnStarted;
+
+  /// No description provided for @summaryPdfColumnBleeding.
+  ///
+  /// In en, this message translates to:
+  /// **'Days of bleeding'**
+  String get summaryPdfColumnBleeding;
+
+  /// No description provided for @summaryPdfColumnLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Cycle length (days)'**
+  String get summaryPdfColumnLength;
+
+  /// No description provided for @summaryPdfColumnNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get summaryPdfColumnNote;
+
+  /// No description provided for @summaryPdfStillGoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Still going'**
+  String get summaryPdfStillGoing;
+
+  /// A cycle the app judges implausibly short, as CycleValidity.implausiblyShort defines it.
+  ///
+  /// In en, this message translates to:
+  /// **'Under 15 days'**
+  String get summaryPdfShort;
+
+  /// No description provided for @summaryPdfLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Over 90 days'**
+  String get summaryPdfLong;
+
+  /// A cycle that is a strong outlier against the person's own history and has not been confirmed (CycleValidity.unconfirmedOutlier).
+  ///
+  /// In en, this message translates to:
+  /// **'Unusual for this record'**
+  String get summaryPdfOutlier;
+
+  /// No description provided for @summaryPdfSymptomsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Symptoms'**
+  String get summaryPdfSymptomsHeading;
+
+  /// No description provided for @summaryPdfSymptomsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'How many days each symptom was logged on, and how strongly it was felt.'**
+  String get summaryPdfSymptomsIntro;
+
+  /// No description provided for @summaryPdfNoSymptoms.
+  ///
+  /// In en, this message translates to:
+  /// **'No symptoms were logged in this span.'**
+  String get summaryPdfNoSymptoms;
+
+  /// No description provided for @summaryPdfColumnSymptom.
+  ///
+  /// In en, this message translates to:
+  /// **'Symptom'**
+  String get summaryPdfColumnSymptom;
+
+  /// No description provided for @summaryPdfColumnDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days'**
+  String get summaryPdfColumnDays;
+
+  /// No description provided for @summaryPdfMeasurementsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature, mucus and progesterone'**
+  String get summaryPdfMeasurementsHeading;
+
+  /// No description provided for @summaryPdfMeasurementsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded only. The app does not use them to predict anything or to estimate ovulation.'**
+  String get summaryPdfMeasurementsNote;
+
+  /// No description provided for @summaryPdfTemperature.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Basal body temperature: 1 reading, {lowest} {unit}.} other{Basal body temperature: {count} readings, from {lowest} to {highest} {unit}.}}'**
+  String summaryPdfTemperature(
+    int count,
+    String lowest,
+    String highest,
+    String unit,
+  );
+
+  /// No description provided for @summaryPdfMucus.
+  ///
+  /// In en, this message translates to:
+  /// **'Cervical mucus: {days}.'**
+  String summaryPdfMucus(String days);
+
+  /// No description provided for @summaryPdfMucusKind.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} on {count, plural, =1{1 day} other{{count} days}}'**
+  String summaryPdfMucusKind(String kind, int count);
+
+  /// No description provided for @summaryPdfPdg.
+  ///
+  /// In en, this message translates to:
+  /// **'Home PdG strips: {results}.'**
+  String summaryPdfPdg(String results);
+
+  /// No description provided for @summaryPdfPdgResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{result} on {date}'**
+  String summaryPdfPdgResult(String result, String date);
+
+  /// No description provided for @summaryPdfBlood.
+  ///
+  /// In en, this message translates to:
+  /// **'Blood progesterone: {results}.'**
+  String summaryPdfBlood(String results);
+
+  /// No description provided for @summaryPdfBloodResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} {unit} on {date}'**
+  String summaryPdfBloodResult(String value, String unit, String date);
+
+  /// No description provided for @summaryPdfConditionsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Conditions'**
+  String get summaryPdfConditionsHeading;
+
+  /// No description provided for @summaryPdfNoConditions.
+  ///
+  /// In en, this message translates to:
+  /// **'None recorded during this span.'**
+  String get summaryPdfNoConditions;
+
+  /// No description provided for @summaryPdfConditionSince.
+  ///
+  /// In en, this message translates to:
+  /// **'{condition}: since {start}'**
+  String summaryPdfConditionSince(String condition, String start);
+
+  /// No description provided for @summaryPdfConditionFromTo.
+  ///
+  /// In en, this message translates to:
+  /// **'{condition}: {start} to {end}'**
+  String summaryPdfConditionFromTo(String condition, String start, String end);
+
+  /// No description provided for @summaryPdfMedicinesHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines'**
+  String get summaryPdfMedicinesHeading;
+
+  /// No description provided for @summaryPdfMedicinesNote.
+  ///
+  /// In en, this message translates to:
+  /// **'As recorded in the app today. The list has no dates, so it may not match the whole span.'**
+  String get summaryPdfMedicinesNote;
+
+  /// No description provided for @summaryPdfNoMedicines.
+  ///
+  /// In en, this message translates to:
+  /// **'None recorded.'**
+  String get summaryPdfNoMedicines;
+
+  /// No description provided for @summaryPdfFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Selene cycle summary, {from} to {to}'**
+  String summaryPdfFooter(String from, String to);
+
+  /// No description provided for @summaryPdfPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} of {count}'**
+  String summaryPdfPage(int page, int count);
 
   /// No description provided for @settingsDeleteAll.
   ///
@@ -1292,6 +1973,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A notification in the morning, the number of days ahead you choose.'**
   String get settingsReminderSubtitle;
+
+  /// No description provided for @settingsLateCheckIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in if a period is late'**
+  String get settingsLateCheckIn;
+
+  /// No description provided for @settingsLateCheckInSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{One notification, a day after the expected range ends with no period logged.} other{One notification, {days} days after the expected range ends with no period logged.}}'**
+  String settingsLateCheckInSubtitle(int days);
+
+  /// No description provided for @settingsMedicineReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicine reminders'**
+  String get settingsMedicineReminders;
+
+  /// No description provided for @settingsMedicineRemindersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set on each medicine, under Conditions and medication.'**
+  String get settingsMedicineRemindersSubtitle;
 
   /// No description provided for @insightsSuppressedPregnancyTitle.
   ///
@@ -1413,10 +2118,10 @@ abstract class AppLocalizations {
   /// **'Ask for your fingerprint, face, PIN or pattern before showing the app. It locks again after a minute in the background.'**
   String get settingsAppLockSubtitle;
 
-  /// Sits under the app-lock toggle, always visible, on or off. A lock a user mistakes for encryption is worse than no lock, so this is not behind a link.
+  /// Sits under the app-lock toggle, always visible, on or off. A lock a user mistakes for the encryption is worse than no lock, so this is not behind a link.
   ///
   /// In en, this message translates to:
-  /// **'This hides the screen. It does not encrypt anything.'**
+  /// **'This only hides the screen. Your data is encrypted on the phone whether the lock is on or off.'**
   String get settingsAppLockNotEncrypted;
 
   /// Replaces the toggle when no credential is enrolled. Names the fix, which is in the device settings and not in this app.
@@ -1599,6 +2304,18 @@ abstract class AppLocalizations {
   /// **'Each maker files its own label for a medicine. One is shown here, chosen by a fixed rule, and the label on your packet may differ.'**
   String get lookupMedicineOneLabel;
 
+  /// The leaflet the FDA requires for some medicines, written for patients. Its official name in the US, kept so it can be looked for by name.
+  ///
+  /// In en, this message translates to:
+  /// **'Medication Guide'**
+  String get lookupGuideTitle;
+
+  /// Above the folded Medication Guide (ADR-0022). It must say that how to take the medicine is left out, so nobody opens it to look for a dose.
+  ///
+  /// In en, this message translates to:
+  /// **'The leaflet the FDA approves for patients, its safety sections only. How to take the medicine is left out, because a dose on a US leaflet may not be the right one for the packet you have, and so are how to store it and what is in it.'**
+  String get lookupGuideNote;
+
   /// The progress bar's label for a screen reader, while one medicine's label loads.
   ///
   /// In en, this message translates to:
@@ -1770,13 +2487,13 @@ abstract class AppLocalizations {
   /// No description provided for @checkerEntrySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'What the US labels of two or more medicines say about each other.'**
+  /// **'What the US labels of medicines, and NCCIH\'s fact sheets on herbs, say about each other.'**
   String get checkerEntrySubtitle;
 
   /// The checker's first paragraph. It says what the check reads and what it cannot conclude before anyone adds a medicine (ADR-0014).
   ///
   /// In en, this message translates to:
-  /// **'Add two or more medicines. For each pair, this shows whether they share an ingredient or an FDA drug class, and quotes any place where one label names the other. It reads the labels and nothing else, so it cannot tell you that a combination is safe.'**
+  /// **'Add two or more medicines, or a herbal supplement and a medicine. For each pair, this shows whether they share an ingredient, an FDA drug class or a group such as “NSAIDs”, and quotes any place where one label names the other or a group it is in. A herb is compared by NCCIH\'s fact sheet on it. It reads the labels and the fact sheets and nothing else, so it cannot tell you that a combination is safe.'**
   String get checkerIntro;
 
   /// No description provided for @checkerAdd.
@@ -1800,7 +2517,7 @@ abstract class AppLocalizations {
   /// No description provided for @checkerFull.
   ///
   /// In en, this message translates to:
-  /// **'Up to {count} medicines can be compared at once.'**
+  /// **'Up to {count} medicines and herbs can be compared at once.'**
   String checkerFull(int count);
 
   /// No description provided for @checkerAlreadyAdded.
@@ -1868,16 +2585,62 @@ abstract class AppLocalizations {
   /// **'The {medicine} label mentions “{words}”, an FDA drug class that includes {other}.'**
   String checkerMentionsClassShort(String medicine, String words, String other);
 
-  /// No description provided for @checkerNothingFoundPair.
+  /// Above a passage quoted from one label that names a group the other medicine is in, such as NSAIDs. Which medicines a group takes in comes from a sourced table (ADR-0021), and its sources are named under the passage.
   ///
   /// In en, this message translates to:
-  /// **'Neither label names the other, and they share no ingredient or FDA drug class.'**
+  /// **'The {medicine} label mentions “{words}”, a group that includes {other}. From {section}:'**
+  String checkerMentionsGroup(
+    String medicine,
+    String words,
+    String other,
+    String section,
+  );
+
+  /// No description provided for @checkerMentionsGroupShort.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”, a group that includes {other}.'**
+  String checkerMentionsGroupShort(String medicine, String words, String other);
+
+  /// A label naming an ingredient every product of a recorded kind of contraception contains, such as levonorgestrel in hormonal IUDs. The kind is in the plural, as conditionKind* gives it.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”, which {kind} contain.'**
+  String checkerMentionsKindName(String medicine, String words, String kind);
+
+  /// No description provided for @checkerMentionsKindNameFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”, which {kind} contain. From {section}:'**
+  String checkerMentionsKindNameFrom(
+    String medicine,
+    String words,
+    String kind,
+    String section,
+  );
+
+  /// Two medicines in a group of the sourced table, by its name in the plural: "NSAIDs", "combined oral contraceptives".
+  ///
+  /// In en, this message translates to:
+  /// **'Both are {groups}.'**
+  String checkerSharedGroup(String groups);
+
+  /// Under a passage naming a group: where the table's list of the group's medicines comes from. Each source is its title and who published it.
+  ///
+  /// In en, this message translates to:
+  /// **'Which medicines are {group}: {sources}.'**
+  String checkerGroupSources(String group, String sources);
+
+  /// On every pair the labels do not connect, in the checker and under Conditions and medication, beside a way to look the pair up online. Worded by the owner. It must not read as a reassurance.
+  ///
+  /// In en, this message translates to:
+  /// **'No labels connect these two medications, but you are advised to verify the results.'**
   String get checkerNothingFoundPair;
 
   /// Shown wherever the labels connect a pair in none of the ways the check looks for. It must never read as a reassurance; interaction_copy_test bans the words that would make it one.
   ///
   /// In en, this message translates to:
-  /// **'That does not mean they are safe together. Labels leave interactions out, and often name medicines only by a group, such as “NSAIDs” or “combined hormonal contraceptives”, which this check cannot match.'**
+  /// **'That does not mean they are safe together. Labels leave interactions out, and often name medicines by a group this check does not know, such as “anticoagulants” or “strong CYP3A4 inducers”.'**
   String get checkerNothingFoundNote;
 
   /// No description provided for @checkerSearchOnline.
@@ -1903,6 +2666,158 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Type the name of a medicine, a brand or an ingredient.'**
   String get checkerPickerPrompt;
+
+  /// No description provided for @checkerAddSupplement.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a herbal supplement'**
+  String get checkerAddSupplement;
+
+  /// Under a herb on the checker's list, where a medicine says how it is taken.
+  ///
+  /// In en, this message translates to:
+  /// **'Herbal supplement · NCCIH fact sheet'**
+  String get checkerSupplementKind;
+
+  /// On the checker while its list holds herbs and no medicine (ADR-0023).
+  ///
+  /// In en, this message translates to:
+  /// **'Add a medicine to compare with. Herbs are compared with medicines, not with each other.'**
+  String get checkerNeedMedicine;
+
+  /// On the checker when two or more herbs are listed. No fact sheet's safety section names another of the herbs, and two herbs have no label between them.
+  ///
+  /// In en, this message translates to:
+  /// **'Herbs are compared with the medicines on the list, not with each other.'**
+  String get checkerHerbsNotCompared;
+
+  /// A medicine whose own ingredients include the herb, as many homeopathic remedies' do. The ingredients are as its label prints them.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label lists {herb} among its active ingredients, as “{ingredients}”.'**
+  String checkerSupplementIngredient(
+    String medicine,
+    String herb,
+    String ingredients,
+  );
+
+  /// Above a passage quoted from a herb's fact sheet that names the medicine. The section is the sheet's own heading, "What Do We Know About Safety?".
+  ///
+  /// In en, this message translates to:
+  /// **'NCCIH\'s fact sheet on {herb} mentions “{words}”. From “{section}”:'**
+  String checkerSheetMentionsName(String herb, String words, String section);
+
+  /// No description provided for @checkerSheetMentionsClass.
+  ///
+  /// In en, this message translates to:
+  /// **'NCCIH\'s fact sheet on {herb} mentions “{words}”, an FDA drug class that includes {other}. From “{section}”:'**
+  String checkerSheetMentionsClass(
+    String herb,
+    String words,
+    String other,
+    String section,
+  );
+
+  /// As checkerMentionsGroup, for a fact sheet: "Birth control pills" names the oral contraceptives.
+  ///
+  /// In en, this message translates to:
+  /// **'NCCIH\'s fact sheet on {herb} mentions “{words}”, a group that includes {other}. From “{section}”:'**
+  String checkerSheetMentionsGroup(
+    String herb,
+    String words,
+    String other,
+    String section,
+  );
+
+  /// On every herb and medicine the label and the fact sheet do not connect, beside a way to look the pair up online. As checkerNothingFoundPair, it must not read as a reassurance.
+  ///
+  /// In en, this message translates to:
+  /// **'Neither the label nor NCCIH\'s fact sheet connects these two, but you are advised to verify the results.'**
+  String get checkerNothingFoundSupplementPair;
+
+  /// Shown wherever a herb and a medicine are connected in none of the ways the check looks for. interaction_copy_test bans the words that would make it a reassurance.
+  ///
+  /// In en, this message translates to:
+  /// **'That does not mean they are safe together. NCCIH\'s fact sheets name only some of the medicines a herb interacts with, and often by a kind, such as “some antidepressants”.'**
+  String get checkerNothingFoundSheetNote;
+
+  /// The heading over the herbs a search on Look something up found.
+  ///
+  /// In en, this message translates to:
+  /// **'Herbal supplements'**
+  String get lookupSupplementsHeading;
+
+  /// Opens NCCIH's fact sheets (ADR-0023). Not the Supplements page under Learn, which is about nutrition and stays hidden behind the ten-second hold.
+  ///
+  /// In en, this message translates to:
+  /// **'Herbal supplements A to Z'**
+  String get lookupSupplementsEntry;
+
+  /// No description provided for @lookupSupplementsEntrySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'NCCIH\'s fact sheets on {count} herbs, such as St. John’s wort, from the US National Institutes of Health.'**
+  String lookupSupplementsEntrySubtitle(int count);
+
+  /// No description provided for @supplementsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Fact sheets from the National Center for Complementary and Integrative Health (NCCIH), part of the US National Institutes of Health, as they stood on {date}. They are in the public domain, and are shown as NCCIH wrote them.'**
+  String supplementsIntro(String date);
+
+  /// No description provided for @supplementsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening the herbal supplements reference'**
+  String get supplementsLoading;
+
+  /// No description provided for @supplementsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The herbal supplements reference could not be opened.'**
+  String get supplementsFailed;
+
+  /// Under a herb a search found by a common or Latin name that is not its title.
+  ///
+  /// In en, this message translates to:
+  /// **'Also called {name}'**
+  String supplementsFoundBy(String name);
+
+  /// No description provided for @supplementsCommonNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Common names: {names}'**
+  String supplementsCommonNames(String names);
+
+  /// No description provided for @supplementsLatinNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Latin names: {names}'**
+  String supplementsLatinNames(String names);
+
+  /// The date is as NCCIH prints it, such as "May 2025".
+  ///
+  /// In en, this message translates to:
+  /// **'From NCCIH\'s fact sheet, last updated {date}. It is in the public domain.'**
+  String supplementsSource(String date);
+
+  /// The page's address, shown and never opened: the app has no internet access (ADR-0004).
+  ///
+  /// In en, this message translates to:
+  /// **'NCCIH publishes it at {url}.'**
+  String supplementsAddress(String url);
+
+  /// No description provided for @supplementsPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'NCCIH\'s photograph of the plant is not in the public domain, so it is left out.'**
+  String get supplementsPhoto;
+
+  /// No description provided for @supplementsCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare with medicines'**
+  String get supplementsCompare;
 
   /// No description provided for @lookupMedicineCheck.
   ///
@@ -2363,7 +3278,7 @@ abstract class AppLocalizations {
   /// No description provided for @conditionsMedicinesIntro.
   ///
   /// In en, this message translates to:
-  /// **'Medicines you take, picked from the app\'s list of US medicines and kept on this device only. Each is compared with the others using their labels.'**
+  /// **'Medicines you take, picked from the app\'s list of US medicines and kept on this device only. Each is compared with the others using their labels, and with any hormonal contraception recorded above.'**
   String get conditionsMedicinesIntro;
 
   /// No description provided for @conditionsMedicinesEmpty.
@@ -2384,6 +3299,42 @@ abstract class AppLocalizations {
   /// **'No longer in this app\'s list of medicines, so it is not compared.'**
   String get conditionsMedicineGone;
 
+  /// No description provided for @conditionsMedicineReminderAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a reminder'**
+  String get conditionsMedicineReminderAdd;
+
+  /// Heading of the time picker that sets a medicine reminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind me every day at'**
+  String get conditionsMedicineReminderHelp;
+
+  /// What a screen reader says for a reminder time, which can be tapped to change it.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the {time} reminder'**
+  String conditionsMedicineReminderChange(String time);
+
+  /// Tooltip, and what a screen reader says, for the button that takes a reminder time off a medicine.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the {time} reminder'**
+  String conditionsMedicineReminderRemove(String time);
+
+  /// No description provided for @conditionsMedicineReminderSet.
+  ///
+  /// In en, this message translates to:
+  /// **'A reminder every day at {time}.'**
+  String conditionsMedicineReminderSet(String time);
+
+  /// Shown when a reminder is set but the phone does not let the app post notifications. The reminder is kept, and arrives once they are allowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are off for this app, so the reminder cannot arrive. They can be turned on in the phone\'s settings.'**
+  String get conditionsMedicineReminderBlocked;
+
   /// No description provided for @conditionsConflictsHeading.
   ///
   /// In en, this message translates to:
@@ -2396,18 +3347,6 @@ abstract class AppLocalizations {
   /// **'Their labels connect these medicines. That is not a finding about you: a pharmacist can tell you whether it matters.'**
   String get conditionsConflictsIntro;
 
-  /// Under the flags, when some pairs were not flagged. Without it, an unflagged pair beside flagged ones reads as cleared.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{The labels of the one other pair do not connect it in the ways this app checks for.} other{The labels of the {count} other pairs do not connect them in the ways this app checks for.}}'**
-  String conditionsConflictsOthers(int count);
-
-  /// No description provided for @conditionsConflictsNone.
-  ///
-  /// In en, this message translates to:
-  /// **'Their labels connect none of these medicines in the ways this app checks for.'**
-  String get conditionsConflictsNone;
-
   /// No description provided for @conditionsConflictLookUp.
   ///
   /// In en, this message translates to:
@@ -2419,6 +3358,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'What the labels say'**
   String get conditionsConflictLabels;
+
+  /// Opens the passages quoted from the medicine's label, on a flag pairing it with a recorded kind of contraception, which has no label of its own.
+  ///
+  /// In en, this message translates to:
+  /// **'What the label says'**
+  String get conditionsConflictLabel;
+
+  /// On a card pairing a recorded kind of contraception with a medicine (ADR-0021). The kind in the plural, as conditionKind* gives it.
+  ///
+  /// In en, this message translates to:
+  /// **'Compared as what every one of the {kind} in the US list has in common, since the record does not say which.'**
+  String conditionsConflictKind(String kind);
+
+  /// The combined pill in a sentence, in the plural: "a group that includes combined pills".
+  ///
+  /// In en, this message translates to:
+  /// **'combined pills'**
+  String get conditionKindCombined;
+
+  /// No description provided for @conditionKindProgestogen.
+  ///
+  /// In en, this message translates to:
+  /// **'progestogen-only pills'**
+  String get conditionKindProgestogen;
+
+  /// No description provided for @conditionKindIud.
+  ///
+  /// In en, this message translates to:
+  /// **'hormonal IUDs'**
+  String get conditionKindIud;
+
+  /// No description provided for @conditionKindImplant.
+  ///
+  /// In en, this message translates to:
+  /// **'contraceptive implants'**
+  String get conditionKindImplant;
 
   /// No description provided for @conditionHormonalContraceptionCombined.
   ///
@@ -2708,6 +3683,18 @@ abstract class AppLocalizations {
   /// **'Record bleeding as yes or no rather than an intensity. Anything already recorded is kept, and comes back if you turn this off.'**
   String get settingsFlowSimplifiedSubtitle;
 
+  /// No description provided for @settingsTemperatureFahrenheit.
+  ///
+  /// In en, this message translates to:
+  /// **'Show temperatures in °F'**
+  String get settingsTemperatureFahrenheit;
+
+  /// No description provided for @settingsTemperatureFahrenheitSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperatures are kept in °C and shown in whichever you choose, so switching changes nothing recorded.'**
+  String get settingsTemperatureFahrenheitSubtitle;
+
   /// No description provided for @settingsCyclePhases.
   ///
   /// In en, this message translates to:
@@ -2813,37 +3800,49 @@ abstract class AppLocalizations {
   /// No description provided for @privacyOnDeviceTitle.
   ///
   /// In en, this message translates to:
-  /// **'Everything stays on this phone'**
+  /// **'We do not collect your information'**
   String get privacyOnDeviceTitle;
 
   /// No description provided for @privacyOnDeviceBody.
   ///
   /// In en, this message translates to:
-  /// **'This app has no internet permission, and a check on every release refuses to build one that asks for it. There is no account to sign into, no sync, and it collects no analytics or crash reports. What you record stays here until you export it.'**
+  /// **'The app has no internet permission, no account, no analytics, no advertising and no crash reporting, and a check on every release refuses to build one that asks for the internet. Everything you record stays on your phone, under your control, and none of it reaches us.'**
   String get privacyOnDeviceBody;
 
-  /// No description provided for @privacyNotEncryptedTitle.
+  /// No description provided for @privacySharingTitle.
   ///
   /// In en, this message translates to:
-  /// **'The database is not encrypted'**
-  String get privacyNotEncryptedTitle;
+  /// **'It leaves your phone only when you choose'**
+  String get privacySharingTitle;
 
-  /// No description provided for @privacyNotEncryptedBody.
+  /// No description provided for @privacySharingBody.
   ///
   /// In en, this message translates to:
-  /// **'Your data sits in this app\'s own storage. Other apps cannot read it on a phone that has not been tampered with, and Android\'s full-device encryption protects it while the phone is switched off. But it is stored as plain text, so anyone who picks up your unlocked phone, or takes a forensic copy of it, can read it. The app lock hides the screen. It does not encrypt the file underneath.'**
-  String get privacyNotEncryptedBody;
+  /// **'Two things send anything anywhere, and only when you ask. An export saves a backup, or a summary for a doctor, wherever you choose. A web search opens in your browser, after the app tells you exactly which words will be searched, and your browser may keep it in its history.'**
+  String get privacySharingBody;
+
+  /// No description provided for @privacyEncryptedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The database is encrypted, with a key the phone keeps'**
+  String get privacyEncryptedTitle;
+
+  /// No description provided for @privacyEncryptedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything you record is kept in the app\'s private storage, in a database file encrypted with a key held by Android\'s secure key store. The key never leaves the phone and is not in your exports, so a copy of the file on its own cannot be read. Scheduled reminders are the one exception: until they are due, Android keeps their wording, which can name the predicted dates or a medicine, outside the encrypted file. Encryption does not protect an unlocked phone. Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.'**
+  String get privacyEncryptedBody;
 
   /// No description provided for @privacyBackupTitle.
   ///
   /// In en, this message translates to:
-  /// **'Nothing is backed up to the cloud'**
+  /// **'Nothing is copied off the phone'**
   String get privacyBackupTitle;
 
   /// No description provided for @privacyBackupBody.
   ///
   /// In en, this message translates to:
-  /// **'Android\'s automatic backup is switched off for this app, so your cycle history is never copied to a Google account. If you lose the phone, the data is gone unless you exported it.'**
+  /// **'Android\'s cloud backup and device-to-device transfer are switched off for the app, so your records are never copied to a Google account or to a new phone. If you lose the phone, they are gone unless you exported them.'**
   String get privacyBackupBody;
 
   /// No description provided for @privacyDeletionTitle.
@@ -2855,19 +3854,19 @@ abstract class AppLocalizations {
   /// No description provided for @privacyDeletionBody.
   ///
   /// In en, this message translates to:
-  /// **'Deleting a day removes the row. Deleting everything removes every row and then reclaims the space, so the old entries are not left readable in the file. Nothing is kept behind a hidden flag.'**
+  /// **'You can delete a single day, condition or medicine at any time. Delete everything removes every record and reclaims the space, so the deleted entries are not left readable in the file. Uninstalling the app deletes everything it stored on the phone.'**
   String get privacyDeletionBody;
 
   /// No description provided for @privacyLogsTitle.
   ///
   /// In en, this message translates to:
-  /// **'The activity log holds no cycle content'**
+  /// **'The activity log holds nothing you recorded'**
   String get privacyLogsTitle;
 
   /// No description provided for @privacyLogsBody.
   ///
   /// In en, this message translates to:
-  /// **'This app keeps a short log of what it did, such as \"a prediction was computed\" with a count of cycles. You can read it and clear it in Settings.'**
+  /// **'The app keeps a short log of what it did, such as \"a prediction was computed\" with a count of cycles. It stays on the phone, only in memory, so it is cleared when the app stops. You can read it and clear it in Settings.'**
   String get privacyLogsBody;
 
   /// No description provided for @privacyExportTitle.
@@ -2879,7 +3878,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyExportBody.
   ///
   /// In en, this message translates to:
-  /// **'An exported backup is a plain readable file wherever you chose to put it, with no protection of its own. Anywhere you save it or send it is outside this app\'s control.'**
+  /// **'An exported backup is a readable file wherever you save it, unless you protect it with a passphrase when you export it. A protected backup opens only with that passphrase, and nobody can recover a forgotten one. Once a backup is saved, it is under your control and the control of wherever you keep or send it.'**
   String get privacyExportBody;
 
   /// No description provided for @bootstrapRecoveredTitle.
@@ -2911,6 +3910,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The data on this device was written by a newer version of this app (storage version {stored}; this version understands {supported}). Nothing has been changed. Install the newer version to carry on.'**
   String bootstrapNewerSchemaBody(int stored, int supported);
+
+  /// No description provided for @bootstrapKeyUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Selene could not unlock your data'**
+  String get bootstrapKeyUnavailableTitle;
+
+  /// No description provided for @bootstrapKeyUnavailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is encrypted on this phone, and the key that unlocks it could not be read just now. Nothing has been opened or changed. Close Selene and open it again; if this keeps happening, restart the phone.'**
+  String get bootstrapKeyUnavailableBody;
 
   /// No description provided for @errorGeneric.
   ///

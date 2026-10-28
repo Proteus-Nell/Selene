@@ -8,11 +8,14 @@
 ///     - CivilDateFormatting: The date formats, as an extension.
 ///     - formatMonth: A month heading.
 ///     - formatDays: A day count, without a pointless trailing zero.
+///     - reminderTimeFormatter: A reminder's time of day, as the phone writes
+///       times.
 library;
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 
 /// Civil date formatting: renders a date in the reader's locale.
 ///
@@ -116,4 +119,25 @@ String formatDays(double days) {
   return rounded == rounded.roundToDouble()
       ? rounded.toStringAsFixed(0)
       : rounded.toStringAsFixed(1);
+}
+
+/// Return a way to write a reminder's time as the phone writes times: "08:00"
+/// or "8:00 AM", by the locale and the phone's 24-hour setting.
+///
+/// A function rather than a string, so that the notification wording can
+/// carry it without holding on to [context].
+///
+/// Args:
+///     context (BuildContext): Read for the localisations and the setting.
+///
+/// Returns:
+///     `String Function(ReminderTime)`: Writes one time.
+String Function(ReminderTime) reminderTimeFormatter(BuildContext context) {
+  final localizations = MaterialLocalizations.of(context);
+  final twentyFourHour =
+      MediaQuery.maybeAlwaysUse24HourFormatOf(context) ?? false;
+  return (time) => localizations.formatTimeOfDay(
+    TimeOfDay(hour: time.hour, minute: time.minute),
+    alwaysUse24HourFormat: twentyFourHour,
+  );
 }

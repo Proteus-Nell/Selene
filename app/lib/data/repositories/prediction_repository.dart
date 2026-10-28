@@ -10,6 +10,9 @@
 ///     2. Derive the usable cycle lengths and the anchor day.
 ///     3. Build the signature and look for a cache row matching it.
 ///     4. On a miss, run the filter and store the new row.
+///     5. Once the window has opened with no period logged, move it forward
+///        past the days already gone (ADR-0016). That step depends on the
+///        day, so it is applied to the cached fit rather than cached itself.
 ///
 /// Includes:
 ///     - PredictionRepository: The pipeline, the cache and its signature.
@@ -27,6 +30,15 @@ import 'package:period_tracker/domain/predict/bayes_filter.dart';
 import 'package:period_tracker/domain/predict/intervals.dart';
 import 'package:period_tracker/domain/predict/priors.dart';
 import 'package:period_tracker/domain/predict/priors_bundled.dart';
+
+/// One fit of the model: the windows as first predicted, and what they came
+/// from.
+typedef _Fit = ({
+  PredictionWindows windows,
+  ConfidenceClass confidence,
+  bool personalised,
+  Forecast forecast,
+});
 
 /// Prediction repository: runs the model and caches the result.
 ///
@@ -150,26 +162,129 @@ class PredictionRepository {
       );
     }
 
-    final sinceLastLog = await _cycles.daysSinceLastLog();
-    if (sinceLastLog != null && sinceLastLog > CycleRules.lostTrackAfterDays) {
-      // Extrapolating past this point produces a confident wrong answer, which
-      // is worse than admitting the gap (`docs/PLAN.md` 5.5).
-      return PredictionResult.lostTrack(
-        statistics: statistics,
-        daysSinceLastLog: sinceLastLog,
-      );
-    }
-
     // The cycle in progress is the anchor: the model predicts a start-to-start
     // length, so the next start is this cycle's start plus that length.
     final anchor = records.last.startDate;
     final lengths = CycleFeatures.usableLengths(records);
+    final fit = await _fit(lengths: lengths, anchor: anchor);
+
+    final today = _cycles.today();
+    final elapsed = anchor.daysBetween(today);
+    final expected = CivilDateRange(
+      anchor.addDays(fit.windows.lo80),
+      anchor.addDays(fit.windows.hi80),
+    );
+
+    // Counted from the start of the last logged period rather than from the
+    // last log of any kind, so that logging symptoms every day cannot hold a
+    // window open for a period that was never logged. And only once the
+    // window first predicted has passed as well, so that someone whose cycles
+    // run long is not told the app has lost track of a cycle it expected to
+    // be long (ADR-0016). Extrapolating past this point produces a confident
+    // wrong answer, which is worse than admitting the gap (`docs/PLAN.md`
+    // 5.5). The day count is the one the ring stops showing at, so the two
+    // cannot disagree.
+    if (elapsed + 1 > CycleRules.lostTrackAfterDays && today > expected.end) {
+      return PredictionResult.lostTrack(
+        statistics: statistics,
+        daysSinceLastPeriod: elapsed,
+      );
+    }
+
+    if (fit.confidence == ConfidenceClass.tooIrregular) {
+      // No window at all rather than a wide one presented as a prediction. The
+      // statistics still go back, so this is never a dead end (risk R17).
+      return PredictionResult.tooIrregular(statistics: statistics);
+    }
+
+    final daysLate = today > expected.end ? expected.end.daysBetween(today) : 0;
+    if (elapsed <= fit.windows.lo80) {
+      return _resultFrom(
+        windows: fit.windows,
+        confidence: fit.confidence,
+        personalised: fit.personalised,
+        anchor: anchor,
+        statistics: statistics,
+        lengths: lengths,
+      );
+    }
+
+    // The window has opened and no period has been logged, so part of it is
+    // already in the past. The days gone by are evidence that this cycle is
+    // at least that long, and the windows are moved forward on it rather than
+    // left reaching back into days that are known not to have been the start.
+    final moved = Intervals.conditionedWindows(
+      fit.forecast,
+      elapsed,
+      _priors.filterPriors.studentTDf,
+    );
+    final movedConfidence = moved == null
+        ? ConfidenceClass.tooIrregular
+        : Intervals.confidenceClass(
+            moved.width80,
+            _priors.confidenceThresholds,
+          );
+    if (movedConfidence == ConfidenceClass.tooIrregular) {
+      // Too wide to be a useful range. Inside the window that was first
+      // predicted, that window still stands and is shown unmoved. Past it, the
+      // app says how late the period is instead of drawing a range it would
+      // refuse to draw for an irregular history.
+      if (daysLate == 0) {
+        return _resultFrom(
+          windows: fit.windows,
+          confidence: fit.confidence,
+          personalised: fit.personalised,
+          anchor: anchor,
+          statistics: statistics,
+          lengths: lengths,
+        );
+      }
+      return PredictionResult.laterThanExpected(
+        expectedWindow80: expected,
+        daysLate: daysLate,
+        statistics: statistics,
+      );
+    }
+    return _resultFrom(
+      windows: moved!,
+      confidence: movedConfidence,
+      personalised: fit.personalised,
+      anchor: anchor,
+      statistics: statistics,
+      lengths: lengths,
+      originalWindow80: expected,
+      daysLate: daysLate,
+    );
+  }
+
+  /// Fit the model to a history, or read the fit from the cache.
+  ///
+  /// Args:
+  ///     lengths (`List<int>`): The usable cycle lengths, oldest first.
+  ///     anchor (CivilDate): The start of the cycle in progress.
+  ///
+  /// Returns:
+  ///     `Future<_Fit>`: The windows as first predicted, their confidence,
+  ///     whether the refit ran, and the forecast they were read from.
+  Future<_Fit> _fit({
+    required List<int> lengths,
+    required CivilDate anchor,
+  }) async {
     final signature = _signatureOf(lengths: lengths, anchor: anchor);
 
     final cached = await _db.modelStateDao.matching(signature);
     if (cached != null) {
       _logger?.info(LogEvent.predictionCacheHit);
-      return _resultFrom(
+      // The forecast is rebuilt from the stored posterior and variances
+      // exactly as the refit built it, squares and all, so a cache hit moves
+      // a late window to the same days as a miss would.
+      final priors = cached.personalised
+          ? _priors.filterPriors.withVariances(
+              obsVar: cached.obsSd * cached.obsSd,
+              driftVar: cached.driftSd * cached.driftSd,
+            )
+          : _priors.filterPriors;
+      return (
         windows: PredictionWindows(
           medianDays: cached.medianDays,
           lo50: cached.lo50,
@@ -181,9 +296,14 @@ class PredictionRepository {
           (c) => c.wireName == cached.confidence,
         ),
         personalised: cached.personalised,
-        anchor: anchor,
-        statistics: statistics,
-        lengths: lengths,
+        forecast: BayesFilter.forecast(
+          FilterState(
+            mean: cached.stateMean,
+            variance: cached.stateVariance,
+            nObs: cached.stateObservations,
+          ),
+          priors,
+        ),
       );
     }
 
@@ -214,13 +334,11 @@ class PredictionRepository {
         'personalised': LogField.flag(prediction.refit.personalised),
       },
     );
-    return _resultFrom(
+    return (
       windows: prediction.windows,
       confidence: prediction.confidence,
       personalised: prediction.refit.personalised,
-      anchor: anchor,
-      statistics: statistics,
-      lengths: lengths,
+      forecast: prediction.forecast,
     );
   }
 
@@ -283,16 +401,22 @@ class PredictionRepository {
   /// Turn a computed window set into the union case the UI renders.
   ///
   /// Args:
-  ///     windows (PredictionWindows): The day figures the filter produced.
-  ///     confidence (ConfidenceClass): How tight the 80% window is.
+  ///     windows (PredictionWindows): The day figures to show.
+  ///     confidence (ConfidenceClass): How tight the 80% window is. Never
+  ///         [ConfidenceClass.tooIrregular], which the caller has already
+  ///         turned into a state with no window.
   ///     personalised (bool): Whether the refit ran for this user.
   ///     anchor (CivilDate): The day the windows are measured from.
   ///     statistics (CycleStatistics): The user's own summary figures.
   ///     lengths (`List<int>`): The usable lengths the model saw.
+  ///     originalWindow80 (CivilDateRange?, optional): The 80% window as
+  ///         first predicted, when [windows] have moved forward from it.
+  ///         Defaults to null.
+  ///     daysLate (int, optional): Days past the end of that window.
+  ///         Defaults to 0.
   ///
   /// Returns:
-  ///     PredictionResult: [TooIrregular] when no window may be shown,
-  ///     otherwise a prediction anchored to a date.
+  ///     PredictionResult: A prediction anchored to a date.
   PredictionResult _resultFrom({
     required PredictionWindows windows,
     required ConfidenceClass confidence,
@@ -300,13 +424,9 @@ class PredictionRepository {
     required CivilDate anchor,
     required CycleStatistics statistics,
     required List<int> lengths,
+    CivilDateRange? originalWindow80,
+    int daysLate = 0,
   }) {
-    if (confidence == ConfidenceClass.tooIrregular) {
-      // No window at all rather than a wide one presented as a prediction. The
-      // statistics still go back, so this is never a dead end (risk R17).
-      return PredictionResult.tooIrregular(statistics: statistics);
-    }
-
     final prediction = Prediction(
       medianStart: anchor.addDays(windows.medianDays),
       window50: CivilDateRange(
@@ -326,6 +446,8 @@ class PredictionRepository {
         usedPopulationPrior: !personalised,
         personalizedHyperparameters: personalised,
       ),
+      originalWindow80: originalWindow80,
+      daysLate: daysLate,
     );
 
     // Personalisation is the dividing line, not a cycle count: below the refit

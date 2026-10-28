@@ -10,6 +10,7 @@
 ///     - MedicineLabel: Which label stands for a drug.
 ///     - MedicineEntry: One drug, as the index describes it.
 ///     - MedicineSection: One section of a label, as published.
+///     - GuideSection: One safety section of a Medication Guide.
 ///     - MedicineMatch: A drug a search found, and the brand it was found by.
 ///     - MedicineSearch: What a search found.
 ///     - MedicineName: One name in the A-Z, and the drugs that go by it.
@@ -273,6 +274,63 @@ final class MedicineSection {
 
   @override
   int get hashCode => Object.hash(name, text);
+}
+
+/// One safety section of a drug's Medication Guide, under its heading.
+///
+/// A Medication Guide is the leaflet the FDA requires for some drugs,
+/// written for patients. Only its safety sections are carried, and never its
+/// part on how to take the medicine (ADR-0022).
+///
+/// Attributes:
+///     heading (String): Its heading, a question: "What should I avoid while
+///         taking sertraline?"
+///     text (String): What is under it, as one run of text.
+@immutable
+final class GuideSection {
+  /// Creates a section.
+  ///
+  /// Args:
+  ///     heading (String): Its heading.
+  ///     text (String): What is under it.
+  const GuideSection({required this.heading, required this.text});
+
+  /// Read a section from a drug's record.
+  ///
+  /// Args:
+  ///     pair (Object?): The section, as `[heading, text]`.
+  ///
+  /// Returns:
+  ///     GuideSection: The section.
+  factory GuideSection.fromJson(Object? pair) {
+    final values = pair! as List<Object?>;
+    return GuideSection(
+      heading: values[0]! as String,
+      text: values[1]! as String,
+    );
+  }
+
+  /// Its heading, as the guide asks it.
+  final String heading;
+
+  /// What is under it, as the guide prints it, on one line: openFDA carries a
+  /// guide as one run of text.
+  final String text;
+
+  /// [text] in its parts: what comes before the first bullet, then each
+  /// bullet, with the mark that starts it. Nothing is reworded; only the
+  /// lines the guide printed are put back.
+  List<String> get parts => <String>[
+    for (final part in text.split(RegExp(r'\s*(?=[•●◦])')))
+      if (part.trim().isNotEmpty) part.trim(),
+  ];
+
+  @override
+  bool operator ==(Object other) =>
+      other is GuideSection && other.heading == heading && other.text == text;
+
+  @override
+  int get hashCode => Object.hash(heading, text);
 }
 
 /// A drug a search found.

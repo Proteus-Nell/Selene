@@ -8,10 +8,11 @@
 /// Includes:
 ///     - MedicineRunner: Where decompression and decoding run.
 ///     - MedicineBundle: Loads the index, one drug's sections, and what
-///       several drugs' labels say about each other.
+///       several drugs' labels, and herbs' fact sheets, say about each other.
 ///     - medicineBundleProvider: The bundle, read from the app's assets.
 ///     - medicineIndexProvider: Every drug, once loaded.
 ///     - medicineSectionsProvider: One drug's label sections.
+///     - medicineGuideProvider: The safety sections of its Medication Guide.
 library;
 
 import 'dart:async';
@@ -24,6 +25,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/data/reference/interactions.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
+import 'package:period_tracker/data/reference/medicine_groups.dart';
+import 'package:period_tracker/data/reference/supplement.dart';
 
 /// Runs a task and returns its result: in a background isolate in the app,
 /// and in place in a widget test, whose fake clock never sees an isolate
@@ -48,11 +51,15 @@ class MedicineBundle {
   ///         background isolate by default, so a 3 MB index never stalls a
   ///         frame.
   ///     directory (String): Where the bundle sits among the assets.
+  ///     groups (MedicineGroups?): The group names matched on labels.
+  ///         Defaults to the table the app ships (ADR-0021).
   MedicineBundle(
     this._assets, {
     MedicineRunner run = Isolate.run,
     this.directory = 'assets/medicines',
-  }) : _runner = run;
+    MedicineGroups? groups,
+  }) : _runner = run,
+       groups = groups ?? MedicineGroups.bundled;
 
   /// Where the files are read from.
   final AssetBundle _assets;
@@ -62,6 +69,9 @@ class MedicineBundle {
 
   /// Where the bundle sits among the assets.
   final String directory;
+
+  /// The group names matched on labels.
+  final MedicineGroups groups;
 
   /// The number of the chunk last opened, and the chunk.
   (int, Future<_Chunk>)? _last;
@@ -90,6 +100,37 @@ class MedicineBundle {
   ///         builds, and showing the text anyway would show another drug's
   ///         warnings under this one's name.
   Future<List<MedicineSection>> sections(MedicineEntry entry) async {
+    final record = await _record(entry);
+    return List<MedicineSection>.unmodifiable(<MedicineSection>[
+      for (final pair in record['sections']! as List<Object?>)
+        MedicineSection.fromJson(pair),
+    ]);
+  }
+
+  /// Load the safety sections of one drug's Medication Guide.
+  ///
+  /// From the same label as [sections], and the same line of the bundle.
+  ///
+  /// Args:
+  ///     entry (MedicineEntry): The drug, as the index describes it.
+  ///
+  /// Returns:
+  ///     `Future<List<GuideSection>>`: The guide's safety sections, in its
+  ///     order. Empty for a drug with no guide, or one whose guide could not
+  ///     be carried without its dosing (ADR-0022).
+  ///
+  /// Throws:
+  ///     MedicineBundleException: As [sections] does.
+  Future<List<GuideSection>> guide(MedicineEntry entry) async {
+    final record = await _record(entry);
+    return List<GuideSection>.unmodifiable(<GuideSection>[
+      for (final pair in record['guide'] as List<Object?>? ?? const <Object?>[])
+        GuideSection.fromJson(pair),
+    ]);
+  }
+
+  /// Read the line the index points [entry] at, and check it is its own.
+  Future<Map<String, Object?>> _record(MedicineEntry entry) async {
     final chunk = await _chunk(entry.chunk);
     if (entry.line >= chunk.lineCount) {
       throw MedicineBundleException(
@@ -104,10 +145,7 @@ class MedicineBundle {
         '${entry.key} points at the text of ${record['key']}',
       );
     }
-    return List<MedicineSection>.unmodifiable(<MedicineSection>[
-      for (final pair in record['sections']! as List<Object?>)
-        MedicineSection.fromJson(pair),
-    ]);
+    return record;
   }
 
   /// Compare what several drugs' labels say about each other.
@@ -133,7 +171,59 @@ class MedicineBundle {
     final labels = <String, List<MedicineSection>>{
       for (final medicine in medicines) medicine.key: await sections(medicine),
     };
-    return _check(_runner, medicines, labels);
+    return _check(_runner, medicines, labels, groups);
+  }
+
+  /// Compare recorded kinds of contraception with several drugs' labels.
+  ///
+  /// As [interactions], for [checkConditions]: each kind counts as what its
+  /// products share, and a kind one of the drugs is a product of is left out.
+  ///
+  /// Args:
+  ///     conditions (`List<ConditionKind>`): The kinds recorded.
+  ///     medicines (`List<MedicineEntry>`): The drugs, in the order added.
+  ///
+  /// Returns:
+  ///     `Future<List<ConditionPair>>`: One per kind and drug.
+  ///
+  /// Throws:
+  ///     MedicineBundleException: When a drug's line holds another drug's
+  ///         text, as [sections] does.
+  Future<List<ConditionPair>> conditions(
+    List<ConditionKind> conditions,
+    List<MedicineEntry> medicines,
+  ) async {
+    if (conditions.isEmpty || medicines.isEmpty) return <ConditionPair>[];
+    final labels = <String, List<MedicineSection>>{
+      for (final medicine in medicines) medicine.key: await sections(medicine),
+    };
+    return _checkConditions(_runner, conditions, medicines, labels, groups);
+  }
+
+  /// Compare herbs' fact sheets with several drugs' labels.
+  ///
+  /// As [interactions], for [checkSupplements]: each herb with each drug, and
+  /// no herb with another.
+  ///
+  /// Args:
+  ///     supplements (`List<Supplement>`): The herbs, in the order added.
+  ///     medicines (`List<MedicineEntry>`): The drugs, in the order added.
+  ///
+  /// Returns:
+  ///     `Future<List<SupplementPair>>`: One per herb and drug.
+  ///
+  /// Throws:
+  ///     MedicineBundleException: When a drug's line holds another drug's
+  ///         text, as [sections] does.
+  Future<List<SupplementPair>> supplements(
+    List<Supplement> supplements,
+    List<MedicineEntry> medicines,
+  ) async {
+    if (supplements.isEmpty || medicines.isEmpty) return <SupplementPair>[];
+    final labels = <String, List<MedicineSection>>{
+      for (final medicine in medicines) medicine.key: await sections(medicine),
+    };
+    return _checkSupplements(_runner, supplements, medicines, labels, groups);
   }
 
   /// Return chunk [number], decompressed, from the cache when it was the last
@@ -186,7 +276,32 @@ class MedicineBundle {
     MedicineRunner run,
     List<MedicineEntry> medicines,
     Map<String, List<MedicineSection>> labels,
-  ) => run(() => checkInteractions(medicines, labels));
+    MedicineGroups groups,
+  ) => run(() => checkInteractions(medicines, labels, groups: groups));
+
+  /// Compare every kind in [conditions] with every one of [medicines],
+  /// through [run].
+  static Future<List<ConditionPair>> _checkConditions(
+    MedicineRunner run,
+    List<ConditionKind> conditions,
+    List<MedicineEntry> medicines,
+    Map<String, List<MedicineSection>> labels,
+    MedicineGroups groups,
+  ) => run(
+    () => checkConditions(conditions, medicines, labels, groups: groups),
+  );
+
+  /// Compare every herb in [supplements] with every one of [medicines],
+  /// through [run].
+  static Future<List<SupplementPair>> _checkSupplements(
+    MedicineRunner run,
+    List<Supplement> supplements,
+    List<MedicineEntry> medicines,
+    Map<String, List<MedicineSection>> labels,
+    MedicineGroups groups,
+  ) => run(
+    () => checkSupplements(supplements, medicines, labels, groups: groups),
+  );
 }
 
 /// One decompressed chunk of label text, and where each of its lines starts.
@@ -241,4 +356,12 @@ final AutoDisposeFutureProviderFamily<List<MedicineSection>, MedicineEntry>
 medicineSectionsProvider = FutureProvider.autoDispose
     .family<List<MedicineSection>, MedicineEntry>(
       (ref, entry) => ref.watch(medicineBundleProvider).sections(entry),
+    );
+
+/// The safety sections of one drug's Medication Guide, empty where it has
+/// none (ADR-0022).
+final AutoDisposeFutureProviderFamily<List<GuideSection>, MedicineEntry>
+medicineGuideProvider = FutureProvider.autoDispose
+    .family<List<GuideSection>, MedicineEntry>(
+      (ref, entry) => ref.watch(medicineBundleProvider).guide(entry),
     );

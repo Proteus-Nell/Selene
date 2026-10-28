@@ -56,26 +56,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingIntro =>
-      'This app records your cycle on this device and predicts when your next period is likely to start. It has no internet permission, so nothing can be sent anywhere.';
+      'Selene records your cycle on your phone and predicts when your next period is likely to start. We do not collect any of it. The app has no internet permission, and nothing you record leaves your phone unless you choose to send it.';
 
   @override
-  String get onboardingWhatItIsNotTitle => 'What this app is not';
+  String get onboardingWhatItIsNotTitle => 'What Selene is not';
 
   @override
   String get onboardingNotContraception =>
-      'This is a record of dates, not contraception. It cannot tell you when sex is unlikely to lead to pregnancy, and it must never be used to try.';
+      'Selene is not contraception. It cannot tell you when sex is unlikely to lead to pregnancy, and it must never be used to try.';
 
   @override
   String get onboardingNotMedical =>
-      'This is a record, not medical advice. If something about your cycle worries you, talk to a clinician.';
+      'Selene does not give medical advice. If something about your cycle worries you, talk to a doctor or nurse.';
 
   @override
   String get onboardingNotDiagnostic =>
-      'It works from the dates you record and nothing else. It knows nothing about your contraception, pregnancy, medication, illness or stress, so it cannot diagnose anything.';
+      'Predictions come from the dates you record and nothing else, so Selene cannot diagnose anything. Illness, stress, medicines and contraception can all move a period, and predictions do not account for them.';
 
   @override
   String get onboardingAlwaysARange =>
-      'Predictions come as a range of days. Cycles vary enough that a single date would claim a precision this app does not have.';
+      'Predictions come as a range of days, never a single date, because cycles vary too much for one date to be accurate.';
 
   @override
   String get onboardingAcknowledge => 'I understand';
@@ -137,6 +137,48 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get logCountdownNothingYetCaption =>
       'log a period start and this fills in';
+
+  @override
+  String get logCountdownLater => 'later than expected';
+
+  @override
+  String logCountdownLaterCaption(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days past the expected range',
+      one: '1 day past the expected range',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get logCountdownLostTrack => 'lost track';
+
+  @override
+  String get logCountdownLostTrackCaption =>
+      'log your latest period start and this picks up again';
+
+  @override
+  String get logCountdownNoRange => 'no range';
+
+  @override
+  String get logCountdownNoRangeCaption =>
+      'your cycles vary too much for a useful one';
+
+  @override
+  String get logCountdownPaused => 'paused';
+
+  @override
+  String get logCountdownPausedCaption =>
+      'no prediction while a pregnancy is recorded';
+
+  @override
+  String get logCountdownCheckDates => 'check dates';
+
+  @override
+  String get logCountdownCheckDatesCaption =>
+      'the stored dates need a look before this fills in';
 
   @override
   String logRingLabel(String summary) {
@@ -207,6 +249,73 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logSymptomsTitle => 'Anything else today?';
 
   @override
+  String get logMeasurementsTitle => 'Temperature, mucus and progesterone';
+
+  @override
+  String get logMeasurementsHint =>
+      'Optional, and only a record. Selene does not use any of these to predict anything or to estimate ovulation.';
+
+  @override
+  String get logTemperatureLabel => 'Basal body temperature';
+
+  @override
+  String get logTemperatureCelsius => '°C';
+
+  @override
+  String get logTemperatureFahrenheit => '°F';
+
+  @override
+  String logTemperatureInvalid(String low, String high) {
+    return 'Enter a temperature between $low and $high.';
+  }
+
+  @override
+  String get logMucusTitle => 'Cervical mucus';
+
+  @override
+  String get logMucusDry => 'Dry';
+
+  @override
+  String get logMucusSticky => 'Sticky';
+
+  @override
+  String get logMucusCreamy => 'Creamy';
+
+  @override
+  String get logMucusWatery => 'Watery';
+
+  @override
+  String get logMucusEggWhite => 'Egg white';
+
+  @override
+  String get logProgesteroneTitle => 'Progesterone';
+
+  @override
+  String get logPdgStripLabel => 'Home PdG strip';
+
+  @override
+  String get logPdgNegative => 'Negative';
+
+  @override
+  String get logPdgPositive => 'Positive';
+
+  @override
+  String get logProgesteroneBloodLabel => 'Blood test result';
+
+  @override
+  String get logProgesteroneUnitLabel => 'Unit';
+
+  @override
+  String get logProgesteroneNgPerMl => 'ng/mL';
+
+  @override
+  String get logProgesteroneNmolPerL => 'nmol/L';
+
+  @override
+  String get logProgesteroneInvalid =>
+      'Enter the result as a number above zero.';
+
+  @override
   String get logIntercourseTitle => 'Intercourse';
 
   @override
@@ -232,7 +341,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingSensitiveBody =>
-      'You can record intercourse, and whether it was protected. That is the most sensitive thing stored here. Recording it is optional, and what you record stays on this device and is never used to predict anything. The app lock in settings can ask for your fingerprint or PIN before anything shows.';
+      'You can record intercourse, and whether it was protected. It is the most sensitive thing Selene stores. Recording it is optional, it stays on your phone like everything else, none of it reaches us, and it is never used to predict anything. The app lock in Settings can ask for your fingerprint or PIN before anything shows.';
 
   @override
   String get logSectionPhysical => 'Physical';
@@ -410,6 +519,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'About four out of five times start in this range.';
 
   @override
+  String get insightsLateRange =>
+      'It is later than expected, so this range has moved forward. A late period is harder to predict, so take it as a rough guide.';
+
+  @override
+  String get insightsLateNotLogged =>
+      'If it has started and is not logged yet, logging its first day updates this.';
+
+  @override
+  String get insightsLaterTitle => 'Later than expected';
+
+  @override
+  String insightsLaterBody(String start, String end) {
+    return 'It was expected between $start and $end. A new range would now be too wide to help, so none is shown. If it has started and is not logged yet, logging its first day updates this.';
+  }
+
+  @override
   String insightsHalfTheTime(String start, String end) {
     return 'About half the time it starts between $start and $end.';
   }
@@ -452,7 +577,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String insightsLostTrackBody(int days) {
-    return 'Nothing logged for $days days. That gap is too long to predict from, so nothing is shown here. Log a day and predictions start again.';
+    return 'Your last logged period started $days days ago. That is too long to predict from, so nothing is shown here. If one has come since, logging its first day starts predictions again.';
   }
 
   @override
@@ -596,14 +721,31 @@ class AppLocalizationsEn extends AppLocalizations {
       'Logging a day keeps the predictions useful. No hurry.';
 
   @override
-  String get notificationLateNoticeTitle => 'The predicted window has passed';
+  String get notificationLateNoticeTitle => 'Later than expected';
 
   @override
   String get notificationLateNoticeBody =>
-      'Nothing has been logged since the window closed. Cycles vary, and a prediction can simply be wrong.';
+      'The expected range has passed with no period logged. Cycles vary, and a prediction can simply be wrong.';
 
   @override
   String get notificationLogAction => 'Started today';
+
+  @override
+  String get notificationChannelMedicines => 'Medicine reminders';
+
+  @override
+  String get notificationChannelMedicinesDescription =>
+      'At the times you set on each medicine. None unless you set one.';
+
+  @override
+  String notificationMedicineTitle(String medicine) {
+    return 'Time for $medicine';
+  }
+
+  @override
+  String notificationMedicineBody(String time) {
+    return 'The reminder you set for $time.';
+  }
 
   @override
   String get logMissedReminder =>
@@ -651,7 +793,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsExportSubtitle =>
-      'Writes a file to a location you choose. Nothing else backs this app up.';
+      'Writes a file to a location you choose, protected by a passphrase if you like. Nothing else backs this app up.';
 
   @override
   String settingsExportDone(int count) {
@@ -660,6 +802,69 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsExportFailed => 'The backup could not be written.';
+
+  @override
+  String settingsExportDoneProtected(int count) {
+    return 'Protected backup written: $count days.';
+  }
+
+  @override
+  String get settingsExportProtectTitle =>
+      'Protect this backup with a passphrase?';
+
+  @override
+  String get settingsExportProtectBody =>
+      'Without one, the backup is a readable file, and anyone who gets hold of it can read what you recorded. With one, it opens only with the passphrase. Nobody can recover a forgotten passphrase, not even you, so keep it somewhere safe.';
+
+  @override
+  String get settingsExportPassphraseLabel => 'Passphrase';
+
+  @override
+  String get settingsExportPassphraseConfirmLabel =>
+      'The same passphrase again';
+
+  @override
+  String settingsExportPassphraseTooShort(int count) {
+    return 'Use at least $count characters. A few unrelated words are easier to remember than a short password.';
+  }
+
+  @override
+  String get settingsExportPassphraseMismatch =>
+      'The two passphrases are not the same.';
+
+  @override
+  String get settingsExportWithoutPassphrase => 'Save without one';
+
+  @override
+  String get settingsExportWithPassphrase => 'Protect and save';
+
+  @override
+  String get settingsPassphraseShow => 'Show passphrase';
+
+  @override
+  String get settingsPassphraseHide => 'Hide passphrase';
+
+  @override
+  String get settingsImportPassphraseTitle => 'This backup is protected';
+
+  @override
+  String get settingsImportPassphraseBody =>
+      'Enter the passphrase it was saved with.';
+
+  @override
+  String get settingsImportPassphraseOpen => 'Open';
+
+  @override
+  String get settingsImportPassphraseWrong =>
+      'That passphrase does not open this backup.';
+
+  @override
+  String get settingsImportProtectedNewer =>
+      'This backup was protected by a newer version of Selene. Update the app to open it.';
+
+  @override
+  String get settingsImportProtectedDamaged =>
+      'This protected backup is damaged and cannot be opened.';
 
   @override
   String get settingsImport => 'Restore from a backup';
@@ -679,6 +884,272 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String settingsImportDone(int count, String date) {
     return 'Restored $count days from a backup taken on $date.';
+  }
+
+  @override
+  String get settingsSummary => 'Summary for a doctor';
+
+  @override
+  String get settingsSummarySubtitle =>
+      'A PDF of your periods, cycles, symptoms, conditions and medicines over a span you choose, saved where you choose.';
+
+  @override
+  String get settingsSpreadsheet => 'Export as spreadsheet files';
+
+  @override
+  String get settingsSpreadsheetSubtitle =>
+      'The same as CSV files, to open in a spreadsheet and work with yourself.';
+
+  @override
+  String get summarySpanTitle => 'How far back?';
+
+  @override
+  String get summarySpanBody =>
+      'It covers period dates, cycle lengths, symptoms, temperature, mucus and progesterone, conditions and medicines. Intercourse is never included.';
+
+  @override
+  String get summarySpanThreeMonths => 'The last 3 months';
+
+  @override
+  String get summarySpanSixMonths => 'The last 6 months';
+
+  @override
+  String get summarySpanYear => 'The last year';
+
+  @override
+  String get summarySpanEverything => 'Everything';
+
+  @override
+  String get settingsSummaryDone =>
+      'Saved the summary in the folder you chose.';
+
+  @override
+  String settingsSpreadsheetDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Saved $count files in the folder you chose.',
+      one: 'Saved 1 file in the folder you chose.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsSummaryFailed =>
+      'It could not be saved there. Try another folder.';
+
+  @override
+  String get settingsSummaryNothing =>
+      'Nothing is logged in that span, so there is nothing to summarise.';
+
+  @override
+  String get summaryPdfTitle => 'Cycle summary';
+
+  @override
+  String summaryPdfSpan(String from, String to) {
+    return '$from to $to';
+  }
+
+  @override
+  String summaryPdfAbout(String date) {
+    return 'Made with Selene on $date, from what the person it belongs to logged in the app. It is a personal record, not a clinical measurement and not a diagnosis.';
+  }
+
+  @override
+  String get summaryPdfCyclesHeading => 'Periods and cycles';
+
+  @override
+  String get summaryPdfCyclesUnknown =>
+      'Some logged days contradict each other, so the cycles could not be worked out from them. The logged days are in the spreadsheet export.';
+
+  @override
+  String get summaryPdfNoPeriods => 'No period started in this span.';
+
+  @override
+  String summaryPdfPeriodsStarted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count periods started in this span.',
+      one: '1 period started in this span.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String summaryPdfCycleLength(
+    int count,
+    String median,
+    String shortest,
+    String longest,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Cycle length in days, from one period\'s start to the next: median $median, from $shortest to $longest, over $count complete cycles.',
+      one:
+          'Cycle length in days, from one period\'s start to the next: $median, over 1 complete cycle.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String summaryPdfBleeding(
+    int count,
+    String median,
+    String shortest,
+    String longest,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Days of bleeding: median $median, from $shortest to $longest, over $count periods.',
+      one: 'Days of bleeding: $median, for 1 period.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get summaryPdfNotCounted =>
+      'A cycle with a note is left out of the median, as the app leaves it out of its predictions.';
+
+  @override
+  String get summaryPdfColumnStarted => 'Period started';
+
+  @override
+  String get summaryPdfColumnBleeding => 'Days of bleeding';
+
+  @override
+  String get summaryPdfColumnLength => 'Cycle length (days)';
+
+  @override
+  String get summaryPdfColumnNote => 'Note';
+
+  @override
+  String get summaryPdfStillGoing => 'Still going';
+
+  @override
+  String get summaryPdfShort => 'Under 15 days';
+
+  @override
+  String get summaryPdfLong => 'Over 90 days';
+
+  @override
+  String get summaryPdfOutlier => 'Unusual for this record';
+
+  @override
+  String get summaryPdfSymptomsHeading => 'Symptoms';
+
+  @override
+  String get summaryPdfSymptomsIntro =>
+      'How many days each symptom was logged on, and how strongly it was felt.';
+
+  @override
+  String get summaryPdfNoSymptoms => 'No symptoms were logged in this span.';
+
+  @override
+  String get summaryPdfColumnSymptom => 'Symptom';
+
+  @override
+  String get summaryPdfColumnDays => 'Days';
+
+  @override
+  String get summaryPdfMeasurementsHeading =>
+      'Temperature, mucus and progesterone';
+
+  @override
+  String get summaryPdfMeasurementsNote =>
+      'Recorded only. The app does not use them to predict anything or to estimate ovulation.';
+
+  @override
+  String summaryPdfTemperature(
+    int count,
+    String lowest,
+    String highest,
+    String unit,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Basal body temperature: $count readings, from $lowest to $highest $unit.',
+      one: 'Basal body temperature: 1 reading, $lowest $unit.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String summaryPdfMucus(String days) {
+    return 'Cervical mucus: $days.';
+  }
+
+  @override
+  String summaryPdfMucusKind(String kind, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$kind on $_temp0';
+  }
+
+  @override
+  String summaryPdfPdg(String results) {
+    return 'Home PdG strips: $results.';
+  }
+
+  @override
+  String summaryPdfPdgResult(String result, String date) {
+    return '$result on $date';
+  }
+
+  @override
+  String summaryPdfBlood(String results) {
+    return 'Blood progesterone: $results.';
+  }
+
+  @override
+  String summaryPdfBloodResult(String value, String unit, String date) {
+    return '$value $unit on $date';
+  }
+
+  @override
+  String get summaryPdfConditionsHeading => 'Conditions';
+
+  @override
+  String get summaryPdfNoConditions => 'None recorded during this span.';
+
+  @override
+  String summaryPdfConditionSince(String condition, String start) {
+    return '$condition: since $start';
+  }
+
+  @override
+  String summaryPdfConditionFromTo(String condition, String start, String end) {
+    return '$condition: $start to $end';
+  }
+
+  @override
+  String get summaryPdfMedicinesHeading => 'Medicines';
+
+  @override
+  String get summaryPdfMedicinesNote =>
+      'As recorded in the app today. The list has no dates, so it may not match the whole span.';
+
+  @override
+  String get summaryPdfNoMedicines => 'None recorded.';
+
+  @override
+  String summaryPdfFooter(String from, String to) {
+    return 'Selene cycle summary, $from to $to';
+  }
+
+  @override
+  String summaryPdfPage(int page, int count) {
+    return 'Page $page of $count';
   }
 
   @override
@@ -724,6 +1195,28 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsReminderSubtitle =>
       'A notification in the morning, the number of days ahead you choose.';
+
+  @override
+  String get settingsLateCheckIn => 'Check in if a period is late';
+
+  @override
+  String settingsLateCheckInSubtitle(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other:
+          'One notification, $days days after the expected range ends with no period logged.',
+      one: 'One notification, a day after the expected range ends with no period logged.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsMedicineReminders => 'Medicine reminders';
+
+  @override
+  String get settingsMedicineRemindersSubtitle =>
+      'Set on each medicine, under Conditions and medication.';
 
   @override
   String get insightsSuppressedPregnancyTitle =>
@@ -799,7 +1292,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAppLockNotEncrypted =>
-      'This hides the screen. It does not encrypt anything.';
+      'This only hides the screen. Your data is encrypted on the phone whether the lock is on or off.';
 
   @override
   String get settingsAppLockUnavailable =>
@@ -937,6 +1430,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Each maker files its own label for a medicine. One is shown here, chosen by a fixed rule, and the label on your packet may differ.';
 
   @override
+  String get lookupGuideTitle => 'Medication Guide';
+
+  @override
+  String get lookupGuideNote =>
+      'The leaflet the FDA approves for patients, its safety sections only. How to take the medicine is left out, because a dose on a US leaflet may not be the right one for the packet you have, and so are how to store it and what is in it.';
+
+  @override
   String get lookupMedicineLoading => 'Opening this medicine\'s label';
 
   @override
@@ -1027,11 +1527,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkerEntrySubtitle =>
-      'What the US labels of two or more medicines say about each other.';
+      'What the US labels of medicines, and NCCIH\'s fact sheets on herbs, say about each other.';
 
   @override
   String get checkerIntro =>
-      'Add two or more medicines. For each pair, this shows whether they share an ingredient or an FDA drug class, and quotes any place where one label names the other. It reads the labels and nothing else, so it cannot tell you that a combination is safe.';
+      'Add two or more medicines, or a herbal supplement and a medicine. For each pair, this shows whether they share an ingredient, an FDA drug class or a group such as “NSAIDs”, and quotes any place where one label names the other or a group it is in. A herb is compared by NCCIH\'s fact sheet on it. It reads the labels and the fact sheets and nothing else, so it cannot tell you that a combination is safe.';
 
   @override
   String get checkerAdd => 'Add a medicine';
@@ -1046,7 +1546,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String checkerFull(int count) {
-    return 'Up to $count medicines can be compared at once.';
+    return 'Up to $count medicines and herbs can be compared at once.';
   }
 
   @override
@@ -1111,12 +1611,56 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String checkerMentionsGroup(
+    String medicine,
+    String words,
+    String other,
+    String section,
+  ) {
+    return 'The $medicine label mentions “$words”, a group that includes $other. From $section:';
+  }
+
+  @override
+  String checkerMentionsGroupShort(
+    String medicine,
+    String words,
+    String other,
+  ) {
+    return 'The $medicine label mentions “$words”, a group that includes $other.';
+  }
+
+  @override
+  String checkerMentionsKindName(String medicine, String words, String kind) {
+    return 'The $medicine label mentions “$words”, which $kind contain.';
+  }
+
+  @override
+  String checkerMentionsKindNameFrom(
+    String medicine,
+    String words,
+    String kind,
+    String section,
+  ) {
+    return 'The $medicine label mentions “$words”, which $kind contain. From $section:';
+  }
+
+  @override
+  String checkerSharedGroup(String groups) {
+    return 'Both are $groups.';
+  }
+
+  @override
+  String checkerGroupSources(String group, String sources) {
+    return 'Which medicines are $group: $sources.';
+  }
+
+  @override
   String get checkerNothingFoundPair =>
-      'Neither label names the other, and they share no ingredient or FDA drug class.';
+      'No labels connect these two medications, but you are advised to verify the results.';
 
   @override
   String get checkerNothingFoundNote =>
-      'That does not mean they are safe together. Labels leave interactions out, and often name medicines only by a group, such as “NSAIDs” or “combined hormonal contraceptives”, which this check cannot match.';
+      'That does not mean they are safe together. Labels leave interactions out, and often name medicines by a group this check does not know, such as “anticoagulants” or “strong CYP3A4 inducers”.';
 
   @override
   String get checkerSearchOnline => 'Look this pair up online';
@@ -1133,6 +1677,117 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get checkerPickerPrompt =>
       'Type the name of a medicine, a brand or an ingredient.';
+
+  @override
+  String get checkerAddSupplement => 'Add a herbal supplement';
+
+  @override
+  String get checkerSupplementKind => 'Herbal supplement · NCCIH fact sheet';
+
+  @override
+  String get checkerNeedMedicine =>
+      'Add a medicine to compare with. Herbs are compared with medicines, not with each other.';
+
+  @override
+  String get checkerHerbsNotCompared =>
+      'Herbs are compared with the medicines on the list, not with each other.';
+
+  @override
+  String checkerSupplementIngredient(
+    String medicine,
+    String herb,
+    String ingredients,
+  ) {
+    return 'The $medicine label lists $herb among its active ingredients, as “$ingredients”.';
+  }
+
+  @override
+  String checkerSheetMentionsName(String herb, String words, String section) {
+    return 'NCCIH\'s fact sheet on $herb mentions “$words”. From “$section”:';
+  }
+
+  @override
+  String checkerSheetMentionsClass(
+    String herb,
+    String words,
+    String other,
+    String section,
+  ) {
+    return 'NCCIH\'s fact sheet on $herb mentions “$words”, an FDA drug class that includes $other. From “$section”:';
+  }
+
+  @override
+  String checkerSheetMentionsGroup(
+    String herb,
+    String words,
+    String other,
+    String section,
+  ) {
+    return 'NCCIH\'s fact sheet on $herb mentions “$words”, a group that includes $other. From “$section”:';
+  }
+
+  @override
+  String get checkerNothingFoundSupplementPair =>
+      'Neither the label nor NCCIH\'s fact sheet connects these two, but you are advised to verify the results.';
+
+  @override
+  String get checkerNothingFoundSheetNote =>
+      'That does not mean they are safe together. NCCIH\'s fact sheets name only some of the medicines a herb interacts with, and often by a kind, such as “some antidepressants”.';
+
+  @override
+  String get lookupSupplementsHeading => 'Herbal supplements';
+
+  @override
+  String get lookupSupplementsEntry => 'Herbal supplements A to Z';
+
+  @override
+  String lookupSupplementsEntrySubtitle(int count) {
+    return 'NCCIH\'s fact sheets on $count herbs, such as St. John’s wort, from the US National Institutes of Health.';
+  }
+
+  @override
+  String supplementsIntro(String date) {
+    return 'Fact sheets from the National Center for Complementary and Integrative Health (NCCIH), part of the US National Institutes of Health, as they stood on $date. They are in the public domain, and are shown as NCCIH wrote them.';
+  }
+
+  @override
+  String get supplementsLoading => 'Opening the herbal supplements reference';
+
+  @override
+  String get supplementsFailed =>
+      'The herbal supplements reference could not be opened.';
+
+  @override
+  String supplementsFoundBy(String name) {
+    return 'Also called $name';
+  }
+
+  @override
+  String supplementsCommonNames(String names) {
+    return 'Common names: $names';
+  }
+
+  @override
+  String supplementsLatinNames(String names) {
+    return 'Latin names: $names';
+  }
+
+  @override
+  String supplementsSource(String date) {
+    return 'From NCCIH\'s fact sheet, last updated $date. It is in the public domain.';
+  }
+
+  @override
+  String supplementsAddress(String url) {
+    return 'NCCIH publishes it at $url.';
+  }
+
+  @override
+  String get supplementsPhoto =>
+      'NCCIH\'s photograph of the plant is not in the public domain, so it is left out.';
+
+  @override
+  String get supplementsCompare => 'Compare with medicines';
 
   @override
   String get lookupMedicineCheck => 'Check with other medicines';
@@ -1413,7 +2068,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get conditionsMedicinesIntro =>
-      'Medicines you take, picked from the app\'s list of US medicines and kept on this device only. Each is compared with the others using their labels.';
+      'Medicines you take, picked from the app\'s list of US medicines and kept on this device only. Each is compared with the others using their labels, and with any hormonal contraception recorded above.';
 
   @override
   String get conditionsMedicinesEmpty => 'No medicines recorded.';
@@ -1427,6 +2082,31 @@ class AppLocalizationsEn extends AppLocalizations {
       'No longer in this app\'s list of medicines, so it is not compared.';
 
   @override
+  String get conditionsMedicineReminderAdd => 'Add a reminder';
+
+  @override
+  String get conditionsMedicineReminderHelp => 'Remind me every day at';
+
+  @override
+  String conditionsMedicineReminderChange(String time) {
+    return 'Change the $time reminder';
+  }
+
+  @override
+  String conditionsMedicineReminderRemove(String time) {
+    return 'Remove the $time reminder';
+  }
+
+  @override
+  String conditionsMedicineReminderSet(String time) {
+    return 'A reminder every day at $time.';
+  }
+
+  @override
+  String get conditionsMedicineReminderBlocked =>
+      'Notifications are off for this app, so the reminder cannot arrive. They can be turned on in the phone\'s settings.';
+
+  @override
   String get conditionsConflictsHeading => 'Possible conflicts';
 
   @override
@@ -1434,26 +2114,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'Their labels connect these medicines. That is not a finding about you: a pharmacist can tell you whether it matters.';
 
   @override
-  String conditionsConflictsOthers(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other:
-          'The labels of the $count other pairs do not connect them in the ways this app checks for.',
-      one: 'The labels of the one other pair do not connect it in the ways this app checks for.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get conditionsConflictsNone =>
-      'Their labels connect none of these medicines in the ways this app checks for.';
-
-  @override
   String get conditionsConflictLookUp => 'Look it up online';
 
   @override
   String get conditionsConflictLabels => 'What the labels say';
+
+  @override
+  String get conditionsConflictLabel => 'What the label says';
+
+  @override
+  String conditionsConflictKind(String kind) {
+    return 'Compared as what every one of the $kind in the US list has in common, since the record does not say which.';
+  }
+
+  @override
+  String get conditionKindCombined => 'combined pills';
+
+  @override
+  String get conditionKindProgestogen => 'progestogen-only pills';
+
+  @override
+  String get conditionKindIud => 'hormonal IUDs';
+
+  @override
+  String get conditionKindImplant => 'contraceptive implants';
 
   @override
   String get conditionHormonalContraceptionCombined => 'Combined pill';
@@ -1610,6 +2294,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Record bleeding as yes or no rather than an intensity. Anything already recorded is kept, and comes back if you turn this off.';
 
   @override
+  String get settingsTemperatureFahrenheit => 'Show temperatures in °F';
+
+  @override
+  String get settingsTemperatureFahrenheitSubtitle =>
+      'Temperatures are kept in °C and shown in whichever you choose, so switching changes nothing recorded.';
+
+  @override
   String get settingsCyclePhases => 'Name the cycle phase';
 
   @override
@@ -1669,46 +2360,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String get privacyHeading => 'What this app does with your data';
 
   @override
-  String get privacyOnDeviceTitle => 'Everything stays on this phone';
+  String get privacyOnDeviceTitle => 'We do not collect your information';
 
   @override
   String get privacyOnDeviceBody =>
-      'This app has no internet permission, and a check on every release refuses to build one that asks for it. There is no account to sign into, no sync, and it collects no analytics or crash reports. What you record stays here until you export it.';
+      'The app has no internet permission, no account, no analytics, no advertising and no crash reporting, and a check on every release refuses to build one that asks for the internet. Everything you record stays on your phone, under your control, and none of it reaches us.';
 
   @override
-  String get privacyNotEncryptedTitle => 'The database is not encrypted';
+  String get privacySharingTitle => 'It leaves your phone only when you choose';
 
   @override
-  String get privacyNotEncryptedBody =>
-      'Your data sits in this app\'s own storage. Other apps cannot read it on a phone that has not been tampered with, and Android\'s full-device encryption protects it while the phone is switched off. But it is stored as plain text, so anyone who picks up your unlocked phone, or takes a forensic copy of it, can read it. The app lock hides the screen. It does not encrypt the file underneath.';
+  String get privacySharingBody =>
+      'Two things send anything anywhere, and only when you ask. An export saves a backup, or a summary for a doctor, wherever you choose. A web search opens in your browser, after the app tells you exactly which words will be searched, and your browser may keep it in its history.';
 
   @override
-  String get privacyBackupTitle => 'Nothing is backed up to the cloud';
+  String get privacyEncryptedTitle =>
+      'The database is encrypted, with a key the phone keeps';
+
+  @override
+  String get privacyEncryptedBody =>
+      'Everything you record is kept in the app\'s private storage, in a database file encrypted with a key held by Android\'s secure key store. The key never leaves the phone and is not in your exports, so a copy of the file on its own cannot be read. Scheduled reminders are the one exception: until they are due, Android keeps their wording, which can name the predicted dates or a medicine, outside the encrypted file. Encryption does not protect an unlocked phone. Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.';
+
+  @override
+  String get privacyBackupTitle => 'Nothing is copied off the phone';
 
   @override
   String get privacyBackupBody =>
-      'Android\'s automatic backup is switched off for this app, so your cycle history is never copied to a Google account. If you lose the phone, the data is gone unless you exported it.';
+      'Android\'s cloud backup and device-to-device transfer are switched off for the app, so your records are never copied to a Google account or to a new phone. If you lose the phone, they are gone unless you exported them.';
 
   @override
   String get privacyDeletionTitle => 'Deleting really deletes';
 
   @override
   String get privacyDeletionBody =>
-      'Deleting a day removes the row. Deleting everything removes every row and then reclaims the space, so the old entries are not left readable in the file. Nothing is kept behind a hidden flag.';
+      'You can delete a single day, condition or medicine at any time. Delete everything removes every record and reclaims the space, so the deleted entries are not left readable in the file. Uninstalling the app deletes everything it stored on the phone.';
 
   @override
-  String get privacyLogsTitle => 'The activity log holds no cycle content';
+  String get privacyLogsTitle => 'The activity log holds nothing you recorded';
 
   @override
   String get privacyLogsBody =>
-      'This app keeps a short log of what it did, such as \"a prediction was computed\" with a count of cycles. You can read it and clear it in Settings.';
+      'The app keeps a short log of what it did, such as \"a prediction was computed\" with a count of cycles. It stays on the phone, only in memory, so it is cleared when the app stops. You can read it and clear it in Settings.';
 
   @override
   String get privacyExportTitle => 'Exports are yours to look after';
 
   @override
   String get privacyExportBody =>
-      'An exported backup is a plain readable file wherever you chose to put it, with no protection of its own. Anywhere you save it or send it is outside this app\'s control.';
+      'An exported backup is a readable file wherever you save it, unless you protect it with a passphrase when you export it. A protected backup opens only with that passphrase, and nobody can recover a forgotten one. Once a backup is saved, it is under your control and the control of wherever you keep or send it.';
 
   @override
   String get bootstrapRecoveredTitle => 'Your data could not be read';
@@ -1727,6 +2426,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String bootstrapNewerSchemaBody(int stored, int supported) {
     return 'The data on this device was written by a newer version of this app (storage version $stored; this version understands $supported). Nothing has been changed. Install the newer version to carry on.';
   }
+
+  @override
+  String get bootstrapKeyUnavailableTitle =>
+      'Selene could not unlock your data';
+
+  @override
+  String get bootstrapKeyUnavailableBody =>
+      'Your data is encrypted on this phone, and the key that unlocks it could not be read just now. Nothing has been opened or changed. Close Selene and open it again; if this keeps happening, restart the phone.';
 
   @override
   String get errorGeneric => 'Something went wrong.';

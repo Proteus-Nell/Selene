@@ -1,7 +1,7 @@
 /// Day editor.
 ///
-/// Edits one day's flow, symptoms and intercourse, in the same shape wherever
-/// it is opened from. Every change writes immediately: a save button would add
+/// Edits one day's flow, symptoms and intercourse, and the measurements kept
+/// only as a record, in the same shape wherever it is opened from. Every change writes immediately: a save button would add
 /// a tap to every correction and create a state where the user believes they
 /// have recorded something and have not.
 ///
@@ -18,6 +18,8 @@ import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/features/common/chip_motion.dart';
+import 'package:period_tracker/features/common/log_labels.dart';
+import 'package:period_tracker/features/log/measurements_editor.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Day editor: one day's flow, symptoms and intercourse.
@@ -78,6 +80,8 @@ class DayEditor extends ConsumerWidget {
     // that started simplified and then grew three more chips would read as the
     // app having changed its mind about what it recorded.
     final simplified = ref.watch(flowSimplifiedProvider).valueOrNull ?? false;
+    final fahrenheit =
+        ref.watch(temperatureFahrenheitProvider).valueOrNull ?? false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,7 +106,7 @@ class DayEditor extends ConsumerWidget {
                     selected: current.flow == flow,
                     onSelected: (_) =>
                         _write(ref, current.copyWith(flow: flow)),
-                    label: Text(_flowLabel(l10n, flow)),
+                    label: Text(flowLabel(l10n, flow)),
                   ),
                 ),
             ],
@@ -165,6 +169,12 @@ class DayEditor extends ConsumerWidget {
             ],
           ),
         ],
+        const SizedBox(height: 12),
+        MeasurementsEditor(
+          current: current,
+          fahrenheit: fahrenheit,
+          onChanged: (next) => _write(ref, next),
+        ),
       ],
     );
   }
@@ -182,23 +192,6 @@ class DayEditor extends ConsumerWidget {
         SymptomSection.physical => l10n.logSectionPhysical,
         SymptomSection.mental => l10n.logSectionMental,
         SymptomSection.emotional => l10n.logSectionEmotional,
-      };
-
-  /// Return the label for one flow intensity.
-  ///
-  /// Args:
-  ///     l10n (AppLocalizations): The translations.
-  ///     flow (FlowIntensity): The intensity to name.
-  ///
-  /// Returns:
-  ///     String: Its name, in the user's language.
-  static String _flowLabel(AppLocalizations l10n, FlowIntensity flow) =>
-      switch (flow) {
-        FlowIntensity.none => l10n.logFlowNone,
-        FlowIntensity.spotting => l10n.logFlowSpotting,
-        FlowIntensity.light => l10n.logFlowLight,
-        FlowIntensity.medium => l10n.logFlowMedium,
-        FlowIntensity.heavy => l10n.logFlowHeavy,
       };
 }
 
@@ -384,7 +377,7 @@ class _SymptomChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final recorded = severity != SymptomSeverity.none;
-    final label = _symptomLabel(l10n, symptom);
+    final label = symptomLabel(l10n, symptom);
     // MergeSemantics, not a bare GestureDetector: a detector wrapping a chip
     // publishes its own node carrying a long-press action and no label, which a
     // screen reader reads out as an unlabelled button. `a11y_test.dart` caught
@@ -410,7 +403,7 @@ class _SymptomChip extends StatelessWidget {
               // they are selected, where the rest do not: the reserved
               // checkmark slot holds the mark's width, not the label's.
               label: Text(
-                recorded ? '$label · ${_severityLabel(l10n, severity)}' : label,
+                recorded ? '$label · ${severityLabel(l10n, severity)}' : label,
               ),
             ),
           ),
@@ -446,7 +439,7 @@ class _SymptomChip extends StatelessWidget {
                 title: Text(
                   option == SymptomSeverity.none
                       ? l10n.logFlowNone
-                      : _severityLabel(l10n, option),
+                      : severityLabel(l10n, option),
                 ),
                 selected: option == severity,
                 onTap: () => Navigator.of(context).pop(option),
@@ -457,51 +450,4 @@ class _SymptomChip extends StatelessWidget {
     );
     if (chosen != null) onChanged(chosen);
   }
-
-  /// Return the label for one symptom.
-  ///
-  /// Args:
-  ///     l10n (AppLocalizations): The translations.
-  ///     symptom (Symptom): The symptom to name.
-  ///
-  /// Returns:
-  ///     String: Its name, in the user's language. Exhaustive over the enum,
-  ///     so a symptom added later fails to compile until it has a name.
-  static String _symptomLabel(AppLocalizations l10n, Symptom symptom) =>
-      switch (symptom) {
-        Symptom.cramps => l10n.logSymptomCramps,
-        Symptom.headache => l10n.logSymptomHeadache,
-        Symptom.bloating => l10n.logSymptomBloating,
-        Symptom.nausea => l10n.logSymptomNausea,
-        Symptom.breastTenderness => l10n.logSymptomBreastTenderness,
-        Symptom.backPain => l10n.logSymptomBackPain,
-        Symptom.acne => l10n.logSymptomAcne,
-        Symptom.digestiveUpset => l10n.logSymptomDigestiveUpset,
-        Symptom.sleep => l10n.logSymptomSleep,
-        Symptom.brainFog => l10n.logSymptomBrainFog,
-        Symptom.poorConcentration => l10n.logSymptomPoorConcentration,
-        Symptom.mood => l10n.logSymptomMood,
-        Symptom.energy => l10n.logSymptomEnergy,
-        Symptom.irritability => l10n.logSymptomIrritability,
-        Symptom.anxiety => l10n.logSymptomAnxiety,
-        Symptom.lowMood => l10n.logSymptomLowMood,
-      };
-
-  /// Return the label for one severity.
-  ///
-  /// Args:
-  ///     l10n (AppLocalizations): The translations.
-  ///     severity (SymptomSeverity): The severity to name.
-  ///
-  /// Returns:
-  ///     String: Its name, in the user's language.
-  static String _severityLabel(
-    AppLocalizations l10n,
-    SymptomSeverity severity,
-  ) => switch (severity) {
-    SymptomSeverity.none => l10n.logFlowNone,
-    SymptomSeverity.mild => l10n.logSeverityMild,
-    SymptomSeverity.moderate => l10n.logSeverityModerate,
-    SymptomSeverity.severe => l10n.logSeveritySevere,
-  };
 }

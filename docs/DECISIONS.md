@@ -12,18 +12,28 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0001](#adr-0001-flutter-and-dart-for-the-android-application) | Flutter and Dart for the Android application | Accepted | 2026-08-17 |
 | [0002](#adr-0002-two-runtime-split-python-reference-dart-production-golden-vectors-as-the-contract) | Two-runtime split with golden vectors as the contract | Accepted | 2026-08-17 |
 | [0003](#adr-0003-hierarchical-bayesian-state-space-model-as-tier-a-tflite-on-device-training-deferred-to-tier-b) | Bayesian state-space model as Tier A, TFLite training deferred to Tier B | Accepted; Tier B runtime clause superseded by [0006](#adr-0006-pytorch-and-executorch-replace-tensorflow-and-litert-entirely) | 2026-08-17 |
-| [0004](#adr-0004-unencrypted-local-sqlite-with-zero-network-permission) | Unencrypted local SQLite with zero network permission | Accepted | 2026-08-17 |
+| [0004](#adr-0004-unencrypted-local-sqlite-with-zero-network-permission) | Unencrypted local SQLite with zero network permission | Accepted; unencrypted storage superseded by [0018](#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds) | 2026-08-17 |
 | [0005](#adr-0005-uv-with-python-311-wsl2-for-gpu-work-jdk-17-pinned-for-android-mlflow-local-only) | uv + Python 3.11, WSL2 for GPU, JDK 17 pinned, MLflow local-only | Accepted; clause 2 (WSL2 scope) narrowed by [0006](#adr-0006-pytorch-and-executorch-replace-tensorflow-and-litert-entirely) | 2026-08-17 |
 | [0006](#adr-0006-pytorch-and-executorch-replace-tensorflow-and-litert-entirely) | PyTorch and ExecuTorch replace TensorFlow and LiteRT entirely | Accepted | 2026-08-17 |
 | [0007](#adr-0007-named-cycle-phases-shown-by-default-ovulation-estimation-still-opt-in) | Named cycle phases shown by default, ovulation estimation still opt-in | Accepted | 2026-08-20 |
 | [0008](#adr-0008-app-lock-gates-the-interface-and-does-not-encrypt-the-database) | App lock gates the interface and does not encrypt the database | Accepted | 2026-08-20 |
 | [0009](#adr-0009-medicines-reference-data-is-generated-at-build-time-from-openfda) | Medicines reference data is generated at build time from openFDA | Accepted; allowlist superseded by [0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) | 2026-08-20 |
 | [0010](#adr-0010-long-term-conditions-are-recorded-not-modelled) | Long-term conditions are recorded, not modelled | Accepted | 2026-08-20 |
-| [0011](#adr-0011-export-v2-refuses-v1-files) | Export v2 refuses v1 files | Accepted | 2026-08-20 |
+| [0011](#adr-0011-export-v2-refuses-v1-files) | Export v2 refuses v1 files | Accepted; refusing a format that only adds fields superseded by [0020](#adr-0020-temperature-mucus-and-progesterone-are-recorded-only-and-export-v4-still-restores-v3) | 2026-08-20 |
 | [0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) | The medicines reference covers every drug, one label each, chosen by rule | Accepted | 2026-10-02 |
 | [0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone) | The medicines bundle is compressed chunks and an index, searched on the phone | Accepted | 2026-10-02 |
-| [0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe) | The interaction checker compares label text, and never calls a pair safe | Accepted | 2026-10-02 |
-| [0015](#adr-0015-recorded-medicines-are-kept-as-a-setting-and-their-flags-only-inform) | Recorded medicines are kept as a setting, and their flags only inform | Accepted | 2026-10-02 |
+| [0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe) | The interaction checker compares label text, and never calls a pair safe | Accepted; findings extended to groups by [0021](#adr-0021-group-names-on-labels-come-from-a-sourced-table-and-recorded-contraception-joins-the-conflict-flags) | 2026-10-02 |
+| [0015](#adr-0015-recorded-medicines-are-kept-as-a-setting-and-their-flags-only-inform) | Recorded medicines are kept as a setting, and their flags only inform | Accepted; recorded contraception joins the flags in [0021](#adr-0021-group-names-on-labels-come-from-a-sourced-table-and-recorded-contraception-joins-the-conflict-flags) | 2026-10-02 |
+| [0016](#adr-0016-a-late-period-moves-the-range-forward-and-lost-track-counts-from-the-last-period) | A late period moves the range forward, and lost track counts from the last period | Accepted | 2026-10-27 |
+| [0017](#adr-0017-releases-are-built-from-a-tag-with-the-key-in-repository-secrets-and-their-version-code-comes-from-the-name) | Releases are built from a tag, with the key in repository secrets, and their version code comes from the name | Accepted | 2026-10-27 |
+| [0018](#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds) | The database is encrypted, with a key the Android Keystore holds | Accepted | 2026-10-28 |
+| [0019](#adr-0019-a-backup-can-be-protected-with-a-passphrase-and-an-unprotected-one-still-restores) | A backup can be protected with a passphrase, and an unprotected one still restores | Accepted | 2026-10-28 |
+| [0020](#adr-0020-temperature-mucus-and-progesterone-are-recorded-only-and-export-v4-still-restores-v3) | Temperature, mucus and progesterone are recorded only, and export v4 still restores v3 | Accepted | 2026-10-28 |
+| [0021](#adr-0021-group-names-on-labels-come-from-a-sourced-table-and-recorded-contraception-joins-the-conflict-flags) | Group names on labels come from a sourced table, and recorded contraception joins the conflict flags | Accepted | 2026-10-28 |
+| [0022](#adr-0022-medication-guides-carry-their-safety-sections-only-and-a-guide-whose-dosing-cannot-be-left-out-is-left-out-whole) | Medication Guides carry their safety sections only, and a guide whose dosing cannot be left out is left out whole | Accepted | 2026-10-28 |
+| [0023](#adr-0023-herbal-supplements-are-nccihs-public-domain-fact-sheets-compared-with-medicines-by-their-safety-section) | Herbal supplements are NCCIH's public-domain fact sheets, compared with medicines by their safety section | Accepted | 2026-10-28 |
+| [0024](#adr-0024-the-summary-for-a-doctor-is-a-pdf-the-app-writes-itself-with-csv-files-of-the-same-data-and-neither-holds-intercourse) | The summary for a doctor is a PDF the app writes itself, with CSV files of the same data, and neither holds intercourse | Accepted | 2026-10-28 |
+| [0025](#adr-0025-the-late-period-check-in-has-a-switch-of-its-own-and-medicine-reminders-repeat-every-day-in-the-phones-own-time-zone) | The late-period check-in has a switch of its own, and medicine reminders repeat every day in the phone's own time zone | Accepted | 2026-10-28 |
 
 ---
 
@@ -130,7 +140,7 @@ Primary evaluation metric is **interval calibration**, not MAE.
 
 ## ADR-0004: Unencrypted local SQLite with zero network permission
 
-**Status:** Accepted, 2026-08-17
+**Status:** Accepted, 2026-08-17. The unencrypted storage is superseded by [ADR-0018](#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds); zero network permission stands.
 **Deciders:** Project owner
 
 ### Context
@@ -431,7 +441,7 @@ they are ever fitted, this ADR is what to supersede.
 
 ## ADR-0011: Export v2 refuses v1 files
 
-**Status:** Accepted, 2026-08-20
+**Status:** Accepted, 2026-08-20. Refusing a format that only adds fields is superseded by [ADR-0020](#adr-0020-temperature-mucus-and-progesterone-are-recorded-only-and-export-v4-still-restores-v3): export v4 restores v3.
 **Deciders:** Project owner
 
 ### Context
@@ -605,7 +615,7 @@ resident in memory whenever the app runs.
 
 ## ADR-0014: The interaction checker compares label text, and never calls a pair safe
 
-**Status:** Accepted, 2026-10-02. Builds on [ADR-0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) and [ADR-0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone).
+**Status:** Accepted, 2026-10-02. Builds on [ADR-0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) and [ADR-0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone). Its findings are extended to groups, such as "NSAIDs", by [ADR-0021](#adr-0021-group-names-on-labels-come-from-a-sourced-table-and-recorded-contraception-joins-the-conflict-flags), which adopts the group table rejected below.
 **Deciders:** Project owner
 
 ### Context
@@ -689,7 +699,7 @@ this misses, but it is hand-written, which the owner has ruled out for now.
 
 ## ADR-0015: Recorded medicines are kept as a setting, and their flags only inform
 
-**Status:** Accepted, 2026-10-02. Uses the matching of [ADR-0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe).
+**Status:** Accepted, 2026-10-02. Uses the matching of [ADR-0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe). Recorded kinds of contraception join the flags in [ADR-0021](#adr-0021-group-names-on-labels-come-from-a-sourced-table-and-recorded-contraception-joins-the-conflict-flags), which adopts the runner-up below.
 **Deciders:** Project owner
 
 ### Context
@@ -726,6 +736,11 @@ Two constraints decide where it lives:
    fails the build on directive or reassuring wording. Where nothing connects,
    the screen says so, and that this does not mean the medicines are safe
    together.
+
+   *Amended 2026-10-27, at the owner's direction:* every pair gets a card,
+   flagged or not. A pair the labels do not connect says "No labels connect
+   these two medications, but you are advised to verify the results.", with
+   the same browser hand-off as a flagged pair.
 4. **Nothing reaches the prediction**, as with conditions (ADR-0010).
 
 ### Runner-up and why rejected
@@ -750,6 +765,873 @@ which the owner has ruled out for now.
 
 ---
 
+## ADR-0016: A late period moves the range forward, and lost track counts from the last period
+
+**Status:** Accepted, 2026-10-27. Extends the golden-vector contract of [ADR-0002](#adr-0002-two-runtime-split-python-reference-dart-production-golden-vectors-as-the-contract).
+**Deciders:** Project owner
+
+### Context
+
+Someone who logged symptoms every day but no period saw "any day now" in the
+ring for as long as they kept logging. Two things combined:
+
+- **The countdown read the window as first predicted.** Once that window had
+  opened, every later day was "inside the expected range", including every day
+  after it had closed.
+- **Losing track was counted from the last log of any kind.** A headache logged
+  yesterday reset it, so the state that exists to stop a stale window being
+  shown never arrived.
+
+Someone who logged nothing at all was told "not yet, log a period start", which
+is also what the ring said to every irregular history and every recorded
+pregnancy. The owner chose three fixes: say the period is later than expected,
+count losing track from the last period, and move the range forward.
+
+### Decision
+
+1. **Lost track counts from the start of the last logged period:** day 61 of the
+   cycle in progress, the day the ring stops counting, and only once the window
+   first predicted has also passed, so that a cycle expected to run long is not
+   mistaken for a lost one. It replaces "60 days with no log of any kind". The
+   panel says when the last period started, and the ring has its own message,
+   "lost track".
+2. **Once the window has opened with no period logged, the windows move
+   forward.** The days gone by are evidence that the cycle is at least that
+   long, so the forecast is conditioned on it: in whole days, a length of at
+   least *k* is a log length of at least log(*k* - 0.5), and each quantile at
+   level *q* becomes the forecast's quantile at
+   `below + q (1 - below)`, where `below` is the forecast's probability under
+   that bound. No bound is ever before today. Quantiles at levels known only on
+   the day cannot come from the shipped table, so the Student-t distribution
+   function and its inverse are computed in plain arithmetic (`student_t.py`,
+   ported step for step to `student_t.dart`), held to SciPy by the Python tests,
+   and pinned across runtimes by a second golden file,
+   `conditioned_cases_v1.json`: 30 cases from five histories, floats to 1e-9
+   and days exactly. The move depends on the day, so it is applied to the
+   cached fit rather than cached, and the prediction is recomputed when the app
+   comes back on a new day.
+3. **Past the window first predicted, the app says the period is later than
+   expected**, and by how many days. The panel gives the moved range as a rough
+   guide, without "four out of five", a most likely day or a confidence label,
+   because the backtest below does not support them there.
+4. **A moved range as wide as the app refuses to show for an irregular history
+   (14 days) is not shown.** Past the window, `PredictionResult.laterThanExpected`
+   says when the period was expected instead. Inside the window, the window
+   first predicted stands, unmoved.
+5. **Reminders are scheduled from the window first predicted**, never from a
+   moved one, which would move "likely started" to tomorrow every day and keep
+   the late notice five days away for good.
+6. **The ring names every state without a window**: "no range" for a history
+   too irregular for one, "paused" while a pregnancy is recorded, and "check
+   dates" when the stored dates disagree.
+
+`cyclecore backtest-late` scores moved windows on the synthetic population,
+counting only cycles that reached each day without their period. Coverage of
+the 80% window, as first predicted and once moved:
+
+| Day | Regular cycles | Held | Irregular cycles | Held |
+| --- | --- | --- | --- | --- |
+| As first predicted | 12,414 | 85.7% | 4,190 | 68.8% |
+| Day after the window opened | 10,542 | 89.7% | 3,555 | 71.2% |
+| Day after its median | 4,713 | 86.4% | 1,932 | 65.0% |
+| Day after it closed | 1,090 | 59.1% | 829 | 58.3% |
+| 5 days after it closed | 457 | 15.8% | 587 | 63.4% |
+| 15 days after it closed | 403 | 90.8% | 358 | 88.8% |
+
+Inside the window, a moved range holds as well as the window first predicted.
+Past it, the cycles still going for a regular user are mostly a missed log, at
+about twice the usual length, which a single Student-t cannot put its mass on
+until the range is wide. The irregular rows include windows the app does not
+show, being wider than 14 days.
+
+### Runner-up and why rejected
+
+**No range at all past the window**, only "later than expected". The backtest
+supports it: a range moved five days past a regular user's window held the
+period one time in six. Rejected because the owner chose to move the range
+forward, and because it does help inside the window, where it drops days that
+have already gone. Past the window it is kept, but labelled for what it is. If
+it misleads in use, removing it is one condition in the repository.
+
+**A mixture model with a missed-log component**, putting mass at about twice
+the usual length. It is what the backtest points to, but it is a change to the
+model rather than to how its forecast is read, and it needs its own priors,
+golden vectors and calibration work.
+
+### Consequences
+
+- A second golden file is part of the contract, and the Dart port has two
+  special functions that only exist to read it. Neither changes the windows
+  first predicted, whose golden file is byte-identical.
+- Someone who logs only periods loses track a few days sooner than before,
+  because the count starts at the period's first day rather than its last.
+- A cycle around ten weeks long is already too irregular to show a window under
+  the 14-day rule, which counts days rather than a proportion of the cycle. That
+  is unchanged here. The protection in point 1 still applies to it: until its
+  window has passed, it gets its own figures rather than "lost track".
+- `Prediction` carries `originalWindow80` and `daysLate`. It is never exported,
+  so the export format does not change.
+
+---
+
+## ADR-0017: Releases are built from a tag, with the key in repository secrets, and their version code comes from the name
+
+**Status:** Accepted, 2026-10-27
+**Deciders:** Project owner
+
+### Context
+
+A newer build would not install over an older one. There were no releases, so
+the APKs being installed were CI artifacts, and CI signs with a debug key that
+every runner generates afresh: no two runs share a signature, and Android
+refuses an update signed by a different key. The version had also never moved
+from `1.0.0+1`, and Flutter adds `1000 × ABI` to each split APK's version code,
+so even a correctly signed 32-bit APK of a later release would be refused over
+the arm64 APK of an earlier one. The owner asked for GitHub Releases that
+update an existing install.
+
+### Decision
+
+1. **A tag `vX.Y.Z` on `main` runs `.github/workflows/release.yml`**, which
+   tests the commit, builds it with `tools/scripts/release.sh`, and leaves a
+   draft release: the APKs, `SHA256SUMS.txt`, and the signing certificate's
+   fingerprint in the notes. A person publishes it, after the upgrade check
+   that no workflow can do.
+2. **The release keystore is held in four repository secrets**, read only by
+   that workflow, which only a tag push triggers. It is written outside the
+   working tree for the build and deleted afterwards.
+3. **The version code is derived from the name**, `major × 10000 + minor × 100 +
+   patch`, by `tools/scripts/release_version.py`, which refuses a pubspec that
+   breaks the rule, a tag that does not match it, and a version no newer than
+   one already tagged.
+4. **Every APK of a release has that one code**, built with
+   `-Pforce-version-code-ignoring-abi=true`, and `release.sh` checks each APK
+   for it.
+5. **CI artifacts are named as test builds**, not installable ones. The first
+   release starts at code 10000, above anything an earlier build could have
+   had, but a copy installed from a CI artifact still has to be backed up,
+   uninstalled and restored once, because its signature differs.
+
+### Runner-up and why rejected
+
+**Building on the owner's machine and uploading by hand.** The key never leaves
+that machine, which is the stronger position: here, anyone who can change the
+release workflow on `main` can make it sign something else. Rejected as the
+default because a release is then only as reproducible as one laptop, and every
+check in `release.sh` depends on someone running it. It stays possible:
+`release.sh` is the same script either way, and `docs/RELEASE.md` section 6
+works without the secrets if the draft is created by hand.
+
+**A build number chosen by hand**, or the workflow's run number. Either can go
+backwards: a hand-chosen number by being forgotten, a run number when the
+workflow is renamed or re-created.
+
+### Consequences
+
+- The keystore is now in two places that must stay identical: the backups in
+  `docs/RELEASE.md` section 1, and the secrets. Replacing the secrets with a new
+  key strands every copy installed from an earlier release.
+- Minor and patch versions stop at 99.
+- Settings shows the version name alone, since the build number is derived
+  from it.
+
+---
+
+## ADR-0018: The database is encrypted, with a key the Android Keystore holds
+
+**Status:** Accepted, 2026-10-28. Supersedes the unencrypted storage of [ADR-0004](#adr-0004-unencrypted-local-sqlite-with-zero-network-permission). [ADR-0008](#adr-0008-app-lock-gates-the-interface-and-does-not-encrypt-the-database) stands: the app lock still only gates the interface.
+**Deciders:** Project owner
+
+### Context
+
+ADR-0004 accepted an unencrypted database, with the risk stated in PRIVACY.md
+and a way out designed in: every connection is made in one function, so
+encryption would be a change there and a one-time migration. The owner chose to
+take it, as the database encrypted on the phone plus optional passphrase
+protection for exports, after asking two questions:
+
+- **Do backups taken before keep restoring?** Yes. Encrypting the database
+  does not change the export format.
+- **Can an encrypted backup be read after a reinstall?** Only one protected by
+  a passphrase. A key the Keystore holds is deleted with the app.
+
+### Decision
+
+1. **SQLite3 Multiple Ciphers**, selected through `package:sqlite3`'s build
+   hook (`hooks: user_defines: sqlite3: source: sqlite3mc` in `pubspec.yaml`).
+   It is MIT licensed, needs no OpenSSL, and its prebuilt binaries are checked
+   against hashes the package pins. The cipher, ChaCha20-Poly1305, is named on
+   every connection, so a change of the library's default could not lock an
+   existing file. `flutter test` runs on the same library, so the encryption is
+   tested rather than mocked.
+2. **The key is 32 random bytes**, made on the phone the first time a build
+   that encrypts opens the database, and kept with `flutter_secure_storage`,
+   which wraps it with an RSA key held by the Android Keystore. Its
+   `resetOnError` is off, so a failed read cannot wipe the only key. The key
+   never leaves the phone and is not in any export.
+3. **A database written before is encrypted in place** on the first launch of
+   the app: `PRAGMA hexrekey`, inside one transaction, with a copy kept until
+   the encrypted file opens with the key and passes `quick_check`, and put back
+   if it does not. A file already damaged is quarantined as it is, unencrypted.
+   One the encryption could not run on, as on a full disk, is opened
+   unencrypted and encrypted on a later launch.
+4. **An unreadable key store opens nothing.** The app says so and the next
+   launch tries again, rather than making a new key the existing file could
+   never be opened with. A key missing from the store, which leaves a file
+   nothing can open, is handled as damage: the file is kept aside and the user
+   is offered their last export.
+5. **The notification action never makes a key or encrypts.** Its background
+   isolate opens a file not yet encrypted as it is, an encrypted one only with
+   the stored key, and otherwise leaves the day unlogged.
+
+### Runner-up and why rejected
+
+**SQLCipher**, which the same hook offers. It links OpenSSL on Android and
+brings its own licence terms, for nothing the app needs that SQLite3 Multiple
+Ciphers lacks.
+
+**A key that needs the user to authenticate**, such as one bound to the device
+credential. It would protect an unlocked phone with root, which this design does
+not. But the notification action logs a period from the lock screen without the
+app open, and could not open the database, and forgetting the credential would
+lose the data.
+
+**A channel in the app's own Android code** instead of a plugin. One dependency
+fewer, but the background engine the notification action runs in registers
+plugins, not the app's own channels.
+
+### Consequences
+
+- A copy of the app's files, taken without the phone, cannot be read. An
+  unlocked phone still can: by anyone using it unless the app lock is on, and
+  by someone with root or a forensic tool, using the key the way the app does.
+  PRIVACY.md says so, and `privacy_text_test.dart` holds it to saying so.
+- Scheduled reminders' wording is kept by Android outside the file until they
+  are due. PRIVACY.md names it.
+- Uninstalling deletes the key with the database. An export is the only way
+  data outlives the app.
+- A file quarantined after encryption is encrypted too, and opens only with
+  the key this install holds.
+
+---
+
+## ADR-0019: A backup can be protected with a passphrase, and an unprotected one still restores
+
+**Status:** Accepted, 2026-10-28. The other half of the owner's choice in [ADR-0018](#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds).
+**Deciders:** Project owner
+
+### Context
+
+A backup is the one copy of this data that leaves the app, and it goes
+wherever the person puts it: a downloads folder, a cloud drive, an email to
+themselves. The database key cannot protect it. That key never leaves the
+phone and is deleted with the app, so a backup sealed with it could not be read
+after a reinstall or on a new phone, which are the two times a backup is
+needed. And the backups people already hold, unprotected, have to keep
+restoring.
+
+### Decision
+
+1. **Export asks every time** whether to protect the backup, before the folder
+   is chosen. "Save without one" is a button of its own, beside "Protect and
+   save", not what happens on the way out.
+2. **A protected backup is JSON**, with the extension the import already
+   accepts:
+
+   ```json
+   {"format": "selene-protected-backup", "version": 1,
+    "kdf": {"name": "pbkdf2-hmac-sha256", "iterations": 600000, "salt": "<16 bytes>"},
+    "cipher": {"name": "aes-256-gcm", "nonce": "<12 bytes>"},
+    "ciphertext": "<the export, then the 16-byte tag>"}
+   ```
+
+   Binary fields are base64, and the format name and version are bound to the
+   ciphertext as associated data. Inside is the ordinary export, byte for
+   byte, so opening one hands the import the same text, and every check the
+   import makes still runs.
+3. **PBKDF2-HMAC-SHA256 at 600,000 iterations**, OWASP's 2023 figure. Each file
+   records its own count, and a file asking for more than 5,000,000 is refused
+   before any work is done. The derivation is written in the app, hashing
+   HMAC's two padded key blocks once rather than on every iteration, which
+   takes about a third of pointycastle's time. It is held to the RFC 7914 test
+   vectors and to pointycastle's own PBKDF2. AES-256-GCM is pointycastle's. Both
+   run on another isolate, so the screen stays responsive.
+4. **A passphrase is at least 8 characters**, typed twice. A wrong one is
+   refused and asked for again. A forgotten one cannot be recovered, and the
+   dialog says so before anything is saved.
+5. **An unprotected export is unchanged** and restores as before. The import
+   tells the two apart by the `format` field.
+
+### Runner-up and why rejected
+
+**Argon2id**, which is memory-hard and resists guessing on graphics cards
+better. In pure Dart it is slow on a phone at parameters worth having, and the
+alternative is a native plugin, for a file made a few times a year.
+
+**Sealing with the database key.** Unreadable after a reinstall, as above.
+
+**A password-protected zip.** The common zip encryption is broken, the AES
+variant needs another library, and the import would need to unpack before it
+could read anything.
+
+### Consequences
+
+- A forgotten passphrase loses that backup, and nobody can help.
+- The format above is complete, so any PBKDF2 and AES-GCM implementation can
+  open a backup without this app.
+- Sealing and opening each take a second or two on a phone, behind a progress
+  bar.
+
+---
+
+## ADR-0020: Temperature, mucus and progesterone are recorded only, and export v4 still restores v3
+
+**Status:** Accepted, 2026-10-28. Relaxes [ADR-0011](#adr-0011-export-v2-refuses-v1-files) for formats that only add fields.
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for three more things to be logged: basal body temperature,
+cervical mucus, and progesterone results, both a home PdG strip and a blood
+test with its unit. Asked whether they should feed the prediction, the owner
+chose **record only**. They are fertility signs: read together, a temperature
+shift, egg-white mucus and a positive PdG strip are how fertility-awareness
+methods place ovulation, and assumption A5 forbids this app from presenting a
+fertile window or a safe day.
+
+They change the export, and under ADR-0011 every change of format refused the
+previous one. Twice already that stranded every backup taken before it, the
+second time for a single nullable field. The owner asked that existing backups
+keep restoring.
+
+### Decision
+
+1. **Five nullable columns** on `day_logs`, schema v5: the temperature in
+   Celsius whatever unit it was entered in, mucus as one of dry, sticky,
+   creamy, watery or egg white, the strip as negative or positive, and the
+   blood value with its unit, ng/mL or nmol/L, kept as the laboratory reported
+   it rather than converted. A value and its unit are set together or not at
+   all, which `DayLog` asserts and the import checks. Null is not recorded.
+2. **Recorded only, structurally.** Nothing in `lib/domain/predict/` or
+   `lib/domain/cycles/` may name the types or the fields, and
+   `record_only_isolation_test.dart` fails the build if anything does. It also
+   checks that a history with every measurement on every day predicts exactly
+   what the same history without them does.
+3. **In the day editor, in a section of their own**, closed unless the day has
+   one, which says before anything is entered that none of it is used to
+   predict anything. Numbers are written when they are finished, not on every
+   keystroke, and refused with a reason when they are out of range. Settings
+   chooses °C or °F for display.
+4. **Export v4 carries them, and v3 still restores.** v4 only adds fields, so
+   a v3 file has nothing missing, and an absent field means not recorded,
+   which is what it meant when the file was written. The import keeps a
+   fingerprint per readable version. v2 and earlier stay refused. The
+   re-export prompt fires only for backups older than the oldest restorable
+   format, so nobody holding a v3 backup is told it is lost.
+
+### Runner-up and why rejected
+
+**Using them to refine the prediction.** A temperature shift or a positive PdG
+strip would narrow the next window, but it is the same inference as placing
+ovulation, one step from the fertile window A5 rules out. The owner chose
+record only.
+
+**Keeping ADR-0011's policy and refusing v3.** It would strand every backup
+taken before this release for the third time, for a change that only adds
+fields, with nothing to gain: there is nothing in a v3 file the import would
+have to guess.
+
+### Consequences
+
+- The import has a branch per readable version. The next change that does
+  remove or rename something can still refuse what came before, and must say
+  so here.
+- The measurements are in exports, and so in any backup a person sends
+  anywhere.
+- The calendar does not mark them. The day editor is where they are seen.
+
+## ADR-0021: Group names on labels come from a sourced table, and recorded contraception joins the conflict flags
+
+**Status:** Accepted, 2026-10-28. Extends the findings of [ADR-0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe), and adopts what it and [ADR-0015](#adr-0015-recorded-medicines-are-kept-as-a-setting-and-their-flags-only-inform) left as runners-up.
+**Deciders:** Project owner
+
+### Context
+
+Labels often name another medicine only by a group. Tranexamic acid's
+contraindicates "combined hormonal contraceptives"; sertraline's warns about
+"NSAIDs"; tramadol's about "SSRIs", "SNRIs", "TCAs" and "MAOIs". ADR-0014
+matched names and the FDA's classes only, so none of these connected, and the
+conflict flags of ADR-0015 inherited the gap. Both screens said so.
+
+The owner chose a **sourced table**: a short table mapping each group name to
+the medicines in it, each row citing its source. Asked whether recorded
+conditions should take part in the flags, such as a recorded combined pill
+with rifampin, the owner chose **yes, with a mapping**, each kind of hormonal
+contraception counting as its active substances.
+
+The FDA's own classes could not do this alone. Most labels carry no class, so
+citalopram, sertraline and escitalopram have none in the bundle, and some
+classes are broader than the words labels use: the FDA's "Serotonin Reuptake
+Inhibitor" takes in trazodone and nefazodone, which are not SSRIs, and in this
+data its "Anti-coagulant" takes in citric acid.
+
+### Decision
+
+1. **A hand-written table, `artifacts/medicines/groups_v1.json`, whose every
+   member comes from the source it cites**: the FDA's established
+   pharmacologic classes as the National Library of Medicine's RxClass
+   publishes them, which lists every ingredient rather than only labelled
+   ones; the FDA's own lists (Table 1 of its 2020 NSAID safety communication;
+   its Office of Women's Health pages on depression medicines and on birth
+   control); the definition in its draft guidance on combined hormonal
+   contraceptive labelling; and, for fluvoxamine and two oddities in the
+   bundle's data, the drug's own approved label. Twelve groups:
+
+   | Group | Members from |
+   | --- | --- |
+   | NSAIDs | FDA class, FDA safety communication |
+   | SSRIs | FDA Office of Women's Health, fluvoxamine's label |
+   | SNRIs, MAOIs, tricyclic antidepressants | FDA class, FDA Office of Women's Health |
+   | triptans | FDA class |
+   | combined hormonal contraceptives, combined oral contraceptives | FDA guidance |
+   | oral contraceptives, hormonal contraceptives, progestin-only contraceptives, progestin-only pills | FDA Office of Women's Health |
+
+2. **Contraceptives are defined, not listed.** A drug is a hormonal
+   contraceptive when its own label's uses say it prevents pregnancy and it
+   contains an estrogen or a progestin, by the FDA's Estrogen and Progestin
+   classes and norgestrel from the Birth Control page. It is combined when it
+   contains an estrogen, since no contraceptive is an estrogen alone, and
+   progestin-only otherwise; oral by its route. Menopause and fibroid products
+   with the same hormones are left out by their uses. A test names every
+   contraceptive left out and why, so a new pill whose hormones the table
+   does not list fails the build.
+3. **Resolved against the bundle when the app is built.**
+   `tools/scripts/gen_medicine_groups.py` reads the committed bundle, no
+   network, and writes `medicine_groups_bundled.dart` with the drugs each group
+   covers by key. CI's `--check` fails on a member that names no drug in the
+   bundle, which catches a typo; on one listed absent that a refresh has
+   brought in; on a phrase no bundled label prints; and on a stale file. A Dart
+   test fails when the bundle was rebuilt and the groups were not.
+4. **Two findings more.** A group both medicines are in, said in its narrowest
+   form ("combined oral contraceptives" rather than that and "hormonal
+   contraceptives" too), and not where an FDA class both are in has said it.
+   And a passage naming a group the other medicine is in, quoted like any
+   mention, with the table's sources under it. A group's phrase does not count
+   straight after "non" ("non-hormonal contraception"), inside a longer group
+   phrase ("hormonal contraceptives" in "combined hormonal contraceptives"
+   names only the combined ones), or in a sentence another mention already
+   quotes. Names and classes are matched as ADR-0014 has them.
+5. **Recorded contraception in the flags.** A record of the combined pill, the
+   mini pill, the hormonal IUD or the implant that runs today counts as what
+   every product of its kind in the bundle shares, since the record does not
+   say which product: the groups they are all in, and the ingredients they all
+   contain, which is levonorgestrel for the IUD, etonogestrel for the implant,
+   and no one ingredient for either pill. It is compared with each recorded
+   medicine, and its card is searchable online like any pair's. A kind whose
+   own product is among the recorded medicines takes no part: that medicine
+   stands for it, with its own label. The other conditions take no part.
+
+### Runner-up and why rejected
+
+**The FDA's classes alone.** Nothing hand-written, but sparse in this data and
+broad in places, as above: it would leave sertraline out of SSRIs and put
+trazodone in.
+
+**NLM MeSH pharmacological actions.** Broader still: its serotonin uptake
+inhibitors take in olanzapine.
+
+**CYP3A4 inhibitors and inducers**, from the FDA's table of examples. Labels
+qualify them too many ways: "strong", "strong or moderate", "potent", "after
+stopping a CYP3A4 inhibitor". An unqualified "CYP3A4 inhibitors" found inside
+"strong CYP3A4 inhibitors" would name drugs the label does not mean. Deferred.
+
+**Anticoagulants.** No current FDA page lists them that could be checked, and
+the FDA's "Anti-coagulant" class in this data takes in citric acid. Deferred.
+Labels mostly name warfarin and the rest by name, which is matched already.
+
+**Asking which pill a recorded combined pill is.** The record is a kind. A
+person who knows the product can add it to the medicines, where it stands for
+the kind.
+
+### Consequences
+
+- Tranexamic acid and the pill connect, as do rifampin and every hormonal
+  contraceptive, lamotrigine and combined oral contraceptives, and tramadol
+  and the antidepressants, in the checker and in the flags.
+- The table is a reading of its sources, and has to be kept like one. A
+  refresh of the bundle can move its members, and the check says so; its
+  sources are dated where they were read.
+- A group's name can be read in a sense its label does not quite mean: "oral
+  contraceptives containing ethinyl estradiol" names a progestin-only pill as
+  well. Every mention is quoted with its sources, as every mention is.
+- A recorded combined pill counts as no one ingredient, because not every
+  combined pill has ethinyl estradiol. A label that names only ethinyl
+  estradiol connects with the pill once the pill itself is recorded.
+- Where nothing connects, the screens still say that this does not mean safe
+  together, and now name groups the check does not know: anticoagulants, and
+  strong CYP3A4 inducers.
+- The groups add about 27 KB of generated Dart, read once when first used.
+
+## ADR-0022: Medication Guides carry their safety sections only, and a guide whose dosing cannot be left out is left out whole
+
+**Status:** Accepted, 2026-10-28. Keeps the rule of [ADR-0009](#adr-0009-medicines-reference-data-is-generated-at-build-time-from-openfda) and [ADR-0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) that no dosing is carried.
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for Medication Guides on each medicine's page: the leaflets
+the FDA requires for some drugs, written for patients, which openFDA carries
+in the label export as `spl_medguide`. About one label in twelve has one.
+
+A guide is laid out by 21 CFR 208.20 as questions, and one of them is "How
+should I take ...?", which is dosing. The medicines reference has never
+carried dosing: a dose read off a US label and applied to a packet bought
+elsewhere is the harm it exists to avoid. openFDA carries a guide as one run of
+text with its headings inline, so leaving that section out means finding the
+headings in prose. Tried on a whole partition of the export, cutting the
+dosing heading alone leaked dosing into what was kept. A heading misspelt on
+the label ("How shlould atomoxetine capsules be taken?") is not found, and a
+quoted cross-reference ('See " What are the possible side effects...? "') is
+taken for a heading and splits the section in two. Either way, missed-dose
+instructions land in the section before.
+
+The bundle had been built from the 2026-10-02 export, which openFDA has since
+replaced, so a guide could only come from the same label the bundle shows by
+building the bundle again.
+
+### Decision
+
+1. **The guide comes from the label the bundle already shows**, in the same
+   pass over the export, and is stored with the drug's sections as `[heading,
+   text]` pairs. The index counts them.
+2. **Only the safety sections are carried, by their headings in 21 CFR
+   208.20:** the most important information; what the medicine is; who should
+   not take it; what to tell a healthcare provider first; what to avoid; its
+   possible side effects; and, in antidepressants' guides, how to watch for
+   suicidal thoughts. Not how to take it, how to store it, or what is in it.
+3. **Fail closed.** A guide is carried only when one of its first three
+   headings is the most important information, which 21 CFR 208.20 puts
+   first. Nothing that would be carried may read as dosing:
+   - a missed, next, double or extra dose;
+   - a how-often, such as "two times a day" or "every 12 hours";
+   - an instruction to take, use or inject something that gives an amount or
+     a frequency;
+   - outside the most important information, any instruction to take, mix,
+     inject or swallow at all.
+
+   A guide that fails any of these is left out whole, not cut further. A
+   question after an opening quote mark is a cross-reference, not a heading.
+4. **Shown folded** at the foot of the medicine's page, under a note that says
+   what it is and that how to take the medicine is left out, and why.
+5. **The bundle is rebuilt from the 2026-10-28 export.** It holds 5,687 drugs,
+   506 of them with a guide. 45 guides were left out for dosing and 41 for a
+   layout the rules do not recognise.
+
+### Runner-up and why rejected
+
+**The whole guide, dosing included, behind a warning.** It contradicts the
+reference's rule that dosing is not carried at all, rather than carried and
+hidden.
+
+**Cutting only the "How should I take" section.** It leaked, as above.
+
+**Patient package inserts**, the leaflets that come with the pill. They have
+no fixed layout to find their dosing in. Left out.
+
+**Fetching guides from openFDA's API by set id**, without a refresh. The API
+serves each label's newest version, so a guide could be from a later version
+than the label shown above it.
+
+### Consequences
+
+- The rules are a reading of prose, and they over-reject on purpose. OxyContin's
+  guide warns in its most important information "Do not take more than 80 mg
+  of OxyContin in one day", which is a safety limit the label above it carries
+  too, and the guide is left out for it. A guide whose side effects run on from
+  a heading the rules missed is left out as well. A refresh reports the counts,
+  and `docs/RELEASE.md` says what a drop in them means.
+- A test reads every guide in the committed bundle against the same rules, so
+  a loosened rule, or a bundle edited by hand, fails the build.
+- The interaction checker does not read guides. ADR-0014's sections are
+  unchanged.
+- The bundle is 13.3 MB, inside ADR-0013's 16 MB. The refresh dropped 148 drugs
+  that openFDA no longer links to a current listing; the group table resolved
+  against it unchanged (ADR-0021).
+
+---
+
+## ADR-0023: Herbal supplements are NCCIH's public-domain fact sheets, compared with medicines by their safety section
+
+**Status:** Accepted, 2026-10-28. Extends the matching of [ADR-0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe) to herbs, and holds them to [ADR-0022](#adr-0022-medication-guides-carry-their-safety-sections-only-and-a-guide-whose-dosing-cannot-be-left-out-is-left-out-whole)'s rule that no dosing is carried.
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for a Supplements A to Z of public-domain NIH pages on
+supplements such as St. John's wort, "so they can be compared with medicines
+too". Herbs are where a period tracker's users meet interactions they do not
+expect: St. John's wort makes the pill less effective, and many take
+chasteberry, black cohosh or evening primrose oil for their cycle.
+
+The US National Center for Complementary and Integrative Health (NCCIH), part
+of the NIH, publishes Herbs at a Glance: a fact sheet on each of 56 herbs, each
+with the same sections, from the background to "Keep in Mind". Every sheet says
+"This publication is not copyrighted and is in the public domain." Its
+photograph is credited to a photographer and is not.
+
+The app already had a page called Supplements, under Learn, about nutrition,
+which the owner hid behind a ten-second hold.
+
+### Decision
+
+1. **The sheets are fetched at build time and carried as NCCIH wrote them**,
+   as the medicines are (ADR-0009): `tools/scripts/gen_supplements.py --fetch`
+   reads the index and every page it links to, keeps the pages that carry the
+   public-domain statement, and writes `app/assets/supplements/nccih_herbs.json`,
+   about 260 KB. Kept: the title, the common and Latin names, the sections up
+   to "Keep in Mind", the date the sheet was last updated, its address, and
+   NCCIH's disclaimer. Left out: the photograph and its credit, the links and
+   the references. A list item keeps the mark the page draws for its depth, so
+   that a list of medicines stays under the line that says why it is there.
+2. **No dosing**, by ADR-0022's rules: a sheet with an instruction to take an
+   amount of something would be left out whole. None has one. A sentence about
+   what dose a study used, as goldenseal's does, is not an instruction.
+3. **Found on Look something up, as "Herbal supplements A to Z"**, and by
+   searching any of a herb's names. Not under Learn, so it does not collide
+   with the nutrition page, which stays behind its hold.
+4. **Compared with medicines in the interaction checker, by the safety section
+   only.** For a herb and a medicine:
+   - the medicine's label is searched as for another medicine (ADR-0014) for
+     any of the herb's names, as one name, so "St. John's Wort (Hypericum
+     perforatum)" is found once;
+   - the herb's safety section, "What Do We Know About Safety?", is searched
+     for the medicine's names, FDA classes and groups (ADR-0021): "Birth
+     control pills" names the oral contraceptives, under the line its list
+     hangs from;
+   - a medicine whose own ingredients include the herb, as many homeopathic
+     remedies' do, is said to contain it, and its label is not searched for a
+     name it is talking about itself by.
+5. **The names looked for are NCCIH's own**, worked out by the generator: the
+   title and every common and Latin name, without notes in parentheses unless
+   they give another name ("synonym Crataegus oxycantha"), also without a
+   possessive's apostrophe and a hybrid's "x". Not an abbreviation: "EPO" is
+   erythropoietin too. The generator refuses a name two herbs share.
+6. **Herbs are not compared with each other.** No sheet's safety section names
+   another of the herbs, and two herbs have no label between them. The checker
+   says so when it lists two.
+
+### Runner-up and why rejected
+
+**NIH Office of Dietary Supplements fact sheets.** They cover vitamins and
+minerals as well as herbs, and the vitamin and mineral sheets are built around
+recommended intakes, amounts this app does not carry.
+
+**MedlinePlus herbs and supplements.** Its pages came from the Natural
+Medicines Comprehensive Database, which is licensed rather than in the public
+domain, and MedlinePlus said in July 2025 that they were no longer available.
+
+**A hand-written table of herb and drug interactions.** It would be the app's
+own claims, with no source a reader could check, which ADR-0014 rejected for
+medicines.
+
+**Recording herbs under Conditions and medication**, so they join the conflict
+flags. Recorded medicines are bundle keys (ADR-0015); herbs would need a second
+kind of record. Left for when it is asked for.
+
+### Consequences
+
+- A sheet names only some of the medicines a herb interacts with, and often by
+  a kind this matching cannot see: "some antidepressants", "drugs that affect
+  serotonin". A herb and a medicine with nothing found get the same refusal
+  to call them safe as two medicines, and the same way out to a search.
+- Names are matched as labels print them, and labels print some loosely: a
+  label's "ginseng" is not NCCIH's "Asian ginseng", and is not found.
+- The bundled font has the bullet and not the hollow bullet or square the
+  sheets nest lists with, or the black circle many Medication Guides use. The
+  marks are drawn instead, on the herb pages and the guides alike.
+- The reference is refreshed with `--fetch`; `--check` fails CI when the asset
+  and its generated Dart disagree, or a sheet loses its safety section.
+
+---
+
+## ADR-0024: The summary for a doctor is a PDF the app writes itself, with CSV files of the same data, and neither holds intercourse
+
+**Status:** Accepted, 2026-10-28. Saves where [ADR-0019](#adr-0019-a-backup-can-be-protected-with-a-passphrase-and-an-unprotected-one-still-restores)'s backups do, and keeps the app's dependency rule of [ADR-0004](#adr-0004-unencrypted-local-sqlite-with-zero-network-permission).
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for something to take to a doctor: a PDF summary of "cycle
+lengths, period dates, symptoms, conditions and medicines over a chosen span,
+as a printable file saved where you choose", and the same data as a
+spreadsheet file "for anyone who wants to analyse it themselves". The JSON
+backup holds everything, but it is for the app to read back, not for a person.
+
+A summary is read by someone other than the person who recorded it, and a
+spreadsheet may travel further. `docs/PLAN.md` 6.5 says to plan for that.
+
+### Decision
+
+1. **One summary, two files.** `CycleSummary` is built from the whole record
+   over a span: the last 3, 6 or 12 months, or everything. It holds the logged
+   days in the span, which day of its cycle each was, the cycles that started
+   in it, the conditions that ran during it, and the medicines recorded. Both
+   files are made from it, so they cannot disagree.
+2. **The PDF is written by the app itself** (`pdf_document.dart`): text in
+   Helvetica and Helvetica Bold, the base fonts every reader has, in
+   WinAnsiEncoding; A4 pages with numbered footers; tables that wrap and carry
+   their header onto a new page. It holds the figures a doctor reads first
+   (periods started, median cycle length and range, median days of bleeding),
+   a table of the periods, the symptoms by days and severity, the
+   measurements, the conditions with their dates, and the medicines.
+3. **The cycle figures count what prediction counts.** A cycle the app flags
+   (ADR-0003's validation) is listed with why, and left out of the medians.
+4. **The spreadsheet is three CSV files**: the logged days, the cycles, and
+   the conditions and medicines. The columns are the backup's keys and the
+   values its names, dates are `YYYY-MM-DD`, and the files follow RFC 4180
+   with CRLF line endings. Temperatures are in Celsius, with a Fahrenheit
+   column beside them for someone who reads Fahrenheit.
+5. **Intercourse is in neither.** `SummaryDay` has no field for it, and
+   `intercourse_isolation_test.dart` fails if the summary's code names it. The
+   question asked before a summary is made says so.
+6. **Saved to a folder the user chooses**, as a backup is, with nothing sent
+   anywhere. A file's name holds only the span, since names are read where
+   contents are not.
+7. **Medicines are listed as the list stands.** It has no dates (ADR-0015),
+   and the PDF says so rather than implying they ran across the span.
+
+### Runner-up and why rejected
+
+**The `pdf` package.** It does everything this needs and much more, and
+brings `image`, `archive`, `barcode` and others into the app to draw text
+and rules. Writing the little PDF needed is a few hundred lines that a test
+can check byte by byte. `printing`, the usual partner, depends on `http`.
+
+**One CSV in a long format** (a row a fact: date, kind, name, value). One file
+instead of three, but a spreadsheet user would have to pivot it before it
+said anything.
+
+**Predictions in the summary.** A prediction is not a record, and a range on a
+doctor's desk is easily read as a date. Left out.
+
+### Consequences
+
+- The PDF can set only WinAnsi's characters. The app is in English, and a
+  character outside them is written as "?". A translation into a language
+  with other letters would need a font embedded.
+- The PDF is untagged, so a screen reader reads it less well than the app.
+  The app itself, and the CSV files, remain the accessible way in.
+- The medians are the app's own statistics, not a clinical calculation, and
+  the PDF says it is a personal record and not a diagnosis.
+
+## ADR-0025: The late-period check-in has a switch of its own, and medicine reminders repeat every day in the phone's own time zone
+
+**Status:** Accepted, 2026-10-28. Keeps the late notice's date where [ADR-0016](#adr-0016-a-late-period-moves-the-range-forward-and-lost-track-counts-from-the-last-period) put it, and stores the reminder times beside the medicines as [ADR-0015](#adr-0015-recorded-medicines-are-kept-as-a-setting-and-their-flags-only-inform) stores those.
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for "one gentle notification when the expected range has
+passed with no period logged, linked to the late-period fix", and for
+"reminders to take recorded medicines at times you set", all of them "local
+notifications from the phone, with lock-screen detail off by default".
+
+The first is nearly there already: the late notice, five days after the
+window first predicted has closed, has been planned since AND-17. It came with the
+switch for the reminders before a period, so it could not be had on its own,
+and its wording predates the late-period fix.
+
+The second is new in kind. Every notification so far goes off once, on a
+date, and is scheduled as an instant in UTC worked out from the phone's own
+clock (`schedule_time_test.dart`), which is right for a single date. A daily
+reminder is repeated by Android at the same time on the clock **in the zone it
+was scheduled in**. Scheduled in UTC, a reminder set for 08:00 goes off at
+07:00 or 09:00 once the clocks change, until the app is next opened.
+
+### Decision
+
+1. **The late-period check-in is the late notice with a switch of its own**,
+   "Check in if a period is late". Until it is set it follows "Remind me
+   before a period is due", which it was part of, so nobody's notifications
+   change on update. It speaks as the app does about a late period ("Later
+   than expected", "The expected range has passed with no period logged"),
+   and carries the one-tap "Started today" action, as the likely-started
+   notice does. Its date stays where ADR-0016 put it.
+2. **Medicine reminders are times set on each recorded medicine**, under
+   Conditions and medication: up to four, each every day. They are a second
+   setting beside the medicines, a medicine's key to its times, so they travel
+   in exports and go with "delete everything" with no change to the export
+   format. Removing a medicine removes its times. Settings has a row that says
+   where they are set and goes there.
+3. **They have a channel of their own**, so that muting one kind of
+   notification does not mute another (risk R15), and are marked as reminders,
+   so a phone set to let reminders through Do Not Disturb lets them through.
+   Nothing about the cycle, its prediction or its switches touches them.
+4. **Without lock-screen detail, a reminder names no medicine.** Its title is
+   the app's name, as every notification's is, and its body is "The reminder
+   you set for 08:00". Not the generic body, which says to open the app to see
+   what a notification is about, because the app has nothing to show for a
+   reminder someone set themselves. With detail on, the title names the
+   medicine. Without it, a locked screen shows none of it, as for the others.
+5. **Scheduled in the phone's zone, by name.** `MainActivity` answers one
+   method channel with `TimeZone.getDefault().id`, the zone is found in the
+   `timezone` package's full database, and the plugin repeats the reminder at
+   the same time on the clock in that zone. The full database because Android
+   still names some zones by older names, `Asia/Calcutta` among them, that the
+   smaller files leave out. If the zone cannot be found, the reminder is
+   scheduled for the same moment in UTC: right until the clocks next change,
+   and put right the next time the app reschedules.
+6. **The permission is asked for when a reminder is set**, the one other
+   moment a notification has visibly been asked for. It counts as the app's
+   one request. If notifications are off, the reminder is kept and the app
+   says it cannot arrive until they are allowed.
+7. **Rebuilt with everything else.** Every reschedule still cancels all and
+   schedules all, the reminders included, and `NotificationSync` watches the
+   times, so setting, changing or removing one, an import, or deleting
+   everything reaches the platform without each having to ask. The cancel
+   takes the cycle's notices off the screen as well, as before, but a medicine
+   reminder that has gone off stays until it is seen to: the app reschedules
+   whenever it is opened, and a reminder that vanished then could be why a
+   dose was missed. They are left out of the missed-reminder check: they
+   repeat every day, so every closed day would read as one missed.
+8. **Inexact, as every notification here is.** A reminder can arrive a few
+   minutes after its time. Exact alarms need a permission the user grants in
+   system settings.
+
+### Runner-up and why rejected
+
+**The `flutter_timezone` package.** It answers the same question through a
+plugin. `MainActivity` answering one method is a few lines and adds nothing.
+
+**The smaller time zone data** (`latest_10y`, 66 KB against 445 KB). It lacks
+the older names Android reports, and a zone it cannot find falls back to UTC.
+The full database is loaded only when a medicine reminder is scheduled.
+
+**Repeating in UTC.** No zone needed, but an hour out for half the year
+wherever the clocks change, until the app is opened.
+
+**Following the phone into a new zone by itself**, with a receiver for the
+zone changing. Some medicines are timed by the hours since the last dose
+rather than by the clock, and a reminder that moved after a flight would be
+wrong for those, with no way for the app to tell which is which. The
+reminder moves when the app is next opened instead.
+
+**A record of doses taken.** Not asked for. The reminders remind and record
+nothing.
+
+### Consequences
+
+- After travelling, a reminder keeps to the zone it was set in until the app
+  is next opened.
+- With detail on, Android keeps a medicine's name in a scheduled reminder's
+  wording outside the encrypted database, as it already keeps the predicted
+  dates (`docs/PRIVACY.md` says so).
+- The Kotlin half is checked as source by `main_activity_test.dart` and built
+  by CI, but run only on a phone: `docs/RELEASE.md` has the check.
+- The time zone database adds about 0.45 MB to each APK.
+
+---
+
 ## Backlog of deferred decisions
 
 Recorded so they are not silently re-litigated. Promote to a numbered ADR when the decision is actually made.
@@ -757,7 +1639,6 @@ Recorded so they are not silently re-litigated. Promote to a numbered ADR when t
 | Topic | Trigger to decide | Current lean |
 | --- | --- | --- |
 | [App lock](#deferred-note-app-lock) | First post-MVP privacy work | **Do it first.** Closes the largest gap in ADR-0004. See the note below |
-| SQLCipher migration | If the threat model changes, or before any wider distribution | Do it; the migration path is designed in |
 | Play Store distribution | Only if the app leaves personal use | Skip; sideload is sufficient and avoids the health-app policy surface |
 | [iOS build](#deferred-note-ios-build) | Only once MVP has been dogfooded for a month **and** a real iOS user exists | **Skip by default.** Cheaper than native, but not free, and it weakens the core privacy claim. See the note below |
 | Ovulation range estimation | Only after the calibration story is solid | Off by default if ever added, and never framed as contraception |

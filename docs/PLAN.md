@@ -134,7 +134,8 @@ The design case to optimize is **"I am two days late noticing"**, not the same-d
 | Window opening | `predictions` | On, 2 days before | Predicted window opens | Always a range, never a bare date |
 | Likely started | `predictions` | On | Window open and no log for 1 day | Offer the 1-tap log action |
 | Logging nudge | `reminders` | **Off** | No log for 7+ days with a cycle in progress. **Hard cap: 1 per 7 days** | Neutral and factual. No streaks, no guilt |
-| Late notice | `predictions` | On | 5+ days past window close | Informational only. **Never mentions pregnancy** (see 6.2) |
+| Late notice (the late-period check-in, its own switch since ADR-0025) | `predictions` | As "Remind me before a period is due" until set | 5+ days past window close | Informational only. **Never mentions pregnancy** (see 6.2). Offer the 1-tap log action |
+| Medicine reminder (ADR-0025) | `medicines` | None until a time is set | Every day, at each time set on a recorded medicine | Without detail, the app's name and the time only, never the medicine |
 
 Android requirements, each a common and costly mistake if skipped:
 
@@ -955,7 +956,7 @@ Anything that cannot be reconstructed from params plus seed plus dataset hash is
 | **Contract: shape and dtype** | `tests/test_contracts.py` | Feature builder output has exact expected columns, dtypes, no NaN, monotone cycle index, and value ranges. Fails loudly on schema drift rather than producing a silently wrong model |
 | **Overfit on one batch (analogue)** | `tests/test_overfit_one_user.py` | Feed a synthetic user with constant 28-day cycles: after 10 cycles the posterior mean must be within 0.05 days of 28 and the 80% interval width must shrink below 2 days. Feed a user with alternating 26/34: the interval must **widen**, not narrow. For Tier B, the literal version: train on 1 batch for 200 steps, assert loss < 1e-3 |
 | **Calibration** | `tests/test_calibration.py` | On 2,000 simulated users from the generative model, empirical coverage of the nominal 50/80/95% intervals must land within +/- 3 percentage points. This is the single most important test in the repo |
-| **Golden cross-runtime** | `tests/test_golden_roundtrip.py` + `app/test/golden_vectors_test.dart` | Python and Dart produce identical filter output to 1e-9 on every case in `predictor_cases_v1.json`. Cases include cold start, 1 cycle, irregular history, an outlier cycle, a 90-day gap, and edited history |
+| **Golden cross-runtime** | `tests/test_golden_roundtrip.py` + `app/test/golden_vectors_test.dart` | Python and Dart produce identical filter output to 1e-9 on every case in `predictor_cases_v1.json`. Cases include cold start, 1 cycle, irregular history, an outlier cycle, a 90-day gap, and edited history. `app/test/conditioned_vectors_test.dart` does the same for `conditioned_cases_v1.json`, the windows moved forward once a period is late (ADR-0016) |
 | **End-to-end smoke (Python)** | `tests/test_e2e_smoke.py` | `synthetic user JSON -> CLI -> prediction JSON` in under 30 seconds, asserting output schema and sane ranges |
 | **End-to-end smoke (app)** | `app/integration_test/e2e_smoke_test.dart` | Onboard, log 3 cycles, assert a prediction window renders, export, wipe, import, assert state restored |
 | **Migration tests** | `app/test/data/migration_test.dart` | Every Drift schema version upgrades to the current one against a committed schema snapshot. Non-negotiable: a failed migration on a real user's phone is unrecoverable data loss |
@@ -980,7 +981,8 @@ Test speed budget: the full `pytest` suite excluding `-m slow` must run in under
 | One logged cycle | Predict, but with a wide interval and `confidence: low`. Say "this will get more accurate" |
 | Highly irregular history (MAD above threshold) | Return `TooIrregular`. Show a range plus a plain statement that cycles vary too much to predict narrowly. **Do not narrow the interval to look confident** |
 | Implausible cycle (under 15 or over 90 days) | Flag it, ask the user to confirm or correct, and down-weight it in the filter until confirmed |
-| Long gap (no logs for 60+ days) | Do not silently extrapolate. Show "we lost track", prompt to log, and reset the filter's forecast horizon |
+| Period later than the predicted window | Say it is later than expected, and by how many days. Move the range forward past the days already gone, as a rough guide rather than an 80% range, and stop showing one once it would be 14 days wide ([ADR-0016](DECISIONS.md#adr-0016-a-late-period-moves-the-range-forward-and-lost-track-counts-from-the-last-period)) |
+| Long gap (no period logged for 60+ days) | Do not silently extrapolate. Show "we lost track", prompt to log, and reset the filter's forecast horizon. Counted from the start of the last logged period, not the last log of any kind, and only once the predicted window has passed too (ADR-0016) |
 | Overlapping or duplicate entries | Reject at the repository boundary with a specific message, never silently merge |
 | Device clock moved backwards, or timezone change | Store all dates as timezone-naive civil dates (a local calendar day is what a user means by "the day my period started"), never as UTC instants. Detect a backwards clock jump and warn rather than corrupting the history |
 | Notification permission denied | App works fully; only the reminder is disabled, with a single non-nagging explanation |
@@ -1102,11 +1104,11 @@ The app processes everything locally. The concrete commitments:
 | --- | --- |
 | Network interception or server breach | Yes, completely. There is no network and no server |
 | A curious person picking up an unlocked phone | **No.** There is no app lock in MVP. Documented gap; app lock is the first post-MVP privacy feature |
-| Device seized and forensically imaged, or legal compulsion | **Partially.** Android full-disk encryption protects a powered-off device. Once unlocked, the database is plaintext. This is the accepted risk of the chosen posture. This matters concretely for users in jurisdictions where reproductive health data has been sought in legal proceedings, a documented concern in the US since 2022 |
+| Device seized and forensically imaged, or legal compulsion | **Partially.** Android full-disk encryption protects a powered-off device, and since [ADR-0018](DECISIONS.md#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds) the database is encrypted with a key the Android Keystore holds, so a copy of the file alone cannot be read. An unlocked phone, or one a forensic tool can make run code as the app, still can. This matters concretely for users in jurisdictions where reproductive health data has been sought in legal proceedings, a documented concern in the US since 2022 |
 | Malicious app on the same device | Yes for a non-rooted device (Android app sandbox); no on a rooted or compromised device |
 | Backup exfiltration via cloud | Yes, `allowBackup="false"` |
 
-**On the plaintext database:** you chose the plain local DB, so that is what this plan specifies, and the tradeoff is recorded rather than relitigated. Two things make it a defensible choice rather than a careless one: (1) the migration path is designed in from day one, so switching to SQLCipher later is a swap of the Drift `QueryExecutor` plus a one-time re-encrypt migration, not a rewrite; and (2) the honest risk statement above ships in `PRIVACY.md` so the user is not misled about what "private" means here. If your threat model ever includes device seizure, revisit ADR-0004.
+**On the plaintext database** (superseded: ADR-0018 took the migration path below, and the database is now encrypted)**:** you chose the plain local DB, so that is what this plan specifies, and the tradeoff is recorded rather than relitigated. Two things make it a defensible choice rather than a careless one: (1) the migration path is designed in from day one, so switching to SQLCipher later is a swap of the Drift `QueryExecutor` plus a one-time re-encrypt migration, not a rewrite; and (2) the honest risk statement above ships in `PRIVACY.md` so the user is not misled about what "private" means here. If your threat model ever includes device seizure, revisit ADR-0004.
 
 ---
 

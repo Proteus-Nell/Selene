@@ -29,7 +29,9 @@ Pipeline:
        what the app's interaction checker looks for (ADR-0014).
     5. Read the chosen labels again, and pack their safety sections into
        compressed chunks under app/assets/medicines, with an index the app
-       searches.
+       searches. A drug whose label carries a Medication Guide gets the
+       guide's safety sections too (`medication_guide`), and never its part
+       on how to take the medicine (ADR-0022).
 
 Two things openFDA cannot give us:
 
@@ -904,22 +906,219 @@ def section_text(label: dict, section: str) -> str:
     return "\n\n".join(str(part).strip() for part in label.get(section) or [] if str(part).strip())
 
 
+# The FDA's patient leaflet for a drug that needs one (21 CFR 208), which
+# openFDA carries as one run of text with its headings inline.
+GUIDE_FIELD = "spl_medguide"
+# A guide's headings are questions, and 21 CFR 208.20 sets them: "What is the
+# most important information I should know about ...?" A question that is
+# quoted is the guide pointing at one of its own headings, not starting one.
+GUIDE_HEADING = re.compile(
+    r"(?<![A-Za-z0-9,;(-])"
+    r"((?:What|How|Who|Where|When|Can|Should|Do|Does|Is|Are|Why|Will|Which)\b"
+    r"(?:[^?.!:\"“”•]|\.(?=\d)){2,200}\?)"
+)
+# The guide's safety sections, the only ones carried. Everything else it has
+# is how to take the medicine, store it, or what is in it, and the first of
+# those is dosing, which this app never shows (ADR-0009, ADR-0022).
+GUIDE_SECTIONS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("important", re.compile(r"^What is the most important information\b", re.IGNORECASE)),
+    (
+        "about",
+        re.compile(
+            r"^What (?:is|are)\b"
+            r"(?!.*\b(?:ingredients|side effects|possible|most important|risks?)\b)",
+            re.IGNORECASE,
+        ),
+    ),
+    ("who", re.compile(r"^Who should not (?:take|use|receive|get|be given)\b", re.IGNORECASE)),
+    (
+        "tell",
+        re.compile(r"^What should I tell my (?:health ?care provider|doctor)\b", re.IGNORECASE),
+    ),
+    ("avoid", re.compile(r"^What should I avoid\b", re.IGNORECASE)),
+    ("side", re.compile(r"^What are (?:the )?possible side effects\b", re.IGNORECASE)),
+    ("watch", re.compile(r"^How can I watch for\b", re.IGNORECASE)),
+)
+# Dosing that a guide has let into a safety section: its headings are not
+# always recognisable, and a missed one runs into the section before it. Any
+# of these anywhere in what would be carried refuses the whole guide.
+GUIDE_DOSING = re.compile(
+    r"\bmiss(?:ed|es)? (?:a |your |one |1 |any |2 |two )?(?:or more )?"
+    r"(?:dose|doses|day|pill|pills|injection|injections)\b"
+    r"|\bnext (?:scheduled |regular |usual )?dose\b|\bdouble (?:the |your |a )?dose\b"
+    r"|\bextra dose\b|\btimes a day\b|\bevery \d+ (?:to \d+ )?(?:hours?|days?|weeks?)\b"
+    r"|\b(?:once|twice|\d+ times?|one time|two times|three times|four times) "
+    r"(?:a|each|per|every) (?:day|week|month|night|morning|evening)\b"
+    r"|\bhow much \w+(?: \w+)? to take\b",
+    re.IGNORECASE,
+)
+# A sentence that tells the reader to do something with the medicine. In the
+# most important information it is usually "Take X exactly as prescribed";
+# anywhere else it is how to take it, run in from a heading that was missed.
+GUIDE_INSTRUCTION = re.compile(
+    r"^(?:[\d.)o\u25e6\u2013-]+\s+)?(?:Take|Give|Inject|Apply|Inhale|Swallow|Chew|Insert|Spray|Mix|"
+    r"Sprinkle|Stir|Shake|Measure|Pour|Open|Hold|Remove|Place|Put|Draw|Attach|Twist|Prime|"
+    r"Press|Fill|Dissolve|Crush|Rinse)\b"
+)
+# An instruction with an amount or a how-often in it is dosing wherever it is.
+GUIDE_DOSE_INSTRUCTION = re.compile(
+    r"^(?:[\d.)o\u25e6\u2013-]+\s+)?(?:(?:Do not|Don't|Never) (?:take|use|give) more|Take|Use|Give|"
+    r"Inject|Apply|Inhale|Swallow|Chew|Insert|Spray|Wear|Place|Put|Change|Remove|Mix|"
+    r"Sprinkle|Measure|Pour)\b"
+)
+GUIDE_AMOUNT = re.compile(
+    r"\b\d+(?:[.,]\d+)?\s?(?:mg|mcg|µg|g|mL|ml|milliliters?|teaspoons?|tablespoons?|units?|"
+    r"tablets?|capsules?|pills?|puffs?|inhalations?|drops?|sprays?|patch(?:es)?|doses?)\b"
+    r"|\b(?:one|two|three|four|1|2|3|4) (?:tablets?|capsules?|pills?|puffs?|inhalations?|"
+    r"drops?|sprays?|doses?)\b"
+    r"|\b(?:each|every|a|per) (?:day|night|morning|evening|week|month)\b|\bdaily\b"
+    r"|\bat bedtime\b|\b(?:once|twice|\d+ times?|one time|two times|three times|four times)\b"
+    r"|\bhours? apart\b",
+    re.IGNORECASE,
+)
+GUIDE_SENTENCE = re.compile(r"(?<=[.!?])\s+|\s*[•◦]\s*")
+
+
+def quoted(text: str, start: int) -> bool:
+    """Report whether a question at `start` opens a quotation.
+
+    Args:
+        text (str): The guide, its whitespace collapsed.
+        start (int): Where the question starts.
+
+    Returns:
+        bool: True when the nearest mark before it opens a quotation: a curly
+        opening quote, or a straight one with an odd number before it, the
+        guide pointing at one of its own headings. False after one that closes
+        a quotation, where a real heading often follows.
+    """
+    before = text[:start].rstrip()
+    if not before:
+        return False
+    mark = before[-1]
+    if mark in "\u201c\u2018":
+        return True
+    if mark == '"':
+        return before.count('"') % 2 == 1
+    return False
+
+
+def guide_parts(text: str) -> list[tuple[str, str]]:
+    """Split a Medication Guide at its headings.
+
+    Args:
+        text (str): The guide, as openFDA carries it: one run of text.
+
+    Returns:
+        `list[tuple[str, str]]`: Each heading and the text under it, in order.
+        What comes before the first heading, the guide's title, is dropped.
+    """
+    text = " ".join(text.split())
+    marks = []
+    for match in GUIDE_HEADING.finditer(text):
+        start = match.start(1)
+        if quoted(text, start):
+            continue
+        marks.append((start, match.end(1)))
+    # Each section runs on to the next heading, and the last to the end.
+    ends = [start for start, _ in marks[1:]] + ([len(text)] if marks else [])
+    return [
+        (text[start:end].strip(), text[end:until].strip())
+        for (start, end), until in zip(marks, ends, strict=True)
+    ]
+
+
+def guide_section(heading: str) -> str | None:
+    """Name the safety section a guide's heading starts, if it starts one.
+
+    Args:
+        heading (str): A heading, as `guide_parts` found it.
+
+    Returns:
+        str | None: "important", "about", "who", "tell", "avoid", "side" or
+        "watch", or None for any other section, which is not carried.
+    """
+    for name, pattern in GUIDE_SECTIONS:
+        if pattern.search(heading):
+            return name
+    return None
+
+
+def guide_dosing(name: str, text: str) -> str | None:
+    """Find dosing in a section of a guide that is about to be carried.
+
+    Args:
+        name (str): The section, from `guide_section`.
+        text (str): What is under its heading.
+
+    Returns:
+        str | None: The words that are dosing, or None when there are none.
+    """
+    found = GUIDE_DOSING.search(text)
+    if found:
+        return found.group(0)
+    for sentence in GUIDE_SENTENCE.split(text):
+        sentence = sentence.strip()
+        if GUIDE_DOSE_INSTRUCTION.search(sentence) and GUIDE_AMOUNT.search(sentence):
+            return sentence
+        if name != "important" and GUIDE_INSTRUCTION.search(sentence):
+            return sentence
+    return None
+
+
+def medication_guide(label: dict) -> tuple[list[list[str]] | None, str]:
+    """Take a label's Medication Guide, its safety sections only.
+
+    Fails closed. A guide is carried only when its first heading is the one
+    21 CFR 208.20 puts first, and nothing that would be carried reads as
+    dosing: not a missed dose, not "two times a day", and outside the most
+    important information, no instruction at all. Anything else leaves the
+    whole guide out, rather than show part of a dose.
+
+    Args:
+        label (dict): One label, as openFDA serves it.
+
+    Returns:
+        `tuple[list[list[str]] | None, str]`: The safety sections as
+        `[heading, text]` pairs, and "carried"; or None, and why: "none",
+        "unrecognised" or "dosing".
+    """
+    raw = " ".join(str(part) for part in label.get(GUIDE_FIELD) or [])
+    if not raw.strip():
+        return None, "none"
+    parts = guide_parts(raw)
+    if not any(guide_section(heading) == "important" for heading, _ in parts[:3]):
+        return None, "unrecognised"
+    kept = []
+    for heading, text in parts:
+        name = guide_section(heading)
+        if name is None:
+            continue
+        if GUIDE_DOSING.search(heading) or guide_dosing(name, text):
+            return None, "dosing"
+        kept.append([heading, text])
+    return kept, "carried"
+
+
 def extract_sections(
     partitions: list[tuple[Path, int]], entries: list[dict]
-) -> dict[str, list[list[str]]]:
+) -> tuple[dict[str, list[list[str]]], dict[str, list[list[str]]], Counter]:
     """Read the chosen labels again and take their safety sections.
 
     A second pass over the export, because a label cannot be chosen until every
     label for its drug has been seen, and holding the text of all of them would
-    take gigabytes.
+    take gigabytes. The Medication Guide, where the label has one, is taken in
+    the same pass, from the same label.
 
     Args:
         partitions (`list[tuple[Path, int]]`): Local paths and label counts.
         entries (`list[dict]`): The selected drugs.
 
     Returns:
-        `dict[str, list[list[str]]]`: Each drug's sections by key, as
-        `[name, text]` pairs in the order the app renders them.
+        `tuple[dict, dict, Counter]`: Each drug's sections by key, as `[name,
+        text]` pairs in the order the app renders them; each guide carried, by
+        key, as `[heading, text]` pairs; and how every guide fared, by
+        `medication_guide`'s outcome.
 
     Raises:
         SystemExit: When a chosen label is not in the export, which means the
@@ -927,6 +1126,8 @@ def extract_sections(
     """
     chosen = {entry["label"]["id"]: entry for entry in entries}
     sections: dict[str, list[list[str]]] = {}
+    guides: dict[str, list[list[str]]] = {}
+    outcomes: Counter = Counter()
     for path, expected in partitions:
         for label in read_partition(path, expected):
             entry = chosen.get(str(label.get("id") or ""))
@@ -936,17 +1137,24 @@ def extract_sections(
             sections[entry["key"]] = [
                 [name, section_text(label, name)] for name in order if has_text(label, name)
             ]
+            guide, outcome = medication_guide(label)
+            outcomes[outcome] += 1
+            if guide:
+                guides[entry["key"]] = guide
         print(f"read {path.name} again", file=sys.stderr)
     missing = sorted({entry["key"] for entry in entries} - set(sections))
     if missing:
         raise SystemExit(
             f"error: {len(missing)} chosen labels are not in the export, e.g. {missing[0]}"
         )
-    return sections
+    return sections, guides, outcomes
 
 
 def build_bundle(
-    meta: dict, entries: list[dict], sections: dict[str, list[list[str]]]
+    meta: dict,
+    entries: list[dict],
+    sections: dict[str, list[list[str]]],
+    guides: dict[str, list[list[str]]] | None = None,
 ) -> tuple[bytes, list[bytes]]:
     """Pack the label text into compressed chunks, and index every drug.
 
@@ -965,18 +1173,21 @@ def build_bundle(
         meta (dict): The selection's metadata.
         entries (`list[dict]`): The selected drugs, sorted by key.
         sections (`dict[str, list[list[str]]]`): Each drug's sections.
+        guides (`dict[str, list[list[str]]] | None`): Each Medication Guide
+            carried, by key. Defaults to none.
 
     Returns:
         `tuple[bytes, list[bytes]]`: The compressed index, and the compressed
         chunks in order.
     """
+    guides = guides or {}
     rows, chunks, lines, size = [], [], [], 0
     for entry in entries:
-        record = json.dumps(
-            {"key": entry["key"], "sections": sections[entry["key"]]},
-            ensure_ascii=False,
-            separators=(",", ":"),
-        )
+        line = {"key": entry["key"], "sections": sections[entry["key"]]}
+        # Only where there is one, so a drug with none costs nothing.
+        if entry["key"] in guides:
+            line["guide"] = guides[entry["key"]]
+        record = json.dumps(line, ensure_ascii=False, separators=(",", ":"))
         rows.append(
             {
                 "brands": entry["brands"],
@@ -1010,6 +1221,7 @@ def build_bundle(
         "disclaimer": DISCLAIMER,
         "entries": rows,
         "export_date": meta["export_date"],
+        "guides": len(guides),
         "jurisdiction": meta["jurisdiction"],
         "schema_version": BUNDLE_SCHEMA_VERSION,
     }
@@ -1164,6 +1376,7 @@ def render(index: dict | None, digest: str) -> str:
     snapshot = "null" if index is None else dart_string(index["export_date"])
     count = 0 if index is None else len(index["entries"])
     chunks = 0 if index is None else index["chunks"]
+    guides = 0 if index is None else index.get("guides", 0)
     disclaimer = DISCLAIMER if index is None else index["disclaimer"]
 
     return f"""// GENERATED BY tools/scripts/gen_medicines.py. DO NOT EDIT BY HAND.
@@ -1188,6 +1401,7 @@ def render(index: dict | None, digest: str) -> str:
 ///     - medicinesFetched: Whether a bundle has been built at all.
 ///     - medicinesSnapshotDate: The date of the openFDA export.
 ///     - medicinesCount: How many drugs the bundle holds.
+///     - medicinesGuideCount: How many of them have a Medication Guide.
 ///     - medicinesChunkCount: How many compressed text chunks it has.
 ///     - medicinesJurisdiction: Where the labelling applies.
 ///     - medicinesDisclaimer: What the screen says about the source.
@@ -1219,6 +1433,9 @@ const String? medicinesSnapshotDate = {snapshot};
 
 /// How many drugs the bundle holds.
 const int medicinesCount = {count};
+
+/// How many of them carry the safety sections of their Medication Guide.
+const int medicinesGuideCount = {guides};
 
 /// How many compressed text chunks the label sections are split into.
 const int medicinesChunkCount = {chunks};
@@ -1271,7 +1488,7 @@ def main() -> int:
             export_date, partitions = export_index()
             local = download_partitions(args.cache, partitions)
             meta, entries = build_selection(local, export_date)
-            sections = extract_sections(local, entries)
+            sections, guides, outcomes = extract_sections(local, entries)
         except (urllib.error.URLError, TimeoutError, OSError, zipfile.BadZipFile) as error:
             # Reported rather than swallowed, and nothing committed is touched.
             # A bundle built from part of the export would silently drop every
@@ -1279,7 +1496,7 @@ def main() -> int:
             print(f"error: reading openFDA's export failed: {error}", file=sys.stderr)
             print("the committed artifacts have not been modified.", file=sys.stderr)
             return 1
-        index, chunks = build_bundle(meta, entries, sections)
+        index, chunks = build_bundle(meta, entries, sections, guides)
         SELECTION.parent.mkdir(parents=True, exist_ok=True)
         SELECTION.write_text(selection_json(meta, entries), encoding="utf-8")
         write_bundle(BUNDLE, index, chunks)
@@ -1287,6 +1504,12 @@ def main() -> int:
             f"wrote {SELECTION.relative_to(REPO_ROOT)} and {len(chunks)} chunks to "
             f"{BUNDLE.relative_to(REPO_ROOT)}: {len(entries)} drugs from "
             f"{meta['counts']['labels']} labels"
+        )
+        # Reported, not committed: how many guides were left out, and why, is
+        # what to look at when a refresh carries far fewer than the last.
+        print(
+            "medication guides: "
+            + ", ".join(f"{count} {outcome}" for outcome, count in sorted(outcomes.items()))
         )
 
     files = bundle_files(BUNDLE)

@@ -59,6 +59,12 @@ enum LogEvent {
   /// The database failed to open and was quarantined.
   dbCorruptionDetected,
 
+  /// A database written before encryption was encrypted in place.
+  dbEncrypted,
+
+  /// The key store could not be read, so the database was not opened.
+  dbKeyUnavailable,
+
   /// Day logs were re-segmented into cycles.
   cyclesSegmented,
 

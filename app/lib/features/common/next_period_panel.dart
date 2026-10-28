@@ -73,11 +73,22 @@ class NextPeriodPanel extends StatelessWidget {
         body: l10n.insightsTooIrregularBody,
         icon: Icons.show_chart,
       ),
-      LostTrack(:final daysSinceLastLog) => _Message(
+      LostTrack(:final daysSinceLastPeriod) => _Message(
         dense: dense,
         title: l10n.insightsLostTrackTitle,
-        body: l10n.insightsLostTrackBody(daysSinceLastLog),
+        body: l10n.insightsLostTrackBody(daysSinceLastPeriod),
         icon: Icons.history,
+      ),
+      // Late enough that a moved range would be too wide to help. Says when it
+      // was expected instead, which is the one thing still worth knowing.
+      LaterThanExpected(:final expectedWindow80) => _Message(
+        dense: dense,
+        title: l10n.insightsLaterTitle,
+        body: l10n.insightsLaterBody(
+          expectedWindow80.start.dayAndMonth(context),
+          expectedWindow80.end.dayAndMonth(context),
+        ),
+        icon: Icons.schedule,
       ),
       NoData() => _Message(
         dense: dense,
@@ -169,31 +180,50 @@ class _Window extends StatelessWidget {
               style: theme.textTheme.headlineSmall,
             ),
             const SizedBox(height: 4),
-            Text(l10n.insightsFourInFive, style: theme.textTheme.bodyMedium),
-            const SizedBox(height: 12),
-            Text(
-              l10n.insightsMostLikely(
-                prediction.medianStart.dayAndMonth(context),
-              ),
-              style: theme.textTheme.bodyMedium,
-            ),
-            if (!dense) ...<Widget>[
+            // Past the window it was first expected in, the range has moved
+            // forward and is not the four-in-five range it was. Backtested on
+            // the synthetic population, a range moved past a regular user's
+            // window held the period far less often than four times in five
+            // (ADR-0016), so the line that says so is not shown, and neither
+            // is a single most likely day or a confidence label.
+            if (prediction.isLate) ...<Widget>[
+              Text(l10n.insightsLateRange, style: theme.textTheme.bodyMedium),
+              const SizedBox(height: 12),
               Text(
-                l10n.insightsHalfTheTime(
-                  prediction.window50.start.dayAndMonth(context),
-                  prediction.window50.end.dayAndMonth(context),
+                l10n.insightsLateNotLogged,
+                style: theme.textTheme.bodyMedium,
+              ),
+            ] else ...<Widget>[
+              Text(l10n.insightsFourInFive, style: theme.textTheme.bodyMedium),
+              const SizedBox(height: 12),
+              Text(
+                l10n.insightsMostLikely(
+                  prediction.medianStart.dayAndMonth(context),
                 ),
                 style: theme.textTheme.bodyMedium,
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: <Widget>[
-                  Chip(
-                    label: Text(_confidenceLabel(l10n, prediction.confidence)),
-                    visualDensity: VisualDensity.compact,
+              if (!dense) ...<Widget>[
+                Text(
+                  l10n.insightsHalfTheTime(
+                    prediction.window50.start.dayAndMonth(context),
+                    prediction.window50.end.dayAndMonth(context),
                   ),
-                ],
-              ),
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: <Widget>[
+                    Chip(
+                      label: Text(
+                        _confidenceLabel(l10n, prediction.confidence),
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+              ],
+            ],
+            if (!dense) ...<Widget>[
               const SizedBox(height: 8),
               Text(subtitle, style: theme.textTheme.bodySmall),
             ],

@@ -17,8 +17,14 @@ import typer
 
 from cyclecore.config import Settings, load_settings
 from cyclecore.data.synthetic import sample_population, simulate_population
-from cyclecore.eval.backtest import backtest_population, report_from_rows
-from cyclecore.export.golden_vectors import write_golden
+from cyclecore.eval.backtest import (
+    LATE_POINTS,
+    backtest_late_population,
+    backtest_population,
+    report_from_rows,
+)
+from cyclecore.eval.metrics import empirical_coverage
+from cyclecore.export.golden_vectors import write_conditioned, write_golden
 from cyclecore.export.priors_json import write_priors
 from cyclecore.models.hyperpriors import fit_variances
 from cyclecore.models.intervals import student_t_quantiles
@@ -114,7 +120,11 @@ def export_golden(
     config: ConfigOpt = None,
     artifacts_dir: ArtifactsOpt = Path("../artifacts"),
 ) -> None:
-    """Write `golden/predictor_cases_v1.json` from the reference filter (task PY-A).
+    """Write the golden vectors from the reference filter (task PY-A).
+
+    `golden/predictor_cases_v1.json` pins the filter and its windows, and
+    `golden/conditioned_cases_v1.json` the windows moved forward once a period is
+    late.
 
     Reads the priors artifact if it exists so the golden vectors and the shipped
     priors always correspond. Falls back to the configured values otherwise, and
@@ -151,6 +161,13 @@ def export_golden(
     path = artifacts_dir / "golden" / "predictor_cases_v1.json"
     payload = write_golden(path, priors, quantiles)
     log.info("export_golden.written", path=str(path), cases=len(payload["cases"]))
+    conditioned_path = artifacts_dir / "golden" / "conditioned_cases_v1.json"
+    conditioned = write_conditioned(conditioned_path, priors, quantiles)
+    log.info(
+        "export_golden.written",
+        path=str(conditioned_path),
+        cases=len(conditioned["cases"]),
+    )
 
 
 @app.command("backtest")
@@ -204,6 +221,68 @@ def backtest(
 
     _log_baselines(rows)
     log.info("backtest.done", artifacts_dir=str(artifacts_dir))
+
+
+@app.command("backtest-late")
+def backtest_late(
+    config: ConfigOpt = None,
+) -> None:
+    """Report how often windows moved forward for a late period hold it.
+
+    The same simulated population and walk as `backtest`. Each cycle that ran
+    past a day in `LATE_POINTS` without its period has its windows moved forward
+    to that day, and the moved windows are scored against the length the cycle
+    turned out to be. Only those cycles count: one whose period came sooner never
+    put the app in that state. ADR-0016 quotes this report.
+    """
+    settings = _settings(config)
+    rng = seed_everything(settings.seed)
+    priors = settings.population.to_filter_priors()
+    quantiles = student_t_quantiles(priors.student_t_df)
+
+    specs = sample_population(
+        settings.backtest.n_users,
+        rng,
+        mean_cycle_days=settings.population.mean_cycle_days,
+        level_sd_log=settings.population.level_sd_log,
+    )
+    users = simulate_population(specs, settings.backtest.n_cycles, rng)
+    fixed = backtest_population(users, priors, quantiles, min_history=settings.backtest.min_history)
+    late = backtest_late_population(
+        users, priors, quantiles, min_history=settings.backtest.min_history
+    )
+
+    for label, irregular in (("regular", False), ("irregular", True)):
+        subset = [r for r in fixed if r.is_irregular == irregular]
+        if subset:
+            report = report_from_rows(subset)
+            log.info(
+                "backtest_late.first_predicted",
+                stratum=label,
+                n=report.n,
+                coverage_50=round(report.coverage_50, 4),
+                coverage_80=round(report.coverage_80, 4),
+            )
+        for point in LATE_POINTS:
+            rows = [r for r in late if r.is_irregular == irregular and r.point == point]
+            if not rows:
+                continue
+            actual = [r.actual_days for r in rows]
+            log.info(
+                "backtest_late.moved",
+                stratum=label,
+                point=point,
+                n=len(rows),
+                coverage_50=round(
+                    empirical_coverage(actual, [r.lo50 for r in rows], [r.hi50 for r in rows]),
+                    4,
+                ),
+                coverage_80=round(
+                    empirical_coverage(actual, [r.lo80 for r in rows], [r.hi80 for r in rows]),
+                    4,
+                ),
+                mean_width_80=round(sum(r.hi80 - r.lo80 + 1 for r in rows) / len(rows), 2),
+            )
 
 
 def _log_baselines(rows: list) -> None:  # type: ignore[type-arg]

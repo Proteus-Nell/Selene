@@ -48,6 +48,21 @@ jobs:
         # on a developer machine.
         run: python3 tools/scripts/gen_medicines.py --check
 
+      - name: Verify the group names table, the bundle and their Dart agree
+        # The table of group names the interaction checker matches, such as
+        # "NSAIDs" and "combined hormonal contraceptives", says which drugs
+        # each one covers (ADR-0021). Its members are resolved against the
+        # bundle, so a rebuilt bundle, or a member that no longer names a drug
+        # in it, fails here rather than matching nothing in silence. No network.
+        run: python3 tools/scripts/gen_medicine_groups.py --check
+
+      - name: Verify the herbal supplements reference and its Dart agree
+        # NCCIH's fact sheets as the app carries them (ADR-0023). Fails when the
+        # asset and the checksum the Dart holds disagree, when a sheet has lost
+        # its safety section or gives an amount to take, or when two herbs are
+        # looked for by one name. No network: the fetch is `--fetch`'s.
+        run: python3 tools/scripts/gen_supplements.py --check
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -111,9 +126,11 @@ jobs:
 
       # Split per ABI, per docs/PLAN.md 3.7: a universal APK carries every
       # architecture's native libraries, and this app ships a native SQLite.
+      # One version code across the splits, as tools/scripts/release.sh builds
+      # them, so CI checks the configuration a release ships with.
       - name: Build release APKs
         working-directory: app
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi -Pforce-version-code-ignoring-abi=true
 
       # Every artifact that could be installed is checked, not just one. The
       # split builds are what actually get distributed, so checking a universal
@@ -169,9 +186,14 @@ jobs:
             fi
           done
 
-      - name: Upload release APKs
+      # Named for what they are. CI has no release key, so these are signed
+      # with a debug key each runner makes afresh: one will not install over
+      # another, nor over a release, nor take a release as an update. They are
+      # build verification only. Phones get APKs from GitHub Releases
+      # (.github/workflows/release.yml, docs/RELEASE.md section 6).
+      - name: Upload the test APKs
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apks
+          name: test-apks-debug-signed-not-for-phones
           path: app/build/app/outputs/flutter-apk/app-*-release.apk
           if-no-files-found: error

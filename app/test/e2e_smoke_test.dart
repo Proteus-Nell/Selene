@@ -16,4 +16,10 @@ void main() {
   ) async {
     await runSmokeFlow(tester);
   });
+
+  testWidgets('the same, with the backup protected by a passphrase', (
+    tester,
+  ) async {
+    await runSmokeFlow(tester, passphrase: 'four unrelated words');
+  });
 }
