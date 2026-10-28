@@ -132,18 +132,17 @@ final class ImportSummary {
 /// diary is worse than no restore: the user would not know which entries were
 /// dropped.
 abstract final class ImportV1 {
-  /// Envelope versions this build can read.
+  /// Envelope versions this build can read, each with the shape it must have.
   ///
-  /// **Only the current version is here** (ADR-0011). Each bump strands every
-  /// backup taken before it, and this is now the second bump in one release
-  /// cycle. Reading an older file would cost a few lines of branching; that was
-  /// offered and declined, and the cost was stated before the choice was made. The refusal message
-  /// below therefore has to be specific enough that a user meeting it
+  /// v3 and v4 (ADR-0020). v4 only added fields, so a v3 file has nothing
+  /// missing and restores with every measurement not recorded. v2 and earlier
+  /// are still refused (ADR-0011): their backups were stranded by v3, and the
+  /// refusal message below has to be specific enough that a user meeting it
   /// understands what happened rather than concluding the app is broken.
-  ///
-  /// This is the line a future session is most likely to "fix" without reading
-  /// why it is here. Read the ADR first.
-  static const Set<int> supportedVersions = <int>{3};
+  static const Map<int, String> supportedVersions = <int, String>{
+    3: exportSchemaFingerprintV3,
+    4: exportSchemaFingerprint,
+  };
 
   /// Parse and validate a backup without touching the database.
   ///
@@ -188,7 +187,7 @@ abstract final class ImportV1 {
           'Update the app, then import it again. Nothing has been changed.',
         );
       }
-      if (!supportedVersions.contains(schemaVersion)) {
+      if (!supportedVersions.containsKey(schemaVersion)) {
         // Named specifically rather than generically, because whoever meets
         // this message has just been told their only backup is unusable and
         // deserves to know exactly why, and what still works. "Something went
@@ -196,17 +195,18 @@ abstract final class ImportV1 {
         // itself. See ADR-0011 for why this refusal exists at all.
         throw _Refusal(
           ImportRejection.unsupportedVersion,
-          'This backup is in the older export format (v$schemaVersion). This '
-          'version of the app reads format v$exportSchemaVersion only and '
-          'cannot restore the older one. Nothing has been changed. If you '
-          'still have the device or app version that wrote this file, export '
-          'again from there. The file is plain text either way: your logged '
-          'days are readable in it with any text editor.',
+          'This backup is in an older export format (v$schemaVersion). This '
+          'version of the app restores formats from '
+          'v$oldestRestorableExportVersion onwards and cannot restore the '
+          'older one. Nothing has been changed. If you still have the device '
+          'or app version that wrote this file, export again from there. The '
+          'file is plain text either way: your logged days are readable in it '
+          'with any text editor.',
         );
       }
 
       final fingerprint = _requireString(decoded, 'schema_fingerprint');
-      if (fingerprint != exportSchemaFingerprint) {
+      if (fingerprint != supportedVersions[schemaVersion]) {
         throw const _Refusal(
           ImportRejection.unexpectedShape,
           'This backup does not have the shape this version expects, even '
@@ -540,12 +540,127 @@ abstract final class ImportV1 {
             date: date,
           );
 
+    // The measurements (ADR-0020). A v3 file has none of these keys, and an
+    // absent key means not recorded, exactly as for intercourse. A value that
+    // is present is checked against what a person or a laboratory could
+    // actually have recorded, so a corrupted file is refused rather than
+    // restored with a temperature of 3,650 degrees in it.
+    final temperature = _decodeMeasurement(
+      json['basal_temperature_celsius'],
+      field: 'temperature',
+      date: date,
+      lowest: _lowestTemperatureCelsius,
+      highest: _highestTemperatureCelsius,
+    );
+    final rawMucus = json['cervical_mucus'];
+    final mucus = rawMucus == null
+        ? null
+        : _decodeEnum(
+            rawMucus,
+            CervicalMucus.values,
+            field: 'cervical mucus',
+            date: date,
+          );
+    final rawStrip = json['pdg_strip'];
+    final strip = rawStrip == null
+        ? null
+        : _decodeEnum(
+            rawStrip,
+            PdgStripResult.values,
+            field: 'progesterone strip result',
+            date: date,
+          );
+    final progesterone = _decodeMeasurement(
+      json['progesterone_value'],
+      field: 'progesterone result',
+      date: date,
+      lowest: 0,
+      highest: _highestProgesterone,
+    );
+    final rawUnit = json['progesterone_unit'];
+    final unit = rawUnit == null
+        ? null
+        : _decodeEnum(
+            rawUnit,
+            ProgesteroneUnit.values,
+            field: 'progesterone unit',
+            date: date,
+          );
+    if ((progesterone == null) != (unit == null)) {
+      throw _Refusal(
+        ImportRejection.malformedField,
+        'The progesterone result recorded for ${date.toIso8601()} has a value '
+        'without its unit, or a unit without its value. Nothing has been '
+        'changed.',
+      );
+    }
+
     return DayLog(
       date: date,
       flow: flow,
       symptoms: symptoms,
       intercourse: intercourse,
+      basalTemperatureCelsius: temperature,
+      cervicalMucus: mucus,
+      pdgStrip: strip,
+      progesteroneValue: progesterone,
+      progesteroneUnit: unit,
     );
+  }
+
+  /// The lowest and highest temperatures a backup may hold, in Celsius.
+  ///
+  /// Wide, because the point is to refuse a corrupted number, not to judge a
+  /// recorded one: a waking temperature outside this is not a temperature.
+  static const double _lowestTemperatureCelsius = 30;
+  static const double _highestTemperatureCelsius = 45;
+
+  /// The highest progesterone a backup may hold, in either unit.
+  ///
+  /// Pregnancy can take serum progesterone into the hundreds of nanomoles per
+  /// litre, so this is only a bound on corruption.
+  static const double _highestProgesterone = 2000;
+
+  /// Decode an optional number, refusing one outside what could be real.
+  ///
+  /// Args:
+  ///     raw (Object?): The value read from the file.
+  ///     field (String): What it is, for the refusal message.
+  ///     date (CivilDate): The day it was recorded for, for the message.
+  ///     lowest (double): The smallest value accepted. Exclusive when zero,
+  ///         since no result is zero.
+  ///     highest (double): The largest value accepted.
+  ///
+  /// Returns:
+  ///     double?: The value, or null when it was not recorded.
+  ///
+  /// Throws:
+  ///     _Refusal: If the value is not a number, or is out of range.
+  static double? _decodeMeasurement(
+    Object? raw, {
+    required String field,
+    required CivilDate date,
+    required double lowest,
+    required double highest,
+  }) {
+    if (raw == null) return null;
+    if (raw is! num || !raw.isFinite) {
+      throw _Refusal(
+        ImportRejection.malformedField,
+        'The $field recorded for ${date.toIso8601()} is not readable.',
+      );
+    }
+    final value = raw.toDouble();
+    final tooLow = lowest == 0 ? value <= 0 : value < lowest;
+    if (tooLow || value > highest) {
+      throw _Refusal(
+        ImportRejection.malformedField,
+        'The $field recorded for ${date.toIso8601()} ($value) is not one a '
+        'person could have recorded, so this backup may be damaged. Nothing '
+        'has been changed.',
+      );
+    }
+    return value;
   }
 
   /// Decode an enum member from a raw JSON value.

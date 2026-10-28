@@ -185,6 +185,14 @@ final StreamProvider<bool> flowSimplifiedProvider = StreamProvider<bool>(
   (ref) => ref.watch(appDatabaseProvider).settingsDao.watchFlowSimplified(),
 );
 
+/// Whether temperatures are shown in degrees Fahrenheit (ADR-0020).
+///
+/// Display only: they are stored in Celsius either way.
+final StreamProvider<bool> temperatureFahrenheitProvider = StreamProvider<bool>(
+  (ref) =>
+      ref.watch(appDatabaseProvider).settingsDao.watchTemperatureFahrenheit(),
+);
+
 /// Asks the device to prove who is holding it (AND-29).
 ///
 /// Overridden in tests with a fake, so the gate's behaviour is exercised

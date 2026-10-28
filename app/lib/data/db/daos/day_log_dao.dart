@@ -103,7 +103,7 @@ class DayLogDao extends DatabaseAccessor<AppDatabase> with _$DayLogDaoMixin {
   /// A companion with an explicit [Value] per column, never the `DayLogRow`
   /// data class. Drift builds both the inserted values and the `DO UPDATE SET`
   /// clause of an upsert by calling `toColumns(true)`, and a data class drops
-  /// its null fields under that flag. `intercourse` is the one nullable column
+  /// its null fields under that flag. `intercourse` was the first nullable column
   /// here, so writing a day whose answer had been cleared produced an update
   /// that never mentioned the column and left the old answer in place: the
   /// user tapped the selected chip, the editor did everything right, and the
@@ -124,6 +124,11 @@ class DayLogDao extends DatabaseAccessor<AppDatabase> with _$DayLogDaoMixin {
     epochDay: Value<int>(log.date.epochDay),
     flow: Value<FlowIntensity>(log.flow),
     intercourse: Value<Intercourse?>(log.intercourse),
+    basalTemperatureCelsius: Value<double?>(log.basalTemperatureCelsius),
+    cervicalMucus: Value<CervicalMucus?>(log.cervicalMucus),
+    pdgStrip: Value<PdgStripResult?>(log.pdgStrip),
+    progesteroneValue: Value<double?>(log.progesteroneValue),
+    progesteroneUnit: Value<ProgesteroneUnit?>(log.progesteroneUnit),
   );
 
   /// Write one day, replacing any existing entry for it.
@@ -271,6 +276,11 @@ class DayLogDao extends DatabaseAccessor<AppDatabase> with _$DayLogDaoMixin {
           flow: row.flow,
           intercourse: row.intercourse,
           symptoms: byDay[row.epochDay] ?? const <Symptom, SymptomSeverity>{},
+          basalTemperatureCelsius: row.basalTemperatureCelsius,
+          cervicalMucus: row.cervicalMucus,
+          pdgStrip: row.pdgStrip,
+          progesteroneValue: row.progesteroneValue,
+          progesteroneUnit: row.progesteroneUnit,
         ),
     ];
   }

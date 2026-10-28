@@ -59,6 +59,27 @@ class DayLogs extends Table {
   /// `intercourse_isolation_test.dart` fails the build if anything does.
   TextColumn get intercourse => textEnum<Intercourse>().nullable()();
 
+  /// Waking temperature in degrees Celsius, whatever unit it was entered in.
+  ///
+  /// This and the four columns below are recorded only (ADR-0020). They are
+  /// fertility signs, nothing in `lib/domain/predict/` or `lib/domain/cycles/`
+  /// may read them, and `record_only_isolation_test.dart` fails the build if
+  /// anything does. Null means not recorded, as for [intercourse].
+  RealColumn get basalTemperatureCelsius => real().nullable()();
+
+  /// Cervical mucus observed, by [CervicalMucus] name.
+  TextColumn get cervicalMucus => textEnum<CervicalMucus>().nullable()();
+
+  /// A home PdG strip's result, by [PdgStripResult] name.
+  TextColumn get pdgStrip => textEnum<PdgStripResult>().nullable()();
+
+  /// A blood test's progesterone, in [progesteroneUnit]. Set exactly when the
+  /// unit is.
+  RealColumn get progesteroneValue => real().nullable()();
+
+  /// The unit the blood test reported, by [ProgesteroneUnit] name.
+  TextColumn get progesteroneUnit => textEnum<ProgesteroneUnit>().nullable()();
+
   @override
   Set<Column<Object>> get primaryKey => <Column<Object>>{epochDay};
 }

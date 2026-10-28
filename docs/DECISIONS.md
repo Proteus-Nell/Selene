@@ -19,7 +19,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0008](#adr-0008-app-lock-gates-the-interface-and-does-not-encrypt-the-database) | App lock gates the interface and does not encrypt the database | Accepted | 2026-08-20 |
 | [0009](#adr-0009-medicines-reference-data-is-generated-at-build-time-from-openfda) | Medicines reference data is generated at build time from openFDA | Accepted; allowlist superseded by [0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) | 2026-08-20 |
 | [0010](#adr-0010-long-term-conditions-are-recorded-not-modelled) | Long-term conditions are recorded, not modelled | Accepted | 2026-08-20 |
-| [0011](#adr-0011-export-v2-refuses-v1-files) | Export v2 refuses v1 files | Accepted | 2026-08-20 |
+| [0011](#adr-0011-export-v2-refuses-v1-files) | Export v2 refuses v1 files | Accepted; refusing a format that only adds fields superseded by [0020](#adr-0020-temperature-mucus-and-progesterone-are-recorded-only-and-export-v4-still-restores-v3) | 2026-08-20 |
 | [0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) | The medicines reference covers every drug, one label each, chosen by rule | Accepted | 2026-10-02 |
 | [0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone) | The medicines bundle is compressed chunks and an index, searched on the phone | Accepted | 2026-10-02 |
 | [0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe) | The interaction checker compares label text, and never calls a pair safe | Accepted | 2026-10-02 |
@@ -28,6 +28,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0017](#adr-0017-releases-are-built-from-a-tag-with-the-key-in-repository-secrets-and-their-version-code-comes-from-the-name) | Releases are built from a tag, with the key in repository secrets, and their version code comes from the name | Accepted | 2026-10-27 |
 | [0018](#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds) | The database is encrypted, with a key the Android Keystore holds | Accepted | 2026-10-28 |
 | [0019](#adr-0019-a-backup-can-be-protected-with-a-passphrase-and-an-unprotected-one-still-restores) | A backup can be protected with a passphrase, and an unprotected one still restores | Accepted | 2026-10-28 |
+| [0020](#adr-0020-temperature-mucus-and-progesterone-are-recorded-only-and-export-v4-still-restores-v3) | Temperature, mucus and progesterone are recorded only, and export v4 still restores v3 | Accepted | 2026-10-28 |
 
 ---
 
@@ -435,7 +436,7 @@ they are ever fitted, this ADR is what to supersede.
 
 ## ADR-0011: Export v2 refuses v1 files
 
-**Status:** Accepted, 2026-08-20
+**Status:** Accepted, 2026-08-20. Refusing a format that only adds fields is superseded by [ADR-0020](#adr-0020-temperature-mucus-and-progesterone-are-recorded-only-and-export-v4-still-restores-v3): export v4 restores v3.
 **Deciders:** Project owner
 
 ### Context
@@ -1075,6 +1076,74 @@ could read anything.
   open a backup without this app.
 - Sealing and opening each take a second or two on a phone, behind a progress
   bar.
+
+---
+
+## ADR-0020: Temperature, mucus and progesterone are recorded only, and export v4 still restores v3
+
+**Status:** Accepted, 2026-10-28. Relaxes [ADR-0011](#adr-0011-export-v2-refuses-v1-files) for formats that only add fields.
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for three more things to be logged: basal body temperature,
+cervical mucus, and progesterone results, both a home PdG strip and a blood
+test with its unit. Asked whether they should feed the prediction, the owner
+chose **record only**. They are fertility signs: read together, a temperature
+shift, egg-white mucus and a positive PdG strip are how fertility-awareness
+methods place ovulation, and assumption A5 forbids this app from presenting a
+fertile window or a safe day.
+
+They change the export, and under ADR-0011 every change of format refused the
+previous one. Twice already that stranded every backup taken before it, the
+second time for a single nullable field. The owner asked that existing backups
+keep restoring.
+
+### Decision
+
+1. **Five nullable columns** on `day_logs`, schema v5: the temperature in
+   Celsius whatever unit it was entered in, mucus as one of dry, sticky,
+   creamy, watery or egg white, the strip as negative or positive, and the
+   blood value with its unit, ng/mL or nmol/L, kept as the laboratory reported
+   it rather than converted. A value and its unit are set together or not at
+   all, which `DayLog` asserts and the import checks. Null is not recorded.
+2. **Recorded only, structurally.** Nothing in `lib/domain/predict/` or
+   `lib/domain/cycles/` may name the types or the fields, and
+   `record_only_isolation_test.dart` fails the build if anything does. It also
+   checks that a history with every measurement on every day predicts exactly
+   what the same history without them does.
+3. **In the day editor, in a section of their own**, closed unless the day has
+   one, which says before anything is entered that none of it is used to
+   predict anything. Numbers are written when they are finished, not on every
+   keystroke, and refused with a reason when they are out of range. Settings
+   chooses °C or °F for display.
+4. **Export v4 carries them, and v3 still restores.** v4 only adds fields, so
+   a v3 file has nothing missing, and an absent field means not recorded,
+   which is what it meant when the file was written. The import keeps a
+   fingerprint per readable version. v2 and earlier stay refused. The
+   re-export prompt fires only for backups older than the oldest restorable
+   format, so nobody holding a v3 backup is told it is lost.
+
+### Runner-up and why rejected
+
+**Using them to refine the prediction.** A temperature shift or a positive PdG
+strip would narrow the next window, but it is the same inference as placing
+ovulation, one step from the fertile window A5 rules out. The owner chose
+record only.
+
+**Keeping ADR-0011's policy and refusing v3.** It would strand every backup
+taken before this release for the third time, for a change that only adds
+fields, with nothing to gain: there is nothing in a v3 file the import would
+have to guess.
+
+### Consequences
+
+- The import has a branch per readable version. The next change that does
+  remove or rename something can still refuse what came before, and must say
+  so here.
+- The measurements are in exports, and so in any backup a person sends
+  anywhere.
+- The calendar does not mark them. The day editor is where they are seen.
 
 ---
 

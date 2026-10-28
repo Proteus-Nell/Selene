@@ -1,7 +1,7 @@
 /// Day editor.
 ///
-/// Edits one day's flow, symptoms and intercourse, in the same shape wherever
-/// it is opened from. Every change writes immediately: a save button would add
+/// Edits one day's flow, symptoms and intercourse, and the measurements kept
+/// only as a record, in the same shape wherever it is opened from. Every change writes immediately: a save button would add
 /// a tap to every correction and create a state where the user believes they
 /// have recorded something and have not.
 ///
@@ -18,6 +18,7 @@ import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/features/common/chip_motion.dart';
+import 'package:period_tracker/features/log/measurements_editor.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Day editor: one day's flow, symptoms and intercourse.
@@ -78,6 +79,8 @@ class DayEditor extends ConsumerWidget {
     // that started simplified and then grew three more chips would read as the
     // app having changed its mind about what it recorded.
     final simplified = ref.watch(flowSimplifiedProvider).valueOrNull ?? false;
+    final fahrenheit =
+        ref.watch(temperatureFahrenheitProvider).valueOrNull ?? false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,6 +168,12 @@ class DayEditor extends ConsumerWidget {
             ],
           ),
         ],
+        const SizedBox(height: 12),
+        MeasurementsEditor(
+          current: current,
+          fahrenheit: fahrenheit,
+          onChanged: (next) => _write(ref, next),
+        ),
       ],
     );
   }

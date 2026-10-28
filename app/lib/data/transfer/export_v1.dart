@@ -1,4 +1,4 @@
-/// Export format v3.
+/// Export format v4.
 ///
 /// Writes the user's data out as a versioned JSON envelope. This is the only
 /// backup mechanism in the app: there is no cloud sync, so if this is wrong
@@ -7,6 +7,8 @@
 /// Includes:
 ///     - exportSchemaVersion, exportSchemaFingerprint: What this build
 ///       writes, and the shape it promises.
+///     - oldestRestorableExportVersion, exportSchemaFingerprintV3: What it
+///       still restores.
 ///     - ExportEnvelope: The envelope itself.
 ///     - ExportV1: Building, encoding and writing one.
 library;
@@ -24,29 +26,29 @@ import 'package:period_tracker/domain/models/day_log.dart';
 /// Version of the export envelope this build writes.
 ///
 /// Bumped only for a change the previous importer could not read correctly.
-/// The importer refuses anything it does not recognise rather than guessing, so
-/// this number is the promise that a file's fields mean what they used to.
+/// The importer refuses anything newer than it recognises rather than
+/// guessing, so this number is the promise that a file's fields mean what they
+/// used to.
 ///
-/// **v3 adds the intercourse field; v2 and earlier are refused** (ADR-0011).
-/// That decision was taken knowing its cost: this app has no cloud and no Play
-/// Store restore, so the export *is* the recovery path (risk R8), and refusing
-/// v1 makes every backup taken before this release unrestorable. A few lines
-/// of import branching would have avoided it and were declined. The mitigation
-/// is the one-time re-export prompt, `SettingKey.exportFormatAcknowledged`, so
-/// that nobody discovers the loss after losing a phone.
+/// **v4 adds the five record-only measurements (ADR-0020), and v3 still
+/// restores.** v4 only adds fields, each nullable, so a v3 file has nothing
+/// missing: an absent measurement means not recorded, which is exactly what it
+/// meant when the file was written. ADR-0011's refusal of older formats stands
+/// for v2 and earlier, whose backups were already stranded by v3, and no
+/// longer applies to a format that only adds fields. A user holding a v3
+/// backup is therefore not warned on update.
 ///
-/// If you are reading this because you are about to "fix" the refusal: it is
-/// not an oversight. Read ADR-0011 first.
+/// The history, because it is the reason the policy changed: v2 refused v1 and
+/// v3 refused v2, each stranding every backup taken before it, the second time
+/// for a change that only added a nullable field. See ADR-0011 and ADR-0020.
+const int exportSchemaVersion = 4;
+
+/// The oldest export format this build restores.
 ///
-/// **The cost of this policy compounds.** v2 stranded every backup taken before
-/// it; v3 strands every backup taken between the two. That is the second time
-/// in one release cycle, and it is worth saying out loud, because the argument
-/// for refusing is weakest here: v3 adds a *nullable* field, so a v2 file has
-/// nothing missing, and absence genuinely means "not recorded". Reading one
-/// would have cost no guesswork. The policy was chosen deliberately and is
-/// being followed deliberately; if it is ever revisited, this is the case to
-/// revisit it on.
-const int exportSchemaVersion = 3;
+/// The re-export prompt is driven by this, not by [exportSchemaVersion]: a
+/// user needs telling that their backups have stopped restoring only when the
+/// format they last exported in is older than this.
+const int oldestRestorableExportVersion = 3;
 
 /// Fingerprint of the envelope's *shape*, not its contents.
 ///
@@ -59,6 +61,17 @@ const int exportSchemaVersion = 3;
 /// `export_v1_test.dart` rebuilds this from the actual serialised keys, so
 /// changing the shape without changing this constant fails the suite.
 const String exportSchemaFingerprint =
+    'v4;'
+    'envelope[app_version,conditions,day_logs,db_schema_version,exported_utc,'
+    'schema_fingerprint,schema_version,settings];'
+    'day_log[basal_temperature_celsius,cervical_mucus,date,flow,intercourse,'
+    'pdg_strip,progesterone_unit,progesterone_value,symptoms];'
+    'condition[condition,end,start]';
+
+/// The fingerprint a v3 export carries, which this build still restores.
+///
+/// Fixed: it describes files already on people's phones and drives.
+const String exportSchemaFingerprintV3 =
     'v3;'
     'envelope[app_version,conditions,day_logs,db_schema_version,exported_utc,'
     'schema_fingerprint,schema_version,settings];'

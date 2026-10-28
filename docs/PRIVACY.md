@@ -104,6 +104,22 @@ can say a great deal: emergency contraception, HIV prevention, antidepressants.
 - **A flag is not advice.** It says that two labels connect, and nothing about
   whether that matters for you. A pharmacist can tell you that.
 
+## Temperature, mucus and progesterone
+
+You can record your basal body temperature, cervical mucus, and progesterone
+results, both a home PdG strip and a blood test with its unit. They are
+fertility signs, and they are kept the way intercourse is:
+
+- **They are never used to predict anything.** Not the next period, not
+  ovulation, not a fertile window. The prediction and cycle code cannot read
+  them at all, and an automated check fails the build if that ever changes.
+- **They stay on your device**, encrypted with everything else, and they are in
+  your exports, because a backup that dropped them would lose something you
+  recorded.
+- **You never have to record them.** They sit in their own section of the day
+  editor, closed until you open it. Leaving one empty records nothing, and
+  clearing one takes it back.
+
 ## The app lock
 
 You can require your fingerprint, face, PIN or pattern before the app will show

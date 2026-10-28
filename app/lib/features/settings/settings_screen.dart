@@ -520,6 +520,8 @@ class _DisplaySettings extends ConsumerWidget {
     // Watched rather than loaded into state: the switch and the day editor read
     // the same stream, so they cannot disagree about what is set.
     final simplified = ref.watch(flowSimplifiedProvider).valueOrNull ?? false;
+    final fahrenheit =
+        ref.watch(temperatureFahrenheitProvider).valueOrNull ?? false;
     final phases = ref.watch(showCyclePhasesProvider).valueOrNull ?? true;
     final ovulation =
         ref.watch(showOvulationWindowProvider).valueOrNull ?? false;
@@ -532,6 +534,15 @@ class _DisplaySettings extends ConsumerWidget {
               settings.writeBool(SettingKey.flowSimplified, value: value),
           title: Text(l10n.settingsFlowSimplified),
           subtitle: Text(l10n.settingsFlowSimplifiedSubtitle),
+        ),
+        SwitchListTile(
+          value: fahrenheit,
+          onChanged: (value) => settings.writeBool(
+            SettingKey.temperatureFahrenheit,
+            value: value,
+          ),
+          title: Text(l10n.settingsTemperatureFahrenheit),
+          subtitle: Text(l10n.settingsTemperatureFahrenheitSubtitle),
         ),
         SwitchListTile(
           value: phases,

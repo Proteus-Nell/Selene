@@ -99,8 +99,9 @@ class AppDatabase extends _$AppDatabase {
   /// version is what makes an old build refuse the file instead of crashing on
   /// it. `enum_widening_test.dart` pins this, and v3 is exactly that case: it
   /// widened [Symptom], changed no table, and its snapshot is identical to
-  /// v2's. v4 is the ordinary kind again, a new nullable column.
-  static const int latestSchemaVersion = 4; // @ new_migration.sh
+  /// v2's. v4 is the ordinary kind again, a new nullable column, and v5 five
+  /// more, with three new enums (ADR-0020).
+  static const int latestSchemaVersion = 5; // @ new_migration.sh
 
   @override
   int get schemaVersion => latestSchemaVersion;
@@ -150,6 +151,17 @@ class AppDatabase extends _$AppDatabase {
         // could record this, so "not recorded" is the true answer for every
         // one of them. No row is rewritten and no existing value is touched.
         await m.addColumn(dayLogs, dayLogs.intercourse);
+      }
+      if (from <= 4) {
+        // v5 adds the five record-only measurements (ADR-0020), each a
+        // nullable column with no default, the same cheapest migration as v4:
+        // every existing row gets NULL, which is the true answer, because none
+        // of them could have been recorded before.
+        await m.addColumn(dayLogs, dayLogs.basalTemperatureCelsius);
+        await m.addColumn(dayLogs, dayLogs.cervicalMucus);
+        await m.addColumn(dayLogs, dayLogs.pdgStrip);
+        await m.addColumn(dayLogs, dayLogs.progesteroneValue);
+        await m.addColumn(dayLogs, dayLogs.progesteroneUnit);
       }
       // v2 -> v3 has no step, and that is the point rather than an omission.
       // v3 widened the Symptom enum and changed no table: enums are stored by

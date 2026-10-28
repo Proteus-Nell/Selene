@@ -62,6 +62,12 @@ enum SettingKey {
   /// it back reveals them unchanged.
   flowSimplified('flow_simplified'),
 
+  /// Whether temperatures are shown and entered in degrees Fahrenheit.
+  ///
+  /// Display only, like [flowSimplified]: temperatures are stored in Celsius
+  /// whatever this says (ADR-0020), so switching it changes no recorded value.
+  temperatureFahrenheit('temperature_fahrenheit'),
+
   /// Whether the calendar names the cycle phase (AND-25).
   ///
   /// On by default. Phase names restate dates the user logged; they are not
@@ -327,6 +333,15 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   Stream<bool> watchFlowSimplified() =>
       watchBool(SettingKey.flowSimplified, orElse: false);
 
+  /// Whether temperatures are shown in degrees Fahrenheit.
+  ///
+  /// Defaults to **off**, Celsius.
+  /// Returns:
+  ///     `Stream<bool>`: Whether Fahrenheit is chosen. Re-emitted on every
+  ///     write.
+  Stream<bool> watchTemperatureFahrenheit() =>
+      watchBool(SettingKey.temperatureFahrenheit, orElse: false);
+
   /// Whether the calendar names the cycle phase (AND-25).
   ///
   /// Defaults to **on**. Phase names restate dates the user logged rather than
@@ -405,16 +420,18 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   /// Whether the user still needs telling that their old backups will not
   /// restore (AND-28, ADR-0011).
   ///
-  /// True only when the acknowledged format is older than the one this build
-  /// writes. A database created by this build acknowledges the current format
-  /// at onCreate, so a fresh install is never warned about backups it has
-  /// never taken.
+  /// True only when the acknowledged format is older than the oldest one this
+  /// build restores. Not merely older than the one it writes: a v3 backup
+  /// still restores in a build that writes v4 (ADR-0020), and warning about it
+  /// would tell people their backups are lost when they are not. A database
+  /// created by this build acknowledges the current format at onCreate, so a
+  /// fresh install is never warned about backups it has never taken.
   /// Returns:
   ///     `Future<bool>`: True while the acknowledged format is older than
-  ///     the one this build writes.
+  ///     the oldest one this build restores.
   Future<bool> needsReExportPrompt() async =>
       await readInt(SettingKey.exportFormatAcknowledged, orElse: 0) <
-      exportSchemaVersion;
+      oldestRestorableExportVersion;
 
   /// Watch [needsReExportPrompt], for the screen that shows it.
   ///
@@ -432,7 +449,7 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
         .map(
           (row) =>
               (int.tryParse(row?.settingValue ?? '') ?? 0) <
-              exportSchemaVersion,
+              oldestRestorableExportVersion,
         )
         .distinct();
   }

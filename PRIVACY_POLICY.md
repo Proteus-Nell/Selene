@@ -40,6 +40,7 @@ We do not collect the information you record in the app. It is stored in a datab
 - **Intimate activity data**, only if you choose to record it: whether you had sex on a given day, and whether it was protected.
 - **Health condition data**, such as PMOS (formerly PCOS), endometriosis, pregnancy or hormonal contraception, with the dates each one applied.
 - **Medication data**, such as the medicines you record under Conditions and medication.
+- **Fertility signs**, only if you choose to record them: your basal body temperature, cervical mucus, and progesterone test results. They are kept as a record and never used to predict anything.
 - **Preferences**, such as your reminder, appearance and app lock settings.
 
 ### Third-party sources
@@ -99,7 +100,7 @@ All of these are available in the app itself, because your information is there 
 - **Delete your information.** You can delete single entries, delete everything from Settings, or uninstall the app.
 - **Notifications.** Reminders are optional. The app asks for permission to send notifications once, and only after you have logged a cycle. Detail on the lock screen is off by default.
 - **App lock.** You can make the app ask for your fingerprint, face, PIN or pattern before showing anything. The lock hides the screen. The encryption described under Security is separate, and is on whether the lock is on or off.
-- **Optional information.** You decide what to record. Intimate activity, conditions and medicines can all be left out entirely.
+- **Optional information.** You decide what to record. Intimate activity, fertility signs, conditions and medicines can all be left out entirely.
 - **Do Not Track and Global Privacy Control.** Selene does not track you, so there is nothing for these signals to switch off.
 
 ## Other sites and services

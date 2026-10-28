@@ -249,6 +249,73 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logSymptomsTitle => 'Anything else today?';
 
   @override
+  String get logMeasurementsTitle => 'Temperature, mucus and progesterone';
+
+  @override
+  String get logMeasurementsHint =>
+      'Optional, and only a record. Selene does not use any of these to predict anything or to estimate ovulation.';
+
+  @override
+  String get logTemperatureLabel => 'Basal body temperature';
+
+  @override
+  String get logTemperatureCelsius => '°C';
+
+  @override
+  String get logTemperatureFahrenheit => '°F';
+
+  @override
+  String logTemperatureInvalid(String low, String high) {
+    return 'Enter a temperature between $low and $high.';
+  }
+
+  @override
+  String get logMucusTitle => 'Cervical mucus';
+
+  @override
+  String get logMucusDry => 'Dry';
+
+  @override
+  String get logMucusSticky => 'Sticky';
+
+  @override
+  String get logMucusCreamy => 'Creamy';
+
+  @override
+  String get logMucusWatery => 'Watery';
+
+  @override
+  String get logMucusEggWhite => 'Egg white';
+
+  @override
+  String get logProgesteroneTitle => 'Progesterone';
+
+  @override
+  String get logPdgStripLabel => 'Home PdG strip';
+
+  @override
+  String get logPdgNegative => 'Negative';
+
+  @override
+  String get logPdgPositive => 'Positive';
+
+  @override
+  String get logProgesteroneBloodLabel => 'Blood test result';
+
+  @override
+  String get logProgesteroneUnitLabel => 'Unit';
+
+  @override
+  String get logProgesteroneNgPerMl => 'ng/mL';
+
+  @override
+  String get logProgesteroneNmolPerL => 'nmol/L';
+
+  @override
+  String get logProgesteroneInvalid =>
+      'Enter the result as a number above zero.';
+
+  @override
   String get logIntercourseTitle => 'Intercourse';
 
   @override
@@ -1713,6 +1780,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsFlowSimplifiedSubtitle =>
       'Record bleeding as yes or no rather than an intensity. Anything already recorded is kept, and comes back if you turn this off.';
+
+  @override
+  String get settingsTemperatureFahrenheit => 'Show temperatures in °F';
+
+  @override
+  String get settingsTemperatureFahrenheitSubtitle =>
+      'Temperatures are kept in °C and shown in whichever you choose, so switching changes nothing recorded.';
 
   @override
   String get settingsCyclePhases => 'Name the cycle phase';

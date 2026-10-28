@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/data/transfer/export_v1.dart';
 
 void main() {
   late AppDatabase db;
@@ -154,12 +155,26 @@ void main() {
       expect(await db.settingsDao.needsReExportPrompt(), isFalse);
     });
 
-    test('a future format version would ask again', () async {
-      // The comparison is against the format this build writes, not a boolean.
-      // When export v3 lands with the same problem, this mechanism works
-      // unchanged rather than needing a second flag.
+    test('a format this build can no longer restore asks', () async {
+      // The comparison is against a version, not a boolean, so the next format
+      // that does strand old backups works unchanged rather than needing a
+      // second flag.
       await db.settingsDao.writeInt(SettingKey.exportFormatAcknowledged, 1);
       expect(await db.settingsDao.needsReExportPrompt(), isTrue);
+      await db.settingsDao.writeInt(SettingKey.exportFormatAcknowledged, 2);
+      expect(await db.settingsDao.needsReExportPrompt(), isTrue);
+    });
+
+    test('a format that still restores does not ask (ADR-0020)', () async {
+      // A v3 backup restores in this build, which writes v4. Telling its
+      // owner it was lost would be false, and the kind of false that makes
+      // someone delete a backup they still need.
+      await db.settingsDao.writeInt(
+        SettingKey.exportFormatAcknowledged,
+        oldestRestorableExportVersion,
+      );
+      expect(await db.settingsDao.needsReExportPrompt(), isFalse);
+      expect(oldestRestorableExportVersion, lessThan(exportSchemaVersion));
     });
   });
 

@@ -502,6 +502,132 @@ abstract class AppLocalizations {
   /// **'Anything else today?'**
   String get logSymptomsTitle;
 
+  /// No description provided for @logMeasurementsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature, mucus and progesterone'**
+  String get logMeasurementsTitle;
+
+  /// No description provided for @logMeasurementsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional, and only a record. Selene does not use any of these to predict anything or to estimate ovulation.'**
+  String get logMeasurementsHint;
+
+  /// No description provided for @logTemperatureLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Basal body temperature'**
+  String get logTemperatureLabel;
+
+  /// No description provided for @logTemperatureCelsius.
+  ///
+  /// In en, this message translates to:
+  /// **'°C'**
+  String get logTemperatureCelsius;
+
+  /// No description provided for @logTemperatureFahrenheit.
+  ///
+  /// In en, this message translates to:
+  /// **'°F'**
+  String get logTemperatureFahrenheit;
+
+  /// No description provided for @logTemperatureInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a temperature between {low} and {high}.'**
+  String logTemperatureInvalid(String low, String high);
+
+  /// No description provided for @logMucusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cervical mucus'**
+  String get logMucusTitle;
+
+  /// No description provided for @logMucusDry.
+  ///
+  /// In en, this message translates to:
+  /// **'Dry'**
+  String get logMucusDry;
+
+  /// No description provided for @logMucusSticky.
+  ///
+  /// In en, this message translates to:
+  /// **'Sticky'**
+  String get logMucusSticky;
+
+  /// No description provided for @logMucusCreamy.
+  ///
+  /// In en, this message translates to:
+  /// **'Creamy'**
+  String get logMucusCreamy;
+
+  /// No description provided for @logMucusWatery.
+  ///
+  /// In en, this message translates to:
+  /// **'Watery'**
+  String get logMucusWatery;
+
+  /// No description provided for @logMucusEggWhite.
+  ///
+  /// In en, this message translates to:
+  /// **'Egg white'**
+  String get logMucusEggWhite;
+
+  /// No description provided for @logProgesteroneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Progesterone'**
+  String get logProgesteroneTitle;
+
+  /// No description provided for @logPdgStripLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Home PdG strip'**
+  String get logPdgStripLabel;
+
+  /// No description provided for @logPdgNegative.
+  ///
+  /// In en, this message translates to:
+  /// **'Negative'**
+  String get logPdgNegative;
+
+  /// No description provided for @logPdgPositive.
+  ///
+  /// In en, this message translates to:
+  /// **'Positive'**
+  String get logPdgPositive;
+
+  /// No description provided for @logProgesteroneBloodLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Blood test result'**
+  String get logProgesteroneBloodLabel;
+
+  /// No description provided for @logProgesteroneUnitLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get logProgesteroneUnitLabel;
+
+  /// No description provided for @logProgesteroneNgPerMl.
+  ///
+  /// In en, this message translates to:
+  /// **'ng/mL'**
+  String get logProgesteroneNgPerMl;
+
+  /// No description provided for @logProgesteroneNmolPerL.
+  ///
+  /// In en, this message translates to:
+  /// **'nmol/L'**
+  String get logProgesteroneNmolPerL;
+
+  /// No description provided for @logProgesteroneInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the result as a number above zero.'**
+  String get logProgesteroneInvalid;
+
   /// No description provided for @logIntercourseTitle.
   ///
   /// In en, this message translates to:
@@ -2881,6 +3007,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Record bleeding as yes or no rather than an intensity. Anything already recorded is kept, and comes back if you turn this off.'**
   String get settingsFlowSimplifiedSubtitle;
+
+  /// No description provided for @settingsTemperatureFahrenheit.
+  ///
+  /// In en, this message translates to:
+  /// **'Show temperatures in °F'**
+  String get settingsTemperatureFahrenheit;
+
+  /// No description provided for @settingsTemperatureFahrenheitSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperatures are kept in °C and shown in whichever you choose, so switching changes nothing recorded.'**
+  String get settingsTemperatureFahrenheitSubtitle;
 
   /// No description provided for @settingsCyclePhases.
   ///

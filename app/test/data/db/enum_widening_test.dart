@@ -158,6 +158,50 @@ _pinned = <int, Map<String, List<String>>>{
     ],
     'Intercourse': <String>['protected', 'unprotected'],
   },
+  // v5 added the five record-only measurements (ADR-0020), and three new
+  // persisted enums with them: the same hazard as v4's, refused the same way.
+  5: <String, List<String>>{
+    'FlowIntensity': <String>['none', 'spotting', 'light', 'medium', 'heavy'],
+    'Symptom': <String>[
+      'cramps',
+      'headache',
+      'bloating',
+      'nausea',
+      'breastTenderness',
+      'backPain',
+      'acne',
+      'digestiveUpset',
+      'sleep',
+      'brainFog',
+      'poorConcentration',
+      'mood',
+      'energy',
+      'irritability',
+      'anxiety',
+      'lowMood',
+    ],
+    'SymptomSeverity': <String>['none', 'mild', 'moderate', 'severe'],
+    'Condition': <String>[
+      'hormonalContraceptionCombined',
+      'hormonalContraceptionProgestogen',
+      'hormonalIud',
+      'contraceptiveImplant',
+      'copperIud',
+      'pregnancy',
+      'postpartum',
+      'breastfeeding',
+      'pcos',
+      'endometriosis',
+      'thyroidDisorder',
+      'perimenopause',
+      'uterineFibroids',
+      'other',
+    ],
+    'Intercourse': <String>['protected', 'unprotected'],
+    'CervicalMucus': <String>['dry', 'sticky', 'creamy', 'watery', 'eggWhite'],
+    'PdgStripResult': <String>['negative', 'positive'],
+    'ProgesteroneUnit': <String>['ngPerMl', 'nmolPerL'],
+  },
 };
 
 /// What the code actually declares, right now.
@@ -167,6 +211,9 @@ Map<String, List<String>> _live() => <String, List<String>>{
   'SymptomSeverity': SymptomSeverity.values.map((v) => v.name).toList(),
   'Condition': Condition.values.map((v) => v.name).toList(),
   'Intercourse': Intercourse.values.map((v) => v.name).toList(),
+  'CervicalMucus': CervicalMucus.values.map((v) => v.name).toList(),
+  'PdgStripResult': PdgStripResult.values.map((v) => v.name).toList(),
+  'ProgesteroneUnit': ProgesteroneUnit.values.map((v) => v.name).toList(),
 };
 
 /// The enums `tables.dart` actually persists, read out of the source.

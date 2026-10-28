@@ -63,6 +63,73 @@ void main() {
     });
   });
 
+  group('the measurements (ADR-0020)', () {
+    /// The first day log of a valid document, ready to be given a value.
+    Future<(Map<String, Object?>, Map<String, Object?>)> withDay() async {
+      final document = await validDocument();
+      final day =
+          (document['day_logs']! as List<Object?>).first!
+              as Map<String, Object?>;
+      return (document, day);
+    }
+
+    test('survive an export and an import', () async {
+      final measured = sampleLog.copyWith(
+        basalTemperatureCelsius: 36.48,
+        cervicalMucus: CervicalMucus.watery,
+        pdgStrip: PdgStripResult.negative,
+        progesteroneValue: 0.6,
+        progesteroneUnit: ProgesteroneUnit.ngPerMl,
+      );
+      await db.dayLogDao.save(measured);
+      final text = ExportV1.encode(
+        await ExportV1.build(database: db, clock: clock),
+      );
+      expect(ImportV1.inspect(text).valueOrNull!.dayLogs.single, measured);
+    });
+
+    test('refuse a temperature no one could have taken', () async {
+      final (document, day) = await withDay();
+      day['basal_temperature_celsius'] = 3662;
+      final refusal = await refusalFor(document);
+      expect(refusal.rejection, ImportRejection.malformedField);
+      expect(refusal.message, contains('temperature'));
+    });
+
+    test('refuse a progesterone value without its unit', () async {
+      final (document, day) = await withDay();
+      day['progesterone_value'] = 12.0;
+      final refusal = await refusalFor(document);
+      expect(refusal.message, contains('without its unit'));
+    });
+
+    test('refuse a unit without its value', () async {
+      final (document, day) = await withDay();
+      day['progesterone_unit'] = 'ngPerMl';
+      expect(
+        (await refusalFor(document)).message,
+        contains('without its unit'),
+      );
+    });
+
+    test('name a mucus value this build does not know', () async {
+      final (document, day) = await withDay();
+      day['cervical_mucus'] = 'spinnbarkeit';
+      final refusal = await refusalFor(document);
+      expect(refusal.rejection, ImportRejection.unknownValue);
+      expect(refusal.message, contains('spinnbarkeit'));
+    });
+
+    test('refuse a value that is not a number', () async {
+      final (document, day) = await withDay();
+      day['basal_temperature_celsius'] = '36.5';
+      expect(
+        (await refusalFor(document)).rejection,
+        ImportRejection.malformedField,
+      );
+    });
+  });
+
   group('the shape fingerprint', () {
     test('describes the fields actually written', () async {
       // Rebuilt from the real serialised keys, so changing the envelope, the
