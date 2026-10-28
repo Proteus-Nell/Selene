@@ -300,6 +300,10 @@ abstract final class ExportV1 {
   ///     clock (Clock): Stamps the envelope with the export time.
   ///     logger (RingLogger?, optional): Records counts, never content.
   ///         Defaults to null.
+  ///     seal (`Future<String> Function(String)?`, optional): Turns the
+  ///         encoded export into what is written, when the user chose a
+  ///         passphrase (ADR-0019). Defaults to null, which writes the export
+  ///         as it is.
   ///
   /// Returns:
   ///     `Future<ExportEnvelope>`: The envelope that was written, so the
@@ -309,14 +313,20 @@ abstract final class ExportV1 {
     required AppDatabase database,
     required Clock clock,
     RingLogger? logger,
+    Future<String> Function(String export)? seal,
   }) async {
     final envelope = await build(database: database, clock: clock);
-    await destination.writeAsString(encode(envelope), flush: true);
+    final encoded = encode(envelope);
+    await destination.writeAsString(
+      seal == null ? encoded : await seal(encoded),
+      flush: true,
+    );
     logger?.info(
       LogEvent.exportWritten,
       fields: <String, LogField>{
         'day_logs': LogField.count(envelope.dayLogs.length),
         'settings': LogField.count(envelope.settings.length),
+        'protected': LogField.flag(seal != null),
       },
     );
     return envelope;

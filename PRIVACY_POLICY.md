@@ -87,7 +87,7 @@ A backup file you export stays wherever you saved it until you delete it.
 
 We do not sell, share or disclose your personal information, because we never have it. Information leaves your phone only when you choose to send it:
 
-- **Exports.** You can export a backup file. It is a plain, readable file saved wherever you choose, with no protection of its own. Once it is saved, it is under your control and the control of wherever you keep or send it.
+- **Exports.** You can export a backup file, saved wherever you choose. It is a readable file unless you protect it with a passphrase when you export it, and then it opens only with that passphrase. Once it is saved, it is under your control and the control of wherever you keep or send it.
 - **Searching online.** Some screens offer to search the web for you: "Look it up online" for two medicines, for example. Before anything happens, the app tells you exactly which words will be searched. If you confirm, it opens your web browser at a [DuckDuckGo](https://duckduckgo.com/privacy) search. That request is made by your browser, not by the app, and is covered by the privacy policies of your browser and of DuckDuckGo. Your browser may keep the search in its history.
 
 ## Your choices
@@ -95,7 +95,7 @@ We do not sell, share or disclose your personal information, because we never ha
 All of these are available in the app itself, because your information is there and nowhere else.
 
 - **Access or update your information.** Everything you record can be seen and changed in the app.
-- **Export your information.** You can export everything you recorded as a readable file, from Settings.
+- **Export your information.** You can export everything you recorded as a readable file, from Settings, and protect it with a passphrase if you choose.
 - **Delete your information.** You can delete single entries, delete everything from Settings, or uninstall the app.
 - **Notifications.** Reminders are optional. The app asks for permission to send notifications once, and only after you have logged a cycle. Detail on the lock screen is off by default.
 - **App lock.** You can make the app ask for your fingerprint, face, PIN or pattern before showing anything. The lock hides the screen. The encryption described under Security is separate, and is on whether the lock is on or off.
@@ -114,7 +114,7 @@ The app can open web searches in your browser, as described above, and this repo
 - **Encryption does not protect an unlocked phone.** Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.
 - Scheduled reminders are kept by Android outside the encrypted file until they are due, and their wording can name the predicted dates.
 - Android's cloud backup and device-to-device transfer are switched off for the app, so your records are never copied to a Google account or to a new phone.
-- An exported backup is a plain, readable file wherever you save it.
+- An exported backup is a readable file wherever you save it, unless you protect it with a passphrase when you export it. A protected backup opens only with that passphrase, and nobody can recover a forgotten one.
 
 [`docs/PRIVACY.md`](docs/PRIVACY.md) describes these protections and their limits in more detail.
 

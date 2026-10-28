@@ -41,7 +41,7 @@ The app keeps a short log of what it did, such as "a prediction was computed" wi
 
 ### Exports are yours to look after
 
-An exported backup is a plain, readable file wherever you save it, with no protection of its own. Once it is saved, it is under your control and the control of wherever you keep or send it.
+An exported backup is a readable file wherever you save it, unless you protect it with a passphrase when you export it. A protected backup opens only with that passphrase, and nobody can recover a forgotten one. Once a backup is saved, it is under your control and the control of wherever you keep or send it.
 
 ---
 

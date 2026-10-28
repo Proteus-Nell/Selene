@@ -13,7 +13,7 @@
 - **Predicts** the next period as a date range with a confidence level, never as a single date. The prediction starts from population averages and adjusts to your own cycles as you log them.
 - **Explains** what you logged: cycle phases on the calendar, insights from your own history, and conditions such as PMOS (formerly PCOS) or hormonal contraception recorded alongside it.
 - **Looks up medicines** from US drug labelling, searched or browsed A to Z. It compares two or more medicines by what their labels say about each other, and flags pairs among the medicines you record.
-- **Keeps it private:** no account, no sync, no analytics. An optional app lock asks for your fingerprint or PIN before showing anything.
+- **Keeps it private:** no account, no sync, no analytics. The database is encrypted on the phone, a backup can be protected with a passphrase, and an optional app lock asks for your fingerprint or PIN before showing anything.
 
 Selene is not a contraceptive and does not give medical advice. It never tells you when you cannot get pregnant, and its medicine pages show US labelling, which can differ from the packet in front of you.
 

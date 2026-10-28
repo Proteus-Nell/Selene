@@ -56,6 +56,7 @@ dependencies:
   meta: ^1.19.0
   path: ^1.9.1
   path_provider: ^2.1.6
+  pointycastle: ^4.0.0
   sqlite3: ^3.5.1
   timezone: ^0.11.1
   url_launcher: ^6.3.2

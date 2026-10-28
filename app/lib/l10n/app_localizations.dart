@@ -1260,7 +1260,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsExportSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Writes a file to a location you choose. Nothing else backs this app up.'**
+  /// **'Writes a file to a location you choose, protected by a passphrase if you like. Nothing else backs this app up.'**
   String get settingsExportSubtitle;
 
   /// No description provided for @settingsExportDone.
@@ -1274,6 +1274,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The backup could not be written.'**
   String get settingsExportFailed;
+
+  /// No description provided for @settingsExportDoneProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'Protected backup written: {count} days.'**
+  String settingsExportDoneProtected(int count);
+
+  /// No description provided for @settingsExportProtectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect this backup with a passphrase?'**
+  String get settingsExportProtectTitle;
+
+  /// No description provided for @settingsExportProtectBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Without one, the backup is a readable file, and anyone who gets hold of it can read what you recorded. With one, it opens only with the passphrase. Nobody can recover a forgotten passphrase, not even you, so keep it somewhere safe.'**
+  String get settingsExportProtectBody;
+
+  /// No description provided for @settingsExportPassphraseLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Passphrase'**
+  String get settingsExportPassphraseLabel;
+
+  /// No description provided for @settingsExportPassphraseConfirmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'The same passphrase again'**
+  String get settingsExportPassphraseConfirmLabel;
+
+  /// No description provided for @settingsExportPassphraseTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at least {count} characters. A few unrelated words are easier to remember than a short password.'**
+  String settingsExportPassphraseTooShort(int count);
+
+  /// No description provided for @settingsExportPassphraseMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The two passphrases are not the same.'**
+  String get settingsExportPassphraseMismatch;
+
+  /// No description provided for @settingsExportWithoutPassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Save without one'**
+  String get settingsExportWithoutPassphrase;
+
+  /// No description provided for @settingsExportWithPassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect and save'**
+  String get settingsExportWithPassphrase;
+
+  /// No description provided for @settingsPassphraseShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Show passphrase'**
+  String get settingsPassphraseShow;
+
+  /// No description provided for @settingsPassphraseHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide passphrase'**
+  String get settingsPassphraseHide;
+
+  /// No description provided for @settingsImportPassphraseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup is protected'**
+  String get settingsImportPassphraseTitle;
+
+  /// No description provided for @settingsImportPassphraseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the passphrase it was saved with.'**
+  String get settingsImportPassphraseBody;
+
+  /// No description provided for @settingsImportPassphraseOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get settingsImportPassphraseOpen;
+
+  /// No description provided for @settingsImportPassphraseWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'That passphrase does not open this backup.'**
+  String get settingsImportPassphraseWrong;
+
+  /// No description provided for @settingsImportProtectedNewer.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup was protected by a newer version of Selene. Update the app to open it.'**
+  String get settingsImportProtectedNewer;
+
+  /// No description provided for @settingsImportProtectedDamaged.
+  ///
+  /// In en, this message translates to:
+  /// **'This protected backup is damaged and cannot be opened.'**
+  String get settingsImportProtectedDamaged;
 
   /// No description provided for @settingsImport.
   ///
@@ -2963,7 +3065,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyExportBody.
   ///
   /// In en, this message translates to:
-  /// **'An exported backup is a plain, readable file wherever you save it, with no protection of its own. Once it is saved, it is under your control and the control of wherever you keep or send it.'**
+  /// **'An exported backup is a readable file wherever you save it, unless you protect it with a passphrase when you export it. A protected backup opens only with that passphrase, and nobody can recover a forgotten one. Once a backup is saved, it is under your control and the control of wherever you keep or send it.'**
   String get privacyExportBody;
 
   /// No description provided for @bootstrapRecoveredTitle.

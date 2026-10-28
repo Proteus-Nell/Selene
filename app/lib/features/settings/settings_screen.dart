@@ -24,14 +24,17 @@ import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
+import 'package:period_tracker/core/result.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/data/transfer/export_v1.dart';
 import 'package:period_tracker/data/transfer/import_v1.dart';
+import 'package:period_tracker/data/transfer/protected_backup.dart';
 import 'package:period_tracker/domain/predict/priors_bundled.dart';
 import 'package:period_tracker/features/appearance/appearance_screen.dart';
 import 'package:period_tracker/features/common/chip_motion.dart';
 import 'package:period_tracker/features/common/snack.dart';
+import 'package:period_tracker/features/settings/backup_dialogs.dart';
 import 'package:period_tracker/features/settings/delete_everything_dialog.dart';
 import 'package:period_tracker/features/settings/log_viewer.dart';
 import 'package:period_tracker/features/settings/privacy_section.dart';
@@ -74,17 +77,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Write the whole database to a file the user chooses.
   ///
   /// Steps:
-  ///     1. Ask the user where it goes. There is no default and no fallback.
-  ///     2. Write the envelope there.
-  ///     3. Acknowledge the export format, which clears the re-export banner.
+  ///     1. Ask whether to protect it with a passphrase (ADR-0019).
+  ///     2. Ask the user where it goes. There is no default and no fallback.
+  ///     3. Write the envelope there, sealed if a passphrase was chosen.
+  ///     4. Acknowledge the export format, which clears the re-export banner.
   ///
   /// Returns:
   ///     `Future<void>`: Completes once the file is written and reported, or
-  ///     as soon as the user dismisses the directory picker. A failed write
-  ///     reports and does not acknowledge, so the banner stays up.
+  ///     as soon as the user cancels either question. A failed write reports
+  ///     and does not acknowledge, so the banner stays up.
   Future<void> _export() async {
     final l10n = AppLocalizations.of(context);
     final clock = ref.read(clockProvider);
+    final choice = await showProtectBackupDialog(context);
+    if (choice == null || !mounted) return;
+    final passphrase = choice.passphrase;
     // The user chooses where it goes. There is no default location and no
     // fallback to shared storage, so an export cannot happen by accident or
     // land somewhere the user did not pick (docs/PLAN.md 6.5).
@@ -93,20 +100,78 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     setState(() => _busy = true);
     try {
+      final sealer = ref.read(backupSealerProvider);
       final envelope = await ExportV1.writeTo(
-        File(p.join(directory, ExportV1.suggestedFileName(clock))),
+        File(
+          p.join(
+            directory,
+            passphrase == null
+                ? ExportV1.suggestedFileName(clock)
+                : ProtectedBackup.suggestedFileName(clock),
+          ),
+        ),
         database: ref.read(appDatabaseProvider),
         clock: clock,
         logger: ref.read(loggerProvider),
+        seal: passphrase == null
+            ? null
+            : (export) => sealer.seal(export, passphrase),
       );
       // A completed export is what clears the re-export banner. Navigating to
       // this screen does not, and neither does a failed write.
       await ref.read(appDatabaseProvider).settingsDao.acknowledgeExportFormat();
-      _report(l10n.settingsExportDone(envelope.dayLogs.length));
+      _report(
+        passphrase == null
+            ? l10n.settingsExportDone(envelope.dayLogs.length)
+            : l10n.settingsExportDoneProtected(envelope.dayLogs.length),
+      );
     } on FileSystemException {
       _report(l10n.settingsExportFailed);
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Open a protected backup with the passphrase it was sealed with.
+  ///
+  /// Asks again after a wrong passphrase, saying so, until the right one is
+  /// given or the user cancels.
+  ///
+  /// Args:
+  ///     text (String): The protected backup's contents.
+  ///
+  /// Returns:
+  ///     `Future<String?>`: The ordinary export inside, or null when the user
+  ///     cancelled or the file cannot be opened, which has been reported.
+  Future<String?> _openProtected(String text) async {
+    final l10n = AppLocalizations.of(context);
+    final sealer = ref.read(backupSealerProvider);
+    String? error;
+    while (true) {
+      if (!mounted) return null;
+      final passphrase = await showOpenBackupDialog(context, error: error);
+      if (passphrase == null || !mounted) return null;
+      setState(() => _busy = true);
+      final opened = await sealer.open(text, passphrase);
+      if (mounted) setState(() => _busy = false);
+      switch (opened) {
+        case Ok<String, ProtectedBackupRefusal>(:final value):
+          return value;
+        case Err<String, ProtectedBackupRefusal>(
+          error: ProtectedBackupRefusal.wrongPassphrase,
+        ):
+          error = l10n.settingsImportPassphraseWrong;
+        case Err<String, ProtectedBackupRefusal>(
+          error: ProtectedBackupRefusal.newerVersion,
+        ):
+          _report(l10n.settingsImportProtectedNewer);
+          return null;
+        case Err<String, ProtectedBackupRefusal>(
+          error: ProtectedBackupRefusal.damaged,
+        ):
+          _report(l10n.settingsImportProtectedDamaged);
+          return null;
+      }
     }
   }
 
@@ -134,8 +199,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (file == null || !mounted) return;
 
     // Inspected before anything is replaced, so the confirmation can say what
-    // is actually in the file rather than asking the user to trust it.
-    final text = await file.readAsString();
+    // is actually in the file rather than asking the user to trust it. A
+    // protected backup is opened first, and what is inside goes through the
+    // same inspection as any other export.
+    var text = await file.readAsString();
+    if (!mounted) return;
+    if (ProtectedBackup.isProtected(text)) {
+      final opened = await _openProtected(text);
+      if (opened == null || !mounted) return;
+      text = opened;
+    }
     final inspected = ImportV1.inspect(text);
     if (!mounted) return;
     if (inspected.isErr) {

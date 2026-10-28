@@ -30,6 +30,7 @@ import 'package:period_tracker/data/repositories/condition_repository.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
 import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 import 'package:period_tracker/data/repositories/prediction_repository.dart';
+import 'package:period_tracker/data/transfer/protected_backup.dart';
 import 'package:period_tracker/domain/cycles/condition_overlap.dart';
 import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/domain/models/cycle_record.dart';
@@ -66,6 +67,14 @@ final Provider<Clock> clockProvider = Provider<Clock>(
 /// The app's structured logger.
 final Provider<RingLogger> loggerProvider = Provider<RingLogger>(
   (ref) => RingLogger(clock: ref.watch(clockProvider)),
+);
+
+/// Seals and opens passphrase-protected backups (ADR-0019).
+///
+/// A provider so a widget test can swap in a sealer with a low iteration count
+/// that runs on the test's own isolate, where it can be waited for.
+final Provider<BackupSealer> backupSealerProvider = Provider<BackupSealer>(
+  (ref) => const BackupSealer(),
 );
 
 /// The population priors the prediction model runs with.

@@ -27,6 +27,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0016](#adr-0016-a-late-period-moves-the-range-forward-and-lost-track-counts-from-the-last-period) | A late period moves the range forward, and lost track counts from the last period | Accepted | 2026-10-27 |
 | [0017](#adr-0017-releases-are-built-from-a-tag-with-the-key-in-repository-secrets-and-their-version-code-comes-from-the-name) | Releases are built from a tag, with the key in repository secrets, and their version code comes from the name | Accepted | 2026-10-27 |
 | [0018](#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds) | The database is encrypted, with a key the Android Keystore holds | Accepted | 2026-10-28 |
+| [0019](#adr-0019-a-backup-can-be-protected-with-a-passphrase-and-an-unprotected-one-still-restores) | A backup can be protected with a passphrase, and an unprotected one still restores | Accepted | 2026-10-28 |
 
 ---
 
@@ -1005,6 +1006,75 @@ plugins, not the app's own channels.
   data outlives the app.
 - A file quarantined after encryption is encrypted too, and opens only with
   the key this install holds.
+
+---
+
+## ADR-0019: A backup can be protected with a passphrase, and an unprotected one still restores
+
+**Status:** Accepted, 2026-10-28. The other half of the owner's choice in [ADR-0018](#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds).
+**Deciders:** Project owner
+
+### Context
+
+A backup is the one copy of this data that leaves the app, and it goes
+wherever the person puts it: a downloads folder, a cloud drive, an email to
+themselves. The database key cannot protect it. That key never leaves the
+phone and is deleted with the app, so a backup sealed with it could not be read
+after a reinstall or on a new phone, which are the two times a backup is
+needed. And the backups people already hold, unprotected, have to keep
+restoring.
+
+### Decision
+
+1. **Export asks every time** whether to protect the backup, before the folder
+   is chosen. "Save without one" is a button of its own, beside "Protect and
+   save", not what happens on the way out.
+2. **A protected backup is JSON**, with the extension the import already
+   accepts:
+
+   ```json
+   {"format": "selene-protected-backup", "version": 1,
+    "kdf": {"name": "pbkdf2-hmac-sha256", "iterations": 600000, "salt": "<16 bytes>"},
+    "cipher": {"name": "aes-256-gcm", "nonce": "<12 bytes>"},
+    "ciphertext": "<the export, then the 16-byte tag>"}
+   ```
+
+   Binary fields are base64, and the format name and version are bound to the
+   ciphertext as associated data. Inside is the ordinary export, byte for
+   byte, so opening one hands the import the same text, and every check the
+   import makes still runs.
+3. **PBKDF2-HMAC-SHA256 at 600,000 iterations**, OWASP's 2023 figure. Each file
+   records its own count, and a file asking for more than 5,000,000 is refused
+   before any work is done. The derivation is written in the app, hashing
+   HMAC's two padded key blocks once rather than on every iteration, which
+   takes about a third of pointycastle's time. It is held to the RFC 7914 test
+   vectors and to pointycastle's own PBKDF2. AES-256-GCM is pointycastle's. Both
+   run on another isolate, so the screen stays responsive.
+4. **A passphrase is at least 8 characters**, typed twice. A wrong one is
+   refused and asked for again. A forgotten one cannot be recovered, and the
+   dialog says so before anything is saved.
+5. **An unprotected export is unchanged** and restores as before. The import
+   tells the two apart by the `format` field.
+
+### Runner-up and why rejected
+
+**Argon2id**, which is memory-hard and resists guessing on graphics cards
+better. In pure Dart it is slow on a phone at parameters worth having, and the
+alternative is a native plugin, for a file made a few times a year.
+
+**Sealing with the database key.** Unreadable after a reinstall, as above.
+
+**A password-protected zip.** The common zip encryption is broken, the AES
+variant needs another library, and the import would need to unpack before it
+could read anything.
+
+### Consequences
+
+- A forgotten passphrase loses that backup, and nobody can help.
+- The format above is complete, so any PBKDF2 and AES-GCM implementation can
+  open a backup without this app.
+- Sealing and opening each take a second or two on a phone, behind a progress
+  bar.
 
 ---
 

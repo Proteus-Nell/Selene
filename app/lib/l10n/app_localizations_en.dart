@@ -709,7 +709,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsExportSubtitle =>
-      'Writes a file to a location you choose. Nothing else backs this app up.';
+      'Writes a file to a location you choose, protected by a passphrase if you like. Nothing else backs this app up.';
 
   @override
   String settingsExportDone(int count) {
@@ -718,6 +718,69 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsExportFailed => 'The backup could not be written.';
+
+  @override
+  String settingsExportDoneProtected(int count) {
+    return 'Protected backup written: $count days.';
+  }
+
+  @override
+  String get settingsExportProtectTitle =>
+      'Protect this backup with a passphrase?';
+
+  @override
+  String get settingsExportProtectBody =>
+      'Without one, the backup is a readable file, and anyone who gets hold of it can read what you recorded. With one, it opens only with the passphrase. Nobody can recover a forgotten passphrase, not even you, so keep it somewhere safe.';
+
+  @override
+  String get settingsExportPassphraseLabel => 'Passphrase';
+
+  @override
+  String get settingsExportPassphraseConfirmLabel =>
+      'The same passphrase again';
+
+  @override
+  String settingsExportPassphraseTooShort(int count) {
+    return 'Use at least $count characters. A few unrelated words are easier to remember than a short password.';
+  }
+
+  @override
+  String get settingsExportPassphraseMismatch =>
+      'The two passphrases are not the same.';
+
+  @override
+  String get settingsExportWithoutPassphrase => 'Save without one';
+
+  @override
+  String get settingsExportWithPassphrase => 'Protect and save';
+
+  @override
+  String get settingsPassphraseShow => 'Show passphrase';
+
+  @override
+  String get settingsPassphraseHide => 'Hide passphrase';
+
+  @override
+  String get settingsImportPassphraseTitle => 'This backup is protected';
+
+  @override
+  String get settingsImportPassphraseBody =>
+      'Enter the passphrase it was saved with.';
+
+  @override
+  String get settingsImportPassphraseOpen => 'Open';
+
+  @override
+  String get settingsImportPassphraseWrong =>
+      'That passphrase does not open this backup.';
+
+  @override
+  String get settingsImportProtectedNewer =>
+      'This backup was protected by a newer version of Selene. Update the app to open it.';
+
+  @override
+  String get settingsImportProtectedDamaged =>
+      'This protected backup is damaged and cannot be opened.';
 
   @override
   String get settingsImport => 'Restore from a backup';
@@ -1758,7 +1821,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyExportBody =>
-      'An exported backup is a plain, readable file wherever you save it, with no protection of its own. Once it is saved, it is under your control and the control of wherever you keep or send it.';
+      'An exported backup is a readable file wherever you save it, unless you protect it with a passphrase when you export it. A protected backup opens only with that passphrase, and nobody can recover a forgotten one. Once a backup is saved, it is under your control and the control of wherever you keep or send it.';
 
   @override
   String get bootstrapRecoveredTitle => 'Your data could not be read';
