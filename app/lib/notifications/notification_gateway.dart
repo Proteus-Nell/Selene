@@ -203,6 +203,27 @@ abstract interface class NotificationGateway {
   ///     `Future<bool>`: Whether it was granted.
   Future<bool> requestPermission();
 
+  /// Whether the platform will let a reminder be scheduled for an exact time.
+  ///
+  /// False means a medicine reminder can only be asked for roughly, and so
+  /// can arrive minutes or longer after the time it was set for (ADR-0026).
+  ///
+  /// Returns:
+  ///     `Future<bool>`: Whether exact alarms are allowed right now. True on
+  ///     Android before 12, which needs no permission for them.
+  Future<bool> canScheduleExact();
+
+  /// Ask for permission to schedule a reminder for an exact time.
+  ///
+  /// Unlike [requestPermission] this is not a dialog: Android 14 and later
+  /// answer it by opening their own "Alarms and reminders" screen, and the
+  /// answer only arrives once the user comes back from it.
+  ///
+  /// Returns:
+  ///     `Future<bool>`: Whether exact alarms are allowed once they have
+  ///     returned.
+  Future<bool> requestExactPermission();
+
   /// Remove everything scheduled, and any notice about the cycle still
   /// showing.
   ///
@@ -248,6 +269,14 @@ abstract interface class NotificationGateway {
 /// the most common logging event to a single tap, from the lock screen,
 /// without launching the app.
 const String logPeriodActionId = 'log_period_started';
+
+/// What the plugin's Android side calls a refused exact alarm.
+///
+/// `FlutterLocalNotificationsPlugin.java` throws on an exact schedule it is
+/// not allowed to make, and this is the code it arrives as. Spelled out here
+/// because the permission can be revoked while the app is running, with no
+/// callback to say so (see [LocalNotificationGateway.scheduleDaily]).
+const String _exactAlarmsRefused = 'exact_alarms_not_permitted';
 
 /// The channel `MainActivity` answers with the phone's time zone.
 ///
@@ -352,6 +381,33 @@ final class LocalNotificationGateway implements NotificationGateway {
   }
 
   @override
+  Future<bool> canScheduleExact() async {
+    final android = plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    // False when the platform cannot be asked at all, which schedules
+    // inexactly: the reminder still arrives, a little late.
+    return await android?.canScheduleExactNotifications() ?? false;
+  }
+
+  @override
+  Future<bool> requestExactPermission() async {
+    final android = plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    try {
+      return await android?.requestExactAlarmsPermission() ?? false;
+    } on PlatformException {
+      // The plugin refuses a second request while one is in progress, and
+      // some devices have no screen to send the user to. Either way the
+      // answer is the one that was already true: not allowed.
+      return false;
+    }
+  }
+
+  @override
   Future<void> cancelAll() async {
     // Shown or still to come: one still showing once the prediction has moved
     // is about a window that is no longer the one predicted.
@@ -408,10 +464,11 @@ final class LocalNotificationGateway implements NotificationGateway {
         copy: copy,
         detailed: detailed,
       ),
-      // Inexact, deliberately. Exact alarms need SCHEDULE_EXACT_ALARM, which
-      // Android 14 restricts and which the user would have to grant in system
-      // settings. A period reminder does not need to land on a specific minute,
-      // so asking for that permission would be spending user trust on nothing.
+      // Inexact, deliberately, even where the exact-alarm permission is held
+      // (ADR-0026). These fire at [fireHour], an hour this app chose rather
+      // than one the user named, and nothing about a predicted range turns on
+      // the minute it is announced. Only the medicine reminders are scheduled
+      // exactly, which is where a time the user set themselves is the point.
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );
   }
@@ -481,34 +538,53 @@ final class LocalNotificationGateway implements NotificationGateway {
     required NotificationCopy copy,
     required bool detailed,
   }) async {
-    await plugin.zonedSchedule(
+    final when = dailyTimeFor(
+      reminder.time,
+      today: clock.today(),
+      zone: zoneNamed(await timeZoneName()),
+    );
+    final details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        NotificationChannelId.medicines.id,
+        copy.channelMedicinesName,
+        channelDescription: copy.channelMedicinesDescription,
+        // So that a phone set to let reminders through Do Not Disturb lets
+        // this one through.
+        category: AndroidNotificationCategory.reminder,
+        visibility: detailed
+            ? NotificationVisibility.private
+            : NotificationVisibility.secret,
+      ),
+    );
+
+    // A dose is timed by the clock, so this one is scheduled exactly when the
+    // user has allowed it (ADR-0026) and roughly when they have not. The
+    // cycle's notices stay inexact either way: they fire at an hour this app
+    // chose, where a few minutes mean nothing.
+    Future<void> at(AndroidScheduleMode mode) => plugin.zonedSchedule(
       id: reminder.id,
       title: copy.medicineTitleFor(reminder, detailed: detailed),
       body: copy.medicineBodyFor(reminder),
-      scheduledDate: dailyTimeFor(
-        reminder.time,
-        today: clock.today(),
-        zone: zoneNamed(await timeZoneName()),
-      ),
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          NotificationChannelId.medicines.id,
-          copy.channelMedicinesName,
-          channelDescription: copy.channelMedicinesDescription,
-          // So that a phone set to let reminders through Do Not Disturb lets
-          // this one through.
-          category: AndroidNotificationCategory.reminder,
-          visibility: detailed
-              ? NotificationVisibility.private
-              : NotificationVisibility.secret,
-        ),
-      ),
-      // Inexact, as the others are, so it can arrive a few minutes after its
-      // time. The exact kind needs a permission the user grants in system
-      // settings (see [schedule]).
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      scheduledDate: when,
+      notificationDetails: details,
+      androidScheduleMode: mode,
       matchDateTimeComponents: DateTimeComponents.time,
     );
+
+    if (!await canScheduleExact()) {
+      await at(AndroidScheduleMode.inexactAllowWhileIdle);
+      return;
+    }
+    try {
+      await at(AndroidScheduleMode.exactAllowWhileIdle);
+    } on PlatformException catch (error) {
+      // The permission can be taken away between the question and the answer,
+      // and Android tells the app nothing when it is. Without this the
+      // exception would escape the reschedule loop and take every reminder
+      // after this one with it, which is a worse outcome than a late one.
+      if (error.code != _exactAlarmsRefused) rethrow;
+      await at(AndroidScheduleMode.inexactAllowWhileIdle);
+    }
   }
 
   @override

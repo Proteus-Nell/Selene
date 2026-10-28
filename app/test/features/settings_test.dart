@@ -8,13 +8,69 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/data/transfer/export_v1.dart';
 import 'package:period_tracker/features/settings/delete_everything_dialog.dart';
 import 'package:period_tracker/features/settings/log_viewer.dart';
 import 'package:period_tracker/features/settings/privacy_section.dart';
 import 'package:period_tracker/features/settings/settings_screen.dart';
+import 'package:period_tracker/notifications/notification_gateway.dart';
+import 'package:period_tracker/notifications/notification_plan.dart';
 import 'package:period_tracker/notifications/scheduler.dart';
 
 import 'harness.dart';
+
+/// A gateway that answers the exact-alarm question as told, and counts it.
+///
+/// Schedules nothing: the row under test only asks what the platform allows
+/// and asks it to allow more.
+class _ExactGateway implements NotificationGateway {
+  _ExactGateway({this.allowed = false});
+
+  /// Whether exact alarms are allowed. Set by a granted request, as the real
+  /// one is, so the row shows what actually happened.
+  bool allowed;
+
+  /// What the next request answers.
+  bool grant = false;
+
+  /// How many times the platform was asked.
+  int requests = 0;
+
+  @override
+  Future<bool> canScheduleExact() async => allowed;
+
+  @override
+  Future<bool> requestExactPermission() async {
+    requests++;
+    return allowed = grant;
+  }
+
+  @override
+  Future<void> initialize(NotificationCopy copy) async {}
+
+  @override
+  Future<bool> requestPermission() async => false;
+
+  @override
+  Future<void> cancelAll() async {}
+
+  @override
+  Future<void> schedule(
+    PlannedNotification notification, {
+    required NotificationCopy copy,
+    required bool detailed,
+  }) async {}
+
+  @override
+  Future<void> scheduleDaily(
+    DailyReminder reminder, {
+    required NotificationCopy copy,
+    required bool detailed,
+  }) async {}
+
+  @override
+  Future<List<int>> pendingIds() async => const <int>[];
+}
 
 void main() {
   late AppDatabase db;
@@ -26,9 +82,20 @@ void main() {
   });
   tearDown(() => db.close());
 
-  Future<void> pumpSettings(WidgetTester tester) async {
+  Future<void> pumpSettings(
+    WidgetTester tester, {
+    NotificationGateway? gateway,
+  }) async {
     await tester.pumpWidget(
-      harness(const SettingsScreen(), database: db, logger: logger),
+      harness(
+        const SettingsScreen(),
+        database: db,
+        logger: logger,
+        overrides: <Override>[
+          if (gateway != null)
+            notificationGatewayProvider.overrideWithValue(gateway),
+        ],
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -448,6 +515,42 @@ void main() {
       await scrollSettingsTo(tester, note);
       expect(note, findsOneWidget);
     });
+
+    testWidgets('offer to let them arrive on time, and say so once they '
+        'may', (tester) async {
+      // The prompt beside the medicines is asked once, so this row is where a
+      // "not now" is taken back (ADR-0026).
+      final gateway = _ExactGateway();
+      await pumpSettings(tester, gateway: gateway);
+      final l10n = l10nOf(tester);
+      final row = find.text(l10n.settingsExactRemindersOff);
+      await scrollSettingsTo(tester, row);
+      expect(find.text(l10n.settingsExactRemindersOffSubtitle), findsOneWidget);
+
+      gateway.grant = true;
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+
+      expect(gateway.requests, 1);
+      expect(find.text(l10n.settingsExactRemindersOn), findsOneWidget);
+      expect(find.text(l10n.settingsExactRemindersOff), findsNothing);
+    });
+
+    testWidgets('ask nothing where the phone already allows them', (
+      tester,
+    ) async {
+      // Every phone before Android 12 is in this state, and so is one that
+      // granted it earlier. A row offering what is already true would be
+      // noise, so it only says so.
+      final gateway = _ExactGateway(allowed: true);
+      await pumpSettings(tester, gateway: gateway);
+      final l10n = l10nOf(tester);
+      final row = find.text(l10n.settingsExactRemindersOn);
+      await scrollSettingsTo(tester, row);
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+      expect(gateway.requests, 0);
+    });
   });
 
   group('about', () {
@@ -460,7 +563,9 @@ void main() {
       // was written, and it stopped reaching About the moment AND-24 added a
       // section above it — reported as a missing version string rather than as
       // a short scroll.
-      final version = find.textContaining('1.0.0');
+      // The constant rather than a literal: a release bumps the version, and
+      // this test is about About showing it, not about which one it is.
+      final version = find.textContaining(appVersionName);
       await tester.scrollUntilVisible(version, 200);
       await tester.pumpAndSettle();
       expect(version, findsOneWidget);

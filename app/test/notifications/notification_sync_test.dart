@@ -34,6 +34,12 @@ class _Platform implements NotificationGateway {
   Future<bool> requestPermission() async => false;
 
   @override
+  Future<bool> canScheduleExact() async => true;
+
+  @override
+  Future<bool> requestExactPermission() async => true;
+
+  @override
   Future<void> cancelAll() async => daily.clear();
 
   @override

@@ -150,6 +150,15 @@ enum SettingKey {
   /// succeed.
   notificationPermissionAsked('notification_permission_asked'),
 
+  /// Whether the exact-alarm permission has already been asked for.
+  ///
+  /// Recorded for the same reason as [notificationPermissionAsked], but it
+  /// says less: this one is granted on a system settings screen rather than in
+  /// a dialog, so a refusal is recoverable and Settings keeps a row offering
+  /// it. What this stops is the asking happening again by itself every time a
+  /// reminder is set (ADR-0026).
+  exactAlarmPermissionAsked('exact_alarm_permission_asked'),
+
   /// The medicines recorded under Conditions and medication, as JSON.
   ///
   /// A list of `{"key": ..., "name": ...}`, in the order added

@@ -116,6 +116,9 @@ enum LogEvent {
   /// The notification permission request resolved.
   notificationPermissionResolved,
 
+  /// The exact-alarm permission request resolved (ADR-0026).
+  notificationExactAlarmResolved,
+
   /// The device clock appears to have moved backwards.
   clockWentBackwards,
 }

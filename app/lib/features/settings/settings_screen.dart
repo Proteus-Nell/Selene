@@ -13,6 +13,8 @@
 ///     - _AppLockSettingState: What the device said when it was asked.
 ///     - _DisplaySettings: Preferences that change what is shown.
 ///     - _SectionHeading: A heading over a group of rows.
+///     - _ExactReminderSetting: Whether reminders may arrive on their minute.
+///     - _ExactReminderSettingState: What the platform currently allows.
 ///     - _ReminderSettings: The notification preferences.
 ///     - _ReminderSettingsState: Those preferences, and the resync after one
 ///       changes.
@@ -416,6 +418,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
+            // Beside them, because it is their timing it decides, and here
+            // rather than only in the prompt: that one is asked once, and an
+            // answer of "not now" has to be recoverable (ADR-0026).
+            const _ExactReminderSetting(),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Column(
@@ -700,6 +706,113 @@ class _SectionHeading extends StatelessWidget {
           color: theme.colorScheme.primary,
         ),
       ),
+    );
+  }
+}
+
+/// Whether medicine reminders may be scheduled for the minute they are set
+/// for, and the way to allow it (ADR-0026).
+///
+/// Not a switch, because the app cannot set this: Android holds it, and grants
+/// it on a screen of its own. So the row says which of the two is true now and
+/// offers to open that screen when the answer is no.
+class _ExactReminderSetting extends ConsumerStatefulWidget {
+  /// Creates the row.
+  const _ExactReminderSetting();
+
+  @override
+  ConsumerState<_ExactReminderSetting> createState() =>
+      _ExactReminderSettingState();
+}
+
+/// State for [_ExactReminderSetting]: what the platform currently allows.
+///
+/// Read again after every request, and after the app comes back to the
+/// foreground: the permission is granted on Android's own screen, and can be
+/// taken away there just as quietly, so a value read once would go stale with
+/// nothing to say it had.
+///
+/// Attributes:
+///     _allowed (bool?): Whether exact alarms are allowed. Null until asked.
+///     _busy (bool): Whether a request is in flight.
+class _ExactReminderSettingState extends ConsumerState<_ExactReminderSetting>
+    with WidgetsBindingObserver {
+  /// Whether exact alarms are allowed, or null until the platform has said.
+  bool? _allowed;
+
+  /// Whether a request is in flight, so the row cannot be tapped twice.
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_load());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Coming back from Android's settings, whether this app sent them there
+    // or they went by themselves.
+    if (state == AppLifecycleState.resumed) unawaited(_load());
+  }
+
+  /// Ask the platform what it currently allows.
+  Future<void> _load() async {
+    final allowed = await ref
+        .read(notificationSchedulerProvider)
+        .exactRemindersAllowed();
+    if (!mounted || allowed == _allowed) return;
+    setState(() => _allowed = allowed);
+  }
+
+  /// Ask for the permission, and reschedule if it was granted.
+  ///
+  /// The reschedule is the point: every reminder already queued with the
+  /// platform was queued inexactly, and nothing re-queues it by itself.
+  Future<void> _request() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final scheduler = ref.read(notificationSchedulerProvider);
+      final allowed = await scheduler.requestExactReminders();
+      if (allowed) {
+        ref.read(notificationPreferencesRevisionProvider.notifier).state++;
+      }
+      if (!mounted) return;
+      setState(() => _allowed = allowed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final allowed = _allowed;
+    // Nothing, rather than a row that guesses: it is one platform call away,
+    // and a row that said "may arrive late" and then corrected itself would
+    // have said the wrong thing first.
+    if (allowed == null) return const SizedBox.shrink();
+    return ListTile(
+      leading: Icon(allowed ? Icons.alarm_on_outlined : Icons.alarm_off),
+      title: Text(
+        allowed
+            ? l10n.settingsExactRemindersOn
+            : l10n.settingsExactRemindersOff,
+      ),
+      subtitle: Text(
+        allowed
+            ? l10n.settingsExactRemindersOnSubtitle
+            : l10n.settingsExactRemindersOffSubtitle,
+      ),
+      onTap: allowed || _busy ? null : _request,
     );
   }
 }

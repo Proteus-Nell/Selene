@@ -783,6 +783,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsNotificationPermissionAllow => 'Turn on reminders';
 
   @override
+  String get settingsExactRemindersTitle => 'Let reminders arrive on time?';
+
+  @override
+  String get settingsExactRemindersBody =>
+      'Android decides when a reminder actually goes off, and unless you allow it, one set for 08:00 can arrive minutes or longer afterwards. Allowing it opens a settings screen of Android\'s own, and nothing else changes: the reminder stays on your phone, as it was.';
+
+  @override
+  String get settingsExactRemindersAllow => 'Open settings';
+
+  @override
+  String get settingsExactRemindersOn => 'Reminders arrive on time';
+
+  @override
+  String get settingsExactRemindersOnSubtitle =>
+      'Medicine reminders are set for the minute you chose.';
+
+  @override
+  String get settingsExactRemindersOff => 'Reminders may arrive late';
+
+  @override
+  String get settingsExactRemindersOffSubtitle =>
+      'A medicine reminder can arrive minutes or longer after the time you set. Tap to let Android deliver it on time.';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override
@@ -2100,6 +2124,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String conditionsMedicineReminderSet(String time) {
     return 'A reminder every day at $time.';
+  }
+
+  @override
+  String conditionsMedicineReminderSetLate(String time) {
+    return 'A reminder every day at $time, which may arrive a little after it.';
   }
 
   @override

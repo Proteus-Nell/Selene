@@ -29,6 +29,8 @@ class RecordingGateway implements NotificationGateway {
   int cancelCount = 0;
   int permissionRequests = 0;
   bool grantPermission = true;
+  int exactRequests = 0;
+  bool exactAllowed = false;
 
   @override
   Future<void> initialize(NotificationCopy copy) async =>
@@ -38,6 +40,15 @@ class RecordingGateway implements NotificationGateway {
   Future<bool> requestPermission() async {
     permissionRequests++;
     return grantPermission;
+  }
+
+  @override
+  Future<bool> canScheduleExact() async => exactAllowed;
+
+  @override
+  Future<bool> requestExactPermission() async {
+    exactRequests++;
+    return exactAllowed;
   }
 
   @override
@@ -264,6 +275,46 @@ void main() {
         ),
       );
       expect(await scheduler.shouldRequestPermission(), isFalse);
+    });
+  });
+
+  group('the exact-alarm request', () {
+    test(
+      'is put once, and only where the answer would change something',
+      () async {
+        // A phone that already allows them, every one before Android 12
+        // included, is not asked at all (ADR-0026).
+        gateway.exactAllowed = true;
+        expect(await scheduler.shouldRequestExactReminders(), isFalse);
+
+        gateway.exactAllowed = false;
+        expect(await scheduler.shouldRequestExactReminders(), isTrue);
+        expect(await scheduler.requestExactReminders(), isFalse);
+        expect(gateway.exactRequests, 1);
+        // Asked, so not again by itself. Settings keeps offering it.
+        expect(await scheduler.shouldRequestExactReminders(), isFalse);
+        expect(
+          await db.settingsDao.readBool(
+            SettingKey.exactAlarmPermissionAsked,
+            orElse: false,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test('can be recorded as asked without asking the platform', () async {
+      // "Not now" must not open Android's settings screen, and must not come
+      // back on the next reminder either.
+      await scheduler.recordExactRemindersAsked();
+      expect(gateway.exactRequests, 0);
+      expect(await scheduler.shouldRequestExactReminders(), isFalse);
+    });
+
+    test('reports what the platform currently allows', () async {
+      expect(await scheduler.exactRemindersAllowed(), isFalse);
+      gateway.exactAllowed = true;
+      expect(await scheduler.exactRemindersAllowed(), isTrue);
     });
   });
 

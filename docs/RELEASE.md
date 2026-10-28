@@ -158,6 +158,13 @@ Checklist, in the order the failures actually happen:
 - [ ] A medicine reminder set a few minutes ahead arrives within a few minutes
       of its time, naming the medicine only with lock-screen detail on. This is
       the only check that runs `MainActivity`'s time zone channel (ADR-0025)
+- [ ] Setting that reminder on Android 14 or later asks to let reminders
+      arrive on time, opens Android's "Alarms and reminders" screen, and the
+      Settings row then says they do (ADR-0026). Refuse it instead and the
+      reminder is still kept and still arrives, late, and says so. No test can
+      see any of this: the permission does not exist off a device
+- [ ] Revoke that permission in Android's settings while the app is open: the
+      Settings row goes back to "may arrive late", and reminders keep working
 - [ ] Keystore backups still exist and still open
 - [ ] **Release notes carry the re-export warning** — see below
 - [ ] No claim in `docs/NUTRITION_SOURCES.md` is still marked `[VERIFY]`

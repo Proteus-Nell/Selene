@@ -234,6 +234,62 @@ class NotificationScheduler {
     return granted;
   }
 
+  /// Whether a medicine reminder can currently be scheduled for its minute.
+  ///
+  /// Returns:
+  ///     `Future<bool>`: What the platform says. False means the reminders
+  ///     are scheduled roughly, and can arrive late (ADR-0026).
+  Future<bool> exactRemindersAllowed() => _gateway.canScheduleExact();
+
+  /// Whether to put the exact-alarm question to the user unprompted.
+  ///
+  /// Only once, and only while the answer would change something: a phone
+  /// that already allows exact alarms, Android before 12 among them, is not
+  /// asked at all. Settings keeps a row either way, so a no here is never
+  /// final.
+  ///
+  /// Returns:
+  ///     `Future<bool>`: True when it has not been asked and is not allowed.
+  Future<bool> shouldRequestExactReminders() async {
+    final asked = await _database.settingsDao.readBool(
+      SettingKey.exactAlarmPermissionAsked,
+      orElse: false,
+    );
+    if (asked) return false;
+    return !await _gateway.canScheduleExact();
+  }
+
+  /// Ask for the exact-alarm permission, and record that it was asked.
+  ///
+  /// Android 14 and later answer by opening their own "Alarms and reminders"
+  /// screen, so this completes only once the user comes back from it. The
+  /// caller reschedules afterwards: what is already queued was queued
+  /// inexactly, and nothing re-queues it on its own.
+  ///
+  /// Returns:
+  ///     `Future<bool>`: Whether exact reminders are now allowed.
+  Future<bool> requestExactReminders() async {
+    await _database.settingsDao.writeBool(
+      SettingKey.exactAlarmPermissionAsked,
+      value: true,
+    );
+    final granted = await _gateway.requestExactPermission();
+    _logger?.info(
+      LogEvent.notificationExactAlarmResolved,
+      fields: <String, LogField>{'granted': LogField.flag(granted)},
+    );
+    return granted;
+  }
+
+  /// Record that the exact-alarm question has been put, without putting it.
+  ///
+  /// For a user who answered "not now": the prompt does not come back by
+  /// itself, and the row in Settings is where it lives from then on.
+  Future<void> recordExactRemindersAsked() => _database.settingsDao.writeBool(
+    SettingKey.exactAlarmPermissionAsked,
+    value: true,
+  );
+
   /// Whether a reminder fell due while the app was closed, and records the
   /// visit.
   ///
@@ -334,6 +390,12 @@ final class NoopNotificationGateway implements NotificationGateway {
 
   @override
   Future<bool> requestPermission() async => false;
+
+  @override
+  Future<bool> canScheduleExact() async => false;
+
+  @override
+  Future<bool> requestExactPermission() async => false;
 
   @override
   Future<void> cancelAll() async {}

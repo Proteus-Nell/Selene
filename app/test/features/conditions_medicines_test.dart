@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_bundle.dart';
@@ -92,15 +93,29 @@ const MedicineGroups _groups = MedicineGroups(
   },
 );
 
-/// A gateway that answers the permission request as told, and counts it.
+/// A gateway that answers both permission requests as told, and counts them.
 class _PermissionGateway implements NotificationGateway {
-  _PermissionGateway({required this.grant});
+  _PermissionGateway({
+    required this.grant,
+    this.exact = true,
+    this.grantExact = true,
+  });
 
-  /// What the request answers.
+  /// What the notification permission request answers.
   final bool grant;
 
-  /// How many times it was asked.
+  /// Whether exact alarms are already allowed, so nothing is asked (the
+  /// state every phone before Android 12 is in).
+  final bool exact;
+
+  /// What the exact-alarm request answers, once it is made.
+  final bool grantExact;
+
+  /// How many times the notification permission was asked for.
   int requests = 0;
+
+  /// How many times the exact-alarm permission was asked for.
+  int exactRequests = 0;
 
   @override
   Future<void> initialize(NotificationCopy copy) async {}
@@ -109,6 +124,20 @@ class _PermissionGateway implements NotificationGateway {
   Future<bool> requestPermission() async {
     requests++;
     return grant;
+  }
+
+  @override
+  Future<bool> canScheduleExact() async {
+    if (exact) return true;
+    // Granted by the request, as the real one is, so what the screen says
+    // afterwards is what actually happened.
+    return exactRequests > 0 && grantExact;
+  }
+
+  @override
+  Future<bool> requestExactPermission() async {
+    exactRequests++;
+    return grantExact;
   }
 
   @override
@@ -286,6 +315,74 @@ void main() {
         find.text(l10n.conditionsMedicineReminderBlocked),
         findsOneWidget,
       );
+    });
+
+    testWidgets('ask to arrive on time where the phone does not allow it, '
+        'and say so once allowed', (tester) async {
+      // The moment the question is in context: a user who has just named a
+      // time has said the time matters (ADR-0026).
+      final gateway = _PermissionGateway(grant: true, exact: false);
+      await record(const <String>[aspirin]);
+      await pump(tester, gateway: gateway);
+      final l10n = l10nOf(tester);
+      final add = find.text(l10n.conditionsMedicineReminderAdd);
+      await reveal(tester, add);
+      await tester.tap(add);
+      await tester.pumpAndSettle();
+      await keepTime(tester);
+
+      expect(find.text(l10n.settingsExactRemindersTitle), findsOneWidget);
+      await tester.tap(find.text(l10n.settingsExactRemindersAllow));
+      await tester.pumpAndSettle();
+
+      expect(gateway.exactRequests, 1);
+      expect(
+        find.text(l10n.conditionsMedicineReminderSet('8:00 AM')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('are kept, and said to be late, when the on-time question is '
+        'declined, and it is not asked again', (tester) async {
+      final gateway = _PermissionGateway(
+        grant: true,
+        exact: false,
+        grantExact: false,
+      );
+      await record(const <String>[aspirin]);
+      await pump(tester, gateway: gateway);
+      final l10n = l10nOf(tester);
+
+      Future<void> addReminder() async {
+        final add = find.text(l10n.conditionsMedicineReminderAdd);
+        await reveal(tester, add);
+        await tester.tap(add);
+        await tester.pumpAndSettle();
+        await keepTime(tester);
+      }
+
+      await addReminder();
+      await tester.tap(find.text(l10n.commonNotNow));
+      await tester.pumpAndSettle();
+
+      // Never put to the platform, so Android's own screen never opened.
+      expect(gateway.exactRequests, 0);
+      expect(
+        find.text(l10n.conditionsMedicineReminderSetLate('8:00 AM')),
+        findsOneWidget,
+      );
+      expect(
+        await db.settingsDao.readBool(
+          SettingKey.exactAlarmPermissionAsked,
+          orElse: false,
+        ),
+        isTrue,
+      );
+
+      // A second reminder does not ask again: the row in Settings is where it
+      // lives from here.
+      await addReminder();
+      expect(find.text(l10n.settingsExactRemindersTitle), findsNothing);
     });
 
     testWidgets('can be changed by tapping one', (tester) async {
