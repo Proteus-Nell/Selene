@@ -2180,6 +2180,52 @@ abstract class AppLocalizations {
   /// **'The {medicine} label mentions “{words}”, an FDA drug class that includes {other}.'**
   String checkerMentionsClassShort(String medicine, String words, String other);
 
+  /// Above a passage quoted from one label that names a group the other medicine is in, such as NSAIDs. Which medicines a group takes in comes from a sourced table (ADR-0021), and its sources are named under the passage.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”, a group that includes {other}. From {section}:'**
+  String checkerMentionsGroup(
+    String medicine,
+    String words,
+    String other,
+    String section,
+  );
+
+  /// No description provided for @checkerMentionsGroupShort.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”, a group that includes {other}.'**
+  String checkerMentionsGroupShort(String medicine, String words, String other);
+
+  /// A label naming an ingredient every product of a recorded kind of contraception contains, such as levonorgestrel in hormonal IUDs. The kind is in the plural, as conditionKind* gives it.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”, which {kind} contain.'**
+  String checkerMentionsKindName(String medicine, String words, String kind);
+
+  /// No description provided for @checkerMentionsKindNameFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label mentions “{words}”, which {kind} contain. From {section}:'**
+  String checkerMentionsKindNameFrom(
+    String medicine,
+    String words,
+    String kind,
+    String section,
+  );
+
+  /// Two medicines in a group of the sourced table, by its name in the plural: "NSAIDs", "combined oral contraceptives".
+  ///
+  /// In en, this message translates to:
+  /// **'Both are {groups}.'**
+  String checkerSharedGroup(String groups);
+
+  /// Under a passage naming a group: where the table's list of the group's medicines comes from. Each source is its title and who published it.
+  ///
+  /// In en, this message translates to:
+  /// **'Which medicines are {group}: {sources}.'**
+  String checkerGroupSources(String group, String sources);
+
   /// On every pair the labels do not connect, in the checker and under Conditions and medication, beside a way to look the pair up online. Worded by the owner. It must not read as a reassurance.
   ///
   /// In en, this message translates to:
@@ -2189,7 +2235,7 @@ abstract class AppLocalizations {
   /// Shown wherever the labels connect a pair in none of the ways the check looks for. It must never read as a reassurance; interaction_copy_test bans the words that would make it one.
   ///
   /// In en, this message translates to:
-  /// **'That does not mean they are safe together. Labels leave interactions out, and often name medicines only by a group, such as “NSAIDs” or “combined hormonal contraceptives”, which this check cannot match.'**
+  /// **'That does not mean they are safe together. Labels leave interactions out, and often name medicines by a group this check does not know, such as “anticoagulants” or “strong CYP3A4 inducers”.'**
   String get checkerNothingFoundNote;
 
   /// No description provided for @checkerSearchOnline.
@@ -2719,6 +2765,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'What the labels say'**
   String get conditionsConflictLabels;
+
+  /// Opens the passages quoted from the medicine's label, on a flag pairing it with a recorded kind of contraception, which has no label of its own.
+  ///
+  /// In en, this message translates to:
+  /// **'What the label says'**
+  String get conditionsConflictLabel;
+
+  /// On a card pairing a recorded kind of contraception with a medicine (ADR-0021). The kind in the plural, as conditionKind* gives it.
+  ///
+  /// In en, this message translates to:
+  /// **'Compared as what every one of the {kind} in the US list has in common, since the record does not say which.'**
+  String conditionsConflictKind(String kind);
+
+  /// The combined pill in a sentence, in the plural: "a group that includes combined pills".
+  ///
+  /// In en, this message translates to:
+  /// **'combined pills'**
+  String get conditionKindCombined;
+
+  /// No description provided for @conditionKindProgestogen.
+  ///
+  /// In en, this message translates to:
+  /// **'progestogen-only pills'**
+  String get conditionKindProgestogen;
+
+  /// No description provided for @conditionKindIud.
+  ///
+  /// In en, this message translates to:
+  /// **'hormonal IUDs'**
+  String get conditionKindIud;
+
+  /// No description provided for @conditionKindImplant.
+  ///
+  /// In en, this message translates to:
+  /// **'contraceptive implants'**
+  String get conditionKindImplant;
 
   /// No description provided for @conditionHormonalContraceptionCombined.
   ///

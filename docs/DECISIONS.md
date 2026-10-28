@@ -22,13 +22,14 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0011](#adr-0011-export-v2-refuses-v1-files) | Export v2 refuses v1 files | Accepted; refusing a format that only adds fields superseded by [0020](#adr-0020-temperature-mucus-and-progesterone-are-recorded-only-and-export-v4-still-restores-v3) | 2026-08-20 |
 | [0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) | The medicines reference covers every drug, one label each, chosen by rule | Accepted | 2026-10-02 |
 | [0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone) | The medicines bundle is compressed chunks and an index, searched on the phone | Accepted | 2026-10-02 |
-| [0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe) | The interaction checker compares label text, and never calls a pair safe | Accepted | 2026-10-02 |
-| [0015](#adr-0015-recorded-medicines-are-kept-as-a-setting-and-their-flags-only-inform) | Recorded medicines are kept as a setting, and their flags only inform | Accepted | 2026-10-02 |
+| [0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe) | The interaction checker compares label text, and never calls a pair safe | Accepted; findings extended to groups by [0021](#adr-0021-group-names-on-labels-come-from-a-sourced-table-and-recorded-contraception-joins-the-conflict-flags) | 2026-10-02 |
+| [0015](#adr-0015-recorded-medicines-are-kept-as-a-setting-and-their-flags-only-inform) | Recorded medicines are kept as a setting, and their flags only inform | Accepted; recorded contraception joins the flags in [0021](#adr-0021-group-names-on-labels-come-from-a-sourced-table-and-recorded-contraception-joins-the-conflict-flags) | 2026-10-02 |
 | [0016](#adr-0016-a-late-period-moves-the-range-forward-and-lost-track-counts-from-the-last-period) | A late period moves the range forward, and lost track counts from the last period | Accepted | 2026-10-27 |
 | [0017](#adr-0017-releases-are-built-from-a-tag-with-the-key-in-repository-secrets-and-their-version-code-comes-from-the-name) | Releases are built from a tag, with the key in repository secrets, and their version code comes from the name | Accepted | 2026-10-27 |
 | [0018](#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds) | The database is encrypted, with a key the Android Keystore holds | Accepted | 2026-10-28 |
 | [0019](#adr-0019-a-backup-can-be-protected-with-a-passphrase-and-an-unprotected-one-still-restores) | A backup can be protected with a passphrase, and an unprotected one still restores | Accepted | 2026-10-28 |
 | [0020](#adr-0020-temperature-mucus-and-progesterone-are-recorded-only-and-export-v4-still-restores-v3) | Temperature, mucus and progesterone are recorded only, and export v4 still restores v3 | Accepted | 2026-10-28 |
+| [0021](#adr-0021-group-names-on-labels-come-from-a-sourced-table-and-recorded-contraception-joins-the-conflict-flags) | Group names on labels come from a sourced table, and recorded contraception joins the conflict flags | Accepted | 2026-10-28 |
 
 ---
 
@@ -610,7 +611,7 @@ resident in memory whenever the app runs.
 
 ## ADR-0014: The interaction checker compares label text, and never calls a pair safe
 
-**Status:** Accepted, 2026-10-02. Builds on [ADR-0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) and [ADR-0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone).
+**Status:** Accepted, 2026-10-02. Builds on [ADR-0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) and [ADR-0013](#adr-0013-the-medicines-bundle-is-compressed-chunks-and-an-index-searched-on-the-phone). Its findings are extended to groups, such as "NSAIDs", by [ADR-0021](#adr-0021-group-names-on-labels-come-from-a-sourced-table-and-recorded-contraception-joins-the-conflict-flags), which adopts the group table rejected below.
 **Deciders:** Project owner
 
 ### Context
@@ -694,7 +695,7 @@ this misses, but it is hand-written, which the owner has ruled out for now.
 
 ## ADR-0015: Recorded medicines are kept as a setting, and their flags only inform
 
-**Status:** Accepted, 2026-10-02. Uses the matching of [ADR-0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe).
+**Status:** Accepted, 2026-10-02. Uses the matching of [ADR-0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe). Recorded kinds of contraception join the flags in [ADR-0021](#adr-0021-group-names-on-labels-come-from-a-sourced-table-and-recorded-contraception-joins-the-conflict-flags), which adopts the runner-up below.
 **Deciders:** Project owner
 
 ### Context
@@ -1144,6 +1145,128 @@ have to guess.
 - The measurements are in exports, and so in any backup a person sends
   anywhere.
 - The calendar does not mark them. The day editor is where they are seen.
+
+## ADR-0021: Group names on labels come from a sourced table, and recorded contraception joins the conflict flags
+
+**Status:** Accepted, 2026-10-28. Extends the findings of [ADR-0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe), and adopts what it and [ADR-0015](#adr-0015-recorded-medicines-are-kept-as-a-setting-and-their-flags-only-inform) left as runners-up.
+**Deciders:** Project owner
+
+### Context
+
+Labels often name another medicine only by a group. Tranexamic acid's
+contraindicates "combined hormonal contraceptives"; sertraline's warns about
+"NSAIDs"; tramadol's about "SSRIs", "SNRIs", "TCAs" and "MAOIs". ADR-0014
+matched names and the FDA's classes only, so none of these connected, and the
+conflict flags of ADR-0015 inherited the gap. Both screens said so.
+
+The owner chose a **sourced table**: a short table mapping each group name to
+the medicines in it, each row citing its source. Asked whether recorded
+conditions should take part in the flags, such as a recorded combined pill
+with rifampin, the owner chose **yes, with a mapping**, each kind of hormonal
+contraception counting as its active substances.
+
+The FDA's own classes could not do this alone. Most labels carry no class, so
+citalopram, sertraline and escitalopram have none in the bundle, and some
+classes are broader than the words labels use: the FDA's "Serotonin Reuptake
+Inhibitor" takes in trazodone and nefazodone, which are not SSRIs, and in this
+data its "Anti-coagulant" takes in citric acid.
+
+### Decision
+
+1. **A hand-written table, `artifacts/medicines/groups_v1.json`, whose every
+   member comes from the source it cites**: the FDA's established
+   pharmacologic classes as the National Library of Medicine's RxClass
+   publishes them, which lists every ingredient rather than only labelled
+   ones; the FDA's own lists (Table 1 of its 2020 NSAID safety communication;
+   its Office of Women's Health pages on depression medicines and on birth
+   control); the definition in its draft guidance on combined hormonal
+   contraceptive labelling; and, for fluvoxamine and two oddities in the
+   bundle's data, the drug's own approved label. Twelve groups:
+
+   | Group | Members from |
+   | --- | --- |
+   | NSAIDs | FDA class, FDA safety communication |
+   | SSRIs | FDA Office of Women's Health, fluvoxamine's label |
+   | SNRIs, MAOIs, tricyclic antidepressants | FDA class, FDA Office of Women's Health |
+   | triptans | FDA class |
+   | combined hormonal contraceptives, combined oral contraceptives | FDA guidance |
+   | oral contraceptives, hormonal contraceptives, progestin-only contraceptives, progestin-only pills | FDA Office of Women's Health |
+
+2. **Contraceptives are defined, not listed.** A drug is a hormonal
+   contraceptive when its own label's uses say it prevents pregnancy and it
+   contains an estrogen or a progestin, by the FDA's Estrogen and Progestin
+   classes and norgestrel from the Birth Control page. It is combined when it
+   contains an estrogen, since no contraceptive is an estrogen alone, and
+   progestin-only otherwise; oral by its route. Menopause and fibroid products
+   with the same hormones are left out by their uses. A test names every
+   contraceptive left out and why, so a new pill whose hormones the table
+   does not list fails the build.
+3. **Resolved against the bundle when the app is built.**
+   `tools/scripts/gen_medicine_groups.py` reads the committed bundle, no
+   network, and writes `medicine_groups_bundled.dart` with the drugs each group
+   covers by key. CI's `--check` fails on a member that names no drug in the
+   bundle, which catches a typo; on one listed absent that a refresh has
+   brought in; on a phrase no bundled label prints; and on a stale file. A Dart
+   test fails when the bundle was rebuilt and the groups were not.
+4. **Two findings more.** A group both medicines are in, said in its narrowest
+   form ("combined oral contraceptives" rather than that and "hormonal
+   contraceptives" too), and not where an FDA class both are in has said it.
+   And a passage naming a group the other medicine is in, quoted like any
+   mention, with the table's sources under it. A group's phrase does not count
+   straight after "non" ("non-hormonal contraception"), inside a longer group
+   phrase ("hormonal contraceptives" in "combined hormonal contraceptives"
+   names only the combined ones), or in a sentence another mention already
+   quotes. Names and classes are matched as ADR-0014 has them.
+5. **Recorded contraception in the flags.** A record of the combined pill, the
+   mini pill, the hormonal IUD or the implant that runs today counts as what
+   every product of its kind in the bundle shares, since the record does not
+   say which product: the groups they are all in, and the ingredients they all
+   contain, which is levonorgestrel for the IUD, etonogestrel for the implant,
+   and no one ingredient for either pill. It is compared with each recorded
+   medicine, and its card is searchable online like any pair's. A kind whose
+   own product is among the recorded medicines takes no part: that medicine
+   stands for it, with its own label. The other conditions take no part.
+
+### Runner-up and why rejected
+
+**The FDA's classes alone.** Nothing hand-written, but sparse in this data and
+broad in places, as above: it would leave sertraline out of SSRIs and put
+trazodone in.
+
+**NLM MeSH pharmacological actions.** Broader still: its serotonin uptake
+inhibitors take in olanzapine.
+
+**CYP3A4 inhibitors and inducers**, from the FDA's table of examples. Labels
+qualify them too many ways: "strong", "strong or moderate", "potent", "after
+stopping a CYP3A4 inhibitor". An unqualified "CYP3A4 inhibitors" found inside
+"strong CYP3A4 inhibitors" would name drugs the label does not mean. Deferred.
+
+**Anticoagulants.** No current FDA page lists them that could be checked, and
+the FDA's "Anti-coagulant" class in this data takes in citric acid. Deferred.
+Labels mostly name warfarin and the rest by name, which is matched already.
+
+**Asking which pill a recorded combined pill is.** The record is a kind. A
+person who knows the product can add it to the medicines, where it stands for
+the kind.
+
+### Consequences
+
+- Tranexamic acid and the pill connect, as do rifampin and every hormonal
+  contraceptive, lamotrigine and combined oral contraceptives, and tramadol
+  and the antidepressants, in the checker and in the flags.
+- The table is a reading of its sources, and has to be kept like one. A
+  refresh of the bundle can move its members, and the check says so; its
+  sources are dated where they were read.
+- A group's name can be read in a sense its label does not quite mean: "oral
+  contraceptives containing ethinyl estradiol" names a progestin-only pill as
+  well. Every mention is quoted with its sources, as every mention is.
+- A recorded combined pill counts as no one ingredient, because not every
+  combined pill has ethinyl estradiol. A label that names only ethinyl
+  estradiol connects with the pill once the pill itself is recorded.
+- Where nothing connects, the screens still say that this does not mean safe
+  together, and now name groups the check does not know: anticoagulants, and
+  strong CYP3A4 inducers.
+- The groups add about 27 KB of generated Dart, read once when first used.
 
 ---
 

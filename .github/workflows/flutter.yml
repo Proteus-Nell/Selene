@@ -48,6 +48,14 @@ jobs:
         # on a developer machine.
         run: python3 tools/scripts/gen_medicines.py --check
 
+      - name: Verify the group names table, the bundle and their Dart agree
+        # The table of group names the interaction checker matches, such as
+        # "NSAIDs" and "combined hormonal contraceptives", says which drugs
+        # each one covers (ADR-0021). Its members are resolved against the
+        # bundle, so a rebuilt bundle, or a member that no longer names a drug
+        # in it, fails here rather than matching nothing in silence. No network.
+        run: python3 tools/scripts/gen_medicine_groups.py --check
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

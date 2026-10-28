@@ -174,6 +174,8 @@ release:
 ```bash
 python3 tools/scripts/gen_medicines.py --fetch   # downloads ~1.8 GB into data/
 python3 tools/scripts/gen_medicines.py --check   # should pass
+python3 tools/scripts/gen_medicine_groups.py     # resolves the group names again
+python3 tools/scripts/gen_medicine_groups.py --check
 ```
 
 That needs network, on purpose: it is the one part of this project that talks to
@@ -181,7 +183,11 @@ anything, and it runs on a developer machine or in CI, never on the phone. The
 download is cached under `data/`, which is never committed. Commit
 `artifacts/medicines/selection_v2.json`, `app/assets/medicines/` and
 `app/lib/data/reference/medicines_bundled.dart` together; `--check` fails when
-they disagree.
+they disagree. Commit `app/lib/data/reference/medicine_groups_bundled.dart`
+with them: the group names table (ADR-0021) names drugs by the bundle's keys,
+and its `--check` fails when a member no longer names a drug in the bundle, or
+one listed absent has arrived. Either means editing
+`artifacts/medicines/groups_v1.json` against its sources, not around them.
 
 A refresh rewrites most of the bundle, and each one adds up to 12 MB to the
 repository's history. Refresh for a release, not on every change.
@@ -198,6 +204,10 @@ Two things to check by eye after fetching, because no test can:
   the pill's label stops naming rifampin, or two NSAIDs stop sharing a class,
   but open the checker too: the pill with rifampin, ibuprofen with naproxen,
   and levothyroxine with the pill should each quote the label.
+- The group names' examples (ADR-0021): tranexamic acid with the pill should
+  quote "combined hormonal contraceptives", with the FDA sources under it.
+  The sources themselves are dated where they were read; one that has moved
+  or changed is a reason to check the members it gave.
 
 ### The re-export warning (export format v2)
 

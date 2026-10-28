@@ -1299,12 +1299,56 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String checkerMentionsGroup(
+    String medicine,
+    String words,
+    String other,
+    String section,
+  ) {
+    return 'The $medicine label mentions “$words”, a group that includes $other. From $section:';
+  }
+
+  @override
+  String checkerMentionsGroupShort(
+    String medicine,
+    String words,
+    String other,
+  ) {
+    return 'The $medicine label mentions “$words”, a group that includes $other.';
+  }
+
+  @override
+  String checkerMentionsKindName(String medicine, String words, String kind) {
+    return 'The $medicine label mentions “$words”, which $kind contain.';
+  }
+
+  @override
+  String checkerMentionsKindNameFrom(
+    String medicine,
+    String words,
+    String kind,
+    String section,
+  ) {
+    return 'The $medicine label mentions “$words”, which $kind contain. From $section:';
+  }
+
+  @override
+  String checkerSharedGroup(String groups) {
+    return 'Both are $groups.';
+  }
+
+  @override
+  String checkerGroupSources(String group, String sources) {
+    return 'Which medicines are $group: $sources.';
+  }
+
+  @override
   String get checkerNothingFoundPair =>
       'No labels connect these two medications, but you are advised to verify the results.';
 
   @override
   String get checkerNothingFoundNote =>
-      'That does not mean they are safe together. Labels leave interactions out, and often name medicines only by a group, such as “NSAIDs” or “combined hormonal contraceptives”, which this check cannot match.';
+      'That does not mean they are safe together. Labels leave interactions out, and often name medicines by a group this check does not know, such as “anticoagulants” or “strong CYP3A4 inducers”.';
 
   @override
   String get checkerSearchOnline => 'Look this pair up online';
@@ -1626,6 +1670,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get conditionsConflictLabels => 'What the labels say';
+
+  @override
+  String get conditionsConflictLabel => 'What the label says';
+
+  @override
+  String conditionsConflictKind(String kind) {
+    return 'Compared as what every one of the $kind in the US list has in common, since the record does not say which.';
+  }
+
+  @override
+  String get conditionKindCombined => 'combined pills';
+
+  @override
+  String get conditionKindProgestogen => 'progestogen-only pills';
+
+  @override
+  String get conditionKindIud => 'hormonal IUDs';
+
+  @override
+  String get conditionKindImplant => 'contraceptive implants';
 
   @override
   String get conditionHormonalContraceptionCombined => 'Combined pill';

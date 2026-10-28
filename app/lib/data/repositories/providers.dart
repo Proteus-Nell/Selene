@@ -11,7 +11,8 @@
 /// Includes:
 ///     - appDatabaseProvider and the four repository providers.
 ///     - The day-log, cycle, prediction and condition read providers.
-///     - The recorded medicines, and what their labels say about each other.
+///     - The recorded medicines, what their labels say about each other, and
+///       what they say about the recorded kinds of contraception.
 ///     - One provider per stored preference.
 ///     - themeModeFromWireName: Resolves a stored theme mode.
 library;
@@ -26,6 +27,7 @@ import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/reference/interactions.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_bundle.dart';
+import 'package:period_tracker/data/reference/medicine_groups.dart';
 import 'package:period_tracker/data/repositories/condition_repository.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
 import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
@@ -172,6 +174,49 @@ recordedInteractionsProvider =
         for (final medicine in recorded) ?index.byKey(medicine.key),
       ];
       return ref.watch(medicineBundleProvider).interactions(medicines);
+    });
+
+/// The recorded kinds of contraception the conflict flags compare: the
+/// combined pill, the mini pill, the hormonal IUD and the implant, while a
+/// record of one runs today (ADR-0021).
+///
+/// Each kind once, in the order first recorded. The other conditions have no
+/// ingredients to count as, and take no part.
+final AutoDisposeProvider<List<ConditionKind>> recordedContraceptionProvider =
+    Provider.autoDispose<List<ConditionKind>>((ref) {
+      final records =
+          ref.watch(conditionsProvider).valueOrNull ??
+          const <ConditionRecord>[];
+      final today = ref.watch(clockProvider).today();
+      final table = ref.watch(medicineBundleProvider).groups;
+      final kinds = <ConditionKind>[];
+      for (final record in records) {
+        final kind = table.conditions[record.condition];
+        if (kind != null && record.isActiveOn(today) && !kinds.contains(kind)) {
+          kinds.add(kind);
+        }
+      }
+      return List<ConditionKind>.unmodifiable(kinds);
+    });
+
+/// What the recorded medicines' labels say about the recorded kinds of
+/// contraception: the conflict flags for a combined pill recorded among the
+/// conditions and rifampin among the medicines (ADR-0021).
+///
+/// A kind counts as what every product of it shares, since the record does
+/// not say which product. One whose own product is among the medicines is
+/// left out: that medicine stands for it, with its own label.
+final AutoDisposeFutureProvider<List<ConditionPair>>
+recordedConditionPairsProvider =
+    FutureProvider.autoDispose<List<ConditionPair>>((ref) async {
+      final kinds = ref.watch(recordedContraceptionProvider);
+      final recorded = await ref.watch(recordedMedicinesProvider.future);
+      if (kinds.isEmpty || recorded.isEmpty) return const <ConditionPair>[];
+      final index = await ref.watch(medicineIndexProvider.future);
+      final medicines = <MedicineEntry>[
+        for (final medicine in recorded) ?index.byKey(medicine.key),
+      ];
+      return ref.watch(medicineBundleProvider).conditions(kinds, medicines);
     });
 
 /// Whether the flow control is collapsed to bleeding yes/no (AND-24).

@@ -1,11 +1,12 @@
 // The medicines under Conditions and medication, and their conflict flags
-// (ADR-0014, ADR-0015).
+// (ADR-0014, ADR-0015, ADR-0021).
 //
 // A flag informs and nothing more, at the owner's direction: it says what
 // connects two medicines' labels, and offers the pair to a browser. What is
 // pinned here is that it appears for a pair the labels connect, that a pair
-// they do not connect is never presented as safe, and that the browser is
-// reached only through the usual confirmation.
+// they do not connect is never presented as safe, that the browser is
+// reached only through the usual confirmation, and that a recorded kind of
+// contraception is compared with the medicines as what its products share.
 //
 // The medicines are a handful written out here rather than the bundle the app
 // ships, so that a refresh of openFDA's export cannot change what these tests
@@ -14,10 +15,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_bundle.dart';
+import 'package:period_tracker/data/reference/medicine_groups.dart';
 import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
+import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/features/conditions/conditions_screen.dart';
 import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
 
@@ -25,28 +29,65 @@ import '../data/reference/medicine_fixture.dart';
 import 'harness.dart';
 
 /// In key order, as the generator writes them: one label that names another,
-/// and one that connects with nothing.
+/// one that connects with nothing but a combined pill, and the pill.
 final List<FixtureDrug> _drugs = <FixtureDrug>[
   fixtureDrug('aspirin.oral.otc', name: 'ASPIRIN'),
   fixtureDrug(
-    'ibuprofen.oral.otc',
-    name: 'IBUPROFEN',
-    sections: <List<String>>[
-      <String>[
-        'ask_doctor_or_pharmacist',
-        'Ask a doctor or pharmacist before use if you are taking aspirin.',
-      ],
-    ],
+    'drospirenone+ethinyl-estradiol.oral.rx',
+    name: 'DROSPIRENONE AND ETHINYL ESTRADIOL',
+    substances: <String>['DROSPIRENONE', 'ETHINYL ESTRADIOL'],
+    type: 'rx',
   ),
+  fixtureDrug('ibuprofen.oral.otc', name: 'IBUPROFEN', sections: _ibuprofen),
   fixtureDrug(
     'tranexamic-acid.oral.rx',
     name: 'TRANEXAMIC ACID',
     type: 'rx',
     sections: <List<String>>[
-      <String>['contraindications', 'Active thromboembolic disease.'],
+      <String>['contraindications', _tranexamic],
     ],
   ),
 ];
+
+const String _tranexamic =
+    'Concomitant use of combined hormonal contraceptives. Active '
+    'thromboembolic disease.';
+
+final List<List<String>> _ibuprofen = <List<String>>[
+  <String>[
+    'ask_doctor_or_pharmacist',
+    'Ask a doctor or pharmacist before use if you are taking aspirin.',
+  ],
+];
+
+const GroupSource _guidance = GroupSource(
+  title: 'Labeling for Combined Hormonal Contraceptives',
+  publisher: 'U.S. Food and Drug Administration',
+  url: 'https://www.fda.gov/',
+  retrieved: '2026-10-28',
+);
+
+/// The combined pill as these drugs make it: the one pill above, in the one
+/// group tranexamic acid's label names.
+const MedicineGroup _combined = MedicineGroup(
+  name: 'combined hormonal contraceptives',
+  phrases: <String>['combined hormonal contraceptive'],
+  members: <String>{'drospirenone+ethinyl-estradiol.oral.rx'},
+  sources: <GroupSource>[_guidance],
+);
+
+const MedicineGroups _groups = MedicineGroups(
+  <MedicineGroup>[_combined],
+  conditions: <Condition, ConditionKind>{
+    Condition.hormonalContraceptionCombined: ConditionKind(
+      condition: Condition.hormonalContraceptionCombined,
+      kind: <String>{'drospirenone+ethinyl-estradiol.oral.rx'},
+      names: <String>[],
+      groups: <MedicineGroup>[_combined],
+      source: _guidance,
+    ),
+  },
+);
 
 void main() {
   late AppDatabase db;
@@ -72,7 +113,9 @@ void main() {
         const ConditionsScreen(),
         database: db,
         overrides: <Override>[
-          medicineBundleProvider.overrideWith((ref) => fixtureBundle(_drugs)),
+          medicineBundleProvider.overrideWith(
+            (ref) => fixtureBundle(_drugs, groups: _groups),
+          ),
         ],
       ),
     );
@@ -281,6 +324,148 @@ void main() {
           findRichText: true,
         ),
         findsOneWidget,
+      );
+    });
+  });
+
+  group('a recorded kind of contraception', () {
+    Future<void> recordPill({CivilDate? end}) => db.conditionDao.add(
+      condition: Condition.hormonalContraceptionCombined,
+      start: testClock.today().addDays(-30),
+      end: end,
+    );
+
+    String title(WidgetTester tester, String medicine) {
+      final l10n = l10nOf(tester);
+      return l10n.checkerPairTitle(
+        l10n.conditionHormonalContraceptionCombined,
+        medicine,
+      );
+    }
+
+    testWidgets('is compared with a single medicine, and flagged where its '
+        'label names the kind', (tester) async {
+      await recordPill();
+      await record(const <String>['tranexamic-acid.oral.rx']);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      await reveal(tester, find.text(title(tester, 'TRANEXAMIC ACID')));
+      expect(
+        find.text(
+          l10n.checkerMentionsGroupShort(
+            'TRANEXAMIC ACID',
+            'combined hormonal contraceptives',
+            l10n.conditionKindCombined,
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byIcon(Icons.flag_outlined), findsOneWidget);
+      expect(find.text(l10n.conditionsConflictsIntro), findsOneWidget);
+    });
+
+    testWidgets('opens what the label says, and where the group comes from', (
+      tester,
+    ) async {
+      await recordPill();
+      await record(const <String>['tranexamic-acid.oral.rx']);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      await reveal(tester, find.text(l10n.conditionsConflictLabel));
+      await tester.tap(find.text(l10n.conditionsConflictLabel));
+      await tester.pumpAndSettle();
+      expect(find.byType(ConditionPairScreen), findsOneWidget);
+      expect(
+        find.text(
+          'Concomitant use of combined hormonal contraceptives.',
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          l10n.checkerGroupSources(
+            'combined hormonal contraceptives',
+            '“Labeling for Combined Hormonal Contraceptives”, U.S. Food and '
+                'Drug Administration',
+          ),
+        ),
+        findsOneWidget,
+      );
+      // The record says which kind, not which product, and the screen says
+      // what it was compared as.
+      expect(
+        find.text(l10n.conditionsConflictKind(l10n.conditionKindCombined)),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('is looked up online by its own name', (tester) async {
+      await recordPill();
+      await record(const <String>['tranexamic-acid.oral.rx']);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      await reveal(tester, find.text(l10n.conditionsConflictLookUp));
+      await tester.tap(find.text(l10n.conditionsConflictLookUp));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          l10n.lookupLeavingWithTermBody(
+            'combined pill and tranexamic acid interaction',
+          ),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text(l10n.commonNotNow));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('that a label does not name is not called safe', (
+      tester,
+    ) async {
+      await recordPill();
+      await record(const <String>['ibuprofen.oral.otc']);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      await reveal(tester, find.text(l10n.checkerNothingFoundNote));
+      expect(find.text(title(tester, 'IBUPROFEN')), findsOneWidget);
+      expect(find.text(l10n.checkerNothingFoundPair), findsOneWidget);
+      expect(find.byIcon(Icons.flag_outlined), findsNothing);
+      expect(find.text(l10n.conditionsConflictLabel), findsNothing);
+    });
+
+    testWidgets('is left out where its own product is recorded', (
+      tester,
+    ) async {
+      // The pill recorded twice, as a condition and by name: the medicine,
+      // with its own label, stands for it.
+      await recordPill();
+      await record(const <String>[
+        'drospirenone+ethinyl-estradiol.oral.rx',
+        'tranexamic-acid.oral.rx',
+      ]);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      await reveal(tester, find.text(l10n.conditionsConflictLabels));
+      expect(
+        find.text(
+          l10n.checkerPairTitle(
+            'DROSPIRENONE AND ETHINYL ESTRADIOL',
+            'TRANEXAMIC ACID',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(title(tester, 'TRANEXAMIC ACID')), findsNothing);
+    });
+
+    testWidgets('that has ended takes no part', (tester) async {
+      await recordPill(end: testClock.today().addDays(-5));
+      await record(const <String>['tranexamic-acid.oral.rx']);
+      await pump(tester);
+      expect(
+        find.text(l10nOf(tester).conditionsConflictsHeading),
+        findsNothing,
       );
     });
   });

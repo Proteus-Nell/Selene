@@ -13,6 +13,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_bundle.dart';
+import 'package:period_tracker/data/reference/medicine_groups.dart';
 
 /// One drug for a test bundle, as a row of the generator's selection.
 typedef FixtureDrug = ({
@@ -217,11 +218,19 @@ List<FixtureDrug> shifted(List<FixtureDrug> drugs) => <FixtureDrug>[
 ];
 
 /// A bundle over [drugs] that decodes in place, for a widget test.
-MedicineBundle fixtureBundle(List<FixtureDrug> drugs, {int perChunk = 2}) =>
-    MedicineBundle(
-      MemoryAssets(fixtureFiles(drugs, perChunk: perChunk)),
-      run: inPlace,
-    );
+///
+/// With no group names unless [groups] gives some: the table the app ships
+/// is resolved against the real bundle, and a refresh of it must not change
+/// what a test over these drugs sees.
+MedicineBundle fixtureBundle(
+  List<FixtureDrug> drugs, {
+  int perChunk = 2,
+  MedicineGroups groups = MedicineGroups.none,
+}) => MedicineBundle(
+  MemoryAssets(fixtureFiles(drugs, perChunk: perChunk)),
+  run: inPlace,
+  groups: groups,
+);
 
 /// Run a task where it is, rather than in another isolate.
 ///

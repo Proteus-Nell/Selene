@@ -1,4 +1,4 @@
-// The interaction checker (ADR-0014).
+// The interaction checker (ADR-0014, ADR-0021).
 //
 // What is pinned here is what the screen says, because each part of it is
 // something a reader would otherwise assume: that a pair with nothing found is
@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_bundle.dart';
+import 'package:period_tracker/data/reference/medicine_groups.dart';
 import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
 import 'package:period_tracker/features/lookup/lookup_screen.dart';
 import 'package:period_tracker/features/lookup/medicine_screen.dart';
@@ -69,14 +70,18 @@ void main() {
   /// The drug with [key], as the bundle's index has it.
   MedicineEntry entry(String key) => index.byKey(key)!;
 
-  Future<void> pump(WidgetTester tester, Widget child) async {
+  Future<void> pump(
+    WidgetTester tester,
+    Widget child, {
+    MedicineGroups groups = MedicineGroups.none,
+  }) async {
     await tester.pumpWidget(
       harness(
         child,
         database: db,
         overrides: <Override>[
           medicineBundleProvider.overrideWith(
-            (ref) => fixtureBundle(_drugs),
+            (ref) => fixtureBundle(_drugs, groups: groups),
           ),
         ],
       ),
@@ -84,9 +89,14 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> check(WidgetTester tester, List<String> keys) => pump(
+  Future<void> check(
+    WidgetTester tester,
+    List<String> keys, {
+    MedicineGroups groups = MedicineGroups.none,
+  }) => pump(
     tester,
     InteractionCheckerScreen(initial: <MedicineEntry>[...keys.map(entry)]),
+    groups: groups,
   );
 
   Future<void> reveal(WidgetTester tester, Finder finder) async {
@@ -218,6 +228,27 @@ void main() {
       ]);
       expect(
         find.text(l10nOf(tester).checkerSharedClass(1, _nsaid)),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('says when both are in one group, as the group table has it', (
+      tester,
+    ) async {
+      // Aspirin carries no FDA class here, so the class says nothing, and
+      // the group does.
+      const nsaids = MedicineGroup(
+        name: 'NSAIDs',
+        phrases: <String>['NSAID'],
+        members: <String>{'aspirin.oral.otc', 'ibuprofen.oral.otc'},
+      );
+      await check(
+        tester,
+        const <String>['aspirin.oral.otc', 'ibuprofen.oral.otc'],
+        groups: const MedicineGroups(<MedicineGroup>[nsaids]),
+      );
+      expect(
+        find.text(l10nOf(tester).checkerSharedGroup('NSAIDs')),
         findsOneWidget,
       );
     });

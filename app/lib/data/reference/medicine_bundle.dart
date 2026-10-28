@@ -24,6 +24,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/data/reference/interactions.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
+import 'package:period_tracker/data/reference/medicine_groups.dart';
 
 /// Runs a task and returns its result: in a background isolate in the app,
 /// and in place in a widget test, whose fake clock never sees an isolate
@@ -48,11 +49,15 @@ class MedicineBundle {
   ///         background isolate by default, so a 3 MB index never stalls a
   ///         frame.
   ///     directory (String): Where the bundle sits among the assets.
+  ///     groups (MedicineGroups?): The group names matched on labels.
+  ///         Defaults to the table the app ships (ADR-0021).
   MedicineBundle(
     this._assets, {
     MedicineRunner run = Isolate.run,
     this.directory = 'assets/medicines',
-  }) : _runner = run;
+    MedicineGroups? groups,
+  }) : _runner = run,
+       groups = groups ?? MedicineGroups.bundled;
 
   /// Where the files are read from.
   final AssetBundle _assets;
@@ -62,6 +67,9 @@ class MedicineBundle {
 
   /// Where the bundle sits among the assets.
   final String directory;
+
+  /// The group names matched on labels.
+  final MedicineGroups groups;
 
   /// The number of the chunk last opened, and the chunk.
   (int, Future<_Chunk>)? _last;
@@ -133,7 +141,33 @@ class MedicineBundle {
     final labels = <String, List<MedicineSection>>{
       for (final medicine in medicines) medicine.key: await sections(medicine),
     };
-    return _check(_runner, medicines, labels);
+    return _check(_runner, medicines, labels, groups);
+  }
+
+  /// Compare recorded kinds of contraception with several drugs' labels.
+  ///
+  /// As [interactions], for [checkConditions]: each kind counts as what its
+  /// products share, and a kind one of the drugs is a product of is left out.
+  ///
+  /// Args:
+  ///     conditions (`List<ConditionKind>`): The kinds recorded.
+  ///     medicines (`List<MedicineEntry>`): The drugs, in the order added.
+  ///
+  /// Returns:
+  ///     `Future<List<ConditionPair>>`: One per kind and drug.
+  ///
+  /// Throws:
+  ///     MedicineBundleException: When a drug's line holds another drug's
+  ///         text, as [sections] does.
+  Future<List<ConditionPair>> conditions(
+    List<ConditionKind> conditions,
+    List<MedicineEntry> medicines,
+  ) async {
+    if (conditions.isEmpty || medicines.isEmpty) return <ConditionPair>[];
+    final labels = <String, List<MedicineSection>>{
+      for (final medicine in medicines) medicine.key: await sections(medicine),
+    };
+    return _checkConditions(_runner, conditions, medicines, labels, groups);
   }
 
   /// Return chunk [number], decompressed, from the cache when it was the last
@@ -186,7 +220,20 @@ class MedicineBundle {
     MedicineRunner run,
     List<MedicineEntry> medicines,
     Map<String, List<MedicineSection>> labels,
-  ) => run(() => checkInteractions(medicines, labels));
+    MedicineGroups groups,
+  ) => run(() => checkInteractions(medicines, labels, groups: groups));
+
+  /// Compare every kind in [conditions] with every one of [medicines],
+  /// through [run].
+  static Future<List<ConditionPair>> _checkConditions(
+    MedicineRunner run,
+    List<ConditionKind> conditions,
+    List<MedicineEntry> medicines,
+    Map<String, List<MedicineSection>> labels,
+    MedicineGroups groups,
+  ) => run(
+    () => checkConditions(conditions, medicines, labels, groups: groups),
+  );
 }
 
 /// One decompressed chunk of label text, and where each of its lines starts.

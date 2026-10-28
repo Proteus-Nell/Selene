@@ -20,7 +20,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/data/reference/interactions.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_bundle.dart';
+import 'package:period_tracker/data/reference/medicine_groups.dart';
 import 'package:period_tracker/data/reference/medicines_bundled.dart';
+import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/features/lookup/medicine_screen.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
@@ -262,6 +264,98 @@ void main() {
         thyroid.firstMentions.map((mention) => mention.name),
         contains('Estrogen'),
       );
+    });
+
+    test(
+      'connects the pairs whose labels name each other by a group',
+      () async {
+        // The gap the group table was written to close (ADR-0021): each of
+        // these labels names the other medicine only by a group.
+        final bundle = MedicineBundle(rootBundle, run: inPlace);
+        Future<InteractionPair> compare(String first, String second) async =>
+            (await bundle.interactions(<MedicineEntry>[
+              index.byKey(first)!,
+              index.byKey(second)!,
+            ])).single;
+        Iterable<String?> groupsIn(List<LabelMention> mentions) =>
+            mentions.map((mention) => mention.group?.name);
+
+        // Tranexamic acid contraindicates "combined hormonal contraceptives".
+        final tranexamic = await compare(
+          'tranexamic-acid.oral.rx',
+          'drospirenone+ethinyl-estradiol.oral.rx',
+        );
+        expect(
+          groupsIn(tranexamic.firstMentions),
+          contains('combined hormonal contraceptives'),
+        );
+        // Rifampin's label warns of "systemic hormonal contraceptives".
+        final rifampin = await compare(
+          'rifampin.oral.rx',
+          'drospirenone+ethinyl-estradiol.oral.rx',
+        );
+        expect(
+          groupsIn(rifampin.firstMentions),
+          contains('hormonal contraceptives'),
+        );
+        // Lamotrigine's names "estrogen-containing oral contraceptives".
+        final lamotrigine = await compare(
+          'lamotrigine.oral.rx',
+          'drospirenone+ethinyl-estradiol.oral.rx',
+        );
+        expect(
+          groupsIn(lamotrigine.firstMentions),
+          contains('combined oral contraceptives'),
+        );
+        // Tramadol's names the antidepressants by their classes' abbreviations.
+        final tramadol = await compare(
+          'tramadol-hydrochloride.oral.rx',
+          'sertraline-hydrochloride.oral.rx',
+        );
+        expect(groupsIn(tramadol.firstMentions), contains('SSRIs'));
+        // Two combined pills are said to be so, once.
+        final pills = await compare(
+          'drospirenone+ethinyl-estradiol.oral.rx',
+          'ethinyl-estradiol+norgestimate.oral.rx',
+        );
+        expect(pills.sharedGroups.map((group) => group.name), <String>[
+          'combined oral contraceptives',
+        ]);
+      },
+    );
+
+    test('compares a recorded kind of contraception as its products', () async {
+      final bundle = MedicineBundle(rootBundle, run: inPlace);
+      final kinds = bundle.groups.conditions;
+      Future<ConditionPair> compare(Condition condition, String key) async =>
+          (await bundle.conditions(
+            <ConditionKind>[
+              kinds[condition]!,
+            ],
+            <MedicineEntry>[index.byKey(key)!],
+          )).single;
+
+      // A recorded combined pill, with tranexamic acid.
+      final pill = await compare(
+        Condition.hormonalContraceptionCombined,
+        'tranexamic-acid.oral.rx',
+      );
+      expect(
+        pill.mentions.map((mention) => mention.group?.name),
+        contains('combined hormonal contraceptives'),
+      );
+      // And with rifampin, the owner's example.
+      final rifampin = await compare(
+        Condition.hormonalContraceptionCombined,
+        'rifampin.oral.rx',
+      );
+      expect(rifampin.connected, isTrue);
+      // A hormonal IUD and an emergency pill share levonorgestrel.
+      final iud = await compare(
+        Condition.hormonalIud,
+        'levonorgestrel.oral.otc',
+      );
+      expect(iud.sharedSubstances, <String>['levonorgestrel']);
     });
 
     test('matches nothing on a name that is only a word', () {

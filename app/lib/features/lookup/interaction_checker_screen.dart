@@ -1,16 +1,21 @@
 /// Interaction checker.
 ///
 /// Compares two or more medicines by what their US labels say, a pair at a
-/// time (ADR-0014): an ingredient both contain, an FDA drug class both are in,
-/// and each place one label names the other, quoted as the label prints it.
-/// It never concludes that a combination is safe, and says so wherever it
-/// finds nothing.
+/// time (ADR-0014): an ingredient both contain, an FDA drug class or a group
+/// both are in (ADR-0021), and each place one label names the other, quoted
+/// as the label prints it. It never concludes that a combination is safe, and
+/// says so wherever it finds nothing.
 ///
 /// Includes:
 ///     - InteractionCheckerScreen: The list, and what its labels say.
 ///     - InteractionPairCard: One pair, and what connects it.
+///     - ConditionPairScreen: A recorded kind of contraception and a
+///       medicine, and what the medicine's label says.
 ///     - interactionReasons: What connects a pair, a sentence each.
+///     - conditionReasons: What connects a kind and a medicine, likewise.
+///     - conditionKindName: A kind of contraception, in a sentence.
 ///     - searchPairOnline: The browser hand-off for a pair.
+///     - searchConditionOnline: The same, for a kind and a medicine.
 ///     - _Mention: One quoted passage, with the name set apart.
 library;
 
@@ -19,7 +24,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/data/reference/interactions.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_bundle.dart';
+import 'package:period_tracker/data/reference/medicine_groups.dart';
 import 'package:period_tracker/data/reference/medicines_bundled.dart';
+import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/lookup/browser_handoff.dart';
 import 'package:period_tracker/features/lookup/medicine_picker.dart';
@@ -259,9 +266,17 @@ class InteractionPairCard extends StatelessWidget {
                 child: Text(reason),
               ),
             for (final mention in pair.firstMentions)
-              _Mention(mention: mention, own: pair.first, other: pair.second),
+              _Mention(
+                mention: mention,
+                medicine: pair.first.name,
+                other: pair.second.name,
+              ),
             for (final mention in pair.secondMentions)
-              _Mention(mention: mention, own: pair.second, other: pair.first),
+              _Mention(
+                mention: mention,
+                medicine: pair.second.name,
+                other: pair.first.name,
+              ),
             const SizedBox(height: 4),
             TextButton.icon(
               onPressed: () => searchPairOnline(context, pair),
@@ -285,9 +300,9 @@ class InteractionPairCard extends StatelessWidget {
 ///         here, and each mention is said above its passage instead.
 ///
 /// Returns:
-///     `List<String>`: The ingredients both contain, the classes both are in,
-///     and, unless [quotes], each name one label gives the other. Empty for a
-///     pair the labels do not connect.
+///     `List<String>`: The ingredients both contain, the classes and groups
+///     both are in, and, unless [quotes], each name one label gives the
+///     other. Empty for a pair the labels do not connect.
 List<String> interactionReasons(
   AppLocalizations l10n,
   InteractionPair pair, {
@@ -300,35 +315,98 @@ List<String> interactionReasons(
       pair.sharedClasses.length,
       pair.sharedClasses.join(', '),
     ),
+  if (pair.sharedGroups.isNotEmpty)
+    l10n.checkerSharedGroup(_groupNames(pair.sharedGroups)),
   if (!quotes) ...<String>[
     for (final mention in pair.firstMentions)
       _mentionSentence(
         l10n,
         mention,
-        own: pair.first,
-        other: pair.second,
+        medicine: pair.first.name,
+        other: pair.second.name,
         short: true,
       ),
     for (final mention in pair.secondMentions)
       _mentionSentence(
         l10n,
         mention,
-        own: pair.second,
-        other: pair.first,
+        medicine: pair.second.name,
+        other: pair.first.name,
         short: true,
       ),
   ],
 ];
 
+/// Say what connects a recorded kind of contraception and a medicine, a
+/// sentence each.
+///
+/// Args:
+///     l10n (AppLocalizations): The translations.
+///     pair (ConditionPair): The kind and the medicine.
+///     quotes (bool): Whether the passages are shown with the sentences, as
+///         for [interactionReasons].
+///
+/// Returns:
+///     `List<String>`: What both contain and are in, and, unless [quotes],
+///     each way the medicine's label names the kind. Empty for a pair the
+///     label does not connect.
+List<String> conditionReasons(
+  AppLocalizations l10n,
+  ConditionPair pair, {
+  bool quotes = false,
+}) => <String>[
+  if (pair.sharedSubstances.isNotEmpty)
+    l10n.checkerSharedSubstance(pair.sharedSubstances.join(', ')),
+  if (pair.sharedGroups.isNotEmpty)
+    l10n.checkerSharedGroup(_groupNames(pair.sharedGroups)),
+  if (!quotes)
+    for (final mention in pair.mentions)
+      _mentionSentence(
+        l10n,
+        mention,
+        medicine: pair.medicine.name,
+        other: conditionKindName(l10n, pair.condition.condition),
+        kind: true,
+        short: true,
+      ),
+];
+
+/// Name a recorded kind of contraception in a sentence, in the plural:
+/// "combined pills", as in "a group that includes combined pills".
+///
+/// Args:
+///     l10n (AppLocalizations): The translations.
+///     condition (Condition): The kind.
+///
+/// Returns:
+///     String: Its name. A condition that is not a kind of contraception has
+///     none, and is named as the conditions list names it.
+String conditionKindName(AppLocalizations l10n, Condition condition) =>
+    switch (condition) {
+      Condition.hormonalContraceptionCombined => l10n.conditionKindCombined,
+      Condition.hormonalContraceptionProgestogen =>
+        l10n.conditionKindProgestogen,
+      Condition.hormonalIud => l10n.conditionKindIud,
+      Condition.contraceptiveImplant => l10n.conditionKindImplant,
+      _ => condition.name,
+    };
+
+/// [groups] by name, one after another: "NSAIDs, triptans".
+String _groupNames(List<MedicineGroup> groups) =>
+    groups.map((group) => group.name).join(', ');
+
 /// The sentence that introduces a mention: which label, which words, and,
 /// above a quoted passage, where in the label.
 ///
-/// [short] leaves out where, for a reason with no passage under it.
+/// [short] leaves out where, for a reason with no passage under it. [kind]
+/// says [other] is a recorded kind of contraception, named in the plural: an
+/// ingredient is then one every product of it contains.
 String _mentionSentence(
   AppLocalizations l10n,
   LabelMention mention, {
-  required MedicineEntry own,
-  required MedicineEntry other,
+  required String medicine,
+  required String other,
+  bool kind = false,
   bool short = false,
 }) {
   // The words as the label prints them, on one line: a match can run over a
@@ -337,15 +415,37 @@ String _mentionSentence(
       .substring(mention.start, mention.end)
       .replaceAll(RegExp(r'\s+'), ' ');
   if (short) {
-    return mention.isClass
-        ? l10n.checkerMentionsClassShort(own.name, words, other.name)
-        : l10n.checkerMentionsNameShort(own.name, words);
+    if (mention.group != null) {
+      return l10n.checkerMentionsGroupShort(medicine, words, other);
+    }
+    if (mention.isClass) {
+      return l10n.checkerMentionsClassShort(medicine, words, other);
+    }
+    return kind
+        ? l10n.checkerMentionsKindName(medicine, words, other)
+        : l10n.checkerMentionsNameShort(medicine, words);
   }
   final section = medicineSectionHeading(l10n, mention.section);
-  return mention.isClass
-      ? l10n.checkerMentionsClass(own.name, words, other.name, section)
-      : l10n.checkerMentionsName(own.name, words, section);
+  if (mention.group != null) {
+    return l10n.checkerMentionsGroup(medicine, words, other, section);
+  }
+  if (mention.isClass) {
+    return l10n.checkerMentionsClass(medicine, words, other, section);
+  }
+  return kind
+      ? l10n.checkerMentionsKindNameFrom(medicine, words, other, section)
+      : l10n.checkerMentionsName(medicine, words, section);
 }
+
+/// Say where a group's list of medicines comes from: each source by its
+/// title and who published it.
+String _groupSources(AppLocalizations l10n, MedicineGroup group) =>
+    l10n.checkerGroupSources(
+      group.name,
+      group.sources
+          .map((source) => '“${source.title}”, ${source.publisher}')
+          .join('; '),
+    );
 
 /// Hand a pair off to a browser, after confirming.
 ///
@@ -368,41 +468,169 @@ Future<void> searchPairOnline(BuildContext context, InteractionPair pair) =>
       ),
     );
 
+/// Hand a recorded kind of contraception and a medicine off to a browser,
+/// after confirming, as [searchPairOnline] does a pair.
+///
+/// Args:
+///     context (BuildContext): Where the confirmation is shown.
+///     pair (ConditionPair): The kind and the medicine.
+///     label (String): The kind, as the conditions list names it.
+///
+/// Returns:
+///     `Future<void>`: Completes once the browser has opened, the reader has
+///     declined, or the failure has been reported.
+Future<void> searchConditionOnline(
+  BuildContext context,
+  ConditionPair pair, {
+  required String label,
+}) => BrowserHandoff.offer(
+  context,
+  term: AppLocalizations.of(
+    context,
+  ).checkerSearchTerm(label.toLowerCase(), pair.medicine.name.toLowerCase()),
+);
+
+/// A recorded kind of contraception and a medicine, and every passage where
+/// the medicine's label names the kind: what "What the label says" opens.
+///
+/// The kind has no label of its own, so this shows the one there is.
+///
+/// Attributes:
+///     pair (ConditionPair): The kind and the medicine.
+///     label (String): The kind, as the conditions list names it.
+class ConditionPairScreen extends StatelessWidget {
+  /// Creates the screen.
+  ///
+  /// Args:
+  ///     pair (ConditionPair): The kind and the medicine.
+  ///     label (String): The kind, as the conditions list names it.
+  const ConditionPairScreen({
+    required this.pair,
+    required this.label,
+    super.key,
+  });
+
+  /// The kind and the medicine.
+  final ConditionPair pair;
+
+  /// The kind, as the conditions list names it: "Combined pill".
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final small = theme.textTheme.bodySmall;
+    final kind = conditionKindName(l10n, pair.condition.condition);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.checkerPairTitle(label, pair.medicine.name)),
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          children: <Widget>[
+            Text(
+              l10n.conditionsConflictKind(kind),
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    if (!pair.connected) Text(l10n.checkerNothingFoundPair),
+                    for (final reason in conditionReasons(
+                      l10n,
+                      pair,
+                      quotes: true,
+                    ))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(reason),
+                      ),
+                    for (final mention in pair.mentions)
+                      _Mention(
+                        mention: mention,
+                        medicine: pair.medicine.name,
+                        other: kind,
+                        kind: true,
+                      ),
+                    const SizedBox(height: 4),
+                    TextButton.icon(
+                      onPressed: () =>
+                          searchConditionOnline(context, pair, label: label),
+                      icon: const Icon(Icons.open_in_new),
+                      label: Text(l10n.checkerSearchOnline),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(l10n.checkerAskPharmacist, style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 8),
+            Text(l10n.lookupMedicinesUsOnly, style: small),
+            const SizedBox(height: 8),
+            Text(medicinesDisclaimer, style: small),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// One passage where a label names the other medicine, with the name set
 /// apart from the words around it.
 ///
 /// Attributes:
 ///     mention (LabelMention): The passage, and where the name is in it.
-///     own (MedicineEntry): Whose label it is from.
-///     other (MedicineEntry): Who it names.
+///     medicine (String): Whose label it is from.
+///     other (String): Who it names.
+///     kind (bool): Whether [other] is a recorded kind of contraception.
 class _Mention extends StatelessWidget {
   /// Creates the passage.
   const _Mention({
     required this.mention,
-    required this.own,
+    required this.medicine,
     required this.other,
+    this.kind = false,
   });
 
   /// The passage, and where the name is in it.
   final LabelMention mention;
 
-  /// Whose label it is from.
-  final MedicineEntry own;
+  /// Whose label it is from, by name.
+  final String medicine;
 
-  /// Who it names.
-  final MedicineEntry other;
+  /// Who it names, by name.
+  final String other;
+
+  /// Whether [other] is a recorded kind of contraception, in the plural.
+  final bool kind;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final passage = mention.passage;
+    final group = mention.group;
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(_mentionSentence(l10n, mention, own: own, other: other)),
+          Text(
+            _mentionSentence(
+              l10n,
+              mention,
+              medicine: medicine,
+              other: other,
+              kind: kind,
+            ),
+          ),
           const SizedBox(height: 6),
           DecoratedBox(
             decoration: BoxDecoration(
@@ -430,6 +658,12 @@ class _Mention extends StatelessWidget {
               ),
             ),
           ),
+          // Which medicines a group takes in is the table's, not the
+          // label's, so where the table had it from is said with it.
+          if (group != null) ...<Widget>[
+            const SizedBox(height: 6),
+            Text(_groupSources(l10n, group), style: theme.textTheme.bodySmall),
+          ],
         ],
       ),
     );

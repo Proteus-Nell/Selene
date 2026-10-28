@@ -1,13 +1,16 @@
-// What medicines' labels say about each other (ADR-0014).
+// What medicines' labels say about each other (ADR-0014, ADR-0021).
 //
-// The checker reports three things and nothing else: an ingredient two
-// medicines share, an FDA class they share, and a passage where one label
-// names the other. Most of what is pinned here is what does not count as a
-// mention, because a false one tells somebody their medicines conflict.
+// The checker reports four things and nothing else: an ingredient two
+// medicines share, an FDA class they share, a group they are both in, and a
+// passage where one label names the other, by name, class or group. Most of
+// what is pinned here is what does not count as a mention, because a false
+// one tells somebody their medicines conflict.
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/data/reference/interactions.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
+import 'package:period_tracker/data/reference/medicine_groups.dart';
+import 'package:period_tracker/domain/models/condition.dart';
 
 import 'medicine_fixture.dart';
 
@@ -17,23 +20,28 @@ const String _nsaid = 'Nonsteroidal Anti-inflammatory Drug';
 MedicineEntry _entry(FixtureDrug drug) =>
     fixtureIndex(<FixtureDrug>[drug]).entries.single;
 
+/// [sections] as a label's.
+List<MedicineSection> _label(Map<String, String> sections) => <MedicineSection>[
+  for (final MapEntry(:key, :value) in sections.entries)
+    MedicineSection(name: key, text: value),
+];
+
 /// Compare [first] and [second], with [first]'s label made of [sections].
+///
+/// With no group table unless [groups] gives one, so that what a name or a
+/// class alone finds is pinned apart from the groups.
 InteractionPair _compare(
   FixtureDrug first,
   FixtureDrug second, {
   Map<String, String> sections = const <String, String>{},
   Map<String, String> secondSections = const <String, String>{},
+  MedicineGroups groups = MedicineGroups.none,
 }) => comparePair(
   _entry(first),
   _entry(second),
-  firstSections: <MedicineSection>[
-    for (final MapEntry(:key, :value) in sections.entries)
-      MedicineSection(name: key, text: value),
-  ],
-  secondSections: <MedicineSection>[
-    for (final MapEntry(:key, :value) in secondSections.entries)
-      MedicineSection(name: key, text: value),
-  ],
+  firstSections: _label(sections),
+  secondSections: _label(secondSections),
+  groups: groups,
 );
 
 final FixtureDrug _ibuprofen = fixtureDrug(
@@ -387,6 +395,7 @@ void main() {
             ),
           ],
         },
+        groups: MedicineGroups.none,
       );
       expect(
         pairs.map((pair) => '${pair.first.key} ${pair.second.key}'),
@@ -401,11 +410,304 @@ void main() {
 
     test('of one has no pairs', () {
       expect(
-        checkInteractions(<MedicineEntry>[
-          _entry(_pill),
-        ], const <String, List<MedicineSection>>{}),
+        checkInteractions(
+          <MedicineEntry>[_entry(_pill)],
+          const <String, List<MedicineSection>>{},
+          groups: MedicineGroups.none,
+        ),
         isEmpty,
       );
     });
   });
+
+  group('a group name', () {
+    test('names every drug the group covers', () {
+      // Tranexamic acid's label names the pill only as a group.
+      final pair = _compare(
+        _tranexamic,
+        _pill,
+        sections: <String, String>{
+          'contraindications':
+              'Concomitant use of combined hormonal contraceptives.',
+        },
+        groups: _groups,
+      );
+      final mention = pair.firstMentions.single;
+      expect(mention.group, _chc);
+      expect(mention.name, 'combined hormonal contraceptives');
+      expect(mention.isClass, isFalse);
+      expect(
+        mention.passage.substring(mention.start, mention.end),
+        'combined hormonal contraceptives',
+      );
+      expect(pair.connected, isTrue);
+    });
+
+    test('by an abbreviation the FDA class is never printed as', () {
+      final pair = _compare(
+        _rifampin,
+        _aspirin,
+        sections: <String, String>{'warnings': 'Avoid other NSAIDs.'},
+        groups: _groups,
+      );
+      expect(pair.firstMentions.single.group, _nsaids);
+    });
+
+    test('but not a group the other medicine is not in', () {
+      final pair = _compare(
+        _pill,
+        _rifampin,
+        sections: <String, String>{'warnings': 'Avoid NSAIDs.'},
+        groups: _groups,
+      );
+      expect(pair.firstMentions, isEmpty);
+      expect(pair.connected, isFalse);
+    });
+
+    test('nor one straight after "non"', () {
+      final pair = _compare(
+        _rifampin,
+        _iud,
+        sections: <String, String>{
+          'precautions':
+              'Advise a non-hormonal contraceptive. Use a non hormonal '
+              'method.',
+        },
+        groups: _groups,
+      );
+      expect(pair.firstMentions, isEmpty);
+    });
+
+    test('though the group on its own still is', () {
+      final pair = _compare(
+        _rifampin,
+        _iud,
+        sections: <String, String>{
+          'precautions':
+              'Advise a non-hormonal contraceptive. Systemic hormonal '
+              'contraceptives may be less effective.',
+        },
+        groups: _groups,
+      );
+      expect(
+        pair.firstMentions.single.passage,
+        'Systemic hormonal contraceptives may be less effective.',
+      );
+    });
+
+    test('nor one inside a longer group phrase', () {
+      // "Combined hormonal contraceptives" are the combined ones. The IUD is
+      // a hormonal contraceptive, and not one of these.
+      final pair = _compare(
+        _tranexamic,
+        _iud,
+        sections: <String, String>{
+          'contraindications':
+              'Concomitant use of combined hormonal contraceptives.',
+        },
+        groups: _groups,
+      );
+      expect(pair.firstMentions, isEmpty);
+    });
+
+    test('nor one in a sentence its FDA class has already been quoted from', () {
+      final pair = _compare(
+        _rifampin,
+        _ibuprofen,
+        sections: <String, String>{
+          'warnings':
+              'Avoid nonsteroidal anti-inflammatory drugs (NSAIDs) with this.',
+        },
+        groups: _groups,
+      );
+      final mention = pair.firstMentions.single;
+      expect(mention.isClass, isTrue);
+      expect(mention.group, isNull);
+    });
+
+    test('once, from the most telling section it is in', () {
+      final pair = _compare(
+        _rifampin,
+        _aspirin,
+        sections: <String, String>{
+          'warnings': 'NSAIDs, said in the warnings.',
+          'drug_interactions': 'NSAIDs: increased bleeding. More NSAIDs.',
+        },
+        groups: _groups,
+      );
+      final mention = pair.firstMentions.single;
+      expect(mention.section, 'drug_interactions');
+      expect(mention.passage, 'NSAIDs: increased bleeding.');
+    });
+
+    test('a label talking about its own group is not a mention', () {
+      // Both are NSAIDs, which is said once, as shared.
+      final pair = _compare(
+        _aspirin,
+        _ibuprofen,
+        sections: <String, String>{'warnings': 'NSAIDs may cause bleeding.'},
+        groups: _groups,
+      );
+      expect(pair.sharedGroups, <MedicineGroup>[_nsaids]);
+      expect(pair.firstMentions, isEmpty);
+      expect(pair.connected, isTrue);
+    });
+
+    test('shared, is said in its narrowest form', () {
+      // A pill and a ring are combined hormonal contraceptives, and hormonal
+      // ones too, which adds nothing.
+      final pair = _compare(_pill, _ring, groups: _groups);
+      expect(pair.sharedGroups, <MedicineGroup>[_chc]);
+    });
+
+    test('shared, is not said again where an FDA class has said it', () {
+      final pair = _compare(
+        _ibuprofen,
+        fixtureDrug('naproxen.oral.rx', name: 'NAPROXEN', classes: [_nsaid]),
+        groups: _groups,
+      );
+      expect(pair.sharedClasses, <String>[_nsaid]);
+      expect(pair.sharedGroups, isEmpty);
+    });
+  });
+
+  group('a recorded kind of contraception', () {
+    test('counts as the ingredient all its products contain', () {
+      final pair = compareCondition(
+        _iudKind,
+        _entry(_rifampin),
+        sections: _label(<String, String>{
+          'drug_interactions': 'Levonorgestrel levels may fall.',
+        }),
+        groups: _groups,
+      );
+      expect(pair.mentions.single.name, 'levonorgestrel');
+      expect(pair.mentions.single.group, isNull);
+      expect(pair.connected, isTrue);
+    });
+
+    test('and as the groups they are all in', () {
+      final pair = compareCondition(
+        _iudKind,
+        _entry(_rifampin),
+        sections: _label(<String, String>{
+          'precautions': 'Hormonal contraceptives may be less effective.',
+        }),
+        groups: _groups,
+      );
+      expect(pair.mentions.single.group, _hormonal);
+    });
+
+    test('shares what a medicine shares with its products', () {
+      final pair = compareCondition(
+        _iudKind,
+        _entry(_planB),
+        sections: const <MedicineSection>[],
+        groups: _groups,
+      );
+      expect(pair.sharedSubstances, <String>['levonorgestrel']);
+      expect(pair.sharedGroups, <MedicineGroup>[_hormonal]);
+    });
+
+    test('says nothing where the label does not', () {
+      final pair = compareCondition(
+        _iudKind,
+        _entry(_ibuprofen),
+        sections: _label(<String, String>{'warnings': 'May cause hives.'}),
+        groups: _groups,
+      );
+      expect(pair.connected, isFalse);
+    });
+
+    test('is compared with every medicine, kind by kind', () {
+      final pairs = checkConditions(
+        <ConditionKind>[_iudKind],
+        <MedicineEntry>[_entry(_rifampin), _entry(_ibuprofen)],
+        const <String, List<MedicineSection>>{},
+        groups: _groups,
+      );
+      expect(pairs.map((pair) => pair.medicine.key), <String>[
+        _rifampin.key,
+        _ibuprofen.key,
+      ]);
+    });
+
+    test('is left out where one of its products is recorded', () {
+      // Somebody who records the hormonal IUD and the IUD itself has
+      // recorded one thing twice. The medicine, with its own label, stands
+      // for it.
+      final pairs = checkConditions(
+        <ConditionKind>[_iudKind],
+        <MedicineEntry>[_entry(_rifampin), _entry(_iud)],
+        const <String, List<MedicineSection>>{},
+        groups: _groups,
+      );
+      expect(pairs, isEmpty);
+    });
+  });
 }
+
+final FixtureDrug _tranexamic = fixtureDrug(
+  'tranexamic-acid.oral.rx',
+  name: 'TRANEXAMIC ACID',
+  type: 'rx',
+);
+
+final FixtureDrug _aspirin = fixtureDrug('aspirin.oral.otc', name: 'ASPIRIN');
+
+final FixtureDrug _ring = fixtureDrug(
+  'ethinyl-estradiol+etonogestrel.vaginal.rx',
+  name: 'ETONOGESTREL AND ETHINYL ESTRADIOL',
+  substances: <String>['ETHINYL ESTRADIOL', 'ETONOGESTREL'],
+  routes: <String>['VAGINAL'],
+  type: 'rx',
+);
+
+final FixtureDrug _iud = fixtureDrug(
+  'levonorgestrel.intrauterine.rx',
+  name: 'LEVONORGESTREL',
+  routes: <String>['INTRAUTERINE'],
+  type: 'rx',
+);
+
+final FixtureDrug _planB = fixtureDrug(
+  'levonorgestrel.oral.otc',
+  name: 'LEVONORGESTREL',
+);
+
+final MedicineGroup _nsaids = MedicineGroup(
+  name: 'NSAIDs',
+  phrases: const <String>['NSAID', 'nonsteroidal anti-inflammatory drug'],
+  classes: const <String>[_nsaid],
+  members: <String>{_ibuprofen.key, _aspirin.key, 'naproxen.oral.rx'},
+);
+
+final MedicineGroup _chc = MedicineGroup(
+  name: 'combined hormonal contraceptives',
+  phrases: const <String>['combined hormonal contraceptive'],
+  members: <String>{_pill.key, _ring.key},
+);
+
+final MedicineGroup _hormonal = MedicineGroup(
+  name: 'hormonal contraceptives',
+  phrases: const <String>['hormonal contraceptive'],
+  members: <String>{_pill.key, _ring.key, _iud.key, _planB.key},
+);
+
+final ConditionKind _iudKind = ConditionKind(
+  condition: Condition.hormonalIud,
+  kind: <String>{_iud.key},
+  names: const <String>['levonorgestrel'],
+  groups: <MedicineGroup>[_hormonal],
+  source: const GroupSource(
+    title: 'Birth Control',
+    publisher: 'FDA',
+    url: 'https://www.fda.gov/',
+    retrieved: '2026-10-28',
+  ),
+);
+
+final MedicineGroups _groups = MedicineGroups(
+  <MedicineGroup>[_nsaids, _chc, _hormonal],
+  conditions: <Condition, ConditionKind>{Condition.hormonalIud: _iudKind},
+);

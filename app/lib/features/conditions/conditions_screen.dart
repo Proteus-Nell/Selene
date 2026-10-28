@@ -6,15 +6,19 @@
 /// overlapped, which is context for reading the user's own figures.
 ///
 /// Below them, the medicines the user takes, picked from the bundled US list,
-/// and a flag for each pair whose labels connect them (ADR-0015). A flag only
-/// informs, and offers the pair to a browser.
+/// and a flag for each pair whose labels connect them (ADR-0015), and for
+/// each medicine whose label connects it with a recorded kind of
+/// contraception (ADR-0021). A flag only informs, and offers the pair to a
+/// browser.
 ///
 /// Includes:
 ///     - ConditionsScreen: The list, and the flow that adds to it.
 ///     - _ConditionTile: One record, its dates, and what it overlapped.
 ///     - _Medicines: The recorded medicines, and the flow that adds to them.
-///     - _Conflicts: A card for every pair of recorded medicines.
+///     - _Conflicts: A card for every pair of recorded medicines, and every
+///       recorded kind of contraception with each medicine.
 ///     - _PairCard: One pair, flagged or not.
+///     - _ConditionPairCard: One kind of contraception and one medicine.
 ///     - _spaced: The gap under a card in a list of them.
 ///     - conditionLabel: The user-facing name of a condition.
 ///     - _pickDate: The date picker both flows use.
@@ -389,7 +393,13 @@ class _Medicines extends ConsumerWidget {
             icon: const Icon(Icons.add),
             label: Text(l10n.checkerAdd),
           ),
-          if (recorded.length >= 2) ...<Widget>[
+          // A pair of medicines, or a recorded kind of contraception and a
+          // medicine to compare it with (ADR-0021).
+          if (recorded.length >= 2 ||
+              (recorded.isNotEmpty &&
+                  ref
+                      .watch(recordedContraceptionProvider)
+                      .isNotEmpty)) ...<Widget>[
             const SizedBox(height: 24),
             const _Conflicts(),
           ],
@@ -421,13 +431,14 @@ class _Medicines extends ConsumerWidget {
   }
 }
 
-/// A card for every pair of recorded medicines: the pairs whose labels
-/// connect them first, flagged, then the rest.
+/// A card for every pair of recorded medicines, and for every recorded kind
+/// of contraception with every medicine: those the labels connect first,
+/// flagged, then the rest.
 ///
 /// Every pair can be looked up online, at the owner's direction, whether or
 /// not the labels connect it. A pair with nothing found here is not thereby
-/// cleared: the labels leave interactions out, and name many medicines only
-/// by a group this app cannot match.
+/// cleared: the labels leave interactions out, and name many medicines by a
+/// group this app does not know.
 class _Conflicts extends ConsumerWidget {
   /// Creates the section.
   const _Conflicts();
@@ -437,7 +448,8 @@ class _Conflicts extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final body = theme.textTheme.bodyMedium;
-    final pairs = ref.watch(recordedInteractionsProvider);
+    final medicines = ref.watch(recordedInteractionsProvider);
+    final conditions = ref.watch(recordedConditionPairsProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -449,36 +461,49 @@ class _Conflicts extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 4),
-        ...pairs.when(
-          data: (pairs) {
-            final flagged = <InteractionPair>[
-              for (final pair in pairs)
-                if (pair.connected) pair,
-            ];
-            final unflagged = <InteractionPair>[
-              for (final pair in pairs)
-                if (!pair.connected) pair,
-            ];
-            return <Widget>[
-              if (flagged.isNotEmpty) ...<Widget>[
-                Text(l10n.conditionsConflictsIntro, style: body),
-                const SizedBox(height: 12),
-              ],
-              for (final pair in <InteractionPair>[...flagged, ...unflagged])
-                _spaced(_PairCard(pair: pair), gap: 12),
-              if (unflagged.isNotEmpty)
-                Text(l10n.checkerNothingFoundNote, style: body),
-            ];
-          },
-          error: (error, stack) => <Widget>[
+        ...switch ((medicines, conditions)) {
+          (AsyncError(), _) || (_, AsyncError()) => <Widget>[
             Text(l10n.checkerFailed, style: body),
           ],
-          loading: () => <Widget>[
+          (
+            AsyncData(value: final pairs),
+            AsyncData(value: final kinds),
+          ) =>
+            _cards(l10n, body, pairs, kinds),
+          _ => <Widget>[
             LinearProgressIndicator(semanticsLabel: l10n.checkerLoading),
           ],
-        ),
+        },
       ],
     );
+  }
+
+  /// The cards: the flagged ones first, medicine pairs before kinds, then
+  /// the rest in the same order.
+  List<Widget> _cards(
+    AppLocalizations l10n,
+    TextStyle? body,
+    List<InteractionPair> pairs,
+    List<ConditionPair> kinds,
+  ) {
+    final cards = <(bool, Widget)>[
+      for (final pair in pairs) (pair.connected, _PairCard(pair: pair)),
+      for (final pair in kinds)
+        (pair.connected, _ConditionPairCard(pair: pair)),
+    ];
+    final flagged = cards.any((card) => card.$1);
+    final unflagged = cards.any((card) => !card.$1);
+    return <Widget>[
+      if (flagged) ...<Widget>[
+        Text(l10n.conditionsConflictsIntro, style: body),
+        const SizedBox(height: 12),
+      ],
+      for (final (connected, card) in cards)
+        if (connected) _spaced(card, gap: 12),
+      for (final (connected, card) in cards)
+        if (!connected) _spaced(card, gap: 12),
+      if (unflagged) Text(l10n.checkerNothingFoundNote, style: body),
+    ];
   }
 }
 
@@ -558,6 +583,90 @@ class _PairCard extends StatelessWidget {
                       ),
                     ),
                     child: Text(l10n.conditionsConflictLabels),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A recorded kind of contraception and a recorded medicine, and where to
+/// read more about them.
+///
+/// As [_PairCard], with the kind compared as what every product of it shares
+/// (ADR-0021), and the medicine's label the only one to read: the kind has
+/// none of its own. It informs and nothing else.
+///
+/// Attributes:
+///     pair (ConditionPair): The kind and the medicine.
+class _ConditionPairCard extends StatelessWidget {
+  /// Creates the card.
+  ///
+  /// Args:
+  ///     pair (ConditionPair): The kind and the medicine.
+  const _ConditionPairCard({required this.pair});
+
+  /// The kind and the medicine.
+  final ConditionPair pair;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final label = conditionLabel(l10n, pair.condition.condition);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                if (pair.connected) ...<Widget>[
+                  Icon(Icons.flag_outlined, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: Text(
+                    l10n.checkerPairTitle(label, pair.medicine.name),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (!pair.connected)
+              Text(
+                l10n.checkerNothingFoundPair,
+                style: theme.textTheme.bodyMedium,
+              ),
+            for (final reason in conditionReasons(l10n, pair))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(reason, style: theme.textTheme.bodyMedium),
+              ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              children: <Widget>[
+                TextButton.icon(
+                  onPressed: () =>
+                      searchConditionOnline(context, pair, label: label),
+                  icon: const Icon(Icons.open_in_new),
+                  label: Text(l10n.conditionsConflictLookUp),
+                ),
+                if (pair.connected)
+                  TextButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (context) =>
+                            ConditionPairScreen(pair: pair, label: label),
+                      ),
+                    ),
+                    child: Text(l10n.conditionsConflictLabel),
                   ),
               ],
             ),
