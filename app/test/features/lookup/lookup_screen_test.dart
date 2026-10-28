@@ -8,7 +8,8 @@
 //
 // The medicines here are the handful in medicine_fixture.dart rather than the
 // bundle the app ships, so that a refresh of openFDA's export cannot change
-// what these tests see. medicines_test.dart covers the real bundle.
+// what these tests see. medicines_test.dart covers the real bundle. The herbs
+// are supplement_fixture.dart's two, likewise.
 
 import 'dart:async';
 
@@ -20,12 +21,16 @@ import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/reference/medicine_bundle.dart';
 import 'package:period_tracker/data/reference/medicines_bundled.dart';
+import 'package:period_tracker/data/reference/supplement_bundle.dart';
+import 'package:period_tracker/data/reference/supplements_bundled.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/lookup/lookup_screen.dart';
 import 'package:period_tracker/features/lookup/medicine_browse.dart';
 import 'package:period_tracker/features/lookup/medicine_screen.dart';
+import 'package:period_tracker/features/lookup/supplement_screen.dart';
 
 import '../../data/reference/medicine_fixture.dart';
+import '../../data/reference/supplement_fixture.dart';
 import '../harness.dart';
 
 /// An asset bundle whose files never arrive.
@@ -42,6 +47,7 @@ void main() {
 
   Widget screen({
     MedicineBundle? bundle,
+    AssetBundle? herbs,
     TextScaler textScaler = TextScaler.noScaling,
   }) => harness(
     const LookupScreen(),
@@ -51,11 +57,18 @@ void main() {
       medicineBundleProvider.overrideWith(
         (ref) => bundle ?? fixtureBundle(fixtureDrugs),
       ),
+      supplementAssetsProvider.overrideWithValue(
+        herbs ?? fixtureSupplementAssets(),
+      ),
     ],
   );
 
-  Future<void> pump(WidgetTester tester, {MedicineBundle? bundle}) async {
-    await tester.pumpWidget(screen(bundle: bundle));
+  Future<void> pump(
+    WidgetTester tester, {
+    MedicineBundle? bundle,
+    AssetBundle? herbs,
+  }) async {
+    await tester.pumpWidget(screen(bundle: bundle, herbs: herbs));
     await tester.pumpAndSettle();
   }
 
@@ -301,7 +314,9 @@ void main() {
       expect(find.text('Who should not take ibuprofen tablets?'), findsNothing);
       await tester.tap(title);
       await tester.pumpAndSettle();
-      await reveal(tester, find.text('• stomach bleeding'));
+      // Each bullet a line of its own, its mark drawn.
+      await reveal(tester, find.text('stomach bleeding'));
+      expect(find.text('• stomach bleeding'), findsNothing);
       expect(
         find.text('Who should not take ibuprofen tablets?'),
         findsOneWidget,
@@ -481,6 +496,96 @@ void main() {
     });
   });
 
+  group('the herbal supplements', () {
+    testWidgets('are offered while nothing is typed, A to Z', (tester) async {
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      // The count is the reference the app ships, not the fixture: the entry
+      // is shown before the reference is opened.
+      expect(
+        find.text(l10n.lookupSupplementsEntrySubtitle(supplementsCount)),
+        findsOneWidget,
+      );
+      await tester.tap(find.text(l10n.lookupSupplementsEntry));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SupplementsScreen), findsOneWidget);
+      final date = CivilDate(
+        2026,
+        10,
+        28,
+      ).full(tester.element(find.byType(SupplementsScreen)));
+      expect(find.text(l10n.supplementsIntro(date)), findsOneWidget);
+      // Under their initials, in order.
+      expect(
+        tester.getTopLeft(find.text('G')).dy,
+        lessThan(tester.getTopLeft(find.text('Ginger')).dy),
+      );
+      expect(
+        tester.getTopLeft(find.text('Ginger')).dy,
+        lessThan(tester.getTopLeft(find.text('S')).dy),
+      );
+      expect(find.text('St. John’s Wort'), findsOneWidget);
+      await reveal(tester, find.text(fixtureSupplementsDisclaimer));
+      expect(find.text(fixtureSupplementsDisclaimer), findsOneWidget);
+    });
+
+    testWidgets('a search lists the herbs it finds, above the medicines', (
+      tester,
+    ) async {
+      await pump(tester);
+      await search(tester, 'ginger');
+      final l10n = l10nOf(tester);
+      expect(find.text(l10n.lookupSupplementsHeading), findsOneWidget);
+      expect(find.byType(SupplementTile), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Ginger')).dy,
+        lessThan(tester.getTopLeft(find.text(l10n.lookupMedicinesHeading)).dy),
+      );
+      // No medicine is called ginger, but a herb is: that is not nothing.
+      expect(find.text(l10n.lookupNoResults), findsNothing);
+      // And the entry to the A to Z gives way, as the checker's does.
+      expect(find.text(l10n.lookupSupplementsEntry), findsNothing);
+    });
+
+    testWidgets('a herb found by another name says which', (tester) async {
+      await pump(tester);
+      await search(tester, 'hypericum');
+      expect(
+        find.text(l10nOf(tester).supplementsFoundBy('hypericum')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a search with no herb shows no heading for them', (
+      tester,
+    ) async {
+      await pump(tester);
+      await search(tester, 'ibuprofen');
+      expect(
+        find.text(l10nOf(tester).lookupSupplementsHeading),
+        findsNothing,
+      );
+    });
+
+    testWidgets("opens onto the herb's fact sheet", (tester) async {
+      await pump(tester);
+      await search(tester, 'st johns');
+      await tester.tap(find.text('St. John’s Wort'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SupplementScreen), findsOneWidget);
+      expect(find.text('Birth control pills'), findsOneWidget);
+    });
+
+    testWidgets('say so when they cannot be opened', (tester) async {
+      await pump(tester, herbs: MemoryAssets(<String, Uint8List>{}));
+      final l10n = l10nOf(tester);
+      await tester.tap(find.text(l10n.lookupSupplementsEntry));
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.supplementsFailed), findsOneWidget);
+    });
+  });
+
   group('layout', () {
     testWidgets('survives a 200% text scale', (tester) async {
       await tester.pumpWidget(
@@ -517,6 +622,20 @@ void main() {
       await tester.tap(kind);
       await tester.pumpAndSettle();
       expect(find.byType(MedicineScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets("and so does a herb's page", (tester) async {
+      await tester.pumpWidget(
+        screen(textScaler: const TextScaler.linear(2)),
+      );
+      await tester.pumpAndSettle();
+      await search(tester, 'st johns');
+      final herb = find.text('St. John’s Wort');
+      await reveal(tester, herb);
+      await tester.tap(herb);
+      await tester.pumpAndSettle();
+      expect(find.byType(SupplementScreen), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

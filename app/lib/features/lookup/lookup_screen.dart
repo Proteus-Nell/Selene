@@ -14,9 +14,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_bundle.dart';
 import 'package:period_tracker/data/reference/medicines_bundled.dart';
+import 'package:period_tracker/data/reference/supplement.dart';
+import 'package:period_tracker/data/reference/supplement_bundle.dart';
+import 'package:period_tracker/data/reference/supplements_bundled.dart';
 import 'package:period_tracker/features/lookup/browser_handoff.dart';
 import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
 import 'package:period_tracker/features/lookup/medicine_browse.dart';
+import 'package:period_tracker/features/lookup/supplement_screen.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Lookup screen: look something up, with somewhere to go if it is not here.
@@ -29,7 +33,9 @@ import 'package:period_tracker/l10n/app_localizations.dart';
 ///
 /// The medicines are every drug in openFDA's label export, several thousand of
 /// them (ADR-0012), so they are searched, or browsed a letter at a time, and
-/// each opens onto its own page.
+/// each opens onto its own page. The herbs are NCCIH's fact sheets, a few
+/// dozen (ADR-0023): a search lists the ones it finds above the medicines,
+/// and all of them are a tap away.
 class LookupScreen extends ConsumerStatefulWidget {
   /// Creates the lookup screen.
   const LookupScreen({super.key});
@@ -114,8 +120,21 @@ class _LookupScreenState extends ConsumerState<LookupScreen> {
     final medicines = loaded == null || query.isEmpty
         ? MedicineSearch.none
         : _medicines(loaded, query);
+    final herbs = supplementsCount > 0
+        ? ref.watch(supplementsProvider).valueOrNull
+        : null;
+    final herbMatches = herbs == null || query.isEmpty
+        ? const <SupplementMatch>[]
+        : herbs.search(query);
+    // Said once every reference there is has been searched, and none of them
+    // has anything.
     final nothingMatched =
-        query.isNotEmpty && loaded != null && medicines.total == 0;
+        query.isNotEmpty &&
+        (loaded != null || herbs != null) &&
+        (loaded != null || !medicinesFetched) &&
+        (herbs != null || supplementsCount == 0) &&
+        medicines.total == 0 &&
+        herbMatches.isEmpty;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.lookupTitle)),
@@ -149,6 +168,42 @@ class _LookupScreenState extends ConsumerState<LookupScreen> {
                   ),
                 ),
               ),
+            ],
+            if (supplementsCount > 0 && query.isEmpty) ...<Widget>[
+              const SizedBox(height: 8),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.eco_outlined),
+                  title: Text(l10n.lookupSupplementsEntry),
+                  subtitle: Text(
+                    l10n.lookupSupplementsEntrySubtitle(supplementsCount),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (context) => const SupplementsScreen(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+            // Above the medicines: a few dozen herbs against several thousand
+            // medicines, and one found by name is the page that was meant.
+            if (herbMatches.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 20),
+              Text(
+                l10n.lookupSupplementsHeading,
+                style: theme.textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              for (final match in herbMatches)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: SupplementTile(
+                    supplement: match.supplement,
+                    alias: match.alias,
+                  ),
+                ),
             ],
             const SizedBox(height: 20),
 

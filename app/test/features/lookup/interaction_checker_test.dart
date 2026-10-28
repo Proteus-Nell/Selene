@@ -1,4 +1,4 @@
-// The interaction checker (ADR-0014, ADR-0021).
+// The interaction checker (ADR-0014, ADR-0021, ADR-0023).
 //
 // What is pinned here is what the screen says, because each part of it is
 // something a reader would otherwise assume: that a pair with nothing found is
@@ -7,7 +7,9 @@
 //
 // The medicines are a handful written out here rather than the bundle the app
 // ships, so that a refresh of openFDA's export cannot change what these tests
-// see. medicines_test.dart covers the real bundle.
+// see. medicines_test.dart covers the real bundle. The herbs are
+// supplement_fixture.dart's two, and supplements_test.dart covers the real
+// reference.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,17 +18,21 @@ import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_bundle.dart';
 import 'package:period_tracker/data/reference/medicine_groups.dart';
+import 'package:period_tracker/data/reference/supplement.dart';
+import 'package:period_tracker/data/reference/supplement_bundle.dart';
 import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
 import 'package:period_tracker/features/lookup/lookup_screen.dart';
 import 'package:period_tracker/features/lookup/medicine_screen.dart';
 
 import '../../data/reference/medicine_fixture.dart';
+import '../../data/reference/supplement_fixture.dart';
 import '../harness.dart';
 
 const String _nsaid = 'Nonsteroidal Anti-inflammatory Drug';
 
-/// Four medicines, in key order as the generator writes them: one label that
-/// names another, two in one class, and one that connects with nothing.
+/// Five medicines, in key order as the generator writes them: one label that
+/// names another, two in one class, one that connects with nothing, and one
+/// the fixture St. John's wort's sheet names.
 final List<FixtureDrug> _drugs = <FixtureDrug>[
   fixtureDrug('aspirin.oral.otc', name: 'ASPIRIN'),
   fixtureDrug(
@@ -53,6 +59,18 @@ final List<FixtureDrug> _drugs = <FixtureDrug>[
     type: 'rx',
     sections: <List<String>>[
       <String>['contraindications', 'Active thromboembolic disease.'],
+    ],
+  ),
+  fixtureDrug(
+    'warfarin-sodium.oral.rx',
+    name: 'WARFARIN SODIUM',
+    type: 'rx',
+    terms: <String>['warfarin', 'warfarin sodium'],
+    sections: <List<String>>[
+      <String>[
+        'drug_interactions',
+        "Botanicals such as St. John's wort may decrease its effect.",
+      ],
     ],
   ),
 ];
@@ -83,6 +101,9 @@ void main() {
           medicineBundleProvider.overrideWith(
             (ref) => fixtureBundle(_drugs, groups: groups),
           ),
+          supplementAssetsProvider.overrideWithValue(
+            fixtureSupplementAssets(),
+          ),
         ],
       ),
     );
@@ -92,10 +113,14 @@ void main() {
   Future<void> check(
     WidgetTester tester,
     List<String> keys, {
+    List<String> herbs = const <String>[],
     MedicineGroups groups = MedicineGroups.none,
   }) => pump(
     tester,
-    InteractionCheckerScreen(initial: <MedicineEntry>[...keys.map(entry)]),
+    InteractionCheckerScreen(
+      initial: <MedicineEntry>[...keys.map(entry)],
+      initialSupplements: <Supplement>[...herbs.map(fixtureHerb)],
+    ),
     groups: groups,
   );
 
@@ -313,6 +338,180 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(l10n.lookupLeavingTitle), findsNothing);
       expect(find.text(l10n.lookupLeavingFailed), findsNothing);
+    });
+  });
+
+  group('a herb', () {
+    testWidgets('is added from the herbs, and asks for a medicine to compare '
+        'it with', (tester) async {
+      await check(tester, const <String>[]);
+      final l10n = l10nOf(tester);
+      await tester.tap(find.text(l10n.checkerAddSupplement));
+      await tester.pumpAndSettle();
+      // Every herb, before anything is typed.
+      expect(find.text('St. John’s Wort'), findsOneWidget);
+      await tester.tap(find.text('Ginger'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(InteractionCheckerScreen), findsOneWidget);
+      expect(find.text('Ginger'), findsOneWidget);
+      expect(find.text(l10n.checkerSupplementKind), findsOneWidget);
+      expect(find.text(l10n.checkerNeedMedicine), findsOneWidget);
+    });
+
+    testWidgets('is not added twice', (tester) async {
+      await check(tester, const <String>[], herbs: const <String>['ginger']);
+      final l10n = l10nOf(tester);
+      await tester.tap(find.text(l10n.checkerAddSupplement));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'gin');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ginger'));
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.checkerAlreadyAdded('Ginger')), findsOneWidget);
+    });
+
+    testWidgets('can be taken off the list', (tester) async {
+      await check(
+        tester,
+        const <String>['aspirin.oral.otc'],
+        herbs: const <String>['ginger'],
+      );
+      final l10n = l10nOf(tester);
+      await tester.tap(find.byTooltip(l10n.checkerRemove('Ginger')));
+      await tester.pumpAndSettle();
+      expect(find.text('Ginger'), findsNothing);
+      expect(find.text(l10n.checkerNeedTwo), findsOneWidget);
+    });
+
+    testWidgets("quotes where its fact sheet names the medicine, in NCCIH's "
+        'own words', (tester) async {
+      await check(
+        tester,
+        const <String>['ibuprofen.oral.otc'],
+        herbs: const <String>['ginger'],
+      );
+      final l10n = l10nOf(tester);
+      expect(find.byType(SupplementPairCard), findsOneWidget);
+      expect(
+        find.text(l10n.checkerPairTitle('Ginger', 'IBUPROFEN')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          l10n.checkerSheetMentionsName(
+            'Ginger',
+            'ibuprofen',
+            supplementSafetyHeading,
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Taking ginger with ibuprofen may raise the risk of bleeding.',
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('quotes a list item under the line it hangs from, and the '
+        'label naming the herb', (tester) async {
+      await check(
+        tester,
+        const <String>['warfarin-sodium.oral.rx'],
+        herbs: const <String>['st-johns-wort'],
+      );
+      final l10n = l10nOf(tester);
+      expect(
+        find.text(
+          l10n.checkerMentionsName(
+            'WARFARIN SODIUM',
+            "St. John's wort",
+            l10n.lookupSectionInteractions,
+          ),
+        ),
+        findsOneWidget,
+      );
+      await reveal(tester, find.text(fixtureLeadIn));
+      expect(
+        find.text(
+          l10n.checkerSheetMentionsName(
+            'St. John’s Wort',
+            'Warfarin',
+            supplementSafetyHeading,
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(fixtureLeadIn), findsOneWidget);
+      expect(find.text('Warfarin', findRichText: true), findsOneWidget);
+    });
+
+    testWidgets('that nothing connects is not called safe', (tester) async {
+      await check(
+        tester,
+        const <String>['aspirin.oral.otc'],
+        herbs: const <String>['ginger'],
+      );
+      final l10n = l10nOf(tester);
+      expect(find.text(l10n.checkerNothingFoundSupplementPair), findsOneWidget);
+      expect(find.text(l10n.checkerNothingFoundSheetNote), findsOneWidget);
+      // That note is the medicines', and there is no pair of medicines.
+      expect(find.text(l10n.checkerNothingFoundNote), findsNothing);
+    });
+
+    testWidgets('is compared with each medicine and not with another herb', (
+      tester,
+    ) async {
+      await check(
+        tester,
+        const <String>['ibuprofen.oral.otc'],
+        herbs: const <String>['ginger', 'st-johns-wort'],
+      );
+      final l10n = l10nOf(tester);
+      expect(find.byType(SupplementPairCard), findsNWidgets(2));
+      expect(
+        find.text(l10n.checkerPairTitle('Ginger', 'St. John’s Wort')),
+        findsNothing,
+      );
+      await reveal(tester, find.text(l10n.checkerHerbsNotCompared));
+      expect(find.text(l10n.checkerHerbsNotCompared), findsOneWidget);
+    });
+
+    testWidgets("carries NCCIH's disclaimer while a herb is listed", (
+      tester,
+    ) async {
+      await check(
+        tester,
+        const <String>['ibuprofen.oral.otc'],
+        herbs: const <String>['ginger'],
+      );
+      await reveal(tester, find.text(fixtureSupplementsDisclaimer));
+      expect(find.text(fixtureSupplementsDisclaimer), findsOneWidget);
+    });
+
+    testWidgets('and a medicine can be looked up online together', (
+      tester,
+    ) async {
+      await check(
+        tester,
+        const <String>['aspirin.oral.otc'],
+        herbs: const <String>['ginger'],
+      );
+      final l10n = l10nOf(tester);
+      await reveal(tester, find.text(l10n.checkerSearchOnline));
+      await tester.tap(find.text(l10n.checkerSearchOnline));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          l10n.lookupLeavingWithTermBody('ginger and aspirin interaction'),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text(l10n.commonNotNow));
+      await tester.pumpAndSettle();
     });
   });
 }

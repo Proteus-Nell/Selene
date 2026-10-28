@@ -158,6 +158,8 @@ Checklist, in the order the failures actually happen:
 - [ ] **Release notes carry the re-export warning** — see below
 - [ ] No claim in `docs/NUTRITION_SOURCES.md` is still marked `[VERIFY]`
 - [ ] The medicines bundle comes from a recent openFDA export — see below
+- [ ] The herbal supplements reference has been read from NCCIH recently — see
+      below
 - [ ] No claim in `docs/WEIGHT_SOURCES.md` is still marked `[VERIFY]`
 - [ ] No claim in `docs/MOVEMENT_SOURCES.md` is still marked `[VERIFY]` —
       including its three absence claims, which are cleared by reading the
@@ -211,6 +213,34 @@ Two things to check by eye after fetching, because no test can:
   quote "combined hormonal contraceptives", with the FDA sources under it.
   The sources themselves are dated where they were read; one that has moved
   or changed is a reason to check the members it gave.
+
+### The herbal supplements reference
+
+The herbs are NCCIH's Herbs at a Glance fact sheets, in the public domain,
+packed into `app/assets/supplements/nccih_herbs.json` (ADR-0023). The A to Z
+shows the date they were read. Refresh them before a release:
+
+```bash
+python3 tools/scripts/gen_supplements.py --fetch   # about sixty pages, a minute
+python3 tools/scripts/gen_supplements.py --check   # should pass
+```
+
+Like the medicines' fetch, it needs network and runs on a developer machine,
+never on the phone. Commit the asset and
+`app/lib/data/reference/supplements_bundled.dart` together; `--check` fails when
+they disagree. The fetch refuses to write anything when a sheet has lost its
+safety section, says how much of a herb to take, or shares a name with another
+herb, and says which.
+
+Two things to check by eye after fetching:
+
+- The count. The 2026-10-28 read carried 56 herbs. Fewer means a page stopped
+  carrying the public-domain statement, which leaves it out, or NCCIH changed
+  its layout; read the pages before shipping the result.
+- St. John's wort with a combined pill, in the checker. The pill's label should
+  be quoted naming the herb, and the herb's sheet naming "Birth control pills"
+  under the line its list hangs from. `supplements_test.dart` fails if either
+  stops, but look at it as a reader would.
 
 ### The re-export warning (export format v2)
 

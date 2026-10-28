@@ -1,4 +1,5 @@
-// What medicines' labels say about each other (ADR-0014, ADR-0021).
+// What medicines' labels say about each other (ADR-0014, ADR-0021), and what
+// a herb's fact sheet and a medicine's label say (ADR-0023).
 //
 // The checker reports four things and nothing else: an ingredient two
 // medicines share, an FDA class they share, a group they are both in, and a
@@ -10,9 +11,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/data/reference/interactions.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_groups.dart';
+import 'package:period_tracker/data/reference/supplement.dart';
 import 'package:period_tracker/domain/models/condition.dart';
 
 import 'medicine_fixture.dart';
+import 'supplement_fixture.dart';
 
 const String _nsaid = 'Nonsteroidal Anti-inflammatory Drug';
 
@@ -645,7 +648,185 @@ void main() {
       expect(pairs, isEmpty);
     });
   });
+
+  group('a herb and a medicine', () {
+    final stJohnsWort = fixtureHerb('st-johns-wort');
+    final ginger = fixtureHerb('ginger');
+
+    SupplementPair compareHerb(
+      Supplement herb,
+      FixtureDrug drug, {
+      Map<String, String> label = const <String, String>{},
+      MedicineGroups groups = MedicineGroups.none,
+    }) => compareSupplement(
+      herb,
+      _entry(drug),
+      sections: _label(label),
+      groups: groups,
+    );
+
+    /// A herb whose safety section is [safety], one block a line.
+    Supplement herbSaying(List<String> safety) => Supplement(
+      key: 'st-johns-wort',
+      name: 'St. John’s Wort',
+      commonNames: const <String>['St. John’s wort'],
+      latinNames: const <String>['Hypericum perforatum'],
+      terms: const <String>['hypericum perforatum', "st. john's wort"],
+      sections: <SupplementSection>[
+        SupplementSection(
+          heading: supplementSafetyHeading,
+          blocks: <SupplementBlock>[
+            for (final block in safety) SupplementBlock.parse(block),
+          ],
+        ),
+      ],
+      updated: 'May 2025',
+      url: 'https://www.nccih.nih.gov/health/st-johns-wort',
+    );
+
+    test('is found on a label by any of its names, and once', () {
+      final pair = compareHerb(
+        stJohnsWort,
+        _rifampin,
+        label: <String, String>{
+          'drug_interactions':
+              "Avoid St. John's Wort (Hypericum perforatum) with rifampin.",
+        },
+      );
+      final mention = pair.labelMentions.single;
+      expect(mention.name, 'St. John’s Wort');
+      expect(
+        mention.passage.substring(mention.start, mention.end),
+        "St. John's Wort",
+      );
+      expect(pair.connected, isTrue);
+    });
+
+    test('is found where a label leaves out the apostrophe', () {
+      final pair = compareHerb(
+        stJohnsWort,
+        _rifampin,
+        label: <String, String>{'warnings': 'St. Johns Wort lowers levels.'},
+      );
+      expect(pair.labelMentions, hasLength(1));
+    });
+
+    test('is not found inside another word', () {
+      final pair = compareHerb(
+        ginger,
+        _aspirin,
+        label: <String, String>{'warnings': 'Contains gingerbread flavour.'},
+      );
+      expect(pair.labelMentions, isEmpty);
+      expect(pair.connected, isFalse);
+    });
+
+    test('is not looked for outside the sections a label is read in', () {
+      final pair = compareHerb(
+        ginger,
+        _aspirin,
+        label: <String, String>{'purpose': 'With ginger for flavour.'},
+      );
+      expect(pair.labelMentions, isEmpty);
+    });
+
+    test("whose sheet names the medicine is quoted from the sheet's safety "
+        'section, under the line its list hangs from', () {
+      final pair = compareHerb(stJohnsWort, _warfarin);
+      final mention = pair.sheetMentions.single;
+      expect(mention.section, supplementSafetyHeading);
+      expect(mention.name, 'warfarin');
+      expect(mention.passage, 'Warfarin');
+      expect(mention.leadIn, fixtureLeadIn);
+      expect(pair.labelMentions, isEmpty);
+    });
+
+    test('whose sheet names a group the medicine is in says so', () {
+      final oral = MedicineGroup(
+        name: 'oral contraceptives',
+        phrases: const <String>['oral contraceptive', 'birth control pill'],
+        members: <String>{_pill.key},
+      );
+      final pair = compareHerb(
+        stJohnsWort,
+        _pill,
+        groups: MedicineGroups(<MedicineGroup>[oral]),
+      );
+      final mention = pair.sheetMentions.single;
+      expect(mention.group, oral);
+      expect(mention.passage, 'Birth control pills');
+      expect(mention.leadIn, fixtureLeadIn);
+    });
+
+    test('whose sheet names a class the medicine is in says so', () {
+      final herb = herbSaying(<String>[
+        '• Nonsteroidal anti-inflammatory drugs may add to the risk.',
+      ]);
+      final mention = compareHerb(herb, _ibuprofen).sheetMentions.single;
+      expect(mention.isClass, isTrue);
+      expect(mention.name, _nsaid);
+      expect(mention.leadIn, isNull);
+    });
+
+    test('in a medicine that contains it is said to be in it, and its '
+        'label is not said to name it', () {
+      final remedy = fixtureDrug(
+        'hypericum-perforatum.oral.otc',
+        name: 'HYPERICUM PERFORATUM',
+      );
+      final pair = compareHerb(
+        herbSaying(<String>['• Hypericum perforatum can cause sun rashes.']),
+        remedy,
+        label: <String, String>{'warnings': 'Hypericum perforatum, 30C.'},
+      );
+      expect(pair.ingredients, <String>['hypericum perforatum']);
+      // The label talks about itself, and the sheet about the herb: neither
+      // names the other.
+      expect(pair.labelMentions, isEmpty);
+      expect(pair.sheetMentions, isEmpty);
+      expect(pair.connected, isTrue);
+    });
+
+    test('is in a medicine whose ingredient starts with one of its names', () {
+      final tea = fixtureDrug(
+        'hypericum-perforatum-flowering-top.oral.otc',
+        name: 'HYPERICUM PERFORATUM FLOWERING TOP',
+      );
+      expect(compareHerb(stJohnsWort, tea).ingredients, <String>[
+        'hypericum perforatum flowering top',
+      ]);
+      // A name inside a longer word is not one of its names.
+      final other = fixtureDrug('hypericin.oral.otc', name: 'HYPERICIN');
+      expect(compareHerb(stJohnsWort, other).ingredients, isEmpty);
+    });
+
+    test('is compared with every medicine, herb by herb', () {
+      final pairs = checkSupplements(
+        <Supplement>[ginger, stJohnsWort],
+        <MedicineEntry>[_entry(_aspirin), _entry(_warfarin)],
+        const <String, List<MedicineSection>>{},
+        groups: MedicineGroups.none,
+      );
+      expect(
+        pairs.map((pair) => '${pair.supplement.key} ${pair.medicine.key}'),
+        <String>[
+          'ginger aspirin.oral.otc',
+          'ginger warfarin-sodium.oral.rx',
+          'st-johns-wort aspirin.oral.otc',
+          'st-johns-wort warfarin-sodium.oral.rx',
+        ],
+      );
+      expect(pairs.where((pair) => pair.connected), hasLength(1));
+    });
+  });
 }
+
+final FixtureDrug _warfarin = fixtureDrug(
+  'warfarin-sodium.oral.rx',
+  name: 'WARFARIN SODIUM',
+  type: 'rx',
+  terms: <String>['warfarin', 'warfarin sodium'],
+);
 
 final FixtureDrug _tranexamic = fixtureDrug(
   'tranexamic-acid.oral.rx',

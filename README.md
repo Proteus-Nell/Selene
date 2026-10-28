@@ -4,7 +4,8 @@
 > **Platform:** Android, built with Flutter 3.47 and Dart. Distributed as a signed APK; there is no Play Store listing.\
 > **Prediction:** A Bayesian model that learns from your own logs on the phone, starting from population averages fitted in Python.\
 > **Privacy:** No internet permission at all, and the database is encrypted on the phone. Nothing leaves the phone unless you export it, or confirm a search that opens in your browser. See the [Privacy Policy](PRIVACY_POLICY.md).\
-> **Medicines reference:** The safety sections of 5,835 US drug labels from openFDA, bundled into the app.\
+> **Medicines reference:** The safety sections of 5,687 US drug labels from openFDA, bundled into the app.\
+> **Herbs reference:** NCCIH's public-domain fact sheets on 56 herbal supplements, such as St. John's wort, bundled into the app.\
 > **Github Link:** [Github Link](https://github.com/Proteus-Nell/Selene)
 
 ## What the app does
@@ -12,7 +13,7 @@
 - **Logs** period days, flow, and physical, mental and emotional symptoms. Intercourse can be logged too, but only if you choose to.
 - **Predicts** the next period as a date range with a confidence level, never as a single date. The prediction starts from population averages and adjusts to your own cycles as you log them.
 - **Explains** what you logged: cycle phases on the calendar, insights from your own history, and conditions such as PMOS (formerly PCOS) or hormonal contraception recorded alongside it.
-- **Looks up medicines** from US drug labelling, searched or browsed A to Z. It compares two or more medicines by what their labels say about each other, and flags pairs among the medicines you record.
+- **Looks up medicines and herbs:** US drug labelling, searched or browsed A to Z, and NCCIH's fact sheets on herbal supplements. It compares two or more medicines, or a herb and a medicine, by what their labels and fact sheets say about each other, and flags pairs among the medicines you record.
 - **Keeps it private:** no account, no sync, no analytics. The database is encrypted on the phone, a backup can be protected with a passphrase, and an optional app lock asks for your fingerprint or PIN before showing anything.
 
 Selene is not a contraceptive and does not give medical advice. It never tells you when you cannot get pregnant, and its medicine pages show US labelling, which can differ from the packet in front of you.
@@ -39,6 +40,7 @@ Selene/
 │   │   ├── security/                 # The optional app lock
 │   │   └── l10n/                     # Every string the user reads (app_en.arb)
 │   ├── assets/medicines/             # The bundled openFDA labels, compressed
+│   ├── assets/supplements/           # NCCIH's fact sheets on herbs
 │   ├── test/                         # Unit, widget, golden and end-to-end tests
 │   └── integration_test/             # The smoke flow, run on a device
 │
@@ -56,7 +58,7 @@ Selene/
 └── README.md                         # Project overview (this file)
 ```
 - The prediction model exists twice: a Python reference in `research/`, and the Dart version the app runs. Golden test vectors fail the build if the two ever disagree ([ADR-0002](docs/DECISIONS.md)).
-- Everything the app needs ships inside it: the model's priors, the medicines reference and every string. Nothing is fetched at run time, because the release build has no way to fetch anything.
+- Everything the app needs ships inside it: the model's priors, the medicines and herbs references, and every string. Nothing is fetched at run time, because the release build has no way to fetch anything.
 
 ---
 
@@ -124,11 +126,11 @@ python3 tools/scripts/gen_medicines.py --check
     - Formatting and the analyzer, where info-level findings fail too.
     - Over a thousand unit, widget and golden tests, including copy rules that fail the build on wording the app has no basis for, such as calling a day "safe".
     - No `DateTime.now()` outside `core/clock.dart`, so that every date in the app can be controlled in tests.
-    - The generated Dart matches the committed priors and medicines bundle.
+    - The generated Dart matches the committed priors, medicines bundle, group names table and herbs reference.
 * **Output:** Pass or fail for each step. CI then also builds the release APKs, checks that none of them declares a network permission, and checks their size.
 
 ### Step 4: Regenerating the Bundled Data
-Only needed when the priors or the medicines data change.
+Only needed when the priors, the medicines data or the herbs data change.
 
 ```
 # Population priors, and the golden vectors that pin the Dart model to them
@@ -140,13 +142,19 @@ python3 tools/scripts/gen_priors_dart.py
 
 # Medicines: downloads openFDA's label export (about 1.8 GB, kept under data/, never committed)
 python3 tools/scripts/gen_medicines.py --fetch
+python3 tools/scripts/gen_medicine_groups.py
+
+# Herbs: reads NCCIH's Herbs at a Glance fact sheets, about sixty pages
+python3 tools/scripts/gen_supplements.py --fetch
 ```
 * **File Role:**
 
     - `cyclecore fit-priors` fits the model's population priors and writes `artifacts/priors/priors_v1.json`. `export-golden` writes the test vectors from the Python reference.
     - `gen_priors_dart.py` compiles the priors into `app/lib/domain/predict/priors_bundled.dart`.
-    - `gen_medicines.py --fetch` picks one label for each drug by fixed rules, and packs the labels' safety sections into compressed chunks with a search index. This is the only part of the project that uses the network, and it runs on a developer machine, never on the phone.
-* **Output:** Updated files under `artifacts/`, `app/assets/medicines/` and the generated Dart, committed together. `--check` fails while they disagree.
+    - `gen_medicines.py --fetch` picks one label for each drug by fixed rules, and packs the labels' safety sections into compressed chunks with a search index. `gen_medicine_groups.py` then resolves the group names table, such as which drugs are NSAIDs, against the new bundle.
+    - `gen_supplements.py --fetch` reads NCCIH's fact sheets and keeps their text up to "Keep in Mind", leaving out the photographs, which are not in the public domain. It refuses a sheet that says how much of a herb to take.
+    - The two `--fetch` steps are the only parts of the project that use the network. They run on a developer machine, never on the phone.
+* **Output:** Updated files under `artifacts/`, `app/assets/medicines/`, `app/assets/supplements/` and the generated Dart, committed together. `--check` fails while they disagree.
 
 ### Step 5: Release Build
 ```
@@ -181,7 +189,8 @@ tools/scripts/release.sh                                          # or push the 
 
 Selene is released under the [MIT License](LICENSE).
 
-Two things bundled with it keep their own terms:
+Three things bundled with it keep their own terms:
 
 - The Figtree font, under the SIL Open Font License 1.1 ([`app/assets/fonts/OFL.txt`](app/assets/fonts/OFL.txt)).
 - The drug labelling, from openFDA, under [openFDA's terms](https://open.fda.gov/terms/).
+- The herb fact sheets, from the US National Center for Complementary and Integrative Health's [Herbs at a Glance](https://www.nccih.nih.gov/health/herbsataglance), which are in the public domain. Their photographs are not, and are not bundled.

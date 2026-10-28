@@ -56,6 +56,13 @@ jobs:
         # in it, fails here rather than matching nothing in silence. No network.
         run: python3 tools/scripts/gen_medicine_groups.py --check
 
+      - name: Verify the herbal supplements reference and its Dart agree
+        # NCCIH's fact sheets as the app carries them (ADR-0023). Fails when the
+        # asset and the checksum the Dart holds disagree, when a sheet has lost
+        # its safety section or gives an amount to take, or when two herbs are
+        # looked for by one name. No network: the fetch is `--fetch`'s.
+        run: python3 tools/scripts/gen_supplements.py --check
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

@@ -8,7 +8,7 @@
 /// Includes:
 ///     - MedicineRunner: Where decompression and decoding run.
 ///     - MedicineBundle: Loads the index, one drug's sections, and what
-///       several drugs' labels say about each other.
+///       several drugs' labels, and herbs' fact sheets, say about each other.
 ///     - medicineBundleProvider: The bundle, read from the app's assets.
 ///     - medicineIndexProvider: Every drug, once loaded.
 ///     - medicineSectionsProvider: One drug's label sections.
@@ -26,6 +26,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/data/reference/interactions.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_groups.dart';
+import 'package:period_tracker/data/reference/supplement.dart';
 
 /// Runs a task and returns its result: in a background isolate in the app,
 /// and in place in a widget test, whose fake clock never sees an isolate
@@ -199,6 +200,32 @@ class MedicineBundle {
     return _checkConditions(_runner, conditions, medicines, labels, groups);
   }
 
+  /// Compare herbs' fact sheets with several drugs' labels.
+  ///
+  /// As [interactions], for [checkSupplements]: each herb with each drug, and
+  /// no herb with another.
+  ///
+  /// Args:
+  ///     supplements (`List<Supplement>`): The herbs, in the order added.
+  ///     medicines (`List<MedicineEntry>`): The drugs, in the order added.
+  ///
+  /// Returns:
+  ///     `Future<List<SupplementPair>>`: One per herb and drug.
+  ///
+  /// Throws:
+  ///     MedicineBundleException: When a drug's line holds another drug's
+  ///         text, as [sections] does.
+  Future<List<SupplementPair>> supplements(
+    List<Supplement> supplements,
+    List<MedicineEntry> medicines,
+  ) async {
+    if (supplements.isEmpty || medicines.isEmpty) return <SupplementPair>[];
+    final labels = <String, List<MedicineSection>>{
+      for (final medicine in medicines) medicine.key: await sections(medicine),
+    };
+    return _checkSupplements(_runner, supplements, medicines, labels, groups);
+  }
+
   /// Return chunk [number], decompressed, from the cache when it was the last
   /// one opened.
   Future<_Chunk> _chunk(int number) {
@@ -262,6 +289,18 @@ class MedicineBundle {
     MedicineGroups groups,
   ) => run(
     () => checkConditions(conditions, medicines, labels, groups: groups),
+  );
+
+  /// Compare every herb in [supplements] with every one of [medicines],
+  /// through [run].
+  static Future<List<SupplementPair>> _checkSupplements(
+    MedicineRunner run,
+    List<Supplement> supplements,
+    List<MedicineEntry> medicines,
+    Map<String, List<MedicineSection>> labels,
+    MedicineGroups groups,
+  ) => run(
+    () => checkSupplements(supplements, medicines, labels, groups: groups),
   );
 }
 

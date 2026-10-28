@@ -2094,13 +2094,13 @@ abstract class AppLocalizations {
   /// No description provided for @checkerEntrySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'What the US labels of two or more medicines say about each other.'**
+  /// **'What the US labels of medicines, and NCCIH\'s fact sheets on herbs, say about each other.'**
   String get checkerEntrySubtitle;
 
   /// The checker's first paragraph. It says what the check reads and what it cannot conclude before anyone adds a medicine (ADR-0014).
   ///
   /// In en, this message translates to:
-  /// **'Add two or more medicines. For each pair, this shows whether they share an ingredient, an FDA drug class or a group such as “NSAIDs”, and quotes any place where one label names the other or a group it is in. It reads the labels and nothing else, so it cannot tell you that a combination is safe.'**
+  /// **'Add two or more medicines, or a herbal supplement and a medicine. For each pair, this shows whether they share an ingredient, an FDA drug class or a group such as “NSAIDs”, and quotes any place where one label names the other or a group it is in. A herb is compared by NCCIH\'s fact sheet on it. It reads the labels and the fact sheets and nothing else, so it cannot tell you that a combination is safe.'**
   String get checkerIntro;
 
   /// No description provided for @checkerAdd.
@@ -2124,7 +2124,7 @@ abstract class AppLocalizations {
   /// No description provided for @checkerFull.
   ///
   /// In en, this message translates to:
-  /// **'Up to {count} medicines can be compared at once.'**
+  /// **'Up to {count} medicines and herbs can be compared at once.'**
   String checkerFull(int count);
 
   /// No description provided for @checkerAlreadyAdded.
@@ -2273,6 +2273,158 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Type the name of a medicine, a brand or an ingredient.'**
   String get checkerPickerPrompt;
+
+  /// No description provided for @checkerAddSupplement.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a herbal supplement'**
+  String get checkerAddSupplement;
+
+  /// Under a herb on the checker's list, where a medicine says how it is taken.
+  ///
+  /// In en, this message translates to:
+  /// **'Herbal supplement · NCCIH fact sheet'**
+  String get checkerSupplementKind;
+
+  /// On the checker while its list holds herbs and no medicine (ADR-0023).
+  ///
+  /// In en, this message translates to:
+  /// **'Add a medicine to compare with. Herbs are compared with medicines, not with each other.'**
+  String get checkerNeedMedicine;
+
+  /// On the checker when two or more herbs are listed. No fact sheet's safety section names another of the herbs, and two herbs have no label between them.
+  ///
+  /// In en, this message translates to:
+  /// **'Herbs are compared with the medicines on the list, not with each other.'**
+  String get checkerHerbsNotCompared;
+
+  /// A medicine whose own ingredients include the herb, as many homeopathic remedies' do. The ingredients are as its label prints them.
+  ///
+  /// In en, this message translates to:
+  /// **'The {medicine} label lists {herb} among its active ingredients, as “{ingredients}”.'**
+  String checkerSupplementIngredient(
+    String medicine,
+    String herb,
+    String ingredients,
+  );
+
+  /// Above a passage quoted from a herb's fact sheet that names the medicine. The section is the sheet's own heading, "What Do We Know About Safety?".
+  ///
+  /// In en, this message translates to:
+  /// **'NCCIH\'s fact sheet on {herb} mentions “{words}”. From “{section}”:'**
+  String checkerSheetMentionsName(String herb, String words, String section);
+
+  /// No description provided for @checkerSheetMentionsClass.
+  ///
+  /// In en, this message translates to:
+  /// **'NCCIH\'s fact sheet on {herb} mentions “{words}”, an FDA drug class that includes {other}. From “{section}”:'**
+  String checkerSheetMentionsClass(
+    String herb,
+    String words,
+    String other,
+    String section,
+  );
+
+  /// As checkerMentionsGroup, for a fact sheet: "Birth control pills" names the oral contraceptives.
+  ///
+  /// In en, this message translates to:
+  /// **'NCCIH\'s fact sheet on {herb} mentions “{words}”, a group that includes {other}. From “{section}”:'**
+  String checkerSheetMentionsGroup(
+    String herb,
+    String words,
+    String other,
+    String section,
+  );
+
+  /// On every herb and medicine the label and the fact sheet do not connect, beside a way to look the pair up online. As checkerNothingFoundPair, it must not read as a reassurance.
+  ///
+  /// In en, this message translates to:
+  /// **'Neither the label nor NCCIH\'s fact sheet connects these two, but you are advised to verify the results.'**
+  String get checkerNothingFoundSupplementPair;
+
+  /// Shown wherever a herb and a medicine are connected in none of the ways the check looks for. interaction_copy_test bans the words that would make it a reassurance.
+  ///
+  /// In en, this message translates to:
+  /// **'That does not mean they are safe together. NCCIH\'s fact sheets name only some of the medicines a herb interacts with, and often by a kind, such as “some antidepressants”.'**
+  String get checkerNothingFoundSheetNote;
+
+  /// The heading over the herbs a search on Look something up found.
+  ///
+  /// In en, this message translates to:
+  /// **'Herbal supplements'**
+  String get lookupSupplementsHeading;
+
+  /// Opens NCCIH's fact sheets (ADR-0023). Not the Supplements page under Learn, which is about nutrition and stays hidden behind the long press.
+  ///
+  /// In en, this message translates to:
+  /// **'Herbal supplements A to Z'**
+  String get lookupSupplementsEntry;
+
+  /// No description provided for @lookupSupplementsEntrySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'NCCIH\'s fact sheets on {count} herbs, such as St. John’s wort, from the US National Institutes of Health.'**
+  String lookupSupplementsEntrySubtitle(int count);
+
+  /// No description provided for @supplementsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Fact sheets from the National Center for Complementary and Integrative Health (NCCIH), part of the US National Institutes of Health, as they stood on {date}. They are in the public domain, and are shown as NCCIH wrote them.'**
+  String supplementsIntro(String date);
+
+  /// No description provided for @supplementsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening the herbal supplements reference'**
+  String get supplementsLoading;
+
+  /// No description provided for @supplementsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The herbal supplements reference could not be opened.'**
+  String get supplementsFailed;
+
+  /// Under a herb a search found by a common or Latin name that is not its title.
+  ///
+  /// In en, this message translates to:
+  /// **'Also called {name}'**
+  String supplementsFoundBy(String name);
+
+  /// No description provided for @supplementsCommonNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Common names: {names}'**
+  String supplementsCommonNames(String names);
+
+  /// No description provided for @supplementsLatinNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Latin names: {names}'**
+  String supplementsLatinNames(String names);
+
+  /// The date is as NCCIH prints it, such as "May 2025".
+  ///
+  /// In en, this message translates to:
+  /// **'From NCCIH\'s fact sheet, last updated {date}. It is in the public domain.'**
+  String supplementsSource(String date);
+
+  /// The page's address, shown and never opened: the app has no internet access (ADR-0004).
+  ///
+  /// In en, this message translates to:
+  /// **'NCCIH publishes it at {url}.'**
+  String supplementsAddress(String url);
+
+  /// No description provided for @supplementsPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'NCCIH\'s photograph of the plant is not in the public domain, so it is left out.'**
+  String get supplementsPhoto;
+
+  /// No description provided for @supplementsCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare with medicines'**
+  String get supplementsCompare;
 
   /// No description provided for @lookupMedicineCheck.
   ///

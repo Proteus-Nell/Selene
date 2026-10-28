@@ -131,9 +131,14 @@ flutter:
     - assets/fonts/OFL.txt
     # The medicines reference, built by tools/scripts/gen_medicines.py from
     # openFDA's label export: a compressed index and about sixty compressed
-    # chunks of label text, 12 MB in all (ADR-0012, ADR-0013). Read off the
+    # chunks of label text, 13 MB in all (ADR-0012, ADR-0013). Read off the
     # assets, never fetched: the app has no INTERNET permission (ADR-0004).
     - assets/medicines/
+    # The herbal supplements reference, built by tools/scripts/gen_supplements.py
+    # from NCCIH's Herbs at a Glance fact sheets, which are in the public domain:
+    # one JSON file of about 260 KB (ADR-0023). Read off the assets as the
+    # medicines are, never fetched.
+    - assets/supplements/
 
   fonts:
     - family: Figtree

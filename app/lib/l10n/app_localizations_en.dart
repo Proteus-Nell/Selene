@@ -1222,11 +1222,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkerEntrySubtitle =>
-      'What the US labels of two or more medicines say about each other.';
+      'What the US labels of medicines, and NCCIH\'s fact sheets on herbs, say about each other.';
 
   @override
   String get checkerIntro =>
-      'Add two or more medicines. For each pair, this shows whether they share an ingredient, an FDA drug class or a group such as “NSAIDs”, and quotes any place where one label names the other or a group it is in. It reads the labels and nothing else, so it cannot tell you that a combination is safe.';
+      'Add two or more medicines, or a herbal supplement and a medicine. For each pair, this shows whether they share an ingredient, an FDA drug class or a group such as “NSAIDs”, and quotes any place where one label names the other or a group it is in. A herb is compared by NCCIH\'s fact sheet on it. It reads the labels and the fact sheets and nothing else, so it cannot tell you that a combination is safe.';
 
   @override
   String get checkerAdd => 'Add a medicine';
@@ -1241,7 +1241,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String checkerFull(int count) {
-    return 'Up to $count medicines can be compared at once.';
+    return 'Up to $count medicines and herbs can be compared at once.';
   }
 
   @override
@@ -1372,6 +1372,117 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get checkerPickerPrompt =>
       'Type the name of a medicine, a brand or an ingredient.';
+
+  @override
+  String get checkerAddSupplement => 'Add a herbal supplement';
+
+  @override
+  String get checkerSupplementKind => 'Herbal supplement · NCCIH fact sheet';
+
+  @override
+  String get checkerNeedMedicine =>
+      'Add a medicine to compare with. Herbs are compared with medicines, not with each other.';
+
+  @override
+  String get checkerHerbsNotCompared =>
+      'Herbs are compared with the medicines on the list, not with each other.';
+
+  @override
+  String checkerSupplementIngredient(
+    String medicine,
+    String herb,
+    String ingredients,
+  ) {
+    return 'The $medicine label lists $herb among its active ingredients, as “$ingredients”.';
+  }
+
+  @override
+  String checkerSheetMentionsName(String herb, String words, String section) {
+    return 'NCCIH\'s fact sheet on $herb mentions “$words”. From “$section”:';
+  }
+
+  @override
+  String checkerSheetMentionsClass(
+    String herb,
+    String words,
+    String other,
+    String section,
+  ) {
+    return 'NCCIH\'s fact sheet on $herb mentions “$words”, an FDA drug class that includes $other. From “$section”:';
+  }
+
+  @override
+  String checkerSheetMentionsGroup(
+    String herb,
+    String words,
+    String other,
+    String section,
+  ) {
+    return 'NCCIH\'s fact sheet on $herb mentions “$words”, a group that includes $other. From “$section”:';
+  }
+
+  @override
+  String get checkerNothingFoundSupplementPair =>
+      'Neither the label nor NCCIH\'s fact sheet connects these two, but you are advised to verify the results.';
+
+  @override
+  String get checkerNothingFoundSheetNote =>
+      'That does not mean they are safe together. NCCIH\'s fact sheets name only some of the medicines a herb interacts with, and often by a kind, such as “some antidepressants”.';
+
+  @override
+  String get lookupSupplementsHeading => 'Herbal supplements';
+
+  @override
+  String get lookupSupplementsEntry => 'Herbal supplements A to Z';
+
+  @override
+  String lookupSupplementsEntrySubtitle(int count) {
+    return 'NCCIH\'s fact sheets on $count herbs, such as St. John’s wort, from the US National Institutes of Health.';
+  }
+
+  @override
+  String supplementsIntro(String date) {
+    return 'Fact sheets from the National Center for Complementary and Integrative Health (NCCIH), part of the US National Institutes of Health, as they stood on $date. They are in the public domain, and are shown as NCCIH wrote them.';
+  }
+
+  @override
+  String get supplementsLoading => 'Opening the herbal supplements reference';
+
+  @override
+  String get supplementsFailed =>
+      'The herbal supplements reference could not be opened.';
+
+  @override
+  String supplementsFoundBy(String name) {
+    return 'Also called $name';
+  }
+
+  @override
+  String supplementsCommonNames(String names) {
+    return 'Common names: $names';
+  }
+
+  @override
+  String supplementsLatinNames(String names) {
+    return 'Latin names: $names';
+  }
+
+  @override
+  String supplementsSource(String date) {
+    return 'From NCCIH\'s fact sheet, last updated $date. It is in the public domain.';
+  }
+
+  @override
+  String supplementsAddress(String url) {
+    return 'NCCIH publishes it at $url.';
+  }
+
+  @override
+  String get supplementsPhoto =>
+      'NCCIH\'s photograph of the plant is not in the public domain, so it is left out.';
+
+  @override
+  String get supplementsCompare => 'Compare with medicines';
 
   @override
   String get lookupMedicineCheck => 'Check with other medicines';

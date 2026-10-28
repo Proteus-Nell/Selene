@@ -1,7 +1,7 @@
 // Small medicines bundles, built in memory in the format
 // tools/scripts/gen_medicines.py writes.
 //
-// The real bundle is several thousand drugs and 12 MB. The screen and search
+// The real bundle is several thousand drugs and 13 MB. The screen and search
 // tests use a handful of drugs written out here instead, so that a refresh of
 // openFDA's export cannot change what they assert. medicines_test.dart covers
 // the real bundle.

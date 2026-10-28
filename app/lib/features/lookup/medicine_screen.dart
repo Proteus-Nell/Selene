@@ -14,6 +14,7 @@
 ///     - medicineSectionHeading: A label section's heading.
 ///     - _Section: One section, under its heading.
 ///     - _Guide: The Medication Guide's safety sections, folded away.
+///     - _part: One part of a guide's section, its list mark drawn.
 library;
 
 import 'package:flutter/material.dart';
@@ -23,6 +24,7 @@ import 'package:period_tracker/data/reference/medicine_bundle.dart';
 import 'package:period_tracker/data/reference/medicines_bundled.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
+import 'package:period_tracker/features/lookup/list_mark.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Medicine screen: one medicine's label.
@@ -221,13 +223,23 @@ class _Guide extends StatelessWidget {
             ),
             for (final part in section.parts) ...<Widget>[
               const SizedBox(height: 4),
-              Text(part, style: theme.textTheme.bodyMedium),
+              _part(part, theme.textTheme.bodyMedium),
             ],
           ],
         ],
       ),
     );
   }
+}
+
+/// One part of a guide's section: a paragraph, or a list item with its
+/// mark drawn, since the bundled font has the bullet and not the black
+/// circle or the hollow bullet that guides also print.
+Widget _part(String part, TextStyle? style) {
+  final depth = part.isEmpty ? null : markDepth(part[0]);
+  return depth == null
+      ? Text(part, style: style)
+      : ListItem(depth: depth, text: part.substring(1).trim(), style: style);
 }
 
 /// Say how a medicine is taken, and whether it needs a prescription.

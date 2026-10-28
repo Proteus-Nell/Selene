@@ -31,6 +31,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0020](#adr-0020-temperature-mucus-and-progesterone-are-recorded-only-and-export-v4-still-restores-v3) | Temperature, mucus and progesterone are recorded only, and export v4 still restores v3 | Accepted | 2026-10-28 |
 | [0021](#adr-0021-group-names-on-labels-come-from-a-sourced-table-and-recorded-contraception-joins-the-conflict-flags) | Group names on labels come from a sourced table, and recorded contraception joins the conflict flags | Accepted | 2026-10-28 |
 | [0022](#adr-0022-medication-guides-carry-their-safety-sections-only-and-a-guide-whose-dosing-cannot-be-left-out-is-left-out-whole) | Medication Guides carry their safety sections only, and a guide whose dosing cannot be left out is left out whole | Accepted | 2026-10-28 |
+| [0023](#adr-0023-herbal-supplements-are-nccihs-public-domain-fact-sheets-compared-with-medicines-by-their-safety-section) | Herbal supplements are NCCIH's public-domain fact sheets, compared with medicines by their safety section | Accepted | 2026-10-28 |
 
 ---
 
@@ -1354,6 +1355,100 @@ than the label shown above it.
 - The bundle is 13.3 MB, inside ADR-0013's 16 MB. The refresh dropped 148 drugs
   that openFDA no longer links to a current listing; the group table resolved
   against it unchanged (ADR-0021).
+
+---
+
+## ADR-0023: Herbal supplements are NCCIH's public-domain fact sheets, compared with medicines by their safety section
+
+**Status:** Accepted, 2026-10-28. Extends the matching of [ADR-0014](#adr-0014-the-interaction-checker-compares-label-text-and-never-calls-a-pair-safe) to herbs, and holds them to [ADR-0022](#adr-0022-medication-guides-carry-their-safety-sections-only-and-a-guide-whose-dosing-cannot-be-left-out-is-left-out-whole)'s rule that no dosing is carried.
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for a Supplements A to Z of public-domain NIH pages on
+supplements such as St. John's wort, "so they can be compared with medicines
+too". Herbs are where a period tracker's users meet interactions they do not
+expect: St. John's wort makes the pill less effective, and many take
+chasteberry, black cohosh or evening primrose oil for their cycle.
+
+The US National Center for Complementary and Integrative Health (NCCIH), part
+of the NIH, publishes Herbs at a Glance: a fact sheet on each of 56 herbs, each
+with the same sections, from the background to "Keep in Mind". Every sheet says
+"This publication is not copyrighted and is in the public domain." Its
+photograph is credited to a photographer and is not.
+
+The app already had a page called Supplements, under Learn, about nutrition,
+which the owner hid behind a ten-second hold.
+
+### Decision
+
+1. **The sheets are fetched at build time and carried as NCCIH wrote them**,
+   as the medicines are (ADR-0009): `tools/scripts/gen_supplements.py --fetch`
+   reads the index and every page it links to, keeps the pages that carry the
+   public-domain statement, and writes `app/assets/supplements/nccih_herbs.json`,
+   about 260 KB. Kept: the title, the common and Latin names, the sections up
+   to "Keep in Mind", the date the sheet was last updated, its address, and
+   NCCIH's disclaimer. Left out: the photograph and its credit, the links and
+   the references. A list item keeps the mark the page draws for its depth, so
+   that a list of medicines stays under the line that says why it is there.
+2. **No dosing**, by ADR-0022's rules: a sheet with an instruction to take an
+   amount of something would be left out whole. None has one. A sentence about
+   what dose a study used, as goldenseal's does, is not an instruction.
+3. **Found on Look something up, as "Herbal supplements A to Z"**, and by
+   searching any of a herb's names. Not under Learn, so it does not collide
+   with the nutrition page, which stays behind its hold.
+4. **Compared with medicines in the interaction checker, by the safety section
+   only.** For a herb and a medicine:
+   - the medicine's label is searched as for another medicine (ADR-0014) for
+     any of the herb's names, as one name, so "St. John's Wort (Hypericum
+     perforatum)" is found once;
+   - the herb's safety section, "What Do We Know About Safety?", is searched
+     for the medicine's names, FDA classes and groups (ADR-0021): "Birth
+     control pills" names the oral contraceptives, under the line its list
+     hangs from;
+   - a medicine whose own ingredients include the herb, as many homeopathic
+     remedies' do, is said to contain it, and its label is not searched for a
+     name it is talking about itself by.
+5. **The names looked for are NCCIH's own**, worked out by the generator: the
+   title and every common and Latin name, without notes in parentheses unless
+   they give another name ("synonym Crataegus oxycantha"), also without a
+   possessive's apostrophe and a hybrid's "x". Not an abbreviation: "EPO" is
+   erythropoietin too. The generator refuses a name two herbs share.
+6. **Herbs are not compared with each other.** No sheet's safety section names
+   another of the herbs, and two herbs have no label between them. The checker
+   says so when it lists two.
+
+### Runner-up and why rejected
+
+**NIH Office of Dietary Supplements fact sheets.** They cover vitamins and
+minerals as well as herbs, and the vitamin and mineral sheets are built around
+recommended intakes, amounts this app does not carry.
+
+**MedlinePlus herbs and supplements.** Its pages came from the Natural
+Medicines Comprehensive Database, which is licensed rather than in the public
+domain, and MedlinePlus said in July 2025 that they were no longer available.
+
+**A hand-written table of herb and drug interactions.** It would be the app's
+own claims, with no source a reader could check, which ADR-0014 rejected for
+medicines.
+
+**Recording herbs under Conditions and medication**, so they join the conflict
+flags. Recorded medicines are bundle keys (ADR-0015); herbs would need a second
+kind of record. Left for when it is asked for.
+
+### Consequences
+
+- A sheet names only some of the medicines a herb interacts with, and often by
+  a kind this matching cannot see: "some antidepressants", "drugs that affect
+  serotonin". A herb and a medicine with nothing found get the same refusal
+  to call them safe as two medicines, and the same way out to a search.
+- Names are matched as labels print them, and labels print some loosely: a
+  label's "ginseng" is not NCCIH's "Asian ginseng", and is not found.
+- The bundled font has the bullet and not the hollow bullet or square the
+  sheets nest lists with, or the black circle many Medication Guides use. The
+  marks are drawn instead, on the herb pages and the guides alike.
+- The reference is refreshed with `--fetch`; `--check` fails CI when the asset
+  and its generated Dart disagree, or a sheet loses its safety section.
 
 ---
 

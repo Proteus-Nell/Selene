@@ -53,7 +53,7 @@ The app does not collect anything about you, your phone or how you use it: no de
 
 The app keeps a short log of what it did, such as "a prediction was computed" with a count of cycles. The log holds nothing you recorded and stays on the phone. It is kept only in memory, so it is cleared when the app stops. You can read it and clear it in Settings.
 
-The app also includes US drug labelling from openFDA, which is copied into the app when it is built. Looking up a medicine reads that copy and sends nothing anywhere.
+The app also includes US drug labelling from openFDA, and the US National Center for Complementary and Integrative Health's fact sheets on herbs, which are copied into the app when it is built. Looking up a medicine or a herb reads that copy and sends nothing anywhere.
 
 ## Tracking and other technologies
 

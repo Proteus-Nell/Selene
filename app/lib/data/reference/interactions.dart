@@ -14,6 +14,11 @@
 /// label that names the group names them. A recorded kind of contraception
 /// is compared the same way, as what every product of its kind shares.
 ///
+/// A herb is compared with a medicine by NCCIH's fact sheet on it and the
+/// medicine's label (ADR-0023): where the label names the herb, where the
+/// sheet's safety section names the medicine, its class or a group it is in,
+/// and whether the medicine lists the herb among its own ingredients.
+///
 /// Pure, so it can run in a background isolate and in a plain test.
 ///
 /// Includes:
@@ -22,11 +27,15 @@
 ///     - InteractionPair: What two medicines' labels say about each other.
 ///     - ConditionPair: What a medicine's label says about a recorded kind
 ///       of contraception.
+///     - SupplementPair: What a herb's fact sheet and a medicine's label say
+///       about each other.
 ///     - checkInteractions: Every pair in a list of medicines.
 ///     - comparePair: One pair.
 ///     - checkConditions: Every recorded kind of contraception with every
 ///       medicine.
 ///     - compareCondition: One of those.
+///     - checkSupplements: Every herb with every medicine.
+///     - compareSupplement: One of those.
 ///     - _Side: One side of a comparison, as the matching sees it.
 ///     - _Name: A name to look for, and the pattern that finds it.
 ///     - _names: The names worth looking for.
@@ -36,6 +45,7 @@ library;
 import 'package:meta/meta.dart';
 import 'package:period_tracker/data/reference/medicine.dart';
 import 'package:period_tracker/data/reference/medicine_groups.dart';
+import 'package:period_tracker/data/reference/supplement.dart';
 
 /// The sections searched for mentions of another medicine, most telling
 /// first: where a mention is found in more than one, the first is quoted.
@@ -74,6 +84,7 @@ const int _reach = 200;
 ///     passage (String): The sentence around it, as the label prints it.
 ///     start (int): Where the mention starts in [passage].
 ///     end (int): Where it ends.
+///     leadIn (String?): The line a list item hangs from, in a fact sheet.
 @immutable
 final class LabelMention {
   /// Creates a mention.
@@ -87,6 +98,8 @@ final class LabelMention {
   ///     end (int): Where it ends.
   ///     group (MedicineGroup?, optional): The group [name] is, if it is one.
   ///         Defaults to null.
+  ///     leadIn (String?, optional): The line [passage] hangs from, where it
+  ///         is an item in a fact sheet's list. Defaults to null.
   const LabelMention({
     required this.section,
     required this.name,
@@ -95,9 +108,11 @@ final class LabelMention {
     required this.start,
     required this.end,
     this.group,
+    this.leadIn,
   });
 
-  /// The section it is in, by openFDA's field name.
+  /// The section it is in: openFDA's field name for a label's, and the
+  /// heading itself for a fact sheet's, "What Do We Know About Safety?".
   final String section;
 
   /// The name found: a match term ("naproxen"), a class as the FDA names it
@@ -120,6 +135,12 @@ final class LabelMention {
 
   /// Where it ends.
   final int end;
+
+  /// The line [passage] hangs from, where it is an item in a fact sheet's
+  /// list: "St. John's wort can weaken the effects of many medicines ...
+  /// such as:", above "Birth control pills". Null for a label's passage, which
+  /// is a sentence of its own.
+  final String? leadIn;
 
   @override
   String toString() => 'LabelMention($section: $name)';
@@ -261,6 +282,70 @@ final class ConditionPair {
   @override
   String toString() =>
       'ConditionPair(${condition.condition.name}, ${medicine.key})';
+}
+
+/// What a herb's fact sheet and a medicine's label say about each other.
+///
+/// Attributes:
+///     supplement (Supplement): The herb.
+///     medicine (MedicineEntry): The medicine.
+///     ingredients (`List<String>`): The medicine's own ingredients that are
+///         the herb.
+///     labelMentions (`List<LabelMention>`): Where the medicine's label names
+///         the herb.
+///     sheetMentions (`List<LabelMention>`): Where the herb's fact sheet names
+///         the medicine, or a class or group it is in.
+@immutable
+final class SupplementPair {
+  /// Creates a pair.
+  ///
+  /// Args:
+  ///     supplement (Supplement): The herb.
+  ///     medicine (MedicineEntry): The medicine.
+  ///     ingredients (`List<String>`): The medicine's ingredients that are the
+  ///         herb.
+  ///     labelMentions (`List<LabelMention>`): Where the label names the herb.
+  ///     sheetMentions (`List<LabelMention>`): Where the fact sheet names the
+  ///         medicine.
+  const SupplementPair({
+    required this.supplement,
+    required this.medicine,
+    required this.ingredients,
+    required this.labelMentions,
+    required this.sheetMentions,
+  });
+
+  /// The herb.
+  final Supplement supplement;
+
+  /// The medicine.
+  final MedicineEntry medicine;
+
+  /// The medicine's own ingredients that are the herb, as its label names
+  /// them: "hypericum perforatum", in a remedy that lists it.
+  final List<String> ingredients;
+
+  /// Where the medicine's label names the herb, by any of its names: at most
+  /// one, from the most telling section.
+  final List<LabelMention> labelMentions;
+
+  /// Where the herb's fact sheet names the medicine, a class it is in or a
+  /// group it is in. Only its safety section is read (ADR-0023).
+  final List<LabelMention> sheetMentions;
+
+  /// Whether the label and the fact sheet connect the two in any of these
+  /// ways.
+  ///
+  /// **False never means safe together**, as for [InteractionPair.connected]:
+  /// a fact sheet names only some of the medicines a herb interacts with, and
+  /// many only by a kind, "some antidepressants".
+  bool get connected =>
+      ingredients.isNotEmpty ||
+      labelMentions.isNotEmpty ||
+      sheetMentions.isNotEmpty;
+
+  @override
+  String toString() => 'SupplementPair(${supplement.key}, ${medicine.key})';
 }
 
 /// Compare every pair in a list of medicines.
@@ -424,28 +509,151 @@ ConditionPair compareCondition(
   );
 }
 
-/// One side of a comparison, as the matching sees it: a medicine, or a
-/// recorded kind of contraception counting as what its products share.
+/// Compare each herb with each medicine.
+///
+/// Herbs are not compared with each other: no fact sheet's safety section
+/// names another of the herbs, and two herbs have no label between them.
+///
+/// Args:
+///     supplements (`List<Supplement>`): The herbs, in the order added.
+///     medicines (`List<MedicineEntry>`): The medicines, in the order added.
+///     sections (`Map<String, List<MedicineSection>>`): Each medicine's label
+///         sections, by key.
+///     groups (MedicineGroups): The group table, or [MedicineGroups.none].
+///
+/// Returns:
+///     `List<SupplementPair>`: One per herb and medicine, herb by herb.
+List<SupplementPair> checkSupplements(
+  List<Supplement> supplements,
+  List<MedicineEntry> medicines,
+  Map<String, List<MedicineSection>> sections, {
+  required MedicineGroups groups,
+}) => <SupplementPair>[
+  for (final supplement in supplements)
+    for (final medicine in medicines)
+      compareSupplement(
+        supplement,
+        medicine,
+        sections: sections[medicine.key] ?? const <MedicineSection>[],
+        groups: groups,
+      ),
+];
+
+/// Compare a herb with a medicine.
+///
+/// Steps:
+///     1. The medicine's own ingredients that are the herb: one whose name
+///        starts with any of the herb's, "hawthorn leaf with flower".
+///     2. Where the medicine's label names the herb, by any of its names, as
+///        [comparePair] looks for a medicine's. Not for a medicine that
+///        contains it: that label is talking about itself.
+///     3. Where the herb's safety section names the medicine, a class it is
+///        in or a group it is in. The herb's own names are not looked for
+///        there, though a medicine that contains it goes by them.
+///
+/// Args:
+///     supplement (Supplement): The herb.
+///     medicine (MedicineEntry): The medicine.
+///     sections (`List<MedicineSection>`): The medicine's label.
+///     groups (MedicineGroups): The group table, or [MedicineGroups.none].
+///
+/// Returns:
+///     SupplementPair: What was found.
+SupplementPair compareSupplement(
+  Supplement supplement,
+  MedicineEntry medicine, {
+  required List<MedicineSection> sections,
+  required MedicineGroups groups,
+}) {
+  final own = _Side.medicine(medicine, groups);
+  final herb = _Side.supplement(supplement);
+  final herbNames = <String>{
+    for (final term in supplement.terms) _words(term).join(' '),
+  }..remove('');
+  bool isHerb(String name) {
+    final words = _words(name).join(' ');
+    return herbNames.any(
+      (herbName) => words == herbName || words.startsWith('$herbName '),
+    );
+  }
+
+  // As the label prints them, in lower case: "st. john's wort".
+  final ingredients = <String>{
+    for (final substance in medicine.substances)
+      if (isHerb(substance)) substance.toLowerCase(),
+  }.toList()..sort();
+  final safety = supplement.safety;
+  return SupplementPair(
+    supplement: supplement,
+    medicine: medicine,
+    ingredients: ingredients,
+    labelMentions: ingredients.isNotEmpty
+        ? const <LabelMention>[]
+        : _mentions(
+            own: own,
+            sections: sections,
+            other: herb,
+            skip: const <String>{},
+            skipClasses: const <String>{},
+            skipGroups: const <MedicineGroup>{},
+            table: groups,
+          ),
+    sheetMentions: safety == null
+        ? const <LabelMention>[]
+        : _mentions(
+            own: herb,
+            sections: <MedicineSection>[
+              MedicineSection(name: safety.heading, text: safety.text),
+            ],
+            searched: <String>[safety.heading],
+            other: own,
+            skip: <String>{
+              for (final term in medicine.terms)
+                if (isHerb(term)) term,
+            },
+            skipClasses: const <String>{},
+            skipGroups: const <MedicineGroup>{},
+            table: groups,
+            leadIn: (_, offset) => safety.leadIn(offset),
+          ),
+  );
+}
+
+/// One side of a comparison, as the matching sees it: a medicine, a
+/// recorded kind of contraception counting as what its products share, or a
+/// herb.
 ///
 /// Attributes:
 ///     terms (`List<String>`): What another label would call it.
 ///     names (`Set<String>`): Every name its ingredients go by.
 ///     classes (`List<String>`): The FDA classes it is in.
 ///     groups (`Set<MedicineGroup>`): The groups it is in.
+///     one (String?): The name to look for [terms] under as one, for a side
+///         that is one thing by many names: a herb.
 final class _Side {
   /// A medicine.
   _Side.medicine(MedicineEntry entry, MedicineGroups table)
     : terms = entry.terms,
       names = _ownNames(entry),
       classes = entry.classes,
-      groups = table.of(entry).toSet();
+      groups = table.of(entry).toSet(),
+      one = null;
 
   /// A recorded kind of contraception. It is in no FDA class of its own.
   _Side.condition(ConditionKind kind)
     : terms = kind.names,
       names = kind.names.toSet(),
       classes = const <String>[],
-      groups = kind.groups.toSet();
+      groups = kind.groups.toSet(),
+      one = null;
+
+  /// A herb, by every name NCCIH gives it. It is in no class and no group.
+  _Side.supplement(Supplement supplement)
+    : terms = supplement.terms,
+      names = supplement.terms.toSet(),
+      classes = const <String>[],
+      groups = const <MedicineGroup>{},
+      one = supplement.name;
 
   /// What another label would call it.
   final List<String> terms;
@@ -458,6 +666,12 @@ final class _Side {
 
   /// The groups it is in.
   final Set<MedicineGroup> groups;
+
+  /// The name [terms] are looked for under as one, so that a label printing
+  /// "St. John's Wort (Hypericum perforatum)" is found to name the herb once
+  /// rather than twice. Null for a side whose terms are each a name of its
+  /// own: a medicine's ingredients.
+  final String? one;
 }
 
 /// Every name [entry]'s ingredients go by: its match terms, and its
@@ -526,6 +740,11 @@ List<MedicineGroup> _narrowest(
 ///     skipGroups (`Set<MedicineGroup>`): Groups the two share, not looked
 ///         for.
 ///     table (MedicineGroups): Every group, for their phrases.
+///     searched (`List<String>`, optional): The sections read, most telling
+///         first. Defaults to [mentionSections], a label's.
+///     leadIn (`String? Function(String, int)?`, optional): The line a
+///         mention at an offset in a section hangs from, for a fact sheet's
+///         lists. Defaults to null, for a label.
 ///
 /// Returns:
 ///     `List<LabelMention>`: At most one per name, class and group looked for,
@@ -538,9 +757,16 @@ List<LabelMention> _mentions({
   required Set<String> skipClasses,
   required Set<MedicineGroup> skipGroups,
   required MedicineGroups table,
+  List<String> searched = mentionSections,
+  String? Function(String section, int offset)? leadIn,
 }) {
+  final terms = other.terms.where((term) => !skip.contains(term));
+  final one = other.one;
   final wanted = <_Name>[
-    ..._names(other.terms.where((term) => !skip.contains(term))),
+    if (one == null)
+      ..._names(terms)
+    else if (terms.any((term) => _words(term).isNotEmpty))
+      _Name.any(one, terms),
     ..._names(
       other.classes.where((name) => !skipClasses.contains(name)),
       isClass: true,
@@ -560,7 +786,7 @@ List<LabelMention> _mentions({
   final found = <LabelMention>[];
   final remaining = wanted.toList();
   final remainingGroups = groups.toList();
-  for (final section in mentionSections) {
+  for (final section in searched) {
     final text = byName[section];
     if (text == null || (remaining.isEmpty && remainingGroups.isEmpty)) {
       continue;
@@ -589,6 +815,7 @@ List<LabelMention> _mentions({
           match.start,
           match.end,
           isClass: name.isClass,
+          leadIn: leadIn?.call(section, match.start),
         );
         found.add(mention);
         quoted.add((from, to));
@@ -620,6 +847,7 @@ List<LabelMention> _mentions({
           match.start,
           match.end,
           group: group,
+          leadIn: leadIn?.call(section, match.start),
         );
         if (quoted.any((range) => range.$1 < to && from < range.$2)) continue;
         found.add(mention);
@@ -653,6 +881,8 @@ bool _afterNon(String text, int start) {
 ///         false.
 ///     group (MedicineGroup?, optional): The group [name] is, if it is one.
 ///         Defaults to null.
+///     leadIn (String?, optional): The line the passage hangs from, in a
+///         fact sheet's list. Defaults to null.
 ///
 /// Returns:
 ///     `(LabelMention, int, int)`: The mention, with its passage, and where in
@@ -665,6 +895,7 @@ bool _afterNon(String text, int start) {
   int end, {
   bool isClass = false,
   MedicineGroup? group,
+  String? leadIn,
 }) {
   // Back to where the sentence starts, or as far as the reach allows.
   var from = start;
@@ -702,6 +933,7 @@ bool _afterNon(String text, int start) {
     passage: '$head${raw.trim()}$tail',
     start: head.length + start - from - lead,
     end: head.length + end - from - lead,
+    leadIn: leadIn,
   );
   return (mention, from, to);
 }
@@ -761,15 +993,15 @@ Iterable<_Name> _names(Iterable<String> names, {bool isClass = false}) => names
 final class _Name {
   /// Builds the pattern for [name].
   _Name(this.name, {required this.isClass})
-    : pattern = RegExp(
-        '(?<![A-Za-z0-9])'
-        '${_words(name).map(RegExp.escape).join('[^A-Za-z0-9]+')}'
-        '${isClass ? '(?:s|es)?' : ''}'
-        '(?![A-Za-z0-9])',
-        caseSensitive: false,
-      );
+    : pattern = _pattern(<String>[name], plural: isClass);
 
-  /// The name as the index gives it.
+  /// Builds one pattern for all of [phrases], found under [name]: a herb, by
+  /// any of the names NCCIH gives it.
+  _Name.any(this.name, Iterable<String> phrases)
+    : isClass = false,
+      pattern = _pattern(phrases, plural: false);
+
+  /// The name as the index gives it, or the herb's.
   final String name;
 
   /// Whether it is a class.
@@ -784,19 +1016,33 @@ final class _Name {
 ///
 /// The longest phrase first, so that where two start at the same word the
 /// longer is what is found.
-RegExp _groupPattern(MedicineGroup group) {
-  final cached = _groupPatterns[group];
-  if (cached != null) return cached;
-  final phrases = <String>[
-    for (final phrase in group.phrases)
-      if (_words(phrase).isNotEmpty)
-        _words(phrase).map(RegExp.escape).join('[^A-Za-z0-9]+'),
-  ]..sort((a, b) => b.length.compareTo(a.length));
-  return _groupPatterns[group] = RegExp(
-    '(?<![A-Za-z0-9])(?:${phrases.join('|')})(?:s|es)?(?![A-Za-z0-9])',
-    caseSensitive: false,
-  );
-}
+RegExp _groupPattern(MedicineGroup group) =>
+    _groupPatterns[group] ??= _pattern(group.phrases, plural: true);
 
 /// [_groupPattern]'s, made once for each group.
 final Expando<RegExp> _groupPatterns = Expando<RegExp>('group patterns');
+
+/// What finds any of [phrases]: each one's words in order, with anything but
+/// a letter or digit between them, and neither a letter nor a digit either
+/// side. The longest first, so that where two start at the same word the
+/// longer is what is found.
+///
+/// Args:
+///     phrases (`Iterable<String>`): What to find. Each must have a word in
+///         it: one with none would match the empty string.
+///     plural (bool): Whether a plural is found too, "NSAIDs".
+///
+/// Returns:
+///     RegExp: The pattern, ignoring case.
+RegExp _pattern(Iterable<String> phrases, {required bool plural}) {
+  final alternatives = <String>[
+    for (final phrase in phrases)
+      if (_words(phrase).isNotEmpty)
+        _words(phrase).map(RegExp.escape).join('[^A-Za-z0-9]+'),
+  ]..sort((a, b) => b.length.compareTo(a.length));
+  return RegExp(
+    '(?<![A-Za-z0-9])(?:${alternatives.join('|')})'
+    '${plural ? '(?:s|es)?' : ''}(?![A-Za-z0-9])',
+    caseSensitive: false,
+  );
+}
