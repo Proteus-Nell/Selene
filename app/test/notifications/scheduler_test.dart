@@ -279,27 +279,29 @@ void main() {
   });
 
   group('the exact-alarm request', () {
-    test('is put once, and only where the answer would change something',
-        () async {
-      // A phone that already allows them, every one before Android 12
-      // included, is not asked at all (ADR-0026).
-      gateway.exactAllowed = true;
-      expect(await scheduler.shouldRequestExactReminders(), isFalse);
+    test(
+      'is put once, and only where the answer would change something',
+      () async {
+        // A phone that already allows them, every one before Android 12
+        // included, is not asked at all (ADR-0026).
+        gateway.exactAllowed = true;
+        expect(await scheduler.shouldRequestExactReminders(), isFalse);
 
-      gateway.exactAllowed = false;
-      expect(await scheduler.shouldRequestExactReminders(), isTrue);
-      expect(await scheduler.requestExactReminders(), isFalse);
-      expect(gateway.exactRequests, 1);
-      // Asked, so not again by itself. Settings keeps offering it.
-      expect(await scheduler.shouldRequestExactReminders(), isFalse);
-      expect(
-        await db.settingsDao.readBool(
-          SettingKey.exactAlarmPermissionAsked,
-          orElse: false,
-        ),
-        isTrue,
-      );
-    });
+        gateway.exactAllowed = false;
+        expect(await scheduler.shouldRequestExactReminders(), isTrue);
+        expect(await scheduler.requestExactReminders(), isFalse);
+        expect(gateway.exactRequests, 1);
+        // Asked, so not again by itself. Settings keeps offering it.
+        expect(await scheduler.shouldRequestExactReminders(), isFalse);
+        expect(
+          await db.settingsDao.readBool(
+            SettingKey.exactAlarmPermissionAsked,
+            orElse: false,
+          ),
+          isTrue,
+        );
+      },
+    );
 
     test('can be recorded as asked without asking the platform', () async {
       // "Not now" must not open Android's settings screen, and must not come

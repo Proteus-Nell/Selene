@@ -803,7 +803,9 @@ class _ExactReminderSettingState extends ConsumerState<_ExactReminderSetting>
     return ListTile(
       leading: Icon(allowed ? Icons.alarm_on_outlined : Icons.alarm_off),
       title: Text(
-        allowed ? l10n.settingsExactRemindersOn : l10n.settingsExactRemindersOff,
+        allowed
+            ? l10n.settingsExactRemindersOn
+            : l10n.settingsExactRemindersOff,
       ),
       subtitle: Text(
         allowed

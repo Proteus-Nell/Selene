@@ -625,7 +625,11 @@ class _MedicineReminders extends ConsumerWidget {
     }
 
     final allowed = await scheduler.requestExactReminders();
-    if (allowed) ref.read(notificationPreferencesRevisionProvider.notifier).state++;
+    if (allowed) {
+      // What was queued a moment ago was queued roughly, and Android
+      // re-queues nothing by itself.
+      ref.read(notificationPreferencesRevisionProvider.notifier).state++;
+    }
     return allowed;
   }
 
