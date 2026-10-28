@@ -16,7 +16,9 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
+import 'package:period_tracker/domain/models/temperature.dart';
 import 'package:period_tracker/features/common/chip_motion.dart';
+import 'package:period_tracker/features/common/log_labels.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Measurements editor: one day's temperature, mucus and progesterone.
@@ -56,28 +58,11 @@ class MeasurementsEditor extends StatelessWidget {
   /// See [lowestCelsius].
   static const double highestCelsius = 42;
 
-  static double _toShown(double celsius, {required bool fahrenheit}) =>
-      fahrenheit ? celsius * 9 / 5 + 32 : celsius;
-
-  static double _toCelsius(double shown, {required bool fahrenheit}) =>
-      fahrenheit ? (shown - 32) * 5 / 9 : shown;
-
-  /// Round to the hundredths a thermometer shows.
-  static double _hundredths(double value) => (value * 100).round() / 100;
-
-  /// Write a number without the trailing zeros a reading would not show.
-  static String _format(double value) {
-    final fixed = _hundredths(value).toStringAsFixed(2);
-    return fixed.replaceFirst(RegExp(r'\.?0+$'), '');
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final unit = fahrenheit
-        ? l10n.logTemperatureFahrenheit
-        : l10n.logTemperatureCelsius;
+    final unit = temperatureUnitLabel(l10n, fahrenheit: fahrenheit);
     final temperature = current.basalTemperatureCelsius;
 
     return ExpansionTile(
@@ -97,23 +82,32 @@ class MeasurementsEditor extends StatelessWidget {
           label: '${l10n.logTemperatureLabel} ($unit)',
           value: temperature == null
               ? null
-              : _toShown(temperature, fahrenheit: fahrenheit),
-          format: _format,
+              : Temperature.toShown(temperature, fahrenheit: fahrenheit),
+          format: Temperature.format,
           validate: (shown) {
-            final celsius = _toCelsius(shown, fahrenheit: fahrenheit);
+            final celsius = Temperature.toCelsius(
+              shown,
+              fahrenheit: fahrenheit,
+            );
             if (celsius >= lowestCelsius && celsius <= highestCelsius) {
               return null;
             }
             return l10n.logTemperatureInvalid(
-              _format(_toShown(lowestCelsius, fahrenheit: fahrenheit)),
-              _format(_toShown(highestCelsius, fahrenheit: fahrenheit)),
+              Temperature.format(
+                Temperature.toShown(lowestCelsius, fahrenheit: fahrenheit),
+              ),
+              Temperature.format(
+                Temperature.toShown(highestCelsius, fahrenheit: fahrenheit),
+              ),
             );
           },
           onCommitted: (shown) => onChanged(
             current.copyWith(
               basalTemperatureCelsius: shown == null
                   ? null
-                  : _hundredths(_toCelsius(shown, fahrenheit: fahrenheit)),
+                  : Temperature.hundredths(
+                      Temperature.toCelsius(shown, fahrenheit: fahrenheit),
+                    ),
             ),
           ),
         ),
@@ -123,13 +117,7 @@ class MeasurementsEditor extends StatelessWidget {
         _Choices<CervicalMucus>(
           values: CervicalMucus.values,
           selected: current.cervicalMucus,
-          label: (value) => switch (value) {
-            CervicalMucus.dry => l10n.logMucusDry,
-            CervicalMucus.sticky => l10n.logMucusSticky,
-            CervicalMucus.creamy => l10n.logMucusCreamy,
-            CervicalMucus.watery => l10n.logMucusWatery,
-            CervicalMucus.eggWhite => l10n.logMucusEggWhite,
-          },
+          label: (value) => mucusLabel(l10n, value),
           onChanged: (value) =>
               onChanged(current.copyWith(cervicalMucus: value)),
         ),
@@ -141,10 +129,7 @@ class MeasurementsEditor extends StatelessWidget {
         _Choices<PdgStripResult>(
           values: PdgStripResult.values,
           selected: current.pdgStrip,
-          label: (value) => switch (value) {
-            PdgStripResult.negative => l10n.logPdgNegative,
-            PdgStripResult.positive => l10n.logPdgPositive,
-          },
+          label: (value) => pdgLabel(l10n, value),
           onChanged: (value) => onChanged(current.copyWith(pdgStrip: value)),
         ),
         const SizedBox(height: 12),
@@ -155,7 +140,7 @@ class MeasurementsEditor extends StatelessWidget {
               child: _NumberField(
                 label: l10n.logProgesteroneBloodLabel,
                 value: current.progesteroneValue,
-                format: _format,
+                format: Temperature.format,
                 validate: (value) =>
                     value > 0 ? null : l10n.logProgesteroneInvalid,
                 // The value and its unit go together or not at all: a number
@@ -178,10 +163,7 @@ class MeasurementsEditor extends StatelessWidget {
                 for (final unit in ProgesteroneUnit.values)
                   DropdownMenuItem<ProgesteroneUnit>(
                     value: unit,
-                    child: Text(switch (unit) {
-                      ProgesteroneUnit.ngPerMl => l10n.logProgesteroneNgPerMl,
-                      ProgesteroneUnit.nmolPerL => l10n.logProgesteroneNmolPerL,
-                    }),
+                    child: Text(progesteroneUnitLabel(l10n, unit)),
                   ),
               ],
               // Relabels rather than converts: the number is the laboratory's,

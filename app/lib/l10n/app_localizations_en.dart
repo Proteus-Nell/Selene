@@ -870,6 +870,272 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsSummary => 'Summary for a doctor';
+
+  @override
+  String get settingsSummarySubtitle =>
+      'A PDF of your periods, cycles, symptoms, conditions and medicines over a span you choose, saved where you choose.';
+
+  @override
+  String get settingsSpreadsheet => 'Export as spreadsheet files';
+
+  @override
+  String get settingsSpreadsheetSubtitle =>
+      'The same as CSV files, to open in a spreadsheet and work with yourself.';
+
+  @override
+  String get summarySpanTitle => 'How far back?';
+
+  @override
+  String get summarySpanBody =>
+      'It covers period dates, cycle lengths, symptoms, temperature, mucus and progesterone, conditions and medicines. Intercourse is never included.';
+
+  @override
+  String get summarySpanThreeMonths => 'The last 3 months';
+
+  @override
+  String get summarySpanSixMonths => 'The last 6 months';
+
+  @override
+  String get summarySpanYear => 'The last year';
+
+  @override
+  String get summarySpanEverything => 'Everything';
+
+  @override
+  String get settingsSummaryDone =>
+      'Saved the summary in the folder you chose.';
+
+  @override
+  String settingsSpreadsheetDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Saved $count files in the folder you chose.',
+      one: 'Saved 1 file in the folder you chose.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsSummaryFailed =>
+      'It could not be saved there. Try another folder.';
+
+  @override
+  String get settingsSummaryNothing =>
+      'Nothing is logged in that span, so there is nothing to summarise.';
+
+  @override
+  String get summaryPdfTitle => 'Cycle summary';
+
+  @override
+  String summaryPdfSpan(String from, String to) {
+    return '$from to $to';
+  }
+
+  @override
+  String summaryPdfAbout(String date) {
+    return 'Made with Selene on $date, from what the person it belongs to logged in the app. It is a personal record, not a clinical measurement and not a diagnosis.';
+  }
+
+  @override
+  String get summaryPdfCyclesHeading => 'Periods and cycles';
+
+  @override
+  String get summaryPdfCyclesUnknown =>
+      'Some logged days contradict each other, so the cycles could not be worked out from them. The logged days are in the spreadsheet export.';
+
+  @override
+  String get summaryPdfNoPeriods => 'No period started in this span.';
+
+  @override
+  String summaryPdfPeriodsStarted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count periods started in this span.',
+      one: '1 period started in this span.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String summaryPdfCycleLength(
+    int count,
+    String median,
+    String shortest,
+    String longest,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Cycle length in days, from one period\'s start to the next: median $median, from $shortest to $longest, over $count complete cycles.',
+      one:
+          'Cycle length in days, from one period\'s start to the next: $median, over 1 complete cycle.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String summaryPdfBleeding(
+    int count,
+    String median,
+    String shortest,
+    String longest,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Days of bleeding: median $median, from $shortest to $longest, over $count periods.',
+      one: 'Days of bleeding: $median, for 1 period.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get summaryPdfNotCounted =>
+      'A cycle with a note is left out of the median, as the app leaves it out of its predictions.';
+
+  @override
+  String get summaryPdfColumnStarted => 'Period started';
+
+  @override
+  String get summaryPdfColumnBleeding => 'Days of bleeding';
+
+  @override
+  String get summaryPdfColumnLength => 'Cycle length (days)';
+
+  @override
+  String get summaryPdfColumnNote => 'Note';
+
+  @override
+  String get summaryPdfStillGoing => 'Still going';
+
+  @override
+  String get summaryPdfShort => 'Under 15 days';
+
+  @override
+  String get summaryPdfLong => 'Over 90 days';
+
+  @override
+  String get summaryPdfOutlier => 'Unusual for this record';
+
+  @override
+  String get summaryPdfSymptomsHeading => 'Symptoms';
+
+  @override
+  String get summaryPdfSymptomsIntro =>
+      'How many days each symptom was logged on, and how strongly it was felt.';
+
+  @override
+  String get summaryPdfNoSymptoms => 'No symptoms were logged in this span.';
+
+  @override
+  String get summaryPdfColumnSymptom => 'Symptom';
+
+  @override
+  String get summaryPdfColumnDays => 'Days';
+
+  @override
+  String get summaryPdfMeasurementsHeading =>
+      'Temperature, mucus and progesterone';
+
+  @override
+  String get summaryPdfMeasurementsNote =>
+      'Recorded only. The app does not use them to predict anything or to estimate ovulation.';
+
+  @override
+  String summaryPdfTemperature(
+    int count,
+    String lowest,
+    String highest,
+    String unit,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Basal body temperature: $count readings, from $lowest to $highest $unit.',
+      one: 'Basal body temperature: 1 reading, $lowest $unit.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String summaryPdfMucus(String days) {
+    return 'Cervical mucus: $days.';
+  }
+
+  @override
+  String summaryPdfMucusKind(String kind, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$kind on $_temp0';
+  }
+
+  @override
+  String summaryPdfPdg(String results) {
+    return 'Home PdG strips: $results.';
+  }
+
+  @override
+  String summaryPdfPdgResult(String result, String date) {
+    return '$result on $date';
+  }
+
+  @override
+  String summaryPdfBlood(String results) {
+    return 'Blood progesterone: $results.';
+  }
+
+  @override
+  String summaryPdfBloodResult(String value, String unit, String date) {
+    return '$value $unit on $date';
+  }
+
+  @override
+  String get summaryPdfConditionsHeading => 'Conditions';
+
+  @override
+  String get summaryPdfNoConditions => 'None recorded during this span.';
+
+  @override
+  String summaryPdfConditionSince(String condition, String start) {
+    return '$condition: since $start';
+  }
+
+  @override
+  String summaryPdfConditionFromTo(String condition, String start, String end) {
+    return '$condition: $start to $end';
+  }
+
+  @override
+  String get summaryPdfMedicinesHeading => 'Medicines';
+
+  @override
+  String get summaryPdfMedicinesNote =>
+      'As recorded in the app today. The list has no dates, so it may not match the whole span.';
+
+  @override
+  String get summaryPdfNoMedicines => 'None recorded.';
+
+  @override
+  String summaryPdfFooter(String from, String to) {
+    return 'Selene cycle summary, $from to $to';
+  }
+
+  @override
+  String summaryPdfPage(int page, int count) {
+    return 'Page $page of $count';
+  }
+
+  @override
   String get settingsDeleteAll => 'Delete everything';
 
   @override
@@ -2041,7 +2307,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacySharingBody =>
-      'Two things send anything anywhere, and only when you ask. An export saves a backup file wherever you choose. A web search opens in your browser, after the app tells you exactly which words will be searched, and your browser may keep it in its history.';
+      'Two things send anything anywhere, and only when you ask. An export saves a backup, or a summary for a doctor, wherever you choose. A web search opens in your browser, after the app tells you exactly which words will be searched, and your browser may keep it in its history.';
 
   @override
   String get privacyEncryptedTitle =>

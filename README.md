@@ -14,6 +14,7 @@
 - **Predicts** the next period as a date range with a confidence level, never as a single date. The prediction starts from population averages and adjusts to your own cycles as you log them.
 - **Explains** what you logged: cycle phases on the calendar, insights from your own history, and conditions such as PMOS (formerly PCOS) or hormonal contraception recorded alongside it.
 - **Looks up medicines and herbs:** US drug labelling, searched or browsed A to Z, and NCCIH's fact sheets on herbal supplements. It compares two or more medicines, or a herb and a medicine, by what their labels and fact sheets say about each other, and flags pairs among the medicines you record.
+- **Makes a summary for a doctor:** a PDF of period dates, cycle lengths, symptoms, conditions and medicines over a span you choose, or the same as spreadsheet files. Intercourse is never included.
 - **Keeps it private:** no account, no sync, no analytics. The database is encrypted on the phone, a backup can be protected with a passphrase, and an optional app lock asks for your fingerprint or PIN before showing anything.
 
 Selene is not a contraceptive and does not give medical advice. It never tells you when you cannot get pregnant, and its medicine pages show US labelling, which can differ from the packet in front of you.
@@ -32,7 +33,7 @@ Selene/
 │   ├── lib/
 │   │   ├── main.dart                 # Opens the database, then starts the app
 │   │   ├── core/                     # Clock, dates, theme, logging
-│   │   ├── data/                     # Database, repositories, export and import, medicines bundle reader
+│   │   ├── data/                     # Database, repositories, export and import, the summary, reference readers
 │   │   ├── domain/                   # Cycle maths and the prediction model, in plain Dart
 │   │   ├── features/                 # One folder per screen: today, calendar, log, insights, learn, lookup...
 │   │   ├── notifications/            # Local reminders, re-registered after a restart

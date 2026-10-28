@@ -7,7 +7,8 @@
 ///
 /// Includes:
 ///     - SettingsScreen: The screen itself.
-///     - _SettingsScreenState: The export, import and delete flows.
+///     - _SettingsScreenState: The export, import, summary and delete
+///       flows.
 ///     - _AppLockSetting: The lock toggle, and why it may be unavailable.
 ///     - _AppLockSettingState: What the device said when it was asked.
 ///     - _DisplaySettings: Preferences that change what is shown.
@@ -27,6 +28,8 @@ import 'package:path/path.dart' as p;
 import 'package:period_tracker/core/result.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
+import 'package:period_tracker/data/summary/cycle_summary.dart';
+import 'package:period_tracker/data/summary/summary_csv.dart';
 import 'package:period_tracker/data/transfer/export_v1.dart';
 import 'package:period_tracker/data/transfer/import_v1.dart';
 import 'package:period_tracker/data/transfer/protected_backup.dart';
@@ -38,6 +41,8 @@ import 'package:period_tracker/features/settings/backup_dialogs.dart';
 import 'package:period_tracker/features/settings/delete_everything_dialog.dart';
 import 'package:period_tracker/features/settings/log_viewer.dart';
 import 'package:period_tracker/features/settings/privacy_section.dart';
+import 'package:period_tracker/features/summary/summary_pdf.dart';
+import 'package:period_tracker/features/summary/summary_span_dialog.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 import 'package:period_tracker/notifications/scheduler.dart';
 import 'package:period_tracker/security/app_lock.dart';
@@ -261,6 +266,72 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  /// Make the summary for a doctor, or its spreadsheet files, and save them
+  /// in a folder the user chooses (ADR-0024).
+  ///
+  /// Steps:
+  ///     1. Ask how far back it should reach. The question says what the
+  ///        summary holds, and that intercourse is never in it.
+  ///     2. Ask where it goes. As with a backup, there is no default.
+  ///     3. Build it from the whole record, and write it there.
+  ///
+  /// Args:
+  ///     spreadsheet (bool): Whether to write the CSV files rather than the
+  ///         PDF.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once the files are written and reported,
+  ///     or as soon as the user backs out of either question.
+  Future<void> _summary({required bool spreadsheet}) async {
+    final l10n = AppLocalizations.of(context);
+    final span = await showSummarySpanDialog(context);
+    if (span == null || !mounted) return;
+    final directory = await getDirectoryPath();
+    if (directory == null || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      final clock = ref.read(clockProvider);
+      final summary = await CycleSummary.load(
+        span: span,
+        today: clock.today(),
+        cycles: ref.read(cycleRepositoryProvider),
+        conditions: ref.read(conditionRepositoryProvider),
+        medicines: ref.read(medicineListRepositoryProvider),
+      );
+      if (summary.days.isEmpty && summary.conditions.isEmpty) {
+        _report(l10n.settingsSummaryNothing);
+        return;
+      }
+      final fahrenheit = await ref
+          .read(appDatabaseProvider)
+          .settingsDao
+          .readBool(SettingKey.temperatureFahrenheit, orElse: false);
+      if (spreadsheet) {
+        final files = SummaryCsv.files(summary, fahrenheit: fahrenheit);
+        for (final MapEntry(key: name, value: content) in files.entries) {
+          await File(p.join(directory, name)).writeAsString(content);
+        }
+        _report(l10n.settingsSpreadsheetDone(files.length));
+      } else {
+        final bytes = summaryPdf(
+          summary,
+          l10n: l10n,
+          fahrenheit: fahrenheit,
+          made: clock.nowUtc(),
+        );
+        await File(
+          p.join(directory, summaryPdfFileName(summary)),
+        ).writeAsBytes(bytes);
+        _report(l10n.settingsSummaryDone);
+      }
+    } on FileSystemException {
+      _report(l10n.settingsSummaryFailed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   /// Delete everything, after a typed confirmation.
   ///
   /// The count of logged days is read first so the dialog can say how much is
@@ -306,6 +377,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: Text(l10n.settingsImport),
               subtitle: Text(l10n.settingsImportSubtitle),
               onTap: _busy ? null : _import,
+            ),
+            ListTile(
+              leading: const Icon(Icons.description_outlined),
+              title: Text(l10n.settingsSummary),
+              subtitle: Text(l10n.settingsSummarySubtitle),
+              onTap: _busy ? null : () => _summary(spreadsheet: false),
+            ),
+            ListTile(
+              leading: const Icon(Icons.table_chart_outlined),
+              title: Text(l10n.settingsSpreadsheet),
+              subtitle: Text(l10n.settingsSpreadsheetSubtitle),
+              onTap: _busy ? null : () => _summary(spreadsheet: true),
             ),
             ListTile(
               leading: Icon(

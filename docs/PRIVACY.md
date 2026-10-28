@@ -21,7 +21,7 @@ The app has no internet permission, no account, no analytics, no advertising and
 
 ### It leaves your phone only when you choose
 
-Two things send anything anywhere, and only when you ask. An export saves a backup file wherever you choose. A web search opens in your browser, after the app tells you exactly which words will be searched, and your browser may keep it in its history.
+Two things send anything anywhere, and only when you ask. An export saves a backup, or a summary for a doctor, wherever you choose. A web search opens in your browser, after the app tells you exactly which words will be searched, and your browser may keep it in its history.
 
 ### The database is encrypted, with a key the phone keeps
 

@@ -283,9 +283,12 @@ void main() {
       );
       final before = container.read(notificationPreferencesRevisionProvider);
 
-      await tester.tap(
-        find.widgetWithText(SwitchListTile, l10n.settingsReminderEnabled),
+      final reminders = find.widgetWithText(
+        SwitchListTile,
+        l10n.settingsReminderEnabled,
       );
+      await scrollSettingsTo(tester, reminders);
+      await tester.tap(reminders);
       await tester.pumpAndSettle();
 
       expect(
@@ -299,12 +302,15 @@ void main() {
     ) async {
       await pumpSettings(tester);
       final l10n = l10nOf(tester);
+      final reminders = find.widgetWithText(
+        SwitchListTile,
+        l10n.settingsReminderEnabled,
+      );
+      await scrollSettingsTo(tester, reminders);
       // The switch alone does not say when anything would arrive.
       expect(find.text(l10n.settingsReminderSubtitle), findsOneWidget);
 
-      await tester.tap(
-        find.widgetWithText(SwitchListTile, l10n.settingsReminderEnabled),
-      );
+      await tester.tap(reminders);
       await tester.pumpAndSettle();
       expect(
         await db.settingsDao.readBool(
@@ -324,6 +330,13 @@ void main() {
       // real data leak (risk R16).
       await pumpSettings(tester);
       final l10n = l10nOf(tester);
+      await scrollSettingsTo(
+        tester,
+        find.widgetWithText(
+          SwitchListTile,
+          l10n.settingsDetailedNotifications,
+        ),
+      );
       for (final title in <String>[
         l10n.settingsNudgeEnabled,
         l10n.settingsDetailedNotifications,
@@ -346,12 +359,9 @@ void main() {
       // Risk R12. Saying so is cheaper than the user concluding the app is
       // broken.
       await pumpSettings(tester);
-      await tester.drag(find.byType(ListView), const Offset(0, -260));
-      await tester.pumpAndSettle();
-      expect(
-        find.text(l10nOf(tester).settingsBatteryNoteTitle),
-        findsOneWidget,
-      );
+      final note = find.text(l10nOf(tester).settingsBatteryNoteTitle);
+      await scrollSettingsTo(tester, note);
+      expect(note, findsOneWidget);
     });
   });
 

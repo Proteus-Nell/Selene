@@ -82,13 +82,14 @@ On your phone, what you record stays until you delete it:
 - **Delete everything**, in Settings, removes every record and reclaims the space, so the deleted entries are not left readable in the file.
 - Uninstalling the app deletes everything it stored on the phone.
 
-A backup file you export stays wherever you saved it until you delete it.
+A file you export, a backup or a summary, stays wherever you saved it until you delete it.
 
 ## How we share your personal information
 
 We do not sell, share or disclose your personal information, because we never have it. Information leaves your phone only when you choose to send it:
 
 - **Exports.** You can export a backup file, saved wherever you choose. It is a readable file unless you protect it with a passphrase when you export it, and then it opens only with that passphrase. Once it is saved, it is under your control and the control of wherever you keep or send it.
+- **A summary for a doctor.** You can save a summary of a span you choose, as a PDF or as spreadsheet files, wherever you choose. It holds your period dates, cycle lengths, symptoms, measurements, conditions and medicines, and never intercourse. It is a readable file, and once it is saved it is under your control, as an export is.
 - **Searching online.** Some screens offer to search the web for you: "Look it up online" for two medicines, for example. Before anything happens, the app tells you exactly which words will be searched. If you confirm, it opens your web browser at a [DuckDuckGo](https://duckduckgo.com/privacy) search. That request is made by your browser, not by the app, and is covered by the privacy policies of your browser and of DuckDuckGo. Your browser may keep the search in its history.
 
 ## Your choices

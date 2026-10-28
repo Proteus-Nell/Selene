@@ -78,10 +78,35 @@ void main() {
     expect(offenders, isEmpty, reason: offenders.join('\n'));
   });
 
+  test('nor can the summary for a doctor, or its spreadsheet files', () {
+    // ADR-0024: a summary is a record someone else reads, and a spreadsheet
+    // may travel further still. The summary has no field for the column, and
+    // this keeps it that way. Comments are skipped: the files say in prose why
+    // the column is not there, and that is worth keeping.
+    final offenders = <String>[];
+    for (final directory in <String>[
+      'lib/data/summary',
+      'lib/features/summary',
+    ]) {
+      for (final file in _dartFilesIn(directory)) {
+        final code = file
+            .readAsLinesSync()
+            .where((line) => !line.trimLeft().startsWith('//'))
+            .join('\n');
+        if (RegExp(r'\bIntercourse\b|\.intercourse\b').hasMatch(code)) {
+          offenders.add(file.path);
+        }
+      }
+    }
+    expect(offenders, isEmpty, reason: offenders.join('\n'));
+  });
+
   test('the scan is looking somewhere real', () {
     // A guard that finds no files passes for the wrong reason.
     expect(_dartFilesIn('lib/domain/predict'), isNotEmpty);
     expect(_dartFilesIn('lib/domain/cycles'), isNotEmpty);
+    expect(_dartFilesIn('lib/data/summary'), isNotEmpty);
+    expect(_dartFilesIn('lib/features/summary'), isNotEmpty);
   });
 
   group('and the value does not travel', () {

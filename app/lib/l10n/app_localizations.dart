@@ -1533,6 +1533,351 @@ abstract class AppLocalizations {
   /// **'Restored {count} days from a backup taken on {date}.'**
   String settingsImportDone(int count, String date);
 
+  /// No description provided for @settingsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary for a doctor'**
+  String get settingsSummary;
+
+  /// The PDF summary (ADR-0024). Nothing is sent anywhere: it is written to a folder the user picks.
+  ///
+  /// In en, this message translates to:
+  /// **'A PDF of your periods, cycles, symptoms, conditions and medicines over a span you choose, saved where you choose.'**
+  String get settingsSummarySubtitle;
+
+  /// No description provided for @settingsSpreadsheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Export as spreadsheet files'**
+  String get settingsSpreadsheet;
+
+  /// No description provided for @settingsSpreadsheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The same as CSV files, to open in a spreadsheet and work with yourself.'**
+  String get settingsSpreadsheetSubtitle;
+
+  /// No description provided for @summarySpanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How far back?'**
+  String get summarySpanTitle;
+
+  /// Before a summary or spreadsheet is made. It must say that intercourse is left out, since the file is for someone else to read.
+  ///
+  /// In en, this message translates to:
+  /// **'It covers period dates, cycle lengths, symptoms, temperature, mucus and progesterone, conditions and medicines. Intercourse is never included.'**
+  String get summarySpanBody;
+
+  /// No description provided for @summarySpanThreeMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'The last 3 months'**
+  String get summarySpanThreeMonths;
+
+  /// No description provided for @summarySpanSixMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'The last 6 months'**
+  String get summarySpanSixMonths;
+
+  /// No description provided for @summarySpanYear.
+  ///
+  /// In en, this message translates to:
+  /// **'The last year'**
+  String get summarySpanYear;
+
+  /// No description provided for @summarySpanEverything.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything'**
+  String get summarySpanEverything;
+
+  /// No description provided for @settingsSummaryDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved the summary in the folder you chose.'**
+  String get settingsSummaryDone;
+
+  /// No description provided for @settingsSpreadsheetDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Saved 1 file in the folder you chose.} other{Saved {count} files in the folder you chose.}}'**
+  String settingsSpreadsheetDone(int count);
+
+  /// No description provided for @settingsSummaryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'It could not be saved there. Try another folder.'**
+  String get settingsSummaryFailed;
+
+  /// No description provided for @settingsSummaryNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is logged in that span, so there is nothing to summarise.'**
+  String get settingsSummaryNothing;
+
+  /// No description provided for @summaryPdfTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cycle summary'**
+  String get summaryPdfTitle;
+
+  /// No description provided for @summaryPdfSpan.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} to {to}'**
+  String summaryPdfSpan(String from, String to);
+
+  /// Under the PDF summary's title. It says whose record it is and what it is not, for the doctor reading it.
+  ///
+  /// In en, this message translates to:
+  /// **'Made with Selene on {date}, from what the person it belongs to logged in the app. It is a personal record, not a clinical measurement and not a diagnosis.'**
+  String summaryPdfAbout(String date);
+
+  /// No description provided for @summaryPdfCyclesHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Periods and cycles'**
+  String get summaryPdfCyclesHeading;
+
+  /// No description provided for @summaryPdfCyclesUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Some logged days contradict each other, so the cycles could not be worked out from them. The logged days are in the spreadsheet export.'**
+  String get summaryPdfCyclesUnknown;
+
+  /// No description provided for @summaryPdfNoPeriods.
+  ///
+  /// In en, this message translates to:
+  /// **'No period started in this span.'**
+  String get summaryPdfNoPeriods;
+
+  /// No description provided for @summaryPdfPeriodsStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 period started in this span.} other{{count} periods started in this span.}}'**
+  String summaryPdfPeriodsStarted(int count);
+
+  /// No description provided for @summaryPdfCycleLength.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Cycle length in days, from one period\'s start to the next: {median}, over 1 complete cycle.} other{Cycle length in days, from one period\'s start to the next: median {median}, from {shortest} to {longest}, over {count} complete cycles.}}'**
+  String summaryPdfCycleLength(
+    int count,
+    String median,
+    String shortest,
+    String longest,
+  );
+
+  /// No description provided for @summaryPdfBleeding.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Days of bleeding: {median}, for 1 period.} other{Days of bleeding: median {median}, from {shortest} to {longest}, over {count} periods.}}'**
+  String summaryPdfBleeding(
+    int count,
+    String median,
+    String shortest,
+    String longest,
+  );
+
+  /// No description provided for @summaryPdfNotCounted.
+  ///
+  /// In en, this message translates to:
+  /// **'A cycle with a note is left out of the median, as the app leaves it out of its predictions.'**
+  String get summaryPdfNotCounted;
+
+  /// No description provided for @summaryPdfColumnStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Period started'**
+  String get summaryPdfColumnStarted;
+
+  /// No description provided for @summaryPdfColumnBleeding.
+  ///
+  /// In en, this message translates to:
+  /// **'Days of bleeding'**
+  String get summaryPdfColumnBleeding;
+
+  /// No description provided for @summaryPdfColumnLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Cycle length (days)'**
+  String get summaryPdfColumnLength;
+
+  /// No description provided for @summaryPdfColumnNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get summaryPdfColumnNote;
+
+  /// No description provided for @summaryPdfStillGoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Still going'**
+  String get summaryPdfStillGoing;
+
+  /// A cycle the app judges implausibly short, as CycleValidity.implausiblyShort defines it.
+  ///
+  /// In en, this message translates to:
+  /// **'Under 15 days'**
+  String get summaryPdfShort;
+
+  /// No description provided for @summaryPdfLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Over 90 days'**
+  String get summaryPdfLong;
+
+  /// A cycle that is a strong outlier against the person's own history and has not been confirmed (CycleValidity.unconfirmedOutlier).
+  ///
+  /// In en, this message translates to:
+  /// **'Unusual for this record'**
+  String get summaryPdfOutlier;
+
+  /// No description provided for @summaryPdfSymptomsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Symptoms'**
+  String get summaryPdfSymptomsHeading;
+
+  /// No description provided for @summaryPdfSymptomsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'How many days each symptom was logged on, and how strongly it was felt.'**
+  String get summaryPdfSymptomsIntro;
+
+  /// No description provided for @summaryPdfNoSymptoms.
+  ///
+  /// In en, this message translates to:
+  /// **'No symptoms were logged in this span.'**
+  String get summaryPdfNoSymptoms;
+
+  /// No description provided for @summaryPdfColumnSymptom.
+  ///
+  /// In en, this message translates to:
+  /// **'Symptom'**
+  String get summaryPdfColumnSymptom;
+
+  /// No description provided for @summaryPdfColumnDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days'**
+  String get summaryPdfColumnDays;
+
+  /// No description provided for @summaryPdfMeasurementsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature, mucus and progesterone'**
+  String get summaryPdfMeasurementsHeading;
+
+  /// No description provided for @summaryPdfMeasurementsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded only. The app does not use them to predict anything or to estimate ovulation.'**
+  String get summaryPdfMeasurementsNote;
+
+  /// No description provided for @summaryPdfTemperature.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Basal body temperature: 1 reading, {lowest} {unit}.} other{Basal body temperature: {count} readings, from {lowest} to {highest} {unit}.}}'**
+  String summaryPdfTemperature(
+    int count,
+    String lowest,
+    String highest,
+    String unit,
+  );
+
+  /// No description provided for @summaryPdfMucus.
+  ///
+  /// In en, this message translates to:
+  /// **'Cervical mucus: {days}.'**
+  String summaryPdfMucus(String days);
+
+  /// No description provided for @summaryPdfMucusKind.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} on {count, plural, =1{1 day} other{{count} days}}'**
+  String summaryPdfMucusKind(String kind, int count);
+
+  /// No description provided for @summaryPdfPdg.
+  ///
+  /// In en, this message translates to:
+  /// **'Home PdG strips: {results}.'**
+  String summaryPdfPdg(String results);
+
+  /// No description provided for @summaryPdfPdgResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{result} on {date}'**
+  String summaryPdfPdgResult(String result, String date);
+
+  /// No description provided for @summaryPdfBlood.
+  ///
+  /// In en, this message translates to:
+  /// **'Blood progesterone: {results}.'**
+  String summaryPdfBlood(String results);
+
+  /// No description provided for @summaryPdfBloodResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} {unit} on {date}'**
+  String summaryPdfBloodResult(String value, String unit, String date);
+
+  /// No description provided for @summaryPdfConditionsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Conditions'**
+  String get summaryPdfConditionsHeading;
+
+  /// No description provided for @summaryPdfNoConditions.
+  ///
+  /// In en, this message translates to:
+  /// **'None recorded during this span.'**
+  String get summaryPdfNoConditions;
+
+  /// No description provided for @summaryPdfConditionSince.
+  ///
+  /// In en, this message translates to:
+  /// **'{condition}: since {start}'**
+  String summaryPdfConditionSince(String condition, String start);
+
+  /// No description provided for @summaryPdfConditionFromTo.
+  ///
+  /// In en, this message translates to:
+  /// **'{condition}: {start} to {end}'**
+  String summaryPdfConditionFromTo(String condition, String start, String end);
+
+  /// No description provided for @summaryPdfMedicinesHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicines'**
+  String get summaryPdfMedicinesHeading;
+
+  /// No description provided for @summaryPdfMedicinesNote.
+  ///
+  /// In en, this message translates to:
+  /// **'As recorded in the app today. The list has no dates, so it may not match the whole span.'**
+  String get summaryPdfMedicinesNote;
+
+  /// No description provided for @summaryPdfNoMedicines.
+  ///
+  /// In en, this message translates to:
+  /// **'None recorded.'**
+  String get summaryPdfNoMedicines;
+
+  /// No description provided for @summaryPdfFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Selene cycle summary, {from} to {to}'**
+  String summaryPdfFooter(String from, String to);
+
+  /// No description provided for @summaryPdfPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} of {count}'**
+  String summaryPdfPage(int page, int count);
+
   /// No description provided for @settingsDeleteAll.
   ///
   /// In en, this message translates to:
@@ -2354,7 +2699,7 @@ abstract class AppLocalizations {
   /// **'Herbal supplements'**
   String get lookupSupplementsHeading;
 
-  /// Opens NCCIH's fact sheets (ADR-0023). Not the Supplements page under Learn, which is about nutrition and stays hidden behind the long press.
+  /// Opens NCCIH's fact sheets (ADR-0023). Not the Supplements page under Learn, which is about nutrition and stays hidden behind the ten-second hold.
   ///
   /// In en, this message translates to:
   /// **'Herbal supplements A to Z'**
@@ -3389,7 +3734,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacySharingBody.
   ///
   /// In en, this message translates to:
-  /// **'Two things send anything anywhere, and only when you ask. An export saves a backup file wherever you choose. A web search opens in your browser, after the app tells you exactly which words will be searched, and your browser may keep it in its history.'**
+  /// **'Two things send anything anywhere, and only when you ask. An export saves a backup, or a summary for a doctor, wherever you choose. A web search opens in your browser, after the app tells you exactly which words will be searched, and your browser may keep it in its history.'**
   String get privacySharingBody;
 
   /// No description provided for @privacyEncryptedTitle.

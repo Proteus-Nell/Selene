@@ -32,6 +32,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0021](#adr-0021-group-names-on-labels-come-from-a-sourced-table-and-recorded-contraception-joins-the-conflict-flags) | Group names on labels come from a sourced table, and recorded contraception joins the conflict flags | Accepted | 2026-10-28 |
 | [0022](#adr-0022-medication-guides-carry-their-safety-sections-only-and-a-guide-whose-dosing-cannot-be-left-out-is-left-out-whole) | Medication Guides carry their safety sections only, and a guide whose dosing cannot be left out is left out whole | Accepted | 2026-10-28 |
 | [0023](#adr-0023-herbal-supplements-are-nccihs-public-domain-fact-sheets-compared-with-medicines-by-their-safety-section) | Herbal supplements are NCCIH's public-domain fact sheets, compared with medicines by their safety section | Accepted | 2026-10-28 |
+| [0024](#adr-0024-the-summary-for-a-doctor-is-a-pdf-the-app-writes-itself-with-csv-files-of-the-same-data-and-neither-holds-intercourse) | The summary for a doctor is a PDF the app writes itself, with CSV files of the same data, and neither holds intercourse | Accepted | 2026-10-28 |
 
 ---
 
@@ -1449,6 +1450,78 @@ kind of record. Left for when it is asked for.
   marks are drawn instead, on the herb pages and the guides alike.
 - The reference is refreshed with `--fetch`; `--check` fails CI when the asset
   and its generated Dart disagree, or a sheet loses its safety section.
+
+---
+
+## ADR-0024: The summary for a doctor is a PDF the app writes itself, with CSV files of the same data, and neither holds intercourse
+
+**Status:** Accepted, 2026-10-28. Saves where [ADR-0019](#adr-0019-a-backup-can-be-protected-with-a-passphrase-and-an-unprotected-one-still-restores)'s backups do, and keeps the app's dependency rule of [ADR-0004](#adr-0004-unencrypted-local-sqlite-with-zero-network-permission).
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for something to take to a doctor: a PDF summary of "cycle
+lengths, period dates, symptoms, conditions and medicines over a chosen span,
+as a printable file saved where you choose", and the same data as a
+spreadsheet file "for anyone who wants to analyse it themselves". The JSON
+backup holds everything, but it is for the app to read back, not for a person.
+
+A summary is read by someone other than the person who recorded it, and a
+spreadsheet may travel further. `docs/PLAN.md` 6.5 says to plan for that.
+
+### Decision
+
+1. **One summary, two files.** `CycleSummary` is built from the whole record
+   over a span: the last 3, 6 or 12 months, or everything. It holds the logged
+   days in the span, which day of its cycle each was, the cycles that started
+   in it, the conditions that ran during it, and the medicines recorded. Both
+   files are made from it, so they cannot disagree.
+2. **The PDF is written by the app itself** (`pdf_document.dart`): text in
+   Helvetica and Helvetica Bold, the base fonts every reader has, in
+   WinAnsiEncoding; A4 pages with numbered footers; tables that wrap and carry
+   their header onto a new page. It holds the figures a doctor reads first
+   (periods started, median cycle length and range, median days of bleeding),
+   a table of the periods, the symptoms by days and severity, the
+   measurements, the conditions with their dates, and the medicines.
+3. **The cycle figures count what prediction counts.** A cycle the app flags
+   (ADR-0003's validation) is listed with why, and left out of the medians.
+4. **The spreadsheet is three CSV files**: the logged days, the cycles, and
+   the conditions and medicines. The columns are the backup's keys and the
+   values its names, dates are `YYYY-MM-DD`, and the files follow RFC 4180
+   with CRLF line endings. Temperatures are in Celsius, with a Fahrenheit
+   column beside them for someone who reads Fahrenheit.
+5. **Intercourse is in neither.** `SummaryDay` has no field for it, and
+   `intercourse_isolation_test.dart` fails if the summary's code names it. The
+   question asked before a summary is made says so.
+6. **Saved to a folder the user chooses**, as a backup is, with nothing sent
+   anywhere. A file's name holds only the span, since names are read where
+   contents are not.
+7. **Medicines are listed as the list stands.** It has no dates (ADR-0015),
+   and the PDF says so rather than implying they ran across the span.
+
+### Runner-up and why rejected
+
+**The `pdf` package.** It does everything this needs and much more, and
+brings `image`, `archive`, `barcode` and others into the app to draw text
+and rules. Writing the little PDF needed is a few hundred lines that a test
+can check byte by byte. `printing`, the usual partner, depends on `http`.
+
+**One CSV in a long format** (a row a fact: date, kind, name, value). One file
+instead of three, but a spreadsheet user would have to pivot it before it
+said anything.
+
+**Predictions in the summary.** A prediction is not a record, and a range on a
+doctor's desk is easily read as a date. Left out.
+
+### Consequences
+
+- The PDF can set only WinAnsi's characters. The app is in English, and a
+  character outside them is written as "?". A translation into a language
+  with other letters would need a font embedded.
+- The PDF is untagged, so a screen reader reads it less well than the app.
+  The app itself, and the CSV files, remain the accessible way in.
+- The medians are the app's own statistics, not a clinical calculation, and
+  the PDF says it is a personal record and not a diagnosis.
 
 ---
 
