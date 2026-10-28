@@ -20,6 +20,7 @@ import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
+import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 import 'package:period_tracker/notifications/notification_gateway.dart';
@@ -80,10 +81,17 @@ class NotificationScheduler {
       SettingKey.lastNudgeEpochDay,
       orElse: -1,
     );
+    final predictions = await settings.readBool(
+      SettingKey.reminderEnabled,
+      orElse: true,
+    );
     return NotificationPreferences(
-      predictionsEnabled: await settings.readBool(
-        SettingKey.reminderEnabled,
-        orElse: true,
+      predictionsEnabled: predictions,
+      // Until it has a value of its own, as the predictions switch was set:
+      // the check-in came with it before it had a switch (ADR-0025).
+      lateCheckInEnabled: await settings.readBool(
+        SettingKey.lateCheckInEnabled,
+        orElse: predictions,
       ),
       // Off unless the user turned it on. Never defaulted true on a re-read.
       nudgeEnabled: await settings.readBool(
@@ -98,17 +106,24 @@ class NotificationScheduler {
     );
   }
 
-  /// Rebuild the whole schedule for a prediction.
+  /// Rebuild the whole schedule for a prediction, and the medicine
+  /// reminders with it.
   ///
-  /// Called on every prediction change and every edit.
+  /// Called on every prediction change and every edit, and whenever a
+  /// medicine reminder changes. The medicine reminders are rebuilt each time
+  /// too, because cancelling is all or nothing, and because each run
+  /// schedules them in the zone the phone is in now (ADR-0025).
   ///
   /// Args:
   ///     result (PredictionResult): What the model currently says.
   ///     copy (NotificationCopy): The wording to deliver with.
   ///
   /// Returns:
-  ///     `Future<List<PlannedNotification>>`: What was scheduled, so a test
-  ///     can assert the schedule rather than the side effect.
+  ///     `Future<List<PlannedNotification>>`: What was scheduled about the
+  ///     cycle, so a test can assert the schedule rather than the side
+  ///     effect. Not the medicine reminders, which repeat every day and so
+  ///     are never missed while the app is closed in the sense
+  ///     [checkForMissedReminder] means.
   Future<List<PlannedNotification>> reschedule(
     PredictionResult result, {
     required NotificationCopy copy,
@@ -135,6 +150,22 @@ class NotificationScheduler {
       _logger?.info(
         LogEvent.notificationScheduled,
         fields: <String, LogField>{'kind': LogField.state(notification.kind)},
+      );
+    }
+
+    final medicines = MedicineListRepository(_database.settingsDao);
+    final daily = NotificationPlanner.planMedicines(
+      await medicines.read(),
+      await medicines.reminders(),
+    );
+    for (final reminder in daily) {
+      await _gateway.scheduleDaily(reminder, copy: copy, detailed: detailed);
+    }
+    if (daily.isNotEmpty) {
+      // How many, and never which: a medicine's name is not for the log.
+      _logger?.info(
+        LogEvent.notificationScheduled,
+        fields: <String, LogField>{'medicines': LogField.count(daily.length)},
       );
     }
     return planned;
@@ -172,6 +203,29 @@ class NotificationScheduler {
   ///     asking when it has not been earned yet.
   Future<bool> requestPermissionIfEarned() async {
     if (!await shouldRequestPermission()) return false;
+    final granted = await _gateway.requestPermission();
+    _logger?.info(
+      LogEvent.notificationPermissionResolved,
+      fields: <String, LogField>{'granted': LogField.flag(granted)},
+    );
+    return granted;
+  }
+
+  /// Ask for permission because a medicine reminder has just been set.
+  ///
+  /// The one other moment the request is in context: someone who has just
+  /// chosen a time to be reminded at has asked for a notification. It counts
+  /// as the one request, so the question after a first logged cycle is not
+  /// put again on top of it. Android shows nothing when permission is
+  /// already granted, or after it has been refused for good, and says which.
+  ///
+  /// Returns:
+  ///     `Future<bool>`: Whether notifications can now be posted.
+  Future<bool> requestPermissionForReminder() async {
+    await _database.settingsDao.writeBool(
+      SettingKey.notificationPermissionAsked,
+      value: true,
+    );
     final granted = await _gateway.requestPermission();
     _logger?.info(
       LogEvent.notificationPermissionResolved,
@@ -292,10 +346,19 @@ final class NoopNotificationGateway implements NotificationGateway {
   }) async {}
 
   @override
+  Future<void> scheduleDaily(
+    DailyReminder reminder, {
+    required NotificationCopy copy,
+    required bool detailed,
+  }) async {}
+
+  @override
   Future<List<int>> pendingIds() async => const <int>[];
 }
 
 /// Bumped whenever a notification preference changes.
+///
+/// Medicine reminders need no bump: `NotificationSync` watches them itself.
 ///
 /// `NotificationSync` reschedules when the *prediction* changes, which is the
 /// right trigger for almost everything. But turning reminders off, or moving

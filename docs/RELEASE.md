@@ -153,7 +153,11 @@ Checklist, in the order the failures actually happen:
 - [ ] `integration_test/e2e_smoke_test.dart` passes on that device
 - [ ] Export writes a file to a directory you chose, and importing it into a
       wiped install restores the same days
-- [ ] Notification permission is asked for once, and only after a cycle exists
+- [ ] Notification permission is asked for once: after a cycle exists, or when
+      a medicine reminder is set
+- [ ] A medicine reminder set a few minutes ahead arrives within a few minutes
+      of its time, naming the medicine only with lock-screen detail on. This is
+      the only check that runs `MainActivity`'s time zone channel (ADR-0025)
 - [ ] Keystore backups still exist and still open
 - [ ] **Release notes carry the re-export warning** — see below
 - [ ] No claim in `docs/NUTRITION_SOURCES.md` is still marked `[VERIFY]`

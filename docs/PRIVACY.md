@@ -25,7 +25,7 @@ Two things send anything anywhere, and only when you ask. An export saves a back
 
 ### The database is encrypted, with a key the phone keeps
 
-Everything you record is kept in the app's private storage, in a database file encrypted with a key held by Android's secure key store. The key never leaves the phone and is not in your exports, so a copy of the file on its own cannot be read. Scheduled reminders are the one exception: until they are due, Android keeps their wording, which can name the predicted dates, outside the encrypted file. Encryption does not protect an unlocked phone. Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.
+Everything you record is kept in the app's private storage, in a database file encrypted with a key held by Android's secure key store. The key never leaves the phone and is not in your exports, so a copy of the file on its own cannot be read. Scheduled reminders are the one exception: until they are due, Android keeps their wording, which can name the predicted dates or a medicine, outside the encrypted file. Encryption does not protect an unlocked phone. Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.
 
 ### Nothing is copied off the phone
 
@@ -148,8 +148,11 @@ The fix is in your device's own settings.
 
 Three, and nothing else:
 
-- **`POST_NOTIFICATIONS`** — the runtime prompt, asked once, and only after you
-  have logged a cycle. Decline it and everything else still works.
+- **`POST_NOTIFICATIONS`** — the runtime prompt, asked for after you have
+  logged a cycle, or when you set a medicine reminder, whichever comes first.
+  Decline it and everything else still works. The app does not raise it again
+  on its own. Setting another medicine reminder asks again, until Android
+  stops showing the prompt, which it does once it has been declined twice.
 - **`RECEIVE_BOOT_COMPLETED`** — granted at install with no prompt, so it is
   easy to miss when reviewing the app. It exists for one reason: Android drops
   every scheduled alarm when the phone restarts, so without it your reminders

@@ -721,14 +721,31 @@ class AppLocalizationsEn extends AppLocalizations {
       'Logging a day keeps the predictions useful. No hurry.';
 
   @override
-  String get notificationLateNoticeTitle => 'The predicted window has passed';
+  String get notificationLateNoticeTitle => 'Later than expected';
 
   @override
   String get notificationLateNoticeBody =>
-      'Nothing has been logged since the window closed. Cycles vary, and a prediction can simply be wrong.';
+      'The expected range has passed with no period logged. Cycles vary, and a prediction can simply be wrong.';
 
   @override
   String get notificationLogAction => 'Started today';
+
+  @override
+  String get notificationChannelMedicines => 'Medicine reminders';
+
+  @override
+  String get notificationChannelMedicinesDescription =>
+      'At the times you set on each medicine. None unless you set one.';
+
+  @override
+  String notificationMedicineTitle(String medicine) {
+    return 'Time for $medicine';
+  }
+
+  @override
+  String notificationMedicineBody(String time) {
+    return 'The reminder you set for $time.';
+  }
 
   @override
   String get logMissedReminder =>
@@ -1178,6 +1195,28 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsReminderSubtitle =>
       'A notification in the morning, the number of days ahead you choose.';
+
+  @override
+  String get settingsLateCheckIn => 'Check in if a period is late';
+
+  @override
+  String settingsLateCheckInSubtitle(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other:
+          'One notification, $days days after the expected range ends with no period logged.',
+      one: 'One notification, a day after the expected range ends with no period logged.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsMedicineReminders => 'Medicine reminders';
+
+  @override
+  String get settingsMedicineRemindersSubtitle =>
+      'Set on each medicine, under Conditions and medication.';
 
   @override
   String get insightsSuppressedPregnancyTitle =>
@@ -2043,6 +2082,31 @@ class AppLocalizationsEn extends AppLocalizations {
       'No longer in this app\'s list of medicines, so it is not compared.';
 
   @override
+  String get conditionsMedicineReminderAdd => 'Add a reminder';
+
+  @override
+  String get conditionsMedicineReminderHelp => 'Remind me every day at';
+
+  @override
+  String conditionsMedicineReminderChange(String time) {
+    return 'Change the $time reminder';
+  }
+
+  @override
+  String conditionsMedicineReminderRemove(String time) {
+    return 'Remove the $time reminder';
+  }
+
+  @override
+  String conditionsMedicineReminderSet(String time) {
+    return 'A reminder every day at $time.';
+  }
+
+  @override
+  String get conditionsMedicineReminderBlocked =>
+      'Notifications are off for this app, so the reminder cannot arrive. They can be turned on in the phone\'s settings.';
+
+  @override
   String get conditionsConflictsHeading => 'Possible conflicts';
 
   @override
@@ -2315,7 +2379,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacyEncryptedBody =>
-      'Everything you record is kept in the app\'s private storage, in a database file encrypted with a key held by Android\'s secure key store. The key never leaves the phone and is not in your exports, so a copy of the file on its own cannot be read. Scheduled reminders are the one exception: until they are due, Android keeps their wording, which can name the predicted dates, outside the encrypted file. Encryption does not protect an unlocked phone. Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.';
+      'Everything you record is kept in the app\'s private storage, in a database file encrypted with a key held by Android\'s secure key store. The key never leaves the phone and is not in your exports, so a copy of the file on its own cannot be read. Scheduled reminders are the one exception: until they are due, Android keeps their wording, which can name the predicted dates or a medicine, outside the encrypted file. Encryption does not protect an unlocked phone. Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.';
 
   @override
   String get privacyBackupTitle => 'Nothing is copied off the phone';

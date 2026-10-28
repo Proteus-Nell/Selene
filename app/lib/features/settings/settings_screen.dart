@@ -37,6 +37,7 @@ import 'package:period_tracker/domain/predict/priors_bundled.dart';
 import 'package:period_tracker/features/appearance/appearance_screen.dart';
 import 'package:period_tracker/features/common/chip_motion.dart';
 import 'package:period_tracker/features/common/snack.dart';
+import 'package:period_tracker/features/conditions/conditions_screen.dart';
 import 'package:period_tracker/features/settings/backup_dialogs.dart';
 import 'package:period_tracker/features/settings/delete_everything_dialog.dart';
 import 'package:period_tracker/features/settings/log_viewer.dart';
@@ -44,6 +45,7 @@ import 'package:period_tracker/features/settings/privacy_section.dart';
 import 'package:period_tracker/features/summary/summary_pdf.dart';
 import 'package:period_tracker/features/summary/summary_span_dialog.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
+import 'package:period_tracker/notifications/notification_plan.dart';
 import 'package:period_tracker/notifications/scheduler.dart';
 import 'package:period_tracker/security/app_lock.dart';
 
@@ -402,6 +404,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Divider(),
             _SectionHeading(l10n.settingsRemindersSection),
             const _ReminderSettings(),
+            // Set where the medicines are, beside each one, and found from
+            // here too, where anyone looking for a reminder looks first.
+            ListTile(
+              leading: const Icon(Icons.medication_outlined),
+              title: Text(l10n.settingsMedicineReminders),
+              subtitle: Text(l10n.settingsMedicineRemindersSubtitle),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const ConditionsScreen(),
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Column(
@@ -713,6 +727,7 @@ class _ReminderSettings extends ConsumerStatefulWidget {
 /// Attributes:
 ///     _enabled (bool?): Whether reminders are on. Null until read.
 ///     _leadDays (int?): How many days ahead to remind. Null until read.
+///     _lateCheckIn (bool): Whether the late-period check-in is on.
 ///     _nudge (bool): Whether the logging nudge is on.
 ///     _detailed (bool): Whether notifications may carry detail.
 class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
@@ -721,6 +736,9 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
 
   /// How many days ahead to remind, or null until the preference is read.
   int? _leadDays;
+
+  /// Whether the late-period check-in is on.
+  bool _lateCheckIn = true;
 
   /// Whether the logging nudge is on.
   bool _nudge = false;
@@ -747,7 +765,7 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
   /// Read the stored preferences once, defaulting rather than failing.
   ///
   /// Returns:
-  ///     `Future<void>`: Completes once all four are in state. A preference
+  ///     `Future<void>`: Completes once all five are in state. A preference
   ///     that was never written falls back to its default rather than
   ///     leaving the row blank.
   Future<void> _load() async {
@@ -759,6 +777,12 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
     final lead = await settings.readInt(
       SettingKey.reminderLeadDays,
       orElse: 2,
+    );
+    // As the reminders before a period were set, until it is set itself: it
+    // was part of them before it had a switch of its own (ADR-0025).
+    final lateCheckIn = await settings.readBool(
+      SettingKey.lateCheckInEnabled,
+      orElse: enabled,
     );
     // Both default to off, and are re-read as off. The nudge is the only
     // notification that is neither a prediction nor actionable, and lock-screen
@@ -776,6 +800,7 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
     setState(() {
       _enabled = enabled;
       _leadDays = lead;
+      _lateCheckIn = lateCheckIn;
       _nudge = nudge;
       _detailed = detailed;
     });
@@ -801,8 +826,34 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
           subtitle: Text(l10n.settingsReminderSubtitle),
           onChanged: (value) async {
             setState(() => _enabled = value);
+            // The check-in follows this switch until it is set itself. Set
+            // now to what its own switch shows, so that it does not quietly
+            // change with this one.
+            if (await settings.raw(SettingKey.lateCheckInEnabled) == null) {
+              await settings.writeBool(
+                SettingKey.lateCheckInEnabled,
+                value: _lateCheckIn,
+              );
+            }
             await settings.writeBool(
               SettingKey.reminderEnabled,
+              value: value,
+            );
+            _resync();
+          },
+        ),
+        SwitchListTile(
+          value: _lateCheckIn,
+          title: Text(l10n.settingsLateCheckIn),
+          subtitle: Text(
+            l10n.settingsLateCheckInSubtitle(
+              NotificationPlanner.lateNoticeAfterDays,
+            ),
+          ),
+          onChanged: (value) async {
+            setState(() => _lateCheckIn = value);
+            await settings.writeBool(
+              SettingKey.lateCheckInEnabled,
               value: value,
             );
             _resync();

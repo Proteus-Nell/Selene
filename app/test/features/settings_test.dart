@@ -353,6 +353,91 @@ void main() {
       }
     });
 
+    testWidgets('give the late-period check-in a switch of its own, set as '
+        'the reminders before a period were until it is used', (tester) async {
+      // It came with those reminders before it had a switch (ADR-0025), so
+      // someone who had turned them off finds it off too.
+      await db.settingsDao.writeBool(SettingKey.reminderEnabled, value: false);
+      await pumpSettings(tester);
+      final l10n = l10nOf(tester);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(SettingsScreen)),
+      );
+      final checkIn = find.widgetWithText(
+        SwitchListTile,
+        l10n.settingsLateCheckIn,
+      );
+      await scrollSettingsTo(tester, checkIn);
+      expect(tester.widget<SwitchListTile>(checkIn).value, isFalse);
+      expect(find.text(l10n.settingsLateCheckInSubtitle(5)), findsOneWidget);
+
+      final before = container.read(notificationPreferencesRevisionProvider);
+      await tester.tap(checkIn);
+      await tester.pumpAndSettle();
+      expect(tester.widget<SwitchListTile>(checkIn).value, isTrue);
+      expect(
+        await db.settingsDao.readBool(
+          SettingKey.lateCheckInEnabled,
+          orElse: false,
+        ),
+        isTrue,
+      );
+      // And the reminders before a period stay as they were.
+      expect(
+        await db.settingsDao.readBool(
+          SettingKey.reminderEnabled,
+          orElse: true,
+        ),
+        isFalse,
+      );
+      expect(
+        container.read(notificationPreferencesRevisionProvider),
+        greaterThan(before),
+      );
+    });
+
+    testWidgets('keep the late-period check-in as its switch shows when the '
+        'reminders before a period are turned off', (tester) async {
+      // Until it is set it follows those reminders, so turning them off would
+      // otherwise turn it off too, under a switch still showing it on.
+      await pumpSettings(tester);
+      final l10n = l10nOf(tester);
+      final reminders = find.widgetWithText(
+        SwitchListTile,
+        l10n.settingsReminderEnabled,
+      );
+      await scrollSettingsTo(tester, reminders);
+      await tester.tap(reminders);
+      await tester.pumpAndSettle();
+
+      final checkIn = find.widgetWithText(
+        SwitchListTile,
+        l10n.settingsLateCheckIn,
+      );
+      await scrollSettingsTo(tester, checkIn);
+      expect(tester.widget<SwitchListTile>(checkIn).value, isTrue);
+      expect(
+        await db.settingsDao.readBool(
+          SettingKey.lateCheckInEnabled,
+          orElse: false,
+        ),
+        isTrue,
+      );
+    });
+
+    testWidgets('say where medicine reminders are set, and go there', (
+      tester,
+    ) async {
+      await pumpSettings(tester);
+      final l10n = l10nOf(tester);
+      final row = find.text(l10n.settingsMedicineReminders);
+      await scrollSettingsTo(tester, row);
+      expect(find.text(l10n.settingsMedicineRemindersSubtitle), findsOneWidget);
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.conditionsTitle), findsWidgets);
+    });
+
     testWidgets('warn that some phones kill scheduled reminders', (
       tester,
     ) async {

@@ -19,6 +19,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:period_tracker/notifications/notification_gateway.dart';
 
 File _repoFile(String relativePath) {
   var directory = Directory.current.absolute;
@@ -66,5 +67,28 @@ void main() {
       isFalse,
       reason: 'MainActivity still extends FlutterActivity',
     );
+  });
+
+  group('the time zone channel', () {
+    // Medicine reminders are scheduled in the phone's zone by name (ADR-0025),
+    // and Dart can only learn the name from here. A channel name or method
+    // that drifted apart would not fail anything: the gateway would quietly
+    // fall back to UTC, and every reminder would move an hour when the clocks
+    // next change.
+    test('is answered on the name the gateway asks on', () {
+      expect(source, contains('"$timeZoneChannelName"'));
+    });
+
+    test("answers \"name\" with the phone's own zone", () {
+      expect(source, contains('"name" -> result.success('));
+      expect(source, contains('TimeZone.getDefault().id'));
+      expect(source, contains('import java.util.TimeZone'));
+    });
+
+    test('is set up without taking plugin registration away', () {
+      // Overriding configureFlutterEngine without calling super stops every
+      // plugin from registering, the notifications among them.
+      expect(source, contains('super.configureFlutterEngine(flutterEngine)'));
+    });
   });
 }

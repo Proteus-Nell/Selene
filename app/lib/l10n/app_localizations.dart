@@ -1290,13 +1290,13 @@ abstract class AppLocalizations {
   /// No description provided for @notificationLateNoticeTitle.
   ///
   /// In en, this message translates to:
-  /// **'The predicted window has passed'**
+  /// **'Later than expected'**
   String get notificationLateNoticeTitle;
 
-  /// No description provided for @notificationLateNoticeBody.
+  /// The late-period check-in (ADR-0025), in the words the app uses for a late period. Informational only, and never about pregnancy.
   ///
   /// In en, this message translates to:
-  /// **'Nothing has been logged since the window closed. Cycles vary, and a prediction can simply be wrong.'**
+  /// **'The expected range has passed with no period logged. Cycles vary, and a prediction can simply be wrong.'**
   String get notificationLateNoticeBody;
 
   /// No description provided for @notificationLogAction.
@@ -1304,6 +1304,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Started today'**
   String get notificationLogAction;
+
+  /// No description provided for @notificationChannelMedicines.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicine reminders'**
+  String get notificationChannelMedicines;
+
+  /// No description provided for @notificationChannelMedicinesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'At the times you set on each medicine. None unless you set one.'**
+  String get notificationChannelMedicinesDescription;
+
+  /// Shown only when lock-screen detail is on. Without it the title is the app's name.
+  ///
+  /// In en, this message translates to:
+  /// **'Time for {medicine}'**
+  String notificationMedicineTitle(String medicine);
+
+  /// Shown with lock-screen detail on or off, so it names neither the medicine nor anything about a cycle. The time is written the way the phone writes times.
+  ///
+  /// In en, this message translates to:
+  /// **'The reminder you set for {time}.'**
+  String notificationMedicineBody(String time);
 
   /// No description provided for @logMissedReminder.
   ///
@@ -1949,6 +1973,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A notification in the morning, the number of days ahead you choose.'**
   String get settingsReminderSubtitle;
+
+  /// No description provided for @settingsLateCheckIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in if a period is late'**
+  String get settingsLateCheckIn;
+
+  /// No description provided for @settingsLateCheckInSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{One notification, a day after the expected range ends with no period logged.} other{One notification, {days} days after the expected range ends with no period logged.}}'**
+  String settingsLateCheckInSubtitle(int days);
+
+  /// No description provided for @settingsMedicineReminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Medicine reminders'**
+  String get settingsMedicineReminders;
+
+  /// No description provided for @settingsMedicineRemindersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set on each medicine, under Conditions and medication.'**
+  String get settingsMedicineRemindersSubtitle;
 
   /// No description provided for @insightsSuppressedPregnancyTitle.
   ///
@@ -3251,6 +3299,42 @@ abstract class AppLocalizations {
   /// **'No longer in this app\'s list of medicines, so it is not compared.'**
   String get conditionsMedicineGone;
 
+  /// No description provided for @conditionsMedicineReminderAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a reminder'**
+  String get conditionsMedicineReminderAdd;
+
+  /// Heading of the time picker that sets a medicine reminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind me every day at'**
+  String get conditionsMedicineReminderHelp;
+
+  /// What a screen reader says for a reminder time, which can be tapped to change it.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the {time} reminder'**
+  String conditionsMedicineReminderChange(String time);
+
+  /// Tooltip, and what a screen reader says, for the button that takes a reminder time off a medicine.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove the {time} reminder'**
+  String conditionsMedicineReminderRemove(String time);
+
+  /// No description provided for @conditionsMedicineReminderSet.
+  ///
+  /// In en, this message translates to:
+  /// **'A reminder every day at {time}.'**
+  String conditionsMedicineReminderSet(String time);
+
+  /// Shown when a reminder is set but the phone does not let the app post notifications. The reminder is kept, and arrives once they are allowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are off for this app, so the reminder cannot arrive. They can be turned on in the phone\'s settings.'**
+  String get conditionsMedicineReminderBlocked;
+
   /// No description provided for @conditionsConflictsHeading.
   ///
   /// In en, this message translates to:
@@ -3746,7 +3830,7 @@ abstract class AppLocalizations {
   /// No description provided for @privacyEncryptedBody.
   ///
   /// In en, this message translates to:
-  /// **'Everything you record is kept in the app\'s private storage, in a database file encrypted with a key held by Android\'s secure key store. The key never leaves the phone and is not in your exports, so a copy of the file on its own cannot be read. Scheduled reminders are the one exception: until they are due, Android keeps their wording, which can name the predicted dates, outside the encrypted file. Encryption does not protect an unlocked phone. Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.'**
+  /// **'Everything you record is kept in the app\'s private storage, in a database file encrypted with a key held by Android\'s secure key store. The key never leaves the phone and is not in your exports, so a copy of the file on its own cannot be read. Scheduled reminders are the one exception: until they are due, Android keeps their wording, which can name the predicted dates or a medicine, outside the encrypted file. Encryption does not protect an unlocked phone. Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.'**
   String get privacyEncryptedBody;
 
   /// No description provided for @privacyBackupTitle.

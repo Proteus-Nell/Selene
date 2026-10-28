@@ -33,6 +33,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0022](#adr-0022-medication-guides-carry-their-safety-sections-only-and-a-guide-whose-dosing-cannot-be-left-out-is-left-out-whole) | Medication Guides carry their safety sections only, and a guide whose dosing cannot be left out is left out whole | Accepted | 2026-10-28 |
 | [0023](#adr-0023-herbal-supplements-are-nccihs-public-domain-fact-sheets-compared-with-medicines-by-their-safety-section) | Herbal supplements are NCCIH's public-domain fact sheets, compared with medicines by their safety section | Accepted | 2026-10-28 |
 | [0024](#adr-0024-the-summary-for-a-doctor-is-a-pdf-the-app-writes-itself-with-csv-files-of-the-same-data-and-neither-holds-intercourse) | The summary for a doctor is a PDF the app writes itself, with CSV files of the same data, and neither holds intercourse | Accepted | 2026-10-28 |
+| [0025](#adr-0025-the-late-period-check-in-has-a-switch-of-its-own-and-medicine-reminders-repeat-every-day-in-the-phones-own-time-zone) | The late-period check-in has a switch of its own, and medicine reminders repeat every day in the phone's own time zone | Accepted | 2026-10-28 |
 
 ---
 
@@ -1522,6 +1523,112 @@ doctor's desk is easily read as a date. Left out.
   The app itself, and the CSV files, remain the accessible way in.
 - The medians are the app's own statistics, not a clinical calculation, and
   the PDF says it is a personal record and not a diagnosis.
+
+## ADR-0025: The late-period check-in has a switch of its own, and medicine reminders repeat every day in the phone's own time zone
+
+**Status:** Accepted, 2026-10-28. Keeps the late notice's date where [ADR-0016](#adr-0016-a-late-period-moves-the-range-forward-and-lost-track-counts-from-the-last-period) put it, and stores the reminder times beside the medicines as [ADR-0015](#adr-0015-recorded-medicines-are-kept-as-a-setting-and-their-flags-only-inform) stores those.
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for "one gentle notification when the expected range has
+passed with no period logged, linked to the late-period fix", and for
+"reminders to take recorded medicines at times you set", all of them "local
+notifications from the phone, with lock-screen detail off by default".
+
+The first is nearly there already: the late notice, five days after the
+window first predicted has closed, has been planned since AND-17. It came with the
+switch for the reminders before a period, so it could not be had on its own,
+and its wording predates the late-period fix.
+
+The second is new in kind. Every notification so far goes off once, on a
+date, and is scheduled as an instant in UTC worked out from the phone's own
+clock (`schedule_time_test.dart`), which is right for a single date. A daily
+reminder is repeated by Android at the same time on the clock **in the zone it
+was scheduled in**. Scheduled in UTC, a reminder set for 08:00 goes off at
+07:00 or 09:00 once the clocks change, until the app is next opened.
+
+### Decision
+
+1. **The late-period check-in is the late notice with a switch of its own**,
+   "Check in if a period is late". Until it is set it follows "Remind me
+   before a period is due", which it was part of, so nobody's notifications
+   change on update. It speaks as the app does about a late period ("Later
+   than expected", "The expected range has passed with no period logged"),
+   and carries the one-tap "Started today" action, as the likely-started
+   notice does. Its date stays where ADR-0016 put it.
+2. **Medicine reminders are times set on each recorded medicine**, under
+   Conditions and medication: up to four, each every day. They are a second
+   setting beside the medicines, a medicine's key to its times, so they travel
+   in exports and go with "delete everything" with no change to the export
+   format. Removing a medicine removes its times. Settings has a row that says
+   where they are set and goes there.
+3. **They have a channel of their own**, so that muting one kind of
+   notification does not mute another (risk R15), and are marked as reminders,
+   so a phone set to let reminders through Do Not Disturb lets them through.
+   Nothing about the cycle, its prediction or its switches touches them.
+4. **Without lock-screen detail, a reminder names no medicine.** Its title is
+   the app's name, as every notification's is, and its body is "The reminder
+   you set for 08:00". Not the generic body, which says to open the app to see
+   what a notification is about, because the app has nothing to show for a
+   reminder someone set themselves. With detail on, the title names the
+   medicine. Without it, a locked screen shows none of it, as for the others.
+5. **Scheduled in the phone's zone, by name.** `MainActivity` answers one
+   method channel with `TimeZone.getDefault().id`, the zone is found in the
+   `timezone` package's full database, and the plugin repeats the reminder at
+   the same time on the clock in that zone. The full database because Android
+   still names some zones by older names, `Asia/Calcutta` among them, that the
+   smaller files leave out. If the zone cannot be found, the reminder is
+   scheduled for the same moment in UTC: right until the clocks next change,
+   and put right the next time the app reschedules.
+6. **The permission is asked for when a reminder is set**, the one other
+   moment a notification has visibly been asked for. It counts as the app's
+   one request. If notifications are off, the reminder is kept and the app
+   says it cannot arrive until they are allowed.
+7. **Rebuilt with everything else.** Every reschedule still cancels all and
+   schedules all, the reminders included, and `NotificationSync` watches the
+   times, so setting, changing or removing one, an import, or deleting
+   everything reaches the platform without each having to ask. The cancel
+   takes the cycle's notices off the screen as well, as before, but a medicine
+   reminder that has gone off stays until it is seen to: the app reschedules
+   whenever it is opened, and a reminder that vanished then could be why a
+   dose was missed. They are left out of the missed-reminder check: they
+   repeat every day, so every closed day would read as one missed.
+8. **Inexact, as every notification here is.** A reminder can arrive a few
+   minutes after its time. Exact alarms need a permission the user grants in
+   system settings.
+
+### Runner-up and why rejected
+
+**The `flutter_timezone` package.** It answers the same question through a
+plugin. `MainActivity` answering one method is a few lines and adds nothing.
+
+**The smaller time zone data** (`latest_10y`, 66 KB against 445 KB). It lacks
+the older names Android reports, and a zone it cannot find falls back to UTC.
+The full database is loaded only when a medicine reminder is scheduled.
+
+**Repeating in UTC.** No zone needed, but an hour out for half the year
+wherever the clocks change, until the app is opened.
+
+**Following the phone into a new zone by itself**, with a receiver for the
+zone changing. Some medicines are timed by the hours since the last dose
+rather than by the clock, and a reminder that moved after a flight would be
+wrong for those, with no way for the app to tell which is which. The
+reminder moves when the app is next opened instead.
+
+**A record of doses taken.** Not asked for. The reminders remind and record
+nothing.
+
+### Consequences
+
+- After travelling, a reminder keeps to the zone it was set in until the app
+  is next opened.
+- With detail on, Android keeps a medicine's name in a scheduled reminder's
+  wording outside the encrypted database, as it already keeps the predicted
+  dates (`docs/PRIVACY.md` says so).
+- The Kotlin half is checked as source by `main_activity_test.dart` and built
+  by CI, but run only on a phone: `docs/RELEASE.md` has the check.
+- The time zone database adds about 0.45 MB to each APK.
 
 ---
 

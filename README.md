@@ -15,6 +15,7 @@
 - **Explains** what you logged: cycle phases on the calendar, insights from your own history, and conditions such as PMOS (formerly PCOS) or hormonal contraception recorded alongside it.
 - **Looks up medicines and herbs:** US drug labelling, searched or browsed A to Z, and NCCIH's fact sheets on herbal supplements. It compares two or more medicines, or a herb and a medicine, by what their labels and fact sheets say about each other, and flags pairs among the medicines you record.
 - **Makes a summary for a doctor:** a PDF of period dates, cycle lengths, symptoms, conditions and medicines over a span you choose, or the same as spreadsheet files. Intercourse is never included.
+- **Reminds you, if you want it to:** before a period is due, once if one is late, and at the times you set on each medicine. Notifications are made by the phone itself, and the lock screen shows no detail unless you turn it on.
 - **Keeps it private:** no account, no sync, no analytics. The database is encrypted on the phone, a backup can be protected with a passphrase, and an optional app lock asks for your fingerprint or PIN before showing anything.
 
 Selene is not a contraceptive and does not give medical advice. It never tells you when you cannot get pregnant, and its medicine pages show US labelling, which can differ from the packet in front of you.

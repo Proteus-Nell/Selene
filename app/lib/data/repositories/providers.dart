@@ -11,8 +11,9 @@
 /// Includes:
 ///     - appDatabaseProvider and the four repository providers.
 ///     - The day-log, cycle, prediction and condition read providers.
-///     - The recorded medicines, what their labels say about each other, and
-///       what they say about the recorded kinds of contraception.
+///     - The recorded medicines, their reminder times, what their labels say
+///       about each other, and what they say about the recorded kinds of
+///       contraception.
 ///     - One provider per stored preference.
 ///     - themeModeFromWireName: Resolves a stored theme mode.
 library;
@@ -154,6 +155,13 @@ final StreamProvider<List<RecordedMedicine>> recordedMedicinesProvider =
     StreamProvider<List<RecordedMedicine>>(
       (ref) => ref.watch(medicineListRepositoryProvider).watch(),
     );
+
+/// The times each recorded medicine is to be reminded of, by its key, kept
+/// current as they change (ADR-0025).
+final StreamProvider<Map<String, List<ReminderTime>>>
+medicineRemindersProvider = StreamProvider<Map<String, List<ReminderTime>>>(
+  (ref) => ref.watch(medicineListRepositoryProvider).watchReminders(),
+);
 
 /// What the recorded medicines' labels say about each other: the conflict
 /// flags under Conditions and medication (ADR-0014, ADR-0015).

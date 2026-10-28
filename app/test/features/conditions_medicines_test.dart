@@ -1,5 +1,5 @@
-// The medicines under Conditions and medication, and their conflict flags
-// (ADR-0014, ADR-0015, ADR-0021).
+// The medicines under Conditions and medication, their reminder times, and
+// their conflict flags (ADR-0014, ADR-0015, ADR-0021, ADR-0025).
 //
 // A flag informs and nothing more, at the owner's direction: it says what
 // connects two medicines' labels, and offers the pair to a browser. What is
@@ -24,6 +24,9 @@ import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 import 'package:period_tracker/domain/models/condition.dart';
 import 'package:period_tracker/features/conditions/conditions_screen.dart';
 import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
+import 'package:period_tracker/notifications/notification_gateway.dart';
+import 'package:period_tracker/notifications/notification_plan.dart';
+import 'package:period_tracker/notifications/scheduler.dart';
 
 import '../data/reference/medicine_fixture.dart';
 import 'harness.dart';
@@ -89,6 +92,46 @@ const MedicineGroups _groups = MedicineGroups(
   },
 );
 
+/// A gateway that answers the permission request as told, and counts it.
+class _PermissionGateway implements NotificationGateway {
+  _PermissionGateway({required this.grant});
+
+  /// What the request answers.
+  final bool grant;
+
+  /// How many times it was asked.
+  int requests = 0;
+
+  @override
+  Future<void> initialize(NotificationCopy copy) async {}
+
+  @override
+  Future<bool> requestPermission() async {
+    requests++;
+    return grant;
+  }
+
+  @override
+  Future<void> cancelAll() async {}
+
+  @override
+  Future<void> schedule(
+    PlannedNotification notification, {
+    required NotificationCopy copy,
+    required bool detailed,
+  }) async {}
+
+  @override
+  Future<void> scheduleDaily(
+    DailyReminder reminder, {
+    required NotificationCopy copy,
+    required bool detailed,
+  }) async {}
+
+  @override
+  Future<List<int>> pendingIds() async => const <int>[];
+}
+
 void main() {
   late AppDatabase db;
   late MedicineListRepository medicines;
@@ -107,7 +150,7 @@ void main() {
     }
   }
 
-  Future<void> pump(WidgetTester tester) async {
+  Future<void> pump(WidgetTester tester, {NotificationGateway? gateway}) async {
     await tester.pumpWidget(
       harness(
         const ConditionsScreen(),
@@ -116,6 +159,8 @@ void main() {
           medicineBundleProvider.overrideWith(
             (ref) => fixtureBundle(_drugs, groups: _groups),
           ),
+          if (gateway != null)
+            notificationGatewayProvider.overrideWithValue(gateway),
         ],
       ),
     );
@@ -185,6 +230,130 @@ void main() {
       final l10n = l10nOf(tester);
       await reveal(tester, find.text(l10n.conditionsMedicineGone));
       expect(find.text('GONE'), findsOneWidget);
+    });
+  });
+
+  group('reminders', () {
+    const aspirin = 'aspirin.oral.otc';
+
+    /// Answer the open time picker with OK, keeping the time it shows.
+    Future<void> keepTime(WidgetTester tester) async {
+      final material = MaterialLocalizations.of(
+        tester.element(find.byType(TimePickerDialog)),
+      );
+      await tester.tap(find.text(material.okButtonLabel));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('are offered on each medicine, and one is kept at the time '
+        'chosen', (tester) async {
+      final gateway = _PermissionGateway(grant: true);
+      await record(const <String>[aspirin]);
+      await pump(tester, gateway: gateway);
+      final l10n = l10nOf(tester);
+      final add = find.text(l10n.conditionsMedicineReminderAdd);
+      await reveal(tester, add);
+      await tester.tap(add);
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.conditionsMedicineReminderHelp), findsOneWidget);
+      await keepTime(tester);
+
+      expect(await medicines.reminders(), const <String, List<ReminderTime>>{
+        aspirin: <ReminderTime>[ReminderTime(8, 0)],
+      });
+      // Asked for here, where a notification has just been asked for.
+      expect(gateway.requests, 1);
+      expect(
+        find.text(l10n.conditionsMedicineReminderSet('8:00 AM')),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(InputChip, '8:00 AM'), findsOneWidget);
+    });
+
+    testWidgets('are kept when notifications are off, and say they cannot '
+        'arrive', (tester) async {
+      await record(const <String>[aspirin]);
+      await pump(tester, gateway: _PermissionGateway(grant: false));
+      final l10n = l10nOf(tester);
+      final add = find.text(l10n.conditionsMedicineReminderAdd);
+      await reveal(tester, add);
+      await tester.tap(add);
+      await tester.pumpAndSettle();
+      await keepTime(tester);
+
+      expect((await medicines.reminders())[aspirin], hasLength(1));
+      expect(
+        find.text(l10n.conditionsMedicineReminderBlocked),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('can be changed by tapping one', (tester) async {
+      await record(const <String>[aspirin]);
+      await medicines.setReminders(aspirin, const <ReminderTime>[
+        ReminderTime(8, 0),
+      ]);
+      await pump(tester, gateway: _PermissionGateway(grant: true));
+      final l10n = l10nOf(tester);
+      final chip = find.byTooltip(
+        l10n.conditionsMedicineReminderChange('8:00 AM'),
+      );
+      await reveal(tester, chip);
+      await tester.tap(chip);
+      await tester.pumpAndSettle();
+
+      // Typed rather than dialled.
+      final material = MaterialLocalizations.of(
+        tester.element(find.byType(TimePickerDialog)),
+      );
+      await tester.tap(find.byTooltip(material.inputTimeModeButtonLabel));
+      await tester.pumpAndSettle();
+      final fields = find.descendant(
+        of: find.byType(TimePickerDialog),
+        matching: find.byType(TextField),
+      );
+      await tester.enterText(fields.first, '9');
+      await tester.enterText(fields.last, '30');
+      await tester.pumpAndSettle();
+      await keepTime(tester);
+
+      expect((await medicines.reminders())[aspirin], const <ReminderTime>[
+        ReminderTime(9, 30),
+      ]);
+    });
+
+    testWidgets('can be taken off with their cross', (tester) async {
+      await record(const <String>[aspirin]);
+      await medicines.setReminders(aspirin, const <ReminderTime>[
+        ReminderTime(8, 0),
+        ReminderTime(20, 0),
+      ]);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      final remove = find.byTooltip(
+        l10n.conditionsMedicineReminderRemove('8:00 PM'),
+      );
+      await reveal(tester, remove);
+      await tester.tap(remove);
+      await tester.pumpAndSettle();
+      expect((await medicines.reminders())[aspirin], const <ReminderTime>[
+        ReminderTime(8, 0),
+      ]);
+    });
+
+    testWidgets('stop being offered at four', (tester) async {
+      await record(const <String>[aspirin]);
+      await medicines.setReminders(aspirin, const <ReminderTime>[
+        ReminderTime(8, 0),
+        ReminderTime(12, 0),
+        ReminderTime(16, 0),
+        ReminderTime(20, 0),
+      ]);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      await reveal(tester, find.widgetWithText(InputChip, '8:00 PM'));
+      expect(find.byType(InputChip), findsNWidgets(4));
+      expect(find.text(l10n.conditionsMedicineReminderAdd), findsNothing);
     });
   });
 

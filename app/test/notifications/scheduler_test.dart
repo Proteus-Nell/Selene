@@ -8,6 +8,7 @@ import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
+import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
@@ -23,6 +24,7 @@ import '../features/harness.dart';
 class RecordingGateway implements NotificationGateway {
   final List<PlannedNotification> scheduled = <PlannedNotification>[];
   final List<bool> detailedFlags = <bool>[];
+  final List<DailyReminder> daily = <DailyReminder>[];
   NotificationCopy? initialisedWith;
   int cancelCount = 0;
   int permissionRequests = 0;
@@ -39,7 +41,12 @@ class RecordingGateway implements NotificationGateway {
   }
 
   @override
-  Future<void> cancelAll() async => cancelCount++;
+  Future<void> cancelAll() async {
+    cancelCount++;
+    scheduled.clear();
+    detailedFlags.clear();
+    daily.clear();
+  }
 
   @override
   Future<void> schedule(
@@ -52,9 +59,22 @@ class RecordingGateway implements NotificationGateway {
   }
 
   @override
+  Future<void> scheduleDaily(
+    DailyReminder reminder, {
+    required NotificationCopy copy,
+    required bool detailed,
+  }) async => daily.add(reminder);
+
+  @override
   Future<List<int>> pendingIds() async =>
       scheduled.map((s) => s.kind.id).toList();
 }
+
+String _medicineTitle(String medicine) => 'Time for $medicine';
+
+String _medicineBody(String time) => 'The reminder you set for $time.';
+
+String _formatTime(ReminderTime time) => time.wire;
 
 Prediction predictionFrom(CivilDate start, CivilDate end) => Prediction(
   medianStart: start,
@@ -101,6 +121,8 @@ void main() {
       channelPredictionsDescription: 'd',
       channelRemindersName: 'Reminders',
       channelRemindersDescription: 'd',
+      channelMedicinesName: 'Medicines',
+      channelMedicinesDescription: 'd',
       genericTitle: 'Selene',
       genericBody: 'Open the app.',
       windowOpeningTitle: 'A period is expected soon',
@@ -112,6 +134,9 @@ void main() {
       lateNoticeTitle: 'The window has passed',
       lateNoticeBody: 'Nothing logged since it closed.',
       logAction: 'Started today',
+      medicineTitle: _medicineTitle,
+      medicineBody: _medicineBody,
+      formatTime: _formatTime,
     );
   });
 
@@ -209,6 +234,24 @@ void main() {
       expect(await scheduler.shouldRequestPermission(), isTrue);
       expect(await scheduler.requestPermissionIfEarned(), isTrue);
       expect(gateway.permissionRequests, 1);
+    });
+
+    test('is asked when a medicine reminder is set, and counts as the one '
+        'request', () async {
+      // Someone who has just chosen a time to be reminded at has asked for a
+      // notification, whether or not a cycle is logged yet.
+      expect(await scheduler.requestPermissionForReminder(), isTrue);
+      expect(gateway.permissionRequests, 1);
+      expect(
+        await db.settingsDao.readBool(
+          SettingKey.notificationPermissionAsked,
+          orElse: false,
+        ),
+        isTrue,
+      );
+
+      gateway.grantPermission = false;
+      expect(await scheduler.requestPermissionForReminder(), isFalse);
     });
 
     test('does not count a symptom-only day as a logged cycle', () async {
@@ -314,6 +357,99 @@ void main() {
       await scheduler.recordNudgeShown();
       expect((await scheduler.preferences()).lastNudge, testClock.today());
     });
+
+    test('read the late-period check-in as the reminders before a period '
+        'were set, until it is set itself', () async {
+      // It came with those reminders before it had a switch of its own, so
+      // nobody's notifications change on update (ADR-0025).
+      expect((await scheduler.preferences()).lateCheckInEnabled, isTrue);
+      await db.settingsDao.writeBool(SettingKey.reminderEnabled, value: false);
+      expect((await scheduler.preferences()).lateCheckInEnabled, isFalse);
+
+      await db.settingsDao.writeBool(
+        SettingKey.lateCheckInEnabled,
+        value: true,
+      );
+      final preferences = await scheduler.preferences();
+      expect(preferences.predictionsEnabled, isFalse);
+      expect(preferences.lateCheckInEnabled, isTrue);
+    });
+  });
+
+  group('medicine reminders', () {
+    const pill = RecordedMedicine(key: 'pill.oral.rx', name: 'PILL');
+
+    Future<void> remind(List<ReminderTime> times) async {
+      await db.settingsDao.writeRaw(
+        SettingKey.recordedMedicines.wireName,
+        MedicineListRepository.encode(const <RecordedMedicine>[pill]),
+      );
+      await MedicineListRepository(
+        db.settingsDao,
+      ).setReminders(pill.key, times);
+    }
+
+    test('are scheduled for every time set on a recorded medicine', () async {
+      await remind(const <ReminderTime>[
+        ReminderTime(20, 0),
+        ReminderTime(8, 0),
+      ]);
+      await scheduler.reschedule(result, copy: copy);
+      expect(gateway.daily, const <DailyReminder>[
+        DailyReminder(id: 2000, medicine: 'PILL', time: ReminderTime(8, 0)),
+        DailyReminder(id: 2001, medicine: 'PILL', time: ReminderTime(20, 0)),
+      ]);
+    });
+
+    test('are rebuilt with everything else, never added twice', () async {
+      await remind(const <ReminderTime>[ReminderTime(8, 0)]);
+      await scheduler.reschedule(result, copy: copy);
+      await scheduler.reschedule(result, copy: copy);
+      expect(gateway.cancelCount, 2);
+      expect(gateway.daily, hasLength(1));
+    });
+
+    test('do not depend on the cycle, its window or its switches', () async {
+      // A medicine is taken whatever the prediction says, and turning off the
+      // notices about a period is not turning off a medicine.
+      await remind(const <ReminderTime>[ReminderTime(8, 0)]);
+      await db.settingsDao.writeBool(SettingKey.reminderEnabled, value: false);
+      await db.settingsDao.writeBool(
+        SettingKey.lateCheckInEnabled,
+        value: false,
+      );
+      await scheduler.reschedule(const PredictionResult.noData(), copy: copy);
+      expect(gateway.scheduled, isEmpty);
+      expect(gateway.daily, hasLength(1));
+    });
+
+    test('are not in the schedule the missed-reminder check keeps', () async {
+      // They repeat every day, so every day the app was closed would read as
+      // one missed.
+      await remind(const <ReminderTime>[ReminderTime(8, 0)]);
+      final planned = await scheduler.reschedule(
+        const PredictionResult.noData(),
+        copy: copy,
+      );
+      expect(planned, isEmpty);
+      await scheduler.checkForMissedReminder(planned);
+      expect(await db.settingsDao.raw(SettingKey.scheduledFireDays), isEmpty);
+    });
+
+    test('without detail, say only that they are yours and when', () {
+      const reminder = DailyReminder(
+        id: 2000,
+        medicine: 'PILL',
+        time: ReminderTime(8, 0),
+      );
+      expect(
+        copy.medicineTitleFor(reminder, detailed: false),
+        copy.genericTitle,
+      );
+      expect(copy.medicineBodyFor(reminder), isNot(contains('PILL')));
+      expect(copy.medicineBodyFor(reminder), contains('08:00'));
+      expect(copy.medicineTitleFor(reminder, detailed: true), contains('PILL'));
+    });
   });
 
   group('the bootstrap', () {
@@ -366,6 +502,8 @@ void main() {
         real.lateNoticeBody,
         real.genericTitle,
         real.genericBody,
+        real.medicineTitle('PILL'),
+        real.medicineBody('08:00'),
       ].join(' ').toLowerCase();
 
       for (final forbidden in <String>[
@@ -395,13 +533,57 @@ void main() {
       expect(none.windowOpeningBody, none.genericBody);
     });
 
-    testWidgets("names both channels in the user's language", (tester) async {
+    testWidgets("names every channel in the user's language", (tester) async {
       await tester.pumpWidget(harness(const SizedBox(), database: db));
       final context = tester.element(find.byType(SizedBox));
       final l10n = AppLocalizations.of(context);
       final real = buildNotificationCopy(context, result);
       expect(real.channelPredictionsName, l10n.notificationChannelPredictions);
       expect(real.channelRemindersName, l10n.notificationChannelReminders);
+      expect(real.channelMedicinesName, l10n.notificationChannelMedicines);
+    });
+
+    testWidgets("writes a medicine reminder's time as the phone writes times", (
+      tester,
+    ) async {
+      const reminder = DailyReminder(
+        id: 2000,
+        medicine: 'PILL',
+        time: ReminderTime(20, 5),
+      );
+      await tester.pumpWidget(harness(const SizedBox(), database: db));
+      final real = buildNotificationCopy(
+        tester.element(find.byType(SizedBox)),
+        result,
+      );
+      expect(real.medicineBodyFor(reminder), contains('8:05 PM'));
+      expect(real.medicineBodyFor(reminder), isNot(contains('PILL')));
+      expect(real.medicineTitleFor(reminder, detailed: true), contains('PILL'));
+    });
+
+    testWidgets('and on the 24-hour clock when the phone is set to it', (
+      tester,
+    ) async {
+      // Set where the phone's setting arrives, as Flutter's own time picker
+      // reads it.
+      await tester.pumpWidget(
+        harness(
+          Builder(
+            builder: (context) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(alwaysUse24HourFormat: true),
+              child: const SizedBox(),
+            ),
+          ),
+          database: db,
+        ),
+      );
+      final real = buildNotificationCopy(
+        tester.element(find.byType(SizedBox)),
+        result,
+      );
+      expect(real.formatTime(const ReminderTime(20, 5)), '20:05');
     });
   });
 }

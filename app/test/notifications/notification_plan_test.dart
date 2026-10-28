@@ -6,6 +6,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 import 'package:period_tracker/domain/cycles/cycle_rules.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
 import 'package:period_tracker/notifications/notification_plan.dart';
@@ -114,15 +115,50 @@ void main() {
       expect(planFor(passed), isEmpty);
     });
 
-    test('is silent when predictions are switched off', () {
+    test('is silent when its reminders and the check-in are both off', () {
       expect(
         planFor(
           result,
           preferences: const NotificationPreferences(
             predictionsEnabled: false,
+            lateCheckInEnabled: false,
           ),
         ),
         isEmpty,
+      );
+    });
+
+    test('keeps the late-period check-in when only the reminders before a '
+        'period are off', () {
+      // Two switches since ADR-0025: someone can want to hear only if a period
+      // is late, and not before every one.
+      expect(
+        kindsIn(
+          planFor(
+            result,
+            preferences: const NotificationPreferences(
+              predictionsEnabled: false,
+            ),
+          ),
+        ),
+        <NotificationKind>{NotificationKind.lateNotice},
+      );
+    });
+
+    test('leaves the late-period check-in out when it is off', () {
+      expect(
+        kindsIn(
+          planFor(
+            result,
+            preferences: const NotificationPreferences(
+              lateCheckInEnabled: false,
+            ),
+          ),
+        ),
+        <NotificationKind>{
+          NotificationKind.windowOpening,
+          NotificationKind.likelyStarted,
+        },
       );
     });
   });
@@ -335,6 +371,94 @@ void main() {
         ),
         isFalse,
       );
+    });
+  });
+
+  group('medicine reminders', () {
+    const pill = RecordedMedicine(key: 'pill.oral.rx', name: 'PILL');
+    const iron = RecordedMedicine(key: 'iron.oral.otc', name: 'IRON');
+
+    test('are one for each time set, medicine by medicine, earliest first', () {
+      expect(
+        NotificationPlanner.planMedicines(
+          const <RecordedMedicine>[pill, iron],
+          const <String, List<ReminderTime>>{
+            'iron.oral.otc': <ReminderTime>[ReminderTime(13, 0)],
+            'pill.oral.rx': <ReminderTime>[
+              ReminderTime(8, 0),
+              ReminderTime(20, 30),
+            ],
+          },
+        ),
+        const <DailyReminder>[
+          DailyReminder(id: 2000, medicine: 'PILL', time: ReminderTime(8, 0)),
+          DailyReminder(
+            id: 2001,
+            medicine: 'PILL',
+            time: ReminderTime(20, 30),
+          ),
+          DailyReminder(id: 2002, medicine: 'IRON', time: ReminderTime(13, 0)),
+        ],
+      );
+    });
+
+    test("never take an id the cycle's notices use", () {
+      // A shared id would let a medicine reminder replace a period notice on
+      // the platform, or the other way round.
+      final ids = NotificationKind.values.map((kind) => kind.id).toSet();
+      expect(
+        ids.every((id) => id < NotificationPlanner.firstMedicineReminderId),
+        isTrue,
+      );
+    });
+
+    test('are none for a medicine no longer recorded', () {
+      expect(
+        NotificationPlanner.planMedicines(
+          const <RecordedMedicine>[iron],
+          const <String, List<ReminderTime>>{
+            'gone.oral.rx': <ReminderTime>[ReminderTime(8, 0)],
+          },
+        ),
+        isEmpty,
+      );
+    });
+
+    test('go out on a channel of their own', () {
+      // So that muting the cycle's notices does not mute a medicine, nor the
+      // other way round (risk R15).
+      expect(NotificationChannelId.medicines.id, 'medicines');
+      for (final kind in NotificationKind.values) {
+        expect(kind.channel, isNot(NotificationChannelId.medicines));
+      }
+    });
+
+    test('compare by value and print readably', () {
+      const reminder = DailyReminder(
+        id: 2000,
+        medicine: 'PILL',
+        time: ReminderTime(8, 0),
+      );
+      expect(
+        reminder,
+        const DailyReminder(
+          id: 2000,
+          medicine: 'PILL',
+          time: ReminderTime(8, 0),
+        ),
+      );
+      expect(
+        reminder,
+        isNot(
+          const DailyReminder(
+            id: 2001,
+            medicine: 'PILL',
+            time: ReminderTime(8, 0),
+          ),
+        ),
+      );
+      expect(reminder.hashCode, isNotNull);
+      expect(reminder.toString(), contains('08:00'));
     });
   });
 

@@ -134,7 +134,8 @@ The design case to optimize is **"I am two days late noticing"**, not the same-d
 | Window opening | `predictions` | On, 2 days before | Predicted window opens | Always a range, never a bare date |
 | Likely started | `predictions` | On | Window open and no log for 1 day | Offer the 1-tap log action |
 | Logging nudge | `reminders` | **Off** | No log for 7+ days with a cycle in progress. **Hard cap: 1 per 7 days** | Neutral and factual. No streaks, no guilt |
-| Late notice | `predictions` | On | 5+ days past window close | Informational only. **Never mentions pregnancy** (see 6.2) |
+| Late notice (the late-period check-in, its own switch since ADR-0025) | `predictions` | As "Remind me before a period is due" until set | 5+ days past window close | Informational only. **Never mentions pregnancy** (see 6.2). Offer the 1-tap log action |
+| Medicine reminder (ADR-0025) | `medicines` | None until a time is set | Every day, at each time set on a recorded medicine | Without detail, the app's name and the time only, never the medicine |
 
 Android requirements, each a common and costly mistake if skipped:
 

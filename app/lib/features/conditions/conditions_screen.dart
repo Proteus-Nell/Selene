@@ -6,15 +6,16 @@
 /// overlapped, which is context for reading the user's own figures.
 ///
 /// Below them, the medicines the user takes, picked from the bundled US list,
-/// and a flag for each pair whose labels connect them (ADR-0015), and for
-/// each medicine whose label connects it with a recorded kind of
-/// contraception (ADR-0021). A flag only informs, and offers the pair to a
-/// browser.
+/// with the times each is to be reminded of (ADR-0025), and a flag for each
+/// pair whose labels connect them (ADR-0015), and for each medicine whose
+/// label connects it with a recorded kind of contraception (ADR-0021). A flag
+/// only informs, and offers the pair to a browser.
 ///
 /// Includes:
 ///     - ConditionsScreen: The list, and the flow that adds to it.
 ///     - _ConditionTile: One record, its dates, and what it overlapped.
 ///     - _Medicines: The recorded medicines, and the flow that adds to them.
+///     - _MedicineReminders: The times one medicine is to be reminded of.
 ///     - _Conflicts: A card for every pair of recorded medicines, and every
 ///       recorded kind of contraception with each medicine.
 ///     - _PairCard: One pair, flagged or not.
@@ -41,6 +42,7 @@ import 'package:period_tracker/features/lookup/interaction_checker_screen.dart';
 import 'package:period_tracker/features/lookup/medicine_picker.dart';
 import 'package:period_tracker/features/lookup/medicine_screen.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
+import 'package:period_tracker/notifications/scheduler.dart';
 
 /// Conditions screen: what was recorded, and over which days.
 ///
@@ -342,6 +344,9 @@ class _Medicines extends ConsumerWidget {
     final recorded =
         ref.watch(recordedMedicinesProvider).valueOrNull ??
         const <RecordedMedicine>[];
+    final reminders =
+        ref.watch(medicineRemindersProvider).valueOrNull ??
+        const <String, List<ReminderTime>>{};
     // The index says how each medicine is taken, and which ones a refresh of
     // the bundle dropped. Loaded only once there is something to say it of.
     final index = medicinesFetched && recorded.isNotEmpty
@@ -369,22 +374,38 @@ class _Medicines extends ConsumerWidget {
           for (final medicine in recorded)
             _spaced(
               Card(
-                child: ListTile(
-                  title: Text(medicine.name),
-                  subtitle: switch (index) {
-                    null => null,
-                    final index => Text(switch (index.byKey(medicine.key)) {
-                      final entry? => medicineKind(l10n, entry),
-                      null => l10n.conditionsMedicineGone,
-                    }),
-                  },
-                  trailing: IconButton(
-                    onPressed: () => ref
-                        .read(medicineListRepositoryProvider)
-                        .remove(medicine.key),
-                    icon: const Icon(Icons.close),
-                    tooltip: l10n.checkerRemove(medicine.name),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    ListTile(
+                      title: Text(medicine.name),
+                      subtitle: switch (index) {
+                        null => null,
+                        final index => Text(switch (index.byKey(
+                          medicine.key,
+                        )) {
+                          final entry? => medicineKind(l10n, entry),
+                          null => l10n.conditionsMedicineGone,
+                        }),
+                      },
+                      trailing: IconButton(
+                        // Its reminders go with it.
+                        onPressed: () => ref
+                            .read(medicineListRepositoryProvider)
+                            .remove(medicine.key),
+                        icon: const Icon(Icons.close),
+                        tooltip: l10n.checkerRemove(medicine.name),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: _MedicineReminders(
+                        medicine: medicine,
+                        times:
+                            reminders[medicine.key] ?? const <ReminderTime>[],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -429,6 +450,113 @@ class _Medicines extends ConsumerWidget {
           : AppLocalizations.of(context).checkerAlreadyAdded(picked.name),
     );
   }
+}
+
+/// The times one medicine is to be reminded of, and a way to add one.
+///
+/// Each time is a chip: tapped, it can be changed, and its cross takes it
+/// off. Each goes off every day, up to [MedicineListRepository.maxReminders]
+/// of them. Nothing here touches the platform's schedule: `NotificationSync`
+/// watches the times and reschedules when they change (ADR-0025).
+///
+/// Attributes:
+///     medicine (RecordedMedicine): The medicine they are for.
+///     times (`List<ReminderTime>`): Its times, earliest first.
+class _MedicineReminders extends ConsumerWidget {
+  /// Creates the row.
+  const _MedicineReminders({required this.medicine, required this.times});
+
+  /// The medicine they are for.
+  final RecordedMedicine medicine;
+
+  /// Its times, earliest first.
+  final List<ReminderTime> times;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final format = reminderTimeFormatter(context);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      children: <Widget>[
+        for (final time in times)
+          InputChip(
+            avatar: const Icon(Icons.alarm, size: 18),
+            label: Text(format(time)),
+            tooltip: l10n.conditionsMedicineReminderChange(format(time)),
+            onPressed: () => _pick(context, ref, replacing: time),
+            onDeleted: () => _save(ref, <ReminderTime>[
+              for (final each in times)
+                if (each != time) each,
+            ]),
+            deleteButtonTooltipMessage: l10n.conditionsMedicineReminderRemove(
+              format(time),
+            ),
+          ),
+        if (times.length < MedicineListRepository.maxReminders)
+          ActionChip(
+            avatar: const Icon(Icons.alarm_add, size: 18),
+            label: Text(l10n.conditionsMedicineReminderAdd),
+            onPressed: () => _pick(context, ref),
+          ),
+      ],
+    );
+  }
+
+  /// Ask for a time, keep it, and say whether it can arrive.
+  ///
+  /// Setting a reminder is the moment a notification has been asked for, so
+  /// it is when the permission is asked for too, if it has not been granted.
+  /// Kept either way: once notifications are allowed, it arrives.
+  ///
+  /// Args:
+  ///     context (BuildContext): What to open the picker over.
+  ///     ref (WidgetRef): For the medicines and the scheduler.
+  ///     replacing (ReminderTime?, optional): The time being changed, or
+  ///         null for a new one. Defaults to null.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once it is kept and said, or at once if
+  ///     the user went back without choosing.
+  Future<void> _pick(
+    BuildContext context,
+    WidgetRef ref, {
+    ReminderTime? replacing,
+  }) async {
+    final l10n = AppLocalizations.of(context);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: replacing == null
+          ? const TimeOfDay(hour: 8, minute: 0)
+          : TimeOfDay(hour: replacing.hour, minute: replacing.minute),
+      helpText: l10n.conditionsMedicineReminderHelp,
+    );
+    if (picked == null || !context.mounted) return;
+    final time = ReminderTime(picked.hour, picked.minute);
+    await _save(ref, <ReminderTime>[
+      for (final each in times)
+        if (each != replacing) each,
+      time,
+    ]);
+    if (!context.mounted) return;
+    final granted = await ref
+        .read(notificationSchedulerProvider)
+        .requestPermissionForReminder();
+    if (!context.mounted) return;
+    showAppSnackBar(
+      context,
+      granted
+          ? l10n.conditionsMedicineReminderSet(
+              reminderTimeFormatter(context)(time),
+            )
+          : l10n.conditionsMedicineReminderBlocked,
+    );
+  }
+
+  /// Keep [next] as this medicine's times.
+  Future<void> _save(WidgetRef ref, List<ReminderTime> next) =>
+      ref.read(medicineListRepositoryProvider).setReminders(medicine.key, next);
 }
 
 /// A card for every pair of recorded medicines, and for every recorded kind

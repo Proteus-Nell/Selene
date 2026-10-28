@@ -8,14 +8,19 @@
 ///     - NotificationCopy: The words a notification is delivered with.
 ///     - NotificationGateway: The interface the scheduler depends on.
 ///     - logPeriodActionId: The one-tap action's identifier.
+///     - timeZoneChannelName: The channel Android names its time zone on.
+///     - platformTimeZoneName: Asks it.
 ///     - LocalNotificationGateway: The real implementation.
 library;
 
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:meta/meta.dart';
 import 'package:period_tracker/core/clock.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/data/repositories/medicine_list_repository.dart';
 import 'package:period_tracker/notifications/notification_plan.dart';
+import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 /// Notification copy: the words a notification is delivered with.
@@ -31,6 +36,8 @@ final class NotificationCopy {
     required this.channelPredictionsDescription,
     required this.channelRemindersName,
     required this.channelRemindersDescription,
+    required this.channelMedicinesName,
+    required this.channelMedicinesDescription,
     required this.genericTitle,
     required this.genericBody,
     required this.windowOpeningTitle,
@@ -42,6 +49,9 @@ final class NotificationCopy {
     required this.lateNoticeTitle,
     required this.lateNoticeBody,
     required this.logAction,
+    required this.medicineTitle,
+    required this.medicineBody,
+    required this.formatTime,
   });
 
   /// Name of the predictions channel, as Android settings shows it.
@@ -55,6 +65,12 @@ final class NotificationCopy {
 
   /// Description of the reminders channel.
   final String channelRemindersDescription;
+
+  /// Name of the medicine reminders channel.
+  final String channelMedicinesName;
+
+  /// Description of the medicine reminders channel.
+  final String channelMedicinesDescription;
 
   /// Title used when detail is not wanted. Says nothing about a cycle.
   final String genericTitle;
@@ -88,6 +104,17 @@ final class NotificationCopy {
 
   /// Label on the one-tap log action.
   final String logAction;
+
+  /// Title for a medicine reminder with detail, from the medicine's name.
+  final String Function(String medicine) medicineTitle;
+
+  /// Body for a medicine reminder, from the time it was set for as
+  /// [formatTime] writes it. The same with detail or without, so it names
+  /// neither the medicine nor anything about a cycle.
+  final String Function(String time) medicineBody;
+
+  /// Writes a reminder's time the way the phone writes times.
+  final String Function(ReminderTime time) formatTime;
 
   /// Return the title for one kind of notification.
   ///
@@ -126,6 +153,33 @@ final class NotificationCopy {
       NotificationKind.lateNotice => lateNoticeBody,
     };
   }
+
+  /// Return the title for a medicine reminder.
+  ///
+  /// Args:
+  ///     reminder (DailyReminder): The reminder going out.
+  ///     detailed (bool): Whether the user has opted into detail. False gives
+  ///         the generic title, which does not name the medicine.
+  ///
+  /// Returns:
+  ///     String: The title to deliver.
+  String medicineTitleFor(DailyReminder reminder, {required bool detailed}) =>
+      detailed ? medicineTitle(reminder.medicine) : genericTitle;
+
+  /// Return the body for a medicine reminder.
+  ///
+  /// Not the generic body, even without detail: that one says to open the
+  /// app to see what the notification is about, and the app has nothing to
+  /// show for a reminder someone set themselves. This one says only that it
+  /// is theirs, and its time (ADR-0025).
+  ///
+  /// Args:
+  ///     reminder (DailyReminder): The reminder going out.
+  ///
+  /// Returns:
+  ///     String: The body to deliver.
+  String medicineBodyFor(DailyReminder reminder) =>
+      medicineBody(formatTime(reminder.time));
 }
 
 /// Notification gateway: the platform surface notifications go through.
@@ -149,7 +203,12 @@ abstract interface class NotificationGateway {
   ///     `Future<bool>`: Whether it was granted.
   Future<bool> requestPermission();
 
-  /// Remove everything currently scheduled.
+  /// Remove everything scheduled, and any notice about the cycle still
+  /// showing.
+  ///
+  /// A medicine reminder that has gone off stays where it is until it is
+  /// seen to: one that vanished whenever the app was opened could be the
+  /// reason a dose was missed (ADR-0025).
   Future<void> cancelAll();
 
   /// Schedule one notification.
@@ -160,6 +219,18 @@ abstract interface class NotificationGateway {
   ///     detailed (bool): Whether the user has opted into detail.
   Future<void> schedule(
     PlannedNotification notification, {
+    required NotificationCopy copy,
+    required bool detailed,
+  });
+
+  /// Schedule one medicine reminder, to repeat every day at its time.
+  ///
+  /// Args:
+  ///     reminder (DailyReminder): What to deliver, and at what time of day.
+  ///     copy (NotificationCopy): Supplies the title and body.
+  ///     detailed (bool): Whether the user has opted into detail.
+  Future<void> scheduleDaily(
+    DailyReminder reminder, {
     required NotificationCopy copy,
     required bool detailed,
   });
@@ -178,6 +249,29 @@ abstract interface class NotificationGateway {
 /// without launching the app.
 const String logPeriodActionId = 'log_period_started';
 
+/// The channel `MainActivity` answers with the phone's time zone.
+///
+/// `main_activity_test.dart` checks the Kotlin side answers on this name.
+const String timeZoneChannelName =
+    'io.github.proteusnell.period_tracker/time_zone';
+
+/// Ask Android which time zone the phone is set to.
+///
+/// Returns:
+///     `Future<String?>`: Its name in the time zone database, such as
+///     `Europe/London`, or null when the platform cannot say.
+Future<String?> platformTimeZoneName() async {
+  try {
+    return await const MethodChannel(
+      timeZoneChannelName,
+    ).invokeMethod<String>('name');
+  } on PlatformException {
+    return null;
+  } on MissingPluginException {
+    return null;
+  }
+}
+
 /// A [NotificationGateway] backed by `flutter_local_notifications`.
 ///
 /// Local only. There is no FCM, no token, and no network permission for one to
@@ -189,6 +283,7 @@ final class LocalNotificationGateway implements NotificationGateway {
     required this.clock,
     this.onAction,
     this.onBackgroundResponse,
+    this.timeZoneName = platformTimeZoneName,
   });
 
   /// The platform plugin. Public so it can be an initializing formal; nothing
@@ -207,6 +302,9 @@ final class LocalNotificationGateway implements NotificationGateway {
   /// `@pragma('vm:entry-point')`: the platform stores a handle to it and looks
   /// it up from a fresh isolate, so a closure cannot be found again.
   final DidReceiveBackgroundNotificationResponseCallback? onBackgroundResponse;
+
+  /// Asks which time zone the phone is set to, for the medicine reminders.
+  final Future<String?> Function() timeZoneName;
 
   /// The hour of day notifications fire at.
   ///
@@ -254,7 +352,16 @@ final class LocalNotificationGateway implements NotificationGateway {
   }
 
   @override
-  Future<void> cancelAll() => plugin.cancelAll();
+  Future<void> cancelAll() async {
+    // Shown or still to come: one still showing once the prediction has moved
+    // is about a window that is no longer the one predicted.
+    for (final kind in NotificationKind.values) {
+      await plugin.cancel(id: kind.id);
+    }
+    // Not the plugin's cancelAll, which would take a medicine reminder that
+    // has gone off off the screen as well.
+    await plugin.cancelAllPendingNotifications();
+  }
 
   /// The exact instant [date] at [fireHour] falls on, for the platform.
   ///
@@ -309,6 +416,101 @@ final class LocalNotificationGateway implements NotificationGateway {
     );
   }
 
+  /// The zone named [name], from the time zone database.
+  ///
+  /// The whole database, aliases included, because Android still names some
+  /// zones by their older names, `Asia/Calcutta` among them, which the
+  /// smaller files leave out. Loaded the first time a medicine reminder is
+  /// scheduled, and not before.
+  ///
+  /// Args:
+  ///     name (String?): What [platformTimeZoneName] answered.
+  ///
+  /// Returns:
+  ///     tz.Location?: The zone, or null when there is no name or the
+  ///     database does not know it.
+  static tz.Location? zoneNamed(String? name) {
+    if (name == null) return null;
+    if (!tz.timeZoneDatabase.isInitialized) tz_data.initializeTimeZones();
+    try {
+      return tz.getLocation(name);
+    } on tz.LocationNotFoundException {
+      return null;
+    }
+  }
+
+  /// When a daily reminder at [time] is first scheduled for, from [today].
+  ///
+  /// In the phone's own zone when it is known, because Android repeats a
+  /// daily notification at the same time on the clock in the zone it was
+  /// scheduled in, and that is what keeps a reminder at 08:00 across a change
+  /// of the clocks. The plugin moves the date on to the next time that comes
+  /// round, so today's date serves even once today's time has passed.
+  ///
+  /// Without a zone, the same moment in UTC: right until the clocks next
+  /// change, and put right again the next time the app reschedules.
+  ///
+  /// Args:
+  ///     time (ReminderTime): The time of day it goes off.
+  ///     today (CivilDate): The phone's date.
+  ///     zone (tz.Location?): The phone's zone, or null when unknown.
+  ///
+  /// Returns:
+  ///     tz.TZDateTime: The time to hand the platform.
+  static tz.TZDateTime dailyTimeFor(
+    ReminderTime time, {
+    required CivilDate today,
+    required tz.Location? zone,
+  }) => zone == null
+      ? tz.TZDateTime.from(
+          DateTime(today.year, today.month, today.day, time.hour, time.minute),
+          tz.UTC,
+        )
+      : tz.TZDateTime(
+          zone,
+          today.year,
+          today.month,
+          today.day,
+          time.hour,
+          time.minute,
+        );
+
+  @override
+  Future<void> scheduleDaily(
+    DailyReminder reminder, {
+    required NotificationCopy copy,
+    required bool detailed,
+  }) async {
+    await plugin.zonedSchedule(
+      id: reminder.id,
+      title: copy.medicineTitleFor(reminder, detailed: detailed),
+      body: copy.medicineBodyFor(reminder),
+      scheduledDate: dailyTimeFor(
+        reminder.time,
+        today: clock.today(),
+        zone: zoneNamed(await timeZoneName()),
+      ),
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          NotificationChannelId.medicines.id,
+          copy.channelMedicinesName,
+          channelDescription: copy.channelMedicinesDescription,
+          // So that a phone set to let reminders through Do Not Disturb lets
+          // this one through.
+          category: AndroidNotificationCategory.reminder,
+          visibility: detailed
+              ? NotificationVisibility.private
+              : NotificationVisibility.secret,
+        ),
+      ),
+      // Inexact, as the others are, so it can arrive a few minutes after its
+      // time. The exact kind needs a permission the user grants in system
+      // settings (see [schedule]).
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.time,
+    );
+  }
+
   @override
   Future<List<int>> pendingIds() async {
     final pending = await plugin.pendingNotificationRequests();
@@ -324,7 +526,9 @@ final class LocalNotificationGateway implements NotificationGateway {
   ///
   /// Returns:
   ///     NotificationDetails: The channel, importance and actions. The
-  ///     logging nudge carries no action and the low-priority channel.
+  ///     logging nudge carries no action and the low-priority channel. The
+  ///     likely-started notice and the late-period check-in carry the
+  ///     one-tap log action.
   NotificationDetails _detailsFor(
     NotificationKind kind, {
     required NotificationCopy copy,
@@ -352,7 +556,9 @@ final class LocalNotificationGateway implements NotificationGateway {
         visibility: detailed
             ? NotificationVisibility.private
             : NotificationVisibility.secret,
-        actions: kind == NotificationKind.likelyStarted
+        actions:
+            kind == NotificationKind.likelyStarted ||
+                kind == NotificationKind.lateNotice
             ? <AndroidNotificationAction>[
                 AndroidNotificationAction(
                   logPeriodActionId,
@@ -389,6 +595,11 @@ final class LocalNotificationGateway implements NotificationGateway {
           copy.channelRemindersName,
           description: copy.channelRemindersDescription,
           importance: Importance.low,
+        ),
+        AndroidNotificationChannel(
+          NotificationChannelId.medicines.id,
+          copy.channelMedicinesName,
+          description: copy.channelMedicinesDescription,
         ),
       ];
 }

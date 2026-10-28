@@ -56,6 +56,14 @@ enum SettingKey {
   /// Epoch day the logging nudge last fired, for its one-per-seven-days cap.
   lastNudgeEpochDay('last_nudge_epoch_day'),
 
+  /// Whether the late-period check-in is enabled: one notification once the
+  /// predicted window has passed with nothing logged (ADR-0025).
+  ///
+  /// Until it is written it follows [reminderEnabled], which it was part of
+  /// before it had a switch of its own, so nobody's notifications change on
+  /// update.
+  lateCheckInEnabled('late_check_in_enabled'),
+
   /// Whether the flow control is collapsed to bleeding yes/no (AND-24).
   ///
   /// Display only. Recorded intensities are never modified by it, so switching
@@ -148,7 +156,15 @@ enum SettingKey {
   /// (`MedicineListRepository`). A setting rather than a table, so that it
   /// travels in exports with no change to their format (ADR-0015). Absent
   /// when none are recorded.
-  recordedMedicines('recorded_medicines');
+  recordedMedicines('recorded_medicines'),
+
+  /// The times of day each recorded medicine is to be reminded of, as JSON.
+  ///
+  /// An object from a medicine's key to its times, `{"key": ["08:00"]}`
+  /// (`MedicineListRepository`). Like the medicines, a setting, so it travels
+  /// in exports with no change to their format (ADR-0025). Absent when none
+  /// are set.
+  medicineReminders('medicine_reminders');
 
   const SettingKey(this.wireName);
 
