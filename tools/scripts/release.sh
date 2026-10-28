@@ -99,7 +99,7 @@ for apk in "${apks[@]}"; do
   # (docs/RELEASE.md 1). The DN is nice to have, so a format that no longer
   # carries it is not worth stopping for; the fingerprint is asserted, because
   # --digest refuses to invent one.
-  grep -i 'Signer #1 certificate DN' <<<"$certs" || true
+  grep -iE 'certificate DN:' <<<"$certs" || true
   echo "Certificate SHA-256: $(bash \
     "$REPO_ROOT/tools/scripts/apk_signer_cert.sh" --digest "$apk")"
 

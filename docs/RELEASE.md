@@ -91,11 +91,27 @@ and then, for every APK produced:
    without reading anything. Both here and in the release workflow the report
    was parsed in place, and each copy took an unparseable report for an empty
    one: `grep 'CN=Android Debug'` cannot match an empty string, so the guard
-   passed. Cutting v1.1.0 found it — the runner's newest build-tools was
-   37.0.0, whose apksigner the old parsing did not recognise. The reader now
-   fails, loudly and quoting what it got, on any report it cannot recognise,
-   and `apk_signer_cert_test.sh` holds it to that in CI, where the shapes it
-   has to survive are exercised without needing a key or a release.
+   passed. Cutting v1.1.0 found it, because build-tools 37.0.0 renamed the
+   fields. Up to 36 apksigner numbered the signers:
+
+   ```
+   Signer #1 certificate DN: CN=Period Tracker, ...
+   Signer #1 certificate SHA-256 digest: 6ec9d804...
+   ```
+
+   37.0.0 names the signature scheme instead, which puts a colon where the old
+   parsing did not expect one:
+
+   ```
+   V2 Signer: certificate DN: CN=Period Tracker, ...
+   V2 Signer: certificate SHA-256 digest: 6ec9d804...
+   ```
+
+   The reader matches `certificate DN:` and `certificate SHA-256 digest:`, the
+   parts that carry the meaning, so a V3 or V4 preamble will pass too. It
+   fails, loudly and quoting what it got, on any report where neither field
+   appears, and `apk_signer_cert_test.sh` holds it to that in CI over both
+   shapes plus the ones worth refusing, without needing a key or a release.
 
    Both scripts take the highest-versioned build-tools they can find, which is
    not necessarily the one Gradle signed with, so each prints which apksigner

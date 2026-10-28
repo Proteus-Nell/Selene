@@ -87,9 +87,25 @@ fi
 status=0
 REPORT="$("$TOOL" verify --print-certs "$APK" 2>&1)" || status=$?
 
-# A report with no signer in it proves nothing, whether apksigner failed or
-# answered in an unfamiliar shape. Either way this is not a pass.
-if (( status != 0 )) || ! grep -qiE '^Signer #[0-9]+ certificate' <<<"$REPORT"; then
+# Matched on the field rather than on what comes before it, because what comes
+# before it is what changed. Up to build-tools 36 apksigner numbered the
+# signers:
+#
+#   Signer #1 certificate DN: CN=Period Tracker, ...
+#   Signer #1 certificate SHA-256 digest: 6ec9d804...
+#
+# 37.0.0 names the signature scheme instead:
+#
+#   V2 Signer: certificate DN: CN=Period Tracker, ...
+#   V2 Signer: certificate SHA-256 digest: 6ec9d804...
+#
+# "certificate DN:" and "certificate SHA-256 digest:" are the parts that carry
+# the meaning, and they survived. A V3 or V4 preamble will too.
+#
+# A report with neither field proves nothing, whether apksigner failed or
+# answered in a shape newer than this. Either way it is not a pass.
+if (( status != 0 )) ||
+  ! grep -qiE 'certificate (DN|SHA-256 digest):' <<<"$REPORT"; then
   {
     echo "ERROR: could not read the signing certificate of $(basename "$APK")."
     echo "       apksigner: $TOOL"
@@ -111,22 +127,38 @@ if [[ "$DIGEST_ONLY" == false ]]; then
   exit 0
 fi
 
-# Tolerant of the label's case and of the spacing after the colon, both of
-# which are apksigner's to change and neither of which carries meaning.
-DIGEST="$(grep -iE '^Signer #1 certificate SHA-256 digest:' <<<"$REPORT" |
-  head -1 | sed 's/^[^:]*: *//' | tr -d '[:space:]' | tr 'A-F' 'a-f')"
+# Everything up to the last colon goes, which takes "Signer #1 certificate
+# SHA-256 digest:" and "V2 Signer: certificate SHA-256 digest:" alike. Case and
+# spacing are apksigner's to change and carry no meaning either.
+#
+# Deduplicated rather than taking the first: a report can list one signer per
+# signature scheme, and those are normally the same certificate said twice. If
+# they are ever not, that is key rotation, and picking whichever came first
+# would put one of two real fingerprints in the release notes.
+# The trimming is sed's rather than `tr -d '[:space:]'`, which would take the
+# newlines with it and weld two digests into one 128-character answer that
+# passes for neither.
+DIGESTS="$(grep -iE 'certificate SHA-256 digest:' <<<"$REPORT" |
+  sed 's/.*: *//; s/[[:space:]]//g' | tr 'A-F' 'a-f' | sort -u)"
 
-# 32 bytes, hex. Checked rather than assumed, so a label that matches while the
-# value has moved cannot become a fingerprint in the release notes.
-if [[ ! "$DIGEST" =~ ^[0-9a-f]{64}$ ]]; then
+complain() {
   {
-    echo "ERROR: no SHA-256 certificate digest in the report for" \
-      "$(basename "$APK")."
+    echo "ERROR: $1 for $(basename "$APK")."
     echo "       apksigner: $TOOL"
     echo "       what it said:"
     sed 's/^/         /' <<<"$REPORT"
   } >&2
   exit 1
+}
+
+if [[ "$(grep -c . <<<"$DIGESTS")" != 1 ]]; then
+  complain "more than one signing certificate, or none"
 fi
 
-echo "$DIGEST"
+# 32 bytes, hex. Checked rather than assumed, so a label that matches while the
+# value has moved cannot become a fingerprint in the release notes.
+if [[ ! "$DIGESTS" =~ ^[0-9a-f]{64}$ ]]; then
+  complain "no SHA-256 certificate digest in the report"
+fi
+
+echo "$DIGESTS"
