@@ -189,8 +189,11 @@ and its `--check` fails when a member no longer names a drug in the bundle, or
 one listed absent has arrived. Either means editing
 `artifacts/medicines/groups_v1.json` against its sources, not around them.
 
-A refresh rewrites most of the bundle, and each one adds up to 12 MB to the
-repository's history. Refresh for a release, not on every change.
+A refresh rewrites most of the bundle, and each one adds up to 13 MB to the
+repository's history. Refresh for a release, not on every change. The refresh
+prints how many Medication Guides it carried and why it left the rest out
+(ADR-0022): a refresh that carries far fewer than the last, 506 of 5,687 drugs
+on the 2026-10-28 export, means a guide's layout or openFDA's has changed.
 
 Two things to check by eye after fetching, because no test can:
 

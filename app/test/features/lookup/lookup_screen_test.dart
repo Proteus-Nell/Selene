@@ -289,6 +289,35 @@ void main() {
       expect(find.text('Aspirin: not generally recommended.'), findsOneWidget);
     });
 
+    testWidgets('folds its Medication Guide away, under what it leaves out', (
+      tester,
+    ) async {
+      await open(tester);
+      final l10n = l10nOf(tester);
+      final title = find.text(l10n.lookupGuideTitle);
+      await reveal(tester, title);
+      // The note is above the fold, so nobody opens it to look for a dose.
+      expect(find.text(l10n.lookupGuideNote), findsOneWidget);
+      expect(find.text('Who should not take ibuprofen tablets?'), findsNothing);
+      await tester.tap(title);
+      await tester.pumpAndSettle();
+      await reveal(tester, find.text('• stomach bleeding'));
+      expect(
+        find.text('Who should not take ibuprofen tablets?'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('has none where the label has none', (tester) async {
+      await pump(tester);
+      await search(tester, 'ibuprofen');
+      final l10n = l10nOf(tester);
+      await tester.tap(tile('Oral · ${l10n.lookupMedicineOverTheCounter}'));
+      await tester.pumpAndSettle();
+      await reveal(tester, find.text(medicinesDisclaimer));
+      expect(find.text(l10n.lookupGuideTitle), findsNothing);
+    });
+
     testWidgets('sets the boxed warning apart, and keeps it legible', (
       tester,
     ) async {

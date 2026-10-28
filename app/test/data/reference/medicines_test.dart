@@ -125,7 +125,8 @@ void main() {
 
   test('the bundle stays inside its size budget', () {
     // ADR-0013 budgets the bundle at 16 MB of APK for every drug's safety
-    // sections; it is about 12. A bundle that outgrows it has started
+    // sections; it is about 13, with the Medication Guides of ADR-0022. A
+    // bundle that outgrows it has started
     // carrying something it was not meant to, or compressing worse.
     const budget = 16 * 1024 * 1024;
     final size = _bundleFiles().fold<int>(
@@ -356,6 +357,26 @@ void main() {
         'levonorgestrel.oral.otc',
       );
       expect(iud.sharedSubstances, <String>['levonorgestrel']);
+    });
+
+    test('carries Medication Guides, their safety sections first', () async {
+      // ADR-0022: only the safety sections, the most important information
+      // first, and never how to take the medicine.
+      expect(medicinesGuideCount, greaterThan(0));
+      final bundle = MedicineBundle(rootBundle, run: inPlace);
+      final sertraline = index.entries.firstWhere(
+        (entry) => entry.key.startsWith('sertraline'),
+      );
+      final guide = await bundle.guide(sertraline);
+      expect(guide, isNotEmpty);
+      expect(
+        guide.first.heading,
+        startsWith('What is the most important information'),
+      );
+      expect(
+        guide.map((section) => section.heading.toLowerCase()),
+        everyElement(isNot(contains('how should i take'))),
+      );
     });
 
     test('matches nothing on a name that is only a word', () {

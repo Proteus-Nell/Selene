@@ -30,6 +30,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0019](#adr-0019-a-backup-can-be-protected-with-a-passphrase-and-an-unprotected-one-still-restores) | A backup can be protected with a passphrase, and an unprotected one still restores | Accepted | 2026-10-28 |
 | [0020](#adr-0020-temperature-mucus-and-progesterone-are-recorded-only-and-export-v4-still-restores-v3) | Temperature, mucus and progesterone are recorded only, and export v4 still restores v3 | Accepted | 2026-10-28 |
 | [0021](#adr-0021-group-names-on-labels-come-from-a-sourced-table-and-recorded-contraception-joins-the-conflict-flags) | Group names on labels come from a sourced table, and recorded contraception joins the conflict flags | Accepted | 2026-10-28 |
+| [0022](#adr-0022-medication-guides-carry-their-safety-sections-only-and-a-guide-whose-dosing-cannot-be-left-out-is-left-out-whole) | Medication Guides carry their safety sections only, and a guide whose dosing cannot be left out is left out whole | Accepted | 2026-10-28 |
 
 ---
 
@@ -1267,6 +1268,92 @@ the kind.
   together, and now name groups the check does not know: anticoagulants, and
   strong CYP3A4 inducers.
 - The groups add about 27 KB of generated Dart, read once when first used.
+
+## ADR-0022: Medication Guides carry their safety sections only, and a guide whose dosing cannot be left out is left out whole
+
+**Status:** Accepted, 2026-10-28. Keeps the rule of [ADR-0009](#adr-0009-medicines-reference-data-is-generated-at-build-time-from-openfda) and [ADR-0012](#adr-0012-the-medicines-reference-covers-every-drug-one-label-each-chosen-by-rule) that no dosing is carried.
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for Medication Guides on each medicine's page: the leaflets
+the FDA requires for some drugs, written for patients, which openFDA carries
+in the label export as `spl_medguide`. About one label in twelve has one.
+
+A guide is laid out by 21 CFR 208.20 as questions, and one of them is "How
+should I take ...?", which is dosing. The medicines reference has never
+carried dosing: a dose read off a US label and applied to a packet bought
+elsewhere is the harm it exists to avoid. openFDA carries a guide as one run of
+text with its headings inline, so leaving that section out means finding the
+headings in prose. Tried on a whole partition of the export, cutting the
+dosing heading alone leaked dosing into what was kept. A heading misspelt on
+the label ("How shlould atomoxetine capsules be taken?") is not found, and a
+quoted cross-reference ('See " What are the possible side effects...? "') is
+taken for a heading and splits the section in two. Either way, missed-dose
+instructions land in the section before.
+
+The bundle had been built from the 2026-10-02 export, which openFDA has since
+replaced, so a guide could only come from the same label the bundle shows by
+building the bundle again.
+
+### Decision
+
+1. **The guide comes from the label the bundle already shows**, in the same
+   pass over the export, and is stored with the drug's sections as `[heading,
+   text]` pairs. The index counts them.
+2. **Only the safety sections are carried, by their headings in 21 CFR
+   208.20:** the most important information; what the medicine is; who should
+   not take it; what to tell a healthcare provider first; what to avoid; its
+   possible side effects; and, in antidepressants' guides, how to watch for
+   suicidal thoughts. Not how to take it, how to store it, or what is in it.
+3. **Fail closed.** A guide is carried only when one of its first three
+   headings is the most important information, which 21 CFR 208.20 puts
+   first. Nothing that would be carried may read as dosing:
+   - a missed, next, double or extra dose;
+   - a how-often, such as "two times a day" or "every 12 hours";
+   - an instruction to take, use or inject something that gives an amount or
+     a frequency;
+   - outside the most important information, any instruction to take, mix,
+     inject or swallow at all.
+
+   A guide that fails any of these is left out whole, not cut further. A
+   question after an opening quote mark is a cross-reference, not a heading.
+4. **Shown folded** at the foot of the medicine's page, under a note that says
+   what it is and that how to take the medicine is left out, and why.
+5. **The bundle is rebuilt from the 2026-10-28 export.** It holds 5,687 drugs,
+   506 of them with a guide. 45 guides were left out for dosing and 41 for a
+   layout the rules do not recognise.
+
+### Runner-up and why rejected
+
+**The whole guide, dosing included, behind a warning.** It contradicts the
+reference's rule that dosing is not carried at all, rather than carried and
+hidden.
+
+**Cutting only the "How should I take" section.** It leaked, as above.
+
+**Patient package inserts**, the leaflets that come with the pill. They have
+no fixed layout to find their dosing in. Left out.
+
+**Fetching guides from openFDA's API by set id**, without a refresh. The API
+serves each label's newest version, so a guide could be from a later version
+than the label shown above it.
+
+### Consequences
+
+- The rules are a reading of prose, and they over-reject on purpose. OxyContin's
+  guide warns in its most important information "Do not take more than 80 mg
+  of OxyContin in one day", which is a safety limit the label above it carries
+  too, and the guide is left out for it. A guide whose side effects run on from
+  a heading the rules missed is left out as well. A refresh reports the counts,
+  and `docs/RELEASE.md` says what a drop in them means.
+- A test reads every guide in the committed bundle against the same rules, so
+  a loosened rule, or a bundle edited by hand, fails the build.
+- The interaction checker does not read guides. ADR-0014's sections are
+  unchanged.
+- The bundle is 13.3 MB, inside ADR-0013's 16 MB. The refresh dropped 148 drugs
+  that openFDA no longer links to a current listing; the group table resolved
+  against it unchanged (ADR-0021).
 
 ---
 

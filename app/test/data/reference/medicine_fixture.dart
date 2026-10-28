@@ -27,13 +27,14 @@ typedef FixtureDrug = ({
   List<String> terms,
   int labels,
   List<List<String>> sections,
+  List<List<String>> guide,
 });
 
 /// Describe a drug for a test bundle.
 ///
 /// Its substances default to its name, its match terms to its substances in
-/// lower case, it has no classes, and its sections default to one purpose
-/// line.
+/// lower case, it has no classes, its sections default to one purpose line,
+/// and it has no Medication Guide.
 FixtureDrug fixtureDrug(
   String key, {
   required String name,
@@ -45,6 +46,7 @@ FixtureDrug fixtureDrug(
   List<String>? terms,
   int labels = 1,
   List<List<String>>? sections,
+  List<List<String>> guide = const <List<String>>[],
 }) => (
   key: key,
   name: name,
@@ -65,7 +67,18 @@ FixtureDrug fixtureDrug(
       <List<String>>[
         <String>['purpose', 'Purpose of $name.'],
       ],
+  guide: guide,
 );
+
+/// The first heading of the one fixture guide, ibuprofen tablets'.
+const String fixtureGuideImportant =
+    'What is the most important information I should know about ibuprofen '
+    'tablets?';
+
+/// What is under it, with the bullets inline, as openFDA carries a guide.
+const String _guideImportantText =
+    'Ibuprofen can cause serious side effects, including: • increased risk of '
+    'a heart attack or stroke • stomach bleeding';
 
 /// Interactions written in two paragraphs, as a label breaks them.
 const String _interactions =
@@ -108,6 +121,13 @@ final List<FixtureDrug> fixtureDrugs = <FixtureDrug>[
       ],
       <String>['indications_and_usage', 'Relief of the signs of arthritis.'],
       <String>['drug_interactions', _interactions],
+    ],
+    guide: <List<String>>[
+      <String>[fixtureGuideImportant, _guideImportantText],
+      <String>[
+        'Who should not take ibuprofen tablets?',
+        'Do not take ibuprofen right before or after heart bypass surgery.',
+      ],
     ],
   ),
   fixtureDrug(
@@ -200,6 +220,8 @@ Map<String, Uint8List> fixtureFiles(
         jsonEncode(<String, Object?>{
           'key': drug.key,
           'sections': drug.sections,
+          // Only where there is one, as the generator writes it.
+          if (drug.guide.isNotEmpty) 'guide': drug.guide,
         }),
     ];
     final name = (start ~/ perChunk).toString().padLeft(3, '0');

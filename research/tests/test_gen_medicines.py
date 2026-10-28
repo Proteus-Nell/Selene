@@ -960,8 +960,10 @@ class TestExtractingSections:
             archive.writestr("part.json", json.dumps({"results": [chosen, other]}))
         entries, _ = gen.select([gen.summarise(chosen)[1]])
 
-        sections = gen.extract_sections([(path, 2)], entries)
+        sections, guides, outcomes = gen.extract_sections([(path, 2)], entries)
         assert ["purpose", "Chosen."] in sections["ibuprofen.oral.otc"]
+        assert guides == {}
+        assert outcomes == {"none": 1}
 
     def test_a_chosen_label_missing_from_the_export_is_refused(self, gen, tmp_path: Path) -> None:
         import zipfile
@@ -972,6 +974,146 @@ class TestExtractingSections:
         entries, _ = gen.select([gen.summarise(raw_label())[1]])
         with pytest.raises(SystemExit):
             gen.extract_sections([(path, 0)], entries)
+
+
+GUIDE = (
+    "Medication Guide SERTRALINE TABLETS "
+    "What is the most important information I should know about sertraline tablets? "
+    "Sertraline may cause serious side effects. Call your healthcare provider. "
+    "What are sertraline tablets? Sertraline is a prescription medicine used to treat "
+    "depression. "
+    "Who should not take sertraline tablets? Do not take sertraline if you take an MAOI. "
+    "What should I tell my healthcare provider before taking sertraline tablets? "
+    "Tell your healthcare provider if you are pregnant. "
+    "How should I take sertraline tablets? • Take sertraline exactly as prescribed. "
+    "• Take 1 tablet each morning. "
+    "What should I avoid while taking sertraline tablets? Do not drink alcohol. "
+    "What are the possible side effects of sertraline tablets? Nausea. "
+    'See "What is the most important information I should know about sertraline tablets?" '
+    "How should I store sertraline tablets? Store at room temperature. "
+    "What are the ingredients in sertraline tablets? Sertraline hydrochloride."
+)
+
+
+def guide_label(text: str = GUIDE) -> dict:
+    """A label with `text` as its Medication Guide."""
+    return raw_label(product_type=RX, sections=RX_SAFETY, spl_medguide=[text])
+
+
+class TestMedicationGuides:
+    """The guide's safety sections, and never its dosing (ADR-0022).
+
+    A Medication Guide is the FDA's patient leaflet, and one of its sections
+    says how to take the medicine: a dose, which this app never shows. What
+    is pinned here is that only the safety sections are carried, and that a
+    guide whose dosing cannot be cleanly left out is left out whole.
+    """
+
+    def test_carries_its_safety_sections_in_order(self, gen) -> None:
+        guide, outcome = gen.medication_guide(guide_label())
+        assert outcome == "carried"
+        assert [heading for heading, _ in guide] == [
+            "What is the most important information I should know about sertraline tablets?",
+            "What are sertraline tablets?",
+            "Who should not take sertraline tablets?",
+            "What should I tell my healthcare provider before taking sertraline tablets?",
+            "What should I avoid while taking sertraline tablets?",
+            "What are the possible side effects of sertraline tablets?",
+        ]
+
+    def test_never_how_to_take_it_nor_how_to_store_it(self, gen) -> None:
+        guide, _ = gen.medication_guide(guide_label())
+        carried = " ".join(heading + " " + text for heading, text in guide)
+        assert "1 tablet each morning" not in carried
+        assert "How should I take" not in carried
+        assert "Store at room temperature" not in carried
+        assert "ingredients" not in carried
+
+    def test_a_quoted_heading_is_a_cross_reference(self, gen) -> None:
+        # 'See "What is the most important..."' is the guide pointing back at a
+        # heading. Taken for one, it would end the side effects there.
+        guide, _ = gen.medication_guide(guide_label())
+        side_effects = dict(guide)["What are the possible side effects of sertraline tablets?"]
+        assert side_effects.startswith("Nausea.")
+        assert "See" in side_effects
+
+    def test_with_the_words_as_published(self, gen) -> None:
+        guide, _ = gen.medication_guide(guide_label())
+        assert dict(guide)["Who should not take sertraline tablets?"] == (
+            "Do not take sertraline if you take an MAOI."
+        )
+
+    def test_a_missed_dose_left_in_a_safety_section_leaves_the_guide_out(self, gen) -> None:
+        # The heading before it was not recognised, so how to take it ran on
+        # into the section before, which would be carried.
+        text = GUIDE.replace(
+            "Tell your healthcare provider if you are pregnant. ",
+            "Tell your healthcare provider if you are pregnant. If you miss a dose, "
+            "take it as soon as you remember. ",
+        )
+        assert gen.medication_guide(guide_label(text)) == (None, "dosing")
+
+    def test_so_does_a_how_often(self, gen) -> None:
+        text = GUIDE.replace("Do not drink alcohol.", "Use 2 inhalations 2 times each day.")
+        assert gen.medication_guide(guide_label(text)) == (None, "dosing")
+
+    def test_so_does_an_instruction_anywhere_but_the_most_important_information(self, gen) -> None:
+        text = GUIDE.replace("Do not drink alcohol.", "Swallow the capsules whole.")
+        assert gen.medication_guide(guide_label(text)) == (None, "dosing")
+
+    def test_though_the_most_important_information_may_say_to_take_it_as_prescribed(
+        self, gen
+    ) -> None:
+        text = GUIDE.replace(
+            "Call your healthcare provider.",
+            "Take sertraline exactly as your healthcare provider tells you to.",
+        )
+        assert gen.medication_guide(guide_label(text))[1] == "carried"
+
+    def test_an_amount_to_take_leaves_it_out_even_there(self, gen) -> None:
+        text = GUIDE.replace("Call your healthcare provider.", "Take 2 tablets at bedtime.")
+        assert gen.medication_guide(guide_label(text)) == (None, "dosing")
+
+    def test_a_guide_laid_out_otherwise_is_left_out(self, gen) -> None:
+        # Without the heading 21 CFR 208.20 puts first, there is no telling
+        # which part is which.
+        text = "MEDICATION GUIDE Methadone tablets are: a strong medicine. Take it daily."
+        assert gen.medication_guide(guide_label(text)) == (None, "unrecognised")
+
+    def test_a_label_without_one_has_none(self, gen) -> None:
+        assert gen.medication_guide(raw_label()) == (None, "none")
+
+    def test_it_travels_with_its_drug_and_is_counted(self, gen) -> None:
+        entries, _, _ = bundle_of(gen, THREE_DRUGS)
+        key = "tranexamic-acid.oral.rx"
+        guide = [["What is the most important information?", "Blood clots."]]
+        rebuilt = gen.build_bundle(
+            {"export_date": "2026-10-02", "jurisdiction": "US"},
+            entries,
+            sections_of(gen, entries),
+            {key: guide},
+        )
+        parsed, lines = unpacked(gen, *rebuilt)
+        records = {
+            json.loads(lines[row["chunk"]][row["line"]])["key"]: json.loads(
+                lines[row["chunk"]][row["line"]]
+            )
+            for row in parsed["entries"]
+        }
+        assert records[key]["guide"] == guide
+        assert "guide" not in records["ibuprofen.oral.otc"]
+        assert parsed["guides"] == 1
+
+    def test_the_generated_dart_says_how_many_drugs_have_one(self, gen) -> None:
+        index = index_for()
+        index["guides"] = 2
+        assert "const int medicinesGuideCount = 2;" in gen.render(index, DIGEST)
+
+
+def sections_of(gen, entries: list[dict]) -> dict[str, list[list[str]]]:
+    """THREE_DRUGS' sections, by the keys `select` gave them."""
+    by_set = {label["set_id"]: text for label, text in THREE_DRUGS}
+    return {entry["key"]: by_set[entry["label"]["set_id"]] for entry in entries}
 
 
 class TestTheCommittedBundle:
@@ -997,3 +1139,33 @@ class TestTheCommittedBundle:
             for line in gen.zlib.decompress(path.read_bytes()).decode().split("\n"):
                 names = {name for name, _ in json.loads(line)["sections"]}
                 assert names <= allowed, names - allowed
+
+    def test_carries_no_dosing_in_any_medication_guide(self, gen, files: list[Path]) -> None:
+        # Every guide in the bundle, held again to the rules that admitted it:
+        # a refresh with a loosened rule, or a guide edited by hand, fails here.
+        guides = 0
+        for path in files[1:]:
+            for line in gen.zlib.decompress(path.read_bytes()).decode().split("\n"):
+                record = json.loads(line)
+                for heading, text in record.get("guide", []):
+                    name = gen.guide_section(heading)
+                    assert name is not None, (record["key"], heading)
+                    assert gen.guide_dosing(name, text) is None, (record["key"], heading)
+                    assert not gen.GUIDE_DOSING.search(heading), (record["key"], heading)
+                guides += "guide" in record
+        assert guides == gen.read_index(files[0])["guides"]
+        assert guides > 0
+
+    def test_well_known_guides_are_carried(self, gen, files: list[Path]) -> None:
+        index = gen.read_index(files[0])
+        lines = [gen.zlib.decompress(path.read_bytes()).decode().split("\n") for path in files[1:]]
+        with_guide = {
+            row["key"]
+            for row in index["entries"]
+            if "guide" in json.loads(lines[row["chunk"]][row["line"]])
+        }
+        # An antidepressant, an NSAID and a sleep medicine, each of which has
+        # one by regulation.
+        assert any(key.startswith("sertraline") for key in with_guide)
+        assert any(key.startswith(("naproxen", "ibuprofen", "meloxicam")) for key in with_guide)
+        assert any(key.startswith("zolpidem") for key in with_guide)

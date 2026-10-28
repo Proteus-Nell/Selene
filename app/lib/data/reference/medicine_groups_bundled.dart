@@ -20,7 +20,7 @@ library;
 /// A test compares the two, so a rebuilt bundle whose groups nobody
 /// regenerated fails the build rather than matching drugs that have moved.
 const String medicineGroupsBundleSha256 =
-    '0a1f81dd94da06f375c2b3027b4fc9172dba9a9996bbaed1c76a5c34e7e926db';
+    '4f719f8156628f713375f3f84b021c54abcb18980ca573697623829b98d20c50';
 
 /// The groups, as JSON: each with its phrases, the keys of the drugs it
 /// covers, and its sources; and each recorded kind of contraception with the
@@ -127,7 +127,6 @@ const String medicineGroupsJson = r'''
     "ketorolac-tromethamine.oral.rx",
     "meclofenamate-sodium.oral.rx",
     "mefenamic-acid.oral.rx",
-    "meloxicam+rizatriptan-benzoate.oral.rx",
     "meloxicam.intravenous.rx",
     "meloxicam.oral.rx",
     "nabumetone.oral.rx",
@@ -222,7 +221,6 @@ const String medicineGroupsJson = r'''
     "duloxetine-hydrochloride.oral.rx",
     "levomilnacipran-hydrochloride.oral.rx",
     "milnacipran-hydrochloride.oral.rx",
-    "venlafaxine-besylate-monohydrate.oral.rx",
     "venlafaxine-hydrochloride.oral.rx"
    ],
    "sources": [
@@ -335,7 +333,6 @@ const String medicineGroupsJson = r'''
     "camphor+menthol+sumatriptan-succinate.unspecified.rx",
     "eletriptan-hydrobromide.oral.rx",
     "frovatriptan-succinate.oral.rx",
-    "meloxicam+rizatriptan-benzoate.oral.rx",
     "naproxen-sodium+sumatriptan-succinate.oral.rx",
     "naratriptan-hydrochloride.oral.rx",
     "ondansetron+sumatriptan-succinate.unspecified.rx",

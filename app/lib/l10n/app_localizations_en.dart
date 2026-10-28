@@ -1125,6 +1125,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Each maker files its own label for a medicine. One is shown here, chosen by a fixed rule, and the label on your packet may differ.';
 
   @override
+  String get lookupGuideTitle => 'Medication Guide';
+
+  @override
+  String get lookupGuideNote =>
+      'The leaflet the FDA approves for patients, its safety sections only. How to take the medicine is left out, because a dose on a US leaflet may not be the right one for the packet you have, and so are how to store it and what is in it.';
+
+  @override
   String get lookupMedicineLoading => 'Opening this medicine\'s label';
 
   @override
@@ -1219,7 +1226,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkerIntro =>
-      'Add two or more medicines. For each pair, this shows whether they share an ingredient or an FDA drug class, and quotes any place where one label names the other. It reads the labels and nothing else, so it cannot tell you that a combination is safe.';
+      'Add two or more medicines. For each pair, this shows whether they share an ingredient, an FDA drug class or a group such as “NSAIDs”, and quotes any place where one label names the other or a group it is in. It reads the labels and nothing else, so it cannot tell you that a combination is safe.';
 
   @override
   String get checkerAdd => 'Add a medicine';
@@ -1645,7 +1652,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get conditionsMedicinesIntro =>
-      'Medicines you take, picked from the app\'s list of US medicines and kept on this device only. Each is compared with the others using their labels.';
+      'Medicines you take, picked from the app\'s list of US medicines and kept on this device only. Each is compared with the others using their labels, and with any hormonal contraception recorded above.';
 
   @override
   String get conditionsMedicinesEmpty => 'No medicines recorded.';

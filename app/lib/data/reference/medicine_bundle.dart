@@ -12,6 +12,7 @@
 ///     - medicineBundleProvider: The bundle, read from the app's assets.
 ///     - medicineIndexProvider: Every drug, once loaded.
 ///     - medicineSectionsProvider: One drug's label sections.
+///     - medicineGuideProvider: The safety sections of its Medication Guide.
 library;
 
 import 'dart:async';
@@ -98,6 +99,37 @@ class MedicineBundle {
   ///         builds, and showing the text anyway would show another drug's
   ///         warnings under this one's name.
   Future<List<MedicineSection>> sections(MedicineEntry entry) async {
+    final record = await _record(entry);
+    return List<MedicineSection>.unmodifiable(<MedicineSection>[
+      for (final pair in record['sections']! as List<Object?>)
+        MedicineSection.fromJson(pair),
+    ]);
+  }
+
+  /// Load the safety sections of one drug's Medication Guide.
+  ///
+  /// From the same label as [sections], and the same line of the bundle.
+  ///
+  /// Args:
+  ///     entry (MedicineEntry): The drug, as the index describes it.
+  ///
+  /// Returns:
+  ///     `Future<List<GuideSection>>`: The guide's safety sections, in its
+  ///     order. Empty for a drug with no guide, or one whose guide could not
+  ///     be carried without its dosing (ADR-0022).
+  ///
+  /// Throws:
+  ///     MedicineBundleException: As [sections] does.
+  Future<List<GuideSection>> guide(MedicineEntry entry) async {
+    final record = await _record(entry);
+    return List<GuideSection>.unmodifiable(<GuideSection>[
+      for (final pair in record['guide'] as List<Object?>? ?? const <Object?>[])
+        GuideSection.fromJson(pair),
+    ]);
+  }
+
+  /// Read the line the index points [entry] at, and check it is its own.
+  Future<Map<String, Object?>> _record(MedicineEntry entry) async {
     final chunk = await _chunk(entry.chunk);
     if (entry.line >= chunk.lineCount) {
       throw MedicineBundleException(
@@ -112,10 +144,7 @@ class MedicineBundle {
         '${entry.key} points at the text of ${record['key']}',
       );
     }
-    return List<MedicineSection>.unmodifiable(<MedicineSection>[
-      for (final pair in record['sections']! as List<Object?>)
-        MedicineSection.fromJson(pair),
-    ]);
+    return record;
   }
 
   /// Compare what several drugs' labels say about each other.
@@ -288,4 +317,12 @@ final AutoDisposeFutureProviderFamily<List<MedicineSection>, MedicineEntry>
 medicineSectionsProvider = FutureProvider.autoDispose
     .family<List<MedicineSection>, MedicineEntry>(
       (ref, entry) => ref.watch(medicineBundleProvider).sections(entry),
+    );
+
+/// The safety sections of one drug's Medication Guide, empty where it has
+/// none (ADR-0022).
+final AutoDisposeFutureProviderFamily<List<GuideSection>, MedicineEntry>
+medicineGuideProvider = FutureProvider.autoDispose
+    .family<List<GuideSection>, MedicineEntry>(
+      (ref, entry) => ref.watch(medicineBundleProvider).guide(entry),
     );

@@ -1911,6 +1911,18 @@ abstract class AppLocalizations {
   /// **'Each maker files its own label for a medicine. One is shown here, chosen by a fixed rule, and the label on your packet may differ.'**
   String get lookupMedicineOneLabel;
 
+  /// The leaflet the FDA requires for some medicines, written for patients. Its official name in the US, kept so it can be looked for by name.
+  ///
+  /// In en, this message translates to:
+  /// **'Medication Guide'**
+  String get lookupGuideTitle;
+
+  /// Above the folded Medication Guide (ADR-0022). It must say that how to take the medicine is left out, so nobody opens it to look for a dose.
+  ///
+  /// In en, this message translates to:
+  /// **'The leaflet the FDA approves for patients, its safety sections only. How to take the medicine is left out, because a dose on a US leaflet may not be the right one for the packet you have, and so are how to store it and what is in it.'**
+  String get lookupGuideNote;
+
   /// The progress bar's label for a screen reader, while one medicine's label loads.
   ///
   /// In en, this message translates to:
@@ -2088,7 +2100,7 @@ abstract class AppLocalizations {
   /// The checker's first paragraph. It says what the check reads and what it cannot conclude before anyone adds a medicine (ADR-0014).
   ///
   /// In en, this message translates to:
-  /// **'Add two or more medicines. For each pair, this shows whether they share an ingredient or an FDA drug class, and quotes any place where one label names the other. It reads the labels and nothing else, so it cannot tell you that a combination is safe.'**
+  /// **'Add two or more medicines. For each pair, this shows whether they share an ingredient, an FDA drug class or a group such as “NSAIDs”, and quotes any place where one label names the other or a group it is in. It reads the labels and nothing else, so it cannot tell you that a combination is safe.'**
   String get checkerIntro;
 
   /// No description provided for @checkerAdd.
@@ -2721,7 +2733,7 @@ abstract class AppLocalizations {
   /// No description provided for @conditionsMedicinesIntro.
   ///
   /// In en, this message translates to:
-  /// **'Medicines you take, picked from the app\'s list of US medicines and kept on this device only. Each is compared with the others using their labels.'**
+  /// **'Medicines you take, picked from the app\'s list of US medicines and kept on this device only. Each is compared with the others using their labels, and with any hormonal contraception recorded above.'**
   String get conditionsMedicinesIntro;
 
   /// No description provided for @conditionsMedicinesEmpty.
