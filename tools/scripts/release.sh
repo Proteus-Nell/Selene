@@ -55,28 +55,6 @@ if (( ${#apks[@]} == 0 )); then
   exit 1
 fi
 
-find_apksigner() {
-  if command -v apksigner >/dev/null 2>&1; then
-    command -v apksigner
-    return 0
-  fi
-  local sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
-  if [[ -n "$sdk" && -d "$sdk/build-tools" ]]; then
-    local found
-    # `sort -V` is a GNU extension that BSD sort (macOS) does not have. Sorting
-    # on a zero-padded key built from the version directory name gets the same
-    # answer with only POSIX tools, and without it "9.0.0" sorts above "34.0.0".
-    found="$(find "$sdk/build-tools" -maxdepth 2 -name 'apksigner' -type f 2>/dev/null |
-      awk -F/ '{
-        for (i = 1; i <= NF; i++) if ($i == "build-tools") v = $(i + 1)
-        split(v, part, ".")
-        printf "%09d%09d%09d\t%s\n", part[1], part[2], part[3], $0
-      }' | sort | tail -1 | cut -f2)"
-    [[ -n "$found" ]] && { echo "$found"; return 0; }
-  fi
-  return 1
-}
-
 find_aapt2() {
   if command -v aapt2 >/dev/null 2>&1; then
     command -v aapt2
@@ -96,11 +74,6 @@ find_aapt2() {
   return 1
 }
 
-APKSIGNER="$(find_apksigner || true)"
-if [[ -z "$APKSIGNER" ]]; then
-  echo "ERROR: apksigner not found. Set ANDROID_HOME or put it on PATH." >&2
-  exit 2
-fi
 AAPT2="$(find_aapt2 || true)"
 if [[ -z "$AAPT2" ]]; then
   echo "ERROR: aapt2 not found. Set ANDROID_HOME or put it on PATH." >&2
@@ -111,7 +84,9 @@ for apk in "${apks[@]}"; do
   echo ""
   echo "== $(basename "$apk")"
 
-  certs="$("$APKSIGNER" verify --print-certs "$apk")"
+  # Fails rather than returning an empty report, which is what makes the test
+  # below mean anything: a report nobody could read used to satisfy it.
+  certs="$(bash "$REPO_ROOT/tools/scripts/apk_signer_cert.sh" "$apk")"
   # The Android debug key is a fixed, publicly known certificate. Shipping an
   # APK signed with it means anyone can sign an update for this app.
   if grep -qi 'CN=Android Debug' <<<"$certs"; then
@@ -119,7 +94,14 @@ for apk in "${apks[@]}"; do
     echo "       This must not be distributed. Check app/android/key.properties." >&2
     exit 1
   fi
-  echo "$certs" | grep -i 'Signer #1 certificate DN' || true
+  # Printed, not just tested: the DN and the fingerprint are how a person
+  # checks by eye that this is the same key as the last release
+  # (docs/RELEASE.md 1). The DN is nice to have, so a format that no longer
+  # carries it is not worth stopping for; the fingerprint is asserted, because
+  # --digest refuses to invent one.
+  grep -i 'Signer #1 certificate DN' <<<"$certs" || true
+  echo "Certificate SHA-256: $(bash \
+    "$REPO_ROOT/tools/scripts/apk_signer_cert.sh" --digest "$apk")"
 
   code="$("$AAPT2" dump badging "$apk" | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p" | head -1)"
   if [[ "$code" != "$EXPECTED_CODE" ]]; then

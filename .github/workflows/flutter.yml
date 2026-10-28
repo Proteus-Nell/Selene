@@ -120,6 +120,13 @@ jobs:
       - name: Forbid DateTime.now() outside core/clock.dart
         run: bash tools/scripts/check_no_datetime_now.sh
 
+      # The signing-certificate reader the release path depends on. That path
+      # runs only for a tag, so without this the first time it is exercised is
+      # a release — which is how a silent apksigner came to pass for a clean
+      # one. This half needs no key and no SDK.
+      - name: Check the signing-certificate reader
+        run: bash tools/scripts/apk_signer_cert_test.sh
+
       - name: Build debug APK
         working-directory: app
         run: flutter build apk --debug

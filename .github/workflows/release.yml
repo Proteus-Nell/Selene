@@ -154,13 +154,17 @@ jobs:
           done
           ( cd dist && sha256sum -- *.apk > SHA256SUMS.txt )
 
-          apksigner="$(ls -d "${ANDROID_HOME}"/build-tools/*/ | sort -V | tail -1)apksigner"
+          # The same reader release.sh uses, which fails loudly when it cannot
+          # recognise apksigner's report rather than returning an empty one.
+          # This step used to parse the report itself, and when build-tools
+          # 37.0.0 answered differently it reported certificates that disagreed
+          # without having read any (v1.1.0, 2026-10-29).
           digests="$(for apk in dist/*.apk; do
-            "$apksigner" verify --print-certs "$apk" |
-              sed -n 's/^Signer #1 certificate SHA-256 digest: //p'
+            bash tools/scripts/apk_signer_cert.sh --digest "$apk"
           done | sort -u)"
-          if [[ "$(wc -l <<<"$digests")" != 1 || -z "$digests" ]]; then
+          if [[ "$(wc -l <<<"$digests")" != 1 ]]; then
             echo "::error::The APKs are not all signed by one certificate."
+            printf 'digests found:\n%s\n' "$digests" >&2
             exit 1
           fi
           fingerprint="$(tr 'a-f' 'A-F' <<<"$digests" | sed 's/../&:/g; s/:$//')"

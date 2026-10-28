@@ -81,10 +81,25 @@ flutter build apk --release --split-per-abi \
 
 and then, for every APK produced:
 
-1. **`apksigner verify --print-certs`**, failing if the signer is the Android
+1. **`apksigner verify --print-certs`**, through
+   `tools/scripts/apk_signer_cert.sh`, failing if the signer is the Android
    debug certificate. A debug-signed release build installs perfectly well on
    the machine that made it, so this is the failure that gets discovered months
    later by a user whose upgrade is refused.
+
+   It goes through that one reader because this check used to be able to pass
+   without reading anything. Both here and in the release workflow the report
+   was parsed in place, and each copy took an unparseable report for an empty
+   one: `grep 'CN=Android Debug'` cannot match an empty string, so the guard
+   passed. Cutting v1.1.0 found it — the runner's newest build-tools was
+   37.0.0, whose apksigner the old parsing did not recognise. The reader now
+   fails, loudly and quoting what it got, on any report it cannot recognise,
+   and `apk_signer_cert_test.sh` holds it to that in CI, where the shapes it
+   has to survive are exercised without needing a key or a release.
+
+   Both scripts take the highest-versioned build-tools they can find, which is
+   not necessarily the one Gradle signed with, so each prints which apksigner
+   it used. `APKSIGNER` overrides the choice.
 2. **`aapt2 dump badging`**, failing unless the APK's version code is the one
    the version name gives. Every APK of a release has the same code.
 3. **`tools/scripts/assert_no_network.sh`**, failing if the APK declares
