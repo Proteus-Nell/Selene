@@ -857,7 +857,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAppLockNotEncrypted =>
-      'This hides the screen. It does not encrypt anything.';
+      'This only hides the screen. Your data is encrypted on the phone whether the lock is on or off.';
 
   @override
   String get settingsAppLockUnavailable =>
@@ -1725,11 +1725,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Two things send anything anywhere, and only when you ask. An export saves a backup file wherever you choose. A web search opens in your browser, after the app tells you exactly which words will be searched, and your browser may keep it in its history.';
 
   @override
-  String get privacyNotEncryptedTitle => 'The database is not encrypted';
+  String get privacyEncryptedTitle =>
+      'The database is encrypted, with a key the phone keeps';
 
   @override
-  String get privacyNotEncryptedBody =>
-      'The database is kept in the app\'s private storage. On a phone that has not been tampered with, other apps cannot read it, and Android\'s device encryption protects it while the phone is switched off. But the database itself is stored as plain text: anyone who has your unlocked phone, or a forensic copy of it, can read what you recorded. The optional app lock hides the screen. It does not encrypt the file underneath.';
+  String get privacyEncryptedBody =>
+      'Everything you record is kept in the app\'s private storage, in a database file encrypted with a key held by Android\'s secure key store. The key never leaves the phone and is not in your exports, so a copy of the file on its own cannot be read. Scheduled reminders are the one exception: until they are due, Android keeps their wording, which can name the predicted dates, outside the encrypted file. Encryption does not protect an unlocked phone. Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.';
 
   @override
   String get privacyBackupTitle => 'Nothing is copied off the phone';
@@ -1776,6 +1777,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String bootstrapNewerSchemaBody(int stored, int supported) {
     return 'The data on this device was written by a newer version of this app (storage version $stored; this version understands $supported). Nothing has been changed. Install the newer version to carry on.';
   }
+
+  @override
+  String get bootstrapKeyUnavailableTitle =>
+      'Selene could not unlock your data';
+
+  @override
+  String get bootstrapKeyUnavailableBody =>
+      'Your data is encrypted on this phone, and the key that unlocks it could not be read just now. Nothing has been opened or changed. Close Selene and open it again; if this keeps happening, restart the phone.';
 
   @override
   String get errorGeneric => 'Something went wrong.';

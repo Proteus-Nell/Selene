@@ -1,14 +1,18 @@
 /// Database connection and recovery.
 ///
-/// The single place the app opens its database file. Verifies the file before
-/// handing it over, quarantines a damaged one rather than deleting it, and
-/// refuses a file written by a newer build.
+/// The single place the app opens its database file. Unlocks it with the key
+/// the Keystore holds, encrypts a file written before encryption, verifies the
+/// file before handing it over, quarantines a damaged one rather than deleting
+/// it, and refuses a file written by a newer build.
 ///
 /// Pipeline:
-///     1. Open the file and run `PRAGMA quick_check`.
-///     2. Let the migration run.
-///     3. On a newer schema, refuse and return no database at all.
-///     4. On damage, move the file aside with its sidecars and open a fresh
+///     1. Read the key, or make and store one if there is none.
+///     2. Encrypt the file in place if it was written before encryption,
+///        keeping a copy until the encrypted file is proven (ADR-0018).
+///     3. Open the file with the key and run `PRAGMA quick_check`.
+///     4. Let the migration run.
+///     5. On a newer schema, refuse and return no database at all.
+///     6. On damage, move the file aside with its sidecars and open a fresh
 ///        one, so the old data survives for a later build to read.
 ///
 /// Includes:
@@ -29,12 +33,22 @@ import 'package:path_provider/path_provider.dart';
 import 'package:period_tracker/core/clock.dart';
 import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/data/db/database_key.dart';
+import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 /// Name of the database file inside the app's private directory.
 const String databaseFileName = 'period_tracker.sqlite';
 
 /// Suffix given to a database file that failed its integrity check.
 const String quarantineSuffix = 'corrupt';
+
+/// Suffix of the copy kept while a file written before encryption is
+/// encrypted. It exists only for the moment the encryption runs, and is
+/// restored from if that was interrupted.
+const String preEncryptionSuffix = 'pre-encryption';
+
+/// The first 16 bytes of every unencrypted SQLite file.
+const String _plaintextHeader = 'SQLite format 3\u0000';
 
 /// Database corrupt exception: the file opened but failed `quick_check`.
 ///
@@ -141,15 +155,27 @@ final class DatabaseRefusedNewerSchema extends DatabaseOpenOutcome {
   final int supportedVersion;
 }
 
+/// Database key unavailable: the key store could not be read.
+///
+/// No database is returned. The key may still be in the store, and opening
+/// without it would mean making a new one, after which the existing file could
+/// never be opened again. Nothing is written, and the next launch tries again.
+final class DatabaseKeyUnavailable extends DatabaseOpenOutcome {
+  /// Creates the outcome.
+  const DatabaseKeyUnavailable();
+}
+
 /// **The single [QueryExecutor] construction site.**
 ///
-/// ADR-0004 accepts an unencrypted database on the condition that this stays
-/// true: every connection the production app makes is created here, so
-/// adopting SQLCipher later is a change to this function plus a one-time
-/// re-encrypt migration, rather than an audit of every call site. Tests
-/// construct `NativeDatabase.memory()` directly, which is deliberate and does
-/// not weaken the guarantee: the point is that no *shipped* code path opens a
-/// database any other way.
+/// ADR-0004 asked for this to stay true so that adopting encryption would be a
+/// change to this function plus a one-time re-encrypt migration, rather than an
+/// audit of every call site, and ADR-0018 is that change: every connection the
+/// production app makes is created here, and unlocked here. The library is
+/// SQLite3 Multiple Ciphers, selected in `pubspec.yaml`, with the ChaCha20
+/// cipher named explicitly so a change of its default could not lock an
+/// existing file. Tests construct `NativeDatabase.memory()` directly, which is
+/// deliberate and does not weaken the guarantee: the point is that no
+/// *shipped* code path opens a database any other way.
 ///
 /// The executor runs on the calling isolate, not a background one.
 ///
@@ -169,10 +195,145 @@ final class DatabaseRefusedNewerSchema extends DatabaseOpenOutcome {
 /// database again.
 /// Args:
 ///     file (File): Where the database lives.
+///     key (String?): The key, from [newDatabaseKey]. Null opens the file
+///         unencrypted, which only the background isolate does, and only for
+///         a file the foreground has not encrypted yet.
 ///
 /// Returns:
 ///     QueryExecutor: An executor running on the calling isolate.
-QueryExecutor createQueryExecutor(File file) => NativeDatabase(file);
+QueryExecutor createQueryExecutor(File file, {required String? key}) =>
+    NativeDatabase(
+      file,
+      setup: key == null ? null : (database) => _unlock(database, key),
+    );
+
+/// Give a connection its key, before anything reads the file.
+///
+/// Args:
+///     database (sqlite.Database): The raw connection.
+///     key (String): The key. Refused unless it is the shape
+///         [newDatabaseKey] makes, because a pragma cannot take a bound
+///         parameter and nothing else may reach the SQL.
+void _unlock(sqlite.Database database, String key) {
+  _requireKeyShape(key);
+  database
+    ..execute("PRAGMA cipher = 'chacha20'")
+    ..execute("PRAGMA hexkey = '$key'");
+}
+
+/// Refuse a key that is not the shape [newDatabaseKey] makes.
+///
+/// A pragma cannot take a bound parameter, so the key is spliced into the SQL,
+/// and this is what keeps anything but hex digits out of it.
+///
+/// Throws:
+///     ArgumentError: For any other string. The key is not in the message.
+void _requireKeyShape(String key) {
+  if (!isDatabaseKey(key)) {
+    throw ArgumentError.value('<redacted>', 'key', 'is not a database key');
+  }
+}
+
+/// Whether [file] is an SQLite database written before encryption.
+///
+/// Args:
+///     file (File): The database file.
+///
+/// Returns:
+///     bool: True when the file starts with SQLite's plain header. False for
+///     an encrypted file, whose first bytes are random, and for no file.
+bool isPlaintextDatabase(File file) {
+  if (!file.existsSync()) return false;
+  final handle = file.openSync();
+  try {
+    final head = handle.readSync(_plaintextHeader.length);
+    return String.fromCharCodes(head) == _plaintextHeader;
+  } finally {
+    handle.closeSync();
+  }
+}
+
+/// Encrypt a database written before encryption, in place.
+///
+/// `PRAGMA hexrekey` rewrites every page inside one transaction, so SQLite's
+/// journal already makes it all or nothing. The copy is a second line, for a
+/// failure the journal cannot see, such as a file the rekey reports done that
+/// then fails to open: it is kept until the encrypted file has opened with the
+/// key and passed `quick_check`, and restored if it does not. A file that is
+/// already damaged is left as it is, for the ordinary quarantine to keep.
+///
+/// Args:
+///     file (File): The unencrypted database file.
+///     key (String): The key to encrypt it with.
+///     logger (RingLogger?): Records that it happened.
+///
+/// Throws:
+///     SqliteException: If the encrypted file does not open, after the
+///         unencrypted one has been put back.
+void _encryptInPlace(File file, String key, RingLogger? logger) {
+  _requireKeyShape(key);
+  final copy = File('${file.path}.$preEncryptionSuffix');
+  final plain = sqlite.sqlite3.open(file.path);
+  try {
+    final check = plain.select('PRAGMA quick_check');
+    if (check.isEmpty || check.first.values.first != 'ok') return;
+    file.copySync(copy.path);
+    plain
+      ..execute("PRAGMA cipher = 'chacha20'")
+      ..execute("PRAGMA hexrekey = '$key'");
+  } finally {
+    plain.close();
+  }
+  _finishEncryption(file, key);
+  logger?.info(LogEvent.dbEncrypted);
+}
+
+/// Prove an encrypted file opens, then drop the copy kept while it was made.
+///
+/// Also what a launch does on finding a copy left by an encryption that was
+/// interrupted: if the file opens with the key, the copy is no longer needed;
+/// if it does not, the copy is the user's data, and it goes back.
+///
+/// Args:
+///     file (File): The database file.
+///     key (String): The key it should open with.
+///
+/// Throws:
+///     SqliteException: If the file does not open with the key, after the
+///         copy has been put back.
+void _finishEncryption(File file, String key) {
+  final copy = File('${file.path}.$preEncryptionSuffix');
+  if (!copy.existsSync()) return;
+  if (!file.existsSync()) {
+    // Opening a file that is not there would make an empty one, which would
+    // pass its check and take the copy with it. The copy is the data.
+    copy.renameSync(file.path);
+    return;
+  }
+  try {
+    final encrypted = sqlite.sqlite3.open(file.path);
+    try {
+      _unlock(encrypted, key);
+      final check = encrypted.select('PRAGMA quick_check');
+      if (check.isEmpty || check.first.values.first != 'ok') {
+        throw sqlite.SqliteException(
+          extendedResultCode: 11,
+          message: 'the encrypted copy failed quick_check',
+        );
+      }
+    } finally {
+      encrypted.close();
+    }
+  } on sqlite.SqliteException {
+    for (final suffix in const <String>['-journal', '-wal', '-shm']) {
+      final sidecar = File('${file.path}$suffix');
+      if (sidecar.existsSync()) sidecar.deleteSync();
+    }
+    copy.renameSync(file.path);
+    rethrow;
+  }
+  copy.deleteSync();
+}
 
 /// Return the directory the production database lives in.
 ///
@@ -195,6 +356,8 @@ Future<Directory> defaultDatabaseDirectory() =>
 ///
 /// Args:
 ///     file (File): The database file to open.
+///     key (String?): The key it opens with, or null for a file not yet
+///         encrypted.
 ///
 /// Returns:
 ///     `Future<AppDatabase>`: The opened, verified database.
@@ -203,8 +366,8 @@ Future<Directory> defaultDatabaseDirectory() =>
 ///     DatabaseCorruptException: If `quick_check` reports damage.
 ///     DatabaseDowngradeException: If the file is from a newer build.
 ///     SqliteException: If the file cannot be opened at all.
-Future<AppDatabase> _attemptOpen(File file) async {
-  final database = AppDatabase(createQueryExecutor(file));
+Future<AppDatabase> _attemptOpen(File file, {required String? key}) async {
+  final database = AppDatabase(createQueryExecutor(file, key: key));
   try {
     await verifyIntegrity(database);
   } on Object {
@@ -236,16 +399,29 @@ Future<AppDatabase> _attemptOpen(File file) async {
 /// The next foreground launch calls [openAppDatabase] and handles the damage
 /// in the open, which is where that decision belongs.
 ///
+/// For the same reason it never makes a key and never encrypts. A file not
+/// yet encrypted, because the app has not been opened since the update that
+/// encrypts it, is opened as it is. An encrypted one needs the stored key, and
+/// without one the day goes unlogged rather than this isolate making a key the
+/// file was never encrypted with.
+///
 /// Args:
 ///     directory (Directory): Where the database file lives.
+///     keyStore (DatabaseKeyStore): Where the key is kept.
 ///
 /// Returns:
 ///     `Future<AppDatabase?>`: The database, or null on any failure at all.
 Future<AppDatabase?> openAppDatabaseWithoutRecovery({
   required Directory directory,
+  required DatabaseKeyStore keyStore,
 }) async {
   try {
-    return await _attemptOpen(File(p.join(directory.path, databaseFileName)));
+    final file = File(p.join(directory.path, databaseFileName));
+    if (isPlaintextDatabase(file)) return await _attemptOpen(file, key: null);
+    if (!file.existsSync()) return null;
+    final key = await keyStore.read();
+    if (key == null) return null;
+    return await _attemptOpen(file, key: key);
   } on Object {
     return null;
   }
@@ -259,21 +435,69 @@ Future<AppDatabase?> openAppDatabaseWithoutRecovery({
 /// and my data is gone" into "the app told me it found a problem and kept the
 /// old file".
 ///
+/// A file written before encryption is encrypted first (ADR-0018). A key
+/// lost from the store, which leaves an encrypted file nothing can open, looks
+/// like damage and is handled as damage: the file is kept aside and the user
+/// is offered their last export.
+///
 /// Args:
 ///     directory (Directory): Where the database file lives.
 ///     clock (Clock): Stamps the quarantined file's name.
+///     keyStore (DatabaseKeyStore): Where the key is kept.
 ///     logger (RingLogger?, optional): Records the outcome. Defaults to null.
 ///
 /// Returns:
-///     `Future<DatabaseOpenOutcome>`: One of the three outcomes. Never
-///     throws for a damaged or newer file; both are outcomes the UI renders.
+///     `Future<DatabaseOpenOutcome>`: One of the four outcomes. Never
+///     throws for a damaged or newer file, or an unreadable key store; each
+///     is an outcome the UI renders.
 Future<DatabaseOpenOutcome> openAppDatabase({
   required Directory directory,
   required Clock clock,
+  required DatabaseKeyStore keyStore,
   RingLogger? logger,
 }) async {
   final file = File(p.join(directory.path, databaseFileName));
-  Future<AppDatabase> attempt() => _attemptOpen(file);
+
+  final String key;
+  try {
+    final stored = await keyStore.read();
+    if (stored != null) {
+      key = stored;
+    } else {
+      key = newDatabaseKey();
+      await keyStore.write(key);
+    }
+  } on DatabaseKeyUnavailableException {
+    logger?.error(LogEvent.dbKeyUnavailable);
+    return const DatabaseKeyUnavailable();
+  }
+
+  // Two steps, each on its own. A copy left by an encryption that was cut
+  // short goes back if the file does not open with the key, and the copy that
+  // goes back is unencrypted, so the second step then encrypts it again.
+  try {
+    _finishEncryption(file, key);
+  } on sqlite.SqliteException {
+    // Restored. Encrypted below.
+  } on FileSystemException {
+    // Left as it was, for the next launch to finish.
+  }
+  try {
+    if (isPlaintextDatabase(file)) _encryptInPlace(file, key, logger);
+  } on sqlite.SqliteException {
+    // Put back unencrypted, and opened that way below.
+  } on FileSystemException {
+    // A full disk, say. Opened unencrypted below.
+  }
+
+  // Whatever is still unencrypted now, because it was already damaged or the
+  // encryption could not run, is opened unencrypted rather than with a key it
+  // could never open with: a healthy file goes on working and is encrypted on
+  // a later launch, and a damaged one is quarantined as damage, not as a
+  // wrong key. Asked on every attempt, so that the fresh file a quarantine
+  // leaves room for is made encrypted.
+  Future<AppDatabase> attempt() =>
+      _attemptOpen(file, key: isPlaintextDatabase(file) ? null : key);
 
   try {
     final database = await attempt();

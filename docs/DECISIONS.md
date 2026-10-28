@@ -12,7 +12,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0001](#adr-0001-flutter-and-dart-for-the-android-application) | Flutter and Dart for the Android application | Accepted | 2026-08-17 |
 | [0002](#adr-0002-two-runtime-split-python-reference-dart-production-golden-vectors-as-the-contract) | Two-runtime split with golden vectors as the contract | Accepted | 2026-08-17 |
 | [0003](#adr-0003-hierarchical-bayesian-state-space-model-as-tier-a-tflite-on-device-training-deferred-to-tier-b) | Bayesian state-space model as Tier A, TFLite training deferred to Tier B | Accepted; Tier B runtime clause superseded by [0006](#adr-0006-pytorch-and-executorch-replace-tensorflow-and-litert-entirely) | 2026-08-17 |
-| [0004](#adr-0004-unencrypted-local-sqlite-with-zero-network-permission) | Unencrypted local SQLite with zero network permission | Accepted | 2026-08-17 |
+| [0004](#adr-0004-unencrypted-local-sqlite-with-zero-network-permission) | Unencrypted local SQLite with zero network permission | Accepted; unencrypted storage superseded by [0018](#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds) | 2026-08-17 |
 | [0005](#adr-0005-uv-with-python-311-wsl2-for-gpu-work-jdk-17-pinned-for-android-mlflow-local-only) | uv + Python 3.11, WSL2 for GPU, JDK 17 pinned, MLflow local-only | Accepted; clause 2 (WSL2 scope) narrowed by [0006](#adr-0006-pytorch-and-executorch-replace-tensorflow-and-litert-entirely) | 2026-08-17 |
 | [0006](#adr-0006-pytorch-and-executorch-replace-tensorflow-and-litert-entirely) | PyTorch and ExecuTorch replace TensorFlow and LiteRT entirely | Accepted | 2026-08-17 |
 | [0007](#adr-0007-named-cycle-phases-shown-by-default-ovulation-estimation-still-opt-in) | Named cycle phases shown by default, ovulation estimation still opt-in | Accepted | 2026-08-20 |
@@ -26,6 +26,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0015](#adr-0015-recorded-medicines-are-kept-as-a-setting-and-their-flags-only-inform) | Recorded medicines are kept as a setting, and their flags only inform | Accepted | 2026-10-02 |
 | [0016](#adr-0016-a-late-period-moves-the-range-forward-and-lost-track-counts-from-the-last-period) | A late period moves the range forward, and lost track counts from the last period | Accepted | 2026-10-27 |
 | [0017](#adr-0017-releases-are-built-from-a-tag-with-the-key-in-repository-secrets-and-their-version-code-comes-from-the-name) | Releases are built from a tag, with the key in repository secrets, and their version code comes from the name | Accepted | 2026-10-27 |
+| [0018](#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds) | The database is encrypted, with a key the Android Keystore holds | Accepted | 2026-10-28 |
 
 ---
 
@@ -132,7 +133,7 @@ Primary evaluation metric is **interval calibration**, not MAE.
 
 ## ADR-0004: Unencrypted local SQLite with zero network permission
 
-**Status:** Accepted, 2026-08-17
+**Status:** Accepted, 2026-08-17. The unencrypted storage is superseded by [ADR-0018](#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds); zero network permission stands.
 **Deciders:** Project owner
 
 ### Context
@@ -929,6 +930,84 @@ workflow is renamed or re-created.
 
 ---
 
+## ADR-0018: The database is encrypted, with a key the Android Keystore holds
+
+**Status:** Accepted, 2026-10-28. Supersedes the unencrypted storage of [ADR-0004](#adr-0004-unencrypted-local-sqlite-with-zero-network-permission). [ADR-0008](#adr-0008-app-lock-gates-the-interface-and-does-not-encrypt-the-database) stands: the app lock still only gates the interface.
+**Deciders:** Project owner
+
+### Context
+
+ADR-0004 accepted an unencrypted database, with the risk stated in PRIVACY.md
+and a way out designed in: every connection is made in one function, so
+encryption would be a change there and a one-time migration. The owner chose to
+take it, as the database encrypted on the phone plus optional passphrase
+protection for exports, after asking two questions:
+
+- **Do backups taken before keep restoring?** Yes. Encrypting the database
+  does not change the export format.
+- **Can an encrypted backup be read after a reinstall?** Only one protected by
+  a passphrase. A key the Keystore holds is deleted with the app.
+
+### Decision
+
+1. **SQLite3 Multiple Ciphers**, selected through `package:sqlite3`'s build
+   hook (`hooks: user_defines: sqlite3: source: sqlite3mc` in `pubspec.yaml`).
+   It is MIT licensed, needs no OpenSSL, and its prebuilt binaries are checked
+   against hashes the package pins. The cipher, ChaCha20-Poly1305, is named on
+   every connection, so a change of the library's default could not lock an
+   existing file. `flutter test` runs on the same library, so the encryption is
+   tested rather than mocked.
+2. **The key is 32 random bytes**, made on the phone the first time a build
+   that encrypts opens the database, and kept with `flutter_secure_storage`,
+   which wraps it with an RSA key held by the Android Keystore. Its
+   `resetOnError` is off, so a failed read cannot wipe the only key. The key
+   never leaves the phone and is not in any export.
+3. **A database written before is encrypted in place** on the first launch of
+   the app: `PRAGMA hexrekey`, inside one transaction, with a copy kept until
+   the encrypted file opens with the key and passes `quick_check`, and put back
+   if it does not. A file already damaged is quarantined as it is, unencrypted.
+   One the encryption could not run on, as on a full disk, is opened
+   unencrypted and encrypted on a later launch.
+4. **An unreadable key store opens nothing.** The app says so and the next
+   launch tries again, rather than making a new key the existing file could
+   never be opened with. A key missing from the store, which leaves a file
+   nothing can open, is handled as damage: the file is kept aside and the user
+   is offered their last export.
+5. **The notification action never makes a key or encrypts.** Its background
+   isolate opens a file not yet encrypted as it is, an encrypted one only with
+   the stored key, and otherwise leaves the day unlogged.
+
+### Runner-up and why rejected
+
+**SQLCipher**, which the same hook offers. It links OpenSSL on Android and
+brings its own licence terms, for nothing the app needs that SQLite3 Multiple
+Ciphers lacks.
+
+**A key that needs the user to authenticate**, such as one bound to the device
+credential. It would protect an unlocked phone with root, which this design does
+not. But the notification action logs a period from the lock screen without the
+app open, and could not open the database, and forgetting the credential would
+lose the data.
+
+**A channel in the app's own Android code** instead of a plugin. One dependency
+fewer, but the background engine the notification action runs in registers
+plugins, not the app's own channels.
+
+### Consequences
+
+- A copy of the app's files, taken without the phone, cannot be read. An
+  unlocked phone still can: by anyone using it unless the app lock is on, and
+  by someone with root or a forensic tool, using the key the way the app does.
+  PRIVACY.md says so, and `privacy_text_test.dart` holds it to saying so.
+- Scheduled reminders' wording is kept by Android outside the file until they
+  are due. PRIVACY.md names it.
+- Uninstalling deletes the key with the database. An export is the only way
+  data outlives the app.
+- A file quarantined after encryption is encrypted too, and opens only with
+  the key this install holds.
+
+---
+
 ## Backlog of deferred decisions
 
 Recorded so they are not silently re-litigated. Promote to a numbered ADR when the decision is actually made.
@@ -936,7 +1015,6 @@ Recorded so they are not silently re-litigated. Promote to a numbered ADR when t
 | Topic | Trigger to decide | Current lean |
 | --- | --- | --- |
 | [App lock](#deferred-note-app-lock) | First post-MVP privacy work | **Do it first.** Closes the largest gap in ADR-0004. See the note below |
-| SQLCipher migration | If the threat model changes, or before any wider distribution | Do it; the migration path is designed in |
 | Play Store distribution | Only if the app leaves personal use | Skip; sideload is sufficient and avoids the health-app policy surface |
 | [iOS build](#deferred-note-ios-build) | Only once MVP has been dogfooded for a month **and** a real iOS user exists | **Skip by default.** Cheaper than native, but not free, and it weakens the core privacy claim. See the note below |
 | Ovulation range estimation | Only after the calibration story is solid | Off by default if ever added, and never framed as contraception |

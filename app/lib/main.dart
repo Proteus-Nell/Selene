@@ -31,6 +31,7 @@ import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/db/connection.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/data/db/database_key.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/notifications/background_action.dart';
@@ -64,10 +65,13 @@ Future<void> main() async {
   final outcome = await openAppDatabase(
     directory: await defaultDatabaseDirectory(),
     clock: clock,
+    keyStore: const KeystoreDatabaseKeyStore(),
     logger: logger,
   );
 
   switch (outcome) {
+    case DatabaseKeyUnavailable():
+      runApp(const KeyUnavailableApp());
     case DatabaseRefusedNewerSchema(
       :final storedVersion,
       :final supportedVersion,

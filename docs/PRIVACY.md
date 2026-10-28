@@ -6,9 +6,10 @@ sections below are shipped verbatim on the Settings screen, and
 Change the wording here and in `app/lib/l10n/app_en.arb` together.
 
 It is written to be read by the person using the app, not by a lawyer. In
-particular it says plainly what is *not* protected, because the accepted risk
-in [DECISIONS.md ADR-0004](DECISIONS.md#adr-0004-unencrypted-local-sqlite-with-zero-network-permission)
-is only defensible if the user is told about it.
+particular it says plainly what is *not* protected. Encryption
+([DECISIONS.md ADR-0018](DECISIONS.md#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds))
+protects a copy of the file, not an unlocked phone, and saying less would let
+the word "encrypted" do work it has not earned.
 
 ---
 
@@ -22,9 +23,9 @@ The app has no internet permission, no account, no analytics, no advertising and
 
 Two things send anything anywhere, and only when you ask. An export saves a backup file wherever you choose. A web search opens in your browser, after the app tells you exactly which words will be searched, and your browser may keep it in its history.
 
-### The database is not encrypted
+### The database is encrypted, with a key the phone keeps
 
-The database is kept in the app's private storage. On a phone that has not been tampered with, other apps cannot read it, and Android's device encryption protects it while the phone is switched off. But the database itself is stored as plain text: anyone who has your unlocked phone, or a forensic copy of it, can read what you recorded. The optional app lock hides the screen. It does not encrypt the file underneath.
+Everything you record is kept in the app's private storage, in a database file encrypted with a key held by Android's secure key store. The key never leaves the phone and is not in your exports, so a copy of the file on its own cannot be read. Scheduled reminders are the one exception: until they are due, Android keeps their wording, which can name the predicted dates, outside the encrypted file. Encryption does not protect an unlocked phone. Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.
 
 ### Nothing is copied off the phone
 
@@ -52,7 +53,8 @@ An exported backup is a plain, readable file wherever you save it, with no prote
 | Another app on the same device reading the data | Yes on a device that has not been rooted, through the Android app sandbox. |
 | Cloud backup exfiltration | Yes. Automatic backup is switched off for this app. |
 | Someone picking up your unlocked phone | **If you turn on the app lock, yes.** It is off by default; see below. |
-| A device seized and forensically imaged, or legal compulsion | **Partly.** Android's full-device encryption protects a phone that is switched off. Once unlocked, the database is plain text — **the app lock does not change this**. |
+| A copy of the app's files, taken without the phone | **Yes.** The database is encrypted, and its key is held by the phone's secure key store, not in the file. |
+| A device seized and forensically imaged, or legal compulsion | **Partly.** Android's device encryption protects a phone that is switched off, and the database is encrypted with a key the phone keeps. A phone that is unlocked, or that a forensic tool can make run code as the app, can still be made to read it — **the app lock does not change this**. |
 
 The last row is the honest limit of this design, recorded rather than hidden.
 
@@ -108,20 +110,19 @@ You can require your fingerprint, face, PIN or pattern before the app will show
 anything. It is **off by default**, it uses the credential your device already
 has, and it locks again after a minute in the background.
 
-**It hides the screen. It does not encrypt your data.**
+**It hides the screen. The lock itself does not encrypt anything.**
 
 That sentence is the whole point of this section. The app lock stops someone who
-picks up your unlocked phone from reading your diary. It does nothing at all
-against anyone who can read the file itself — someone with your unlocked phone
-plugged into a computer with developer options on, anyone with root, or a
-forensic tool. The database is stored unencrypted in the app's private storage
-whether the lock is on or off, exactly as
-[ADR-0004](DECISIONS.md#adr-0004-unencrypted-local-sqlite-with-zero-network-permission)
-describes, and turning the lock on changes nothing about that.
+picks up your unlocked phone from reading your diary. The encryption is
+separate, and on whether the lock is on or off: it protects a copy of the file,
+and the lock protects the screen. Neither stops someone with full control of an
+unlocked phone — root access, or a forensic tool — who can use the app's key
+the way the app does
+([ADR-0018](DECISIONS.md#adr-0018-the-database-is-encrypted-with-a-key-the-android-keystore-holds)).
 
-We say it this plainly because a lock you believe is encryption is worse than no
-lock: it buys a false sense of safety for the price of a few taps. The same
-sentence appears under the toggle in the app itself.
+We say it this plainly because a lock you believe is the encryption is worse
+than no lock: it buys a false sense of safety for the price of a few taps. A
+sentence saying so appears under the toggle in the app itself.
 
 If your device has no PIN, pattern, password or fingerprint set up, the app has
 nothing to ask for and the setting will tell you so rather than failing quietly.

@@ -47,6 +47,7 @@ dependencies:
   # exists to prevent. Revisit only if riverpod moves that dependency to
   # dev_dependencies.
   flutter_riverpod: ^2.6.1
+  flutter_secure_storage: ^11.2.0
   freezed_annotation: ^3.1.0
   go_router: ^17.5.0
   intl: ^0.20.3
@@ -55,6 +56,7 @@ dependencies:
   meta: ^1.19.0
   path: ^1.9.1
   path_provider: ^2.1.6
+  sqlite3: ^3.5.1
   timezone: ^0.11.1
   url_launcher: ^6.3.2
 dev_dependencies:
@@ -143,3 +145,8 @@ flutter:
           weight: 600
         - asset: assets/fonts/Figtree-700.ttf
           weight: 700
+
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc

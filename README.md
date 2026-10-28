@@ -3,7 +3,7 @@
 > **App:** Selene, a menstrual cycle tracker for Android that works entirely offline.\
 > **Platform:** Android, built with Flutter 3.47 and Dart. Distributed as a signed APK; there is no Play Store listing.\
 > **Prediction:** A Bayesian model that learns from your own logs on the phone, starting from population averages fitted in Python.\
-> **Privacy:** No internet permission at all. Nothing leaves the phone unless you export it, or confirm a search that opens in your browser. See the [Privacy Policy](PRIVACY_POLICY.md).\
+> **Privacy:** No internet permission at all, and the database is encrypted on the phone. Nothing leaves the phone unless you export it, or confirm a search that opens in your browser. See the [Privacy Policy](PRIVACY_POLICY.md).\
 > **Medicines reference:** The safety sections of 5,835 US drug labels from openFDA, bundled into the app.\
 > **Github Link:** [Github Link](https://github.com/Proteus-Nell/Selene)
 

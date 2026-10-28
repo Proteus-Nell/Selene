@@ -1,7 +1,7 @@
 # Privacy Policy
 
-**Last updated:** 26 October 2026\
-**Effective as of:** 26 October 2026
+**Last updated:** 27 October 2026\
+**Effective as of:** 27 October 2026
 
 Selene ("**Selene**", "**we**", "**us**" or "**our**") is a menstrual cycle tracker for Android, developed as an open-source project by [Proteus-Nell](https://github.com/Proteus-Nell). This Privacy Policy describes how Selene handles personal information when you use the Selene app or visit [this repository](https://github.com/Proteus-Nell/Selene) (together, the "**Service**").
 
@@ -98,7 +98,7 @@ All of these are available in the app itself, because your information is there 
 - **Export your information.** You can export everything you recorded as a readable file, from Settings.
 - **Delete your information.** You can delete single entries, delete everything from Settings, or uninstall the app.
 - **Notifications.** Reminders are optional. The app asks for permission to send notifications once, and only after you have logged a cycle. Detail on the lock screen is off by default.
-- **App lock.** You can make the app ask for your fingerprint, face, PIN or pattern before showing anything. The lock hides the screen. It does not encrypt your data.
+- **App lock.** You can make the app ask for your fingerprint, face, PIN or pattern before showing anything. The lock hides the screen. The encryption described under Security is separate, and is on whether the lock is on or off.
 - **Optional information.** You decide what to record. Intimate activity, conditions and medicines can all be left out entirely.
 - **Do Not Track and Global Privacy Control.** Selene does not track you, so there is nothing for these signals to switch off.
 
@@ -109,8 +109,10 @@ The app can open web searches in your browser, as described above, and this repo
 ## Security
 
 - The database is kept in the app's private storage. On a phone that has not been tampered with, other apps cannot read it.
-- Android's device encryption protects it while the phone is switched off.
-- **The database itself is not encrypted.** Anyone who has your unlocked phone, or a forensic copy of it, can read what you recorded. The optional app lock hides the screen. It does not change this.
+- The database is encrypted, with a key held by Android's secure key store. The key never leaves the phone and is not in your exports, so a copy of the file on its own cannot be read.
+- Android's device encryption also protects the phone while it is switched off.
+- **Encryption does not protect an unlocked phone.** Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.
+- Scheduled reminders are kept by Android outside the encrypted file until they are due, and their wording can name the predicted dates.
 - Android's cloud backup and device-to-device transfer are switched off for the app, so your records are never copied to a Google account or to a new phone.
 - An exported backup is a plain, readable file wherever you save it.
 

@@ -1497,10 +1497,10 @@ abstract class AppLocalizations {
   /// **'Ask for your fingerprint, face, PIN or pattern before showing the app. It locks again after a minute in the background.'**
   String get settingsAppLockSubtitle;
 
-  /// Sits under the app-lock toggle, always visible, on or off. A lock a user mistakes for encryption is worse than no lock, so this is not behind a link.
+  /// Sits under the app-lock toggle, always visible, on or off. A lock a user mistakes for the encryption is worse than no lock, so this is not behind a link.
   ///
   /// In en, this message translates to:
-  /// **'This hides the screen. It does not encrypt anything.'**
+  /// **'This only hides the screen. Your data is encrypted on the phone whether the lock is on or off.'**
   String get settingsAppLockNotEncrypted;
 
   /// Replaces the toggle when no credential is enrolled. Names the fix, which is in the device settings and not in this app.
@@ -2906,17 +2906,17 @@ abstract class AppLocalizations {
   /// **'Two things send anything anywhere, and only when you ask. An export saves a backup file wherever you choose. A web search opens in your browser, after the app tells you exactly which words will be searched, and your browser may keep it in its history.'**
   String get privacySharingBody;
 
-  /// No description provided for @privacyNotEncryptedTitle.
+  /// No description provided for @privacyEncryptedTitle.
   ///
   /// In en, this message translates to:
-  /// **'The database is not encrypted'**
-  String get privacyNotEncryptedTitle;
+  /// **'The database is encrypted, with a key the phone keeps'**
+  String get privacyEncryptedTitle;
 
-  /// No description provided for @privacyNotEncryptedBody.
+  /// No description provided for @privacyEncryptedBody.
   ///
   /// In en, this message translates to:
-  /// **'The database is kept in the app\'s private storage. On a phone that has not been tampered with, other apps cannot read it, and Android\'s device encryption protects it while the phone is switched off. But the database itself is stored as plain text: anyone who has your unlocked phone, or a forensic copy of it, can read what you recorded. The optional app lock hides the screen. It does not encrypt the file underneath.'**
-  String get privacyNotEncryptedBody;
+  /// **'Everything you record is kept in the app\'s private storage, in a database file encrypted with a key held by Android\'s secure key store. The key never leaves the phone and is not in your exports, so a copy of the file on its own cannot be read. Scheduled reminders are the one exception: until they are due, Android keeps their wording, which can name the predicted dates, outside the encrypted file. Encryption does not protect an unlocked phone. Anyone using it can open the app and read what you recorded unless the app lock is on, and someone with full control of the phone, through root access or a forensic tool, may be able to use the key the way the app does.'**
+  String get privacyEncryptedBody;
 
   /// No description provided for @privacyBackupTitle.
   ///
@@ -2995,6 +2995,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The data on this device was written by a newer version of this app (storage version {stored}; this version understands {supported}). Nothing has been changed. Install the newer version to carry on.'**
   String bootstrapNewerSchemaBody(int stored, int supported);
+
+  /// No description provided for @bootstrapKeyUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Selene could not unlock your data'**
+  String get bootstrapKeyUnavailableTitle;
+
+  /// No description provided for @bootstrapKeyUnavailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is encrypted on this phone, and the key that unlocks it could not be read just now. Nothing has been opened or changed. Close Selene and open it again; if this keeps happening, restart the phone.'**
+  String get bootstrapKeyUnavailableBody;
 
   /// No description provided for @errorGeneric.
   ///

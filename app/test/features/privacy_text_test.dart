@@ -82,13 +82,15 @@ void main() {
 
   test('the honest limits are stated, not softened', () {
     final doc = findFile('docs/PRIVACY.md').readAsStringSync().toLowerCase();
-    // ADR-0004 accepts an unencrypted database on the condition that the user
-    // is told. This is that condition, checked.
-    expect(doc, contains('plain text'));
-    // See settings_test.dart: AND-29 made "no app lock" false, and the honest
-    // limit it was standing for is now that the lock does not encrypt.
-    expect(doc, contains('does not encrypt'));
+    // ADR-0018 encrypts the database, which protects a copy of the file and
+    // not an unlocked phone. Saying "encrypted" without the second half would
+    // let the word do work it has not earned, so the second half is checked.
+    expect(doc, contains('does not protect an unlocked phone'));
     expect(doc, contains('forensic'));
+    // The one thing outside the encrypted file is named.
+    expect(doc, contains('outside the encrypted file'));
+    // And the lock is not mistaken for the encryption.
+    expect(doc, contains('hides the screen'));
     // And the guarantee that is real is stated as such.
     expect(doc, contains('no internet permission'));
   });

@@ -14,6 +14,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:period_tracker/core/clock.dart';
 import 'package:period_tracker/data/db/connection.dart';
+import 'package:period_tracker/data/db/database_key.dart';
 import 'package:period_tracker/data/repositories/cycle_repository.dart';
 import 'package:period_tracker/notifications/notification_gateway.dart';
 
@@ -57,6 +58,7 @@ Future<void> handleBackgroundNotificationResponse(
   // open, where there is a screen to say so on.
   final database = await openAppDatabaseWithoutRecovery(
     directory: await defaultDatabaseDirectory(),
+    keyStore: const KeystoreDatabaseKeyStore(),
   );
   if (database == null) return;
 

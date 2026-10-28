@@ -146,6 +146,10 @@ Checklist, in the order the failures actually happen:
       permission
 - [ ] APK installs on a device that already has the previous version, **as an
       upgrade** (this is the check that catches a wrong key)
+- [ ] After that upgrade, every day logged before it is still there. The first
+      launch of a build that encrypts the database (ADR-0018) encrypts the
+      existing file in place, and this is the only check that sees it happen on
+      a real phone's storage
 - [ ] `integration_test/e2e_smoke_test.dart` passes on that device
 - [ ] Export writes a file to a directory you chose, and importing it into a
       wiped install restores the same days

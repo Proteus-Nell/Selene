@@ -177,25 +177,23 @@ void main() {
       final l10n = l10nOf(tester);
       expect(find.text(l10n.privacyOnDeviceBody), findsOneWidget);
       // The paragraph that matters most is the one that admits a limit.
-      expect(find.text(l10n.privacyNotEncryptedBody), findsOneWidget);
+      expect(find.text(l10n.privacyEncryptedBody), findsOneWidget);
     });
 
-    testWidgets('says plainly that the database is not encrypted', (
-      tester,
-    ) async {
+    testWidgets('says what the encryption does not protect', (tester) async {
       await pumpSettings(tester);
       final l10n = l10nOf(tester);
-      final text = l10n.privacyNotEncryptedBody.toLowerCase();
-      expect(text, contains('plain text'));
-      expect(text, contains('unlocked phone'));
-      // Not "no app lock" any more. AND-29 built one, so that sentence had
-      // become false while this test went on passing — the assertion was
-      // pinning the words rather than the claim. The claim is that the app
-      // does not oversell what "private" buys, and the honest limit now is
-      // that the lock covers the screen and not the file.
-      expect(text, contains('does not encrypt'));
-      // And it does not let the word "private" do work it has not earned.
-      expect(l10n.privacyNotEncryptedTitle.toLowerCase(), contains('not '));
+      final text = l10n.privacyEncryptedBody.toLowerCase();
+      // The claim, and its limit in the same paragraph. The earlier version of
+      // this test pinned "plain text", which was the honest limit until
+      // ADR-0018 made it false; what it was standing for is that the app does
+      // not oversell what it protects.
+      expect(text, contains('encrypted'));
+      expect(text, contains('not in your exports'));
+      expect(text, contains('does not protect an unlocked phone'));
+      expect(text, contains('app lock'));
+      // The one thing kept outside the file is named rather than glossed.
+      expect(text, contains('outside the encrypted file'));
     });
   });
 
