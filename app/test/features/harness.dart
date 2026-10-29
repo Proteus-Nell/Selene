@@ -177,6 +177,38 @@ Future<void> loadBundledFonts() async {
   await figtree.load();
 }
 
+/// Whether golden images mean anything on the machine running the tests.
+///
+/// The goldens are generated on linux-x64 with the pinned Flutter version,
+/// which is what CI runs, and both golden test files say so at the top. Font
+/// rasterisation is the platform's, not Flutter's: the same layout on Windows
+/// differs by anti-aliasing on every glyph edge, which the comparator reports
+/// as a pixel diff of a percent or two. Every golden therefore failed on a
+/// Windows checkout, all twelve of them, and a suite that cannot come back
+/// green locally is a suite whose failures stop being read — which is how a
+/// real `dart format` failure went unnoticed until CI caught it.
+final bool goldensComparable = Platform.isLinux;
+
+/// Compare [finder] against the golden at [path], where that is meaningful.
+///
+/// Off linux-x64 the comparison is recorded as skipped rather than quietly
+/// dropped, so the run says what it did not check.
+///
+/// Args:
+///     finder (Finder): What to capture.
+///     path (String): The golden's path, relative to the test file.
+Future<void> expectGolden(Finder finder, String path) async {
+  if (!goldensComparable) {
+    markTestSkipped(
+      '$path: goldens are generated on linux-x64, and font rasterisation '
+      'differs per platform. A mismatch here would be anti-aliasing, not '
+      'layout. CI compares them.',
+    );
+    return;
+  }
+  await expectLater(finder, matchesGoldenFile(path));
+}
+
 /// Pumps a fixed number of frames rather than settling.
 ///
 /// For the tests that drive the real shell, and the smoke flow on a device.

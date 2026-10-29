@@ -12,3 +12,17 @@
 # fonts: a chunk without a NUL byte early on would otherwise be taken for text,
 # and a chunk with its line endings rewritten no longer decompresses.
 *.zlib binary
+
+# Generated data whose exact bytes are pinned by a SHA-256 in generated Dart:
+# the priors artifact (priors_bundled.dart), the herbal supplements asset
+# (supplements_bundled.dart), and the medicines selection and groups that
+# gen_medicines.py and gen_medicine_groups.py check the same way.
+#
+# `* text=auto` above gives these CRLF on a Windows checkout, which changes
+# every byte after a newline and so changes the hash. The generators compute it
+# over the file as they wrote it, with LF, so the checked-out file hashes to
+# something else and priors_test and supplements_test fail on a developer's
+# machine while passing in CI. Pinning the checkout to LF makes the hash mean
+# the same thing on every platform.
+artifacts/**/*.json text eol=lf
+app/assets/**/*.json text eol=lf

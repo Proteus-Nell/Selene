@@ -59,11 +59,9 @@ void main() {
         // An overflow throws during paint, so this catches the hard failures
         // before the image comparison catches the soft ones.
         expect(tester.takeException(), isNull);
-        await expectLater(
+        await expectGolden(
           find.byType(screen.value.runtimeType),
-          matchesGoldenFile(
-            'goldens/${screen.key}_text_${scale.key}.png',
-          ),
+          'goldens/${screen.key}_text_${scale.key}.png',
         );
       });
     }
