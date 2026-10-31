@@ -8,15 +8,15 @@
 > **Herbs reference:** NCCIH's public-domain fact sheets on 56 herbal supplements, such as St. John's wort, bundled into the app.\
 > **Github Link:** [Github Link](https://github.com/Proteus-Nell/Selene)
 
-## What the app does
+## App Functionalities
 
-- **Logs** period days, flow, and physical, mental and emotional symptoms. Intercourse can be logged too, but only if you choose to.
-- **Predicts** the next period as a date range with a confidence level, never as a single date. The prediction starts from population averages and adjusts to your own cycles as you log them.
+- **Logs** period days, flow, and physical, mental, and emotional symptoms. Intercourse can optionally be logged.
+- **Predicts** the next period as a date range with a confidence level. The prediction starts from population averages and adjusts to your own cycles as you log them.
 - **Explains** what you logged: cycle phases on the calendar, insights from your own history, and conditions such as PMOS (formerly PCOS) or hormonal contraception recorded alongside it.
-- **Looks up medicines and herbs:** US drug labelling, searched or browsed A to Z, and NCCIH's fact sheets on herbal supplements. It compares two or more medicines, or a herb and a medicine, by what their labels and fact sheets say about each other, and flags pairs among the medicines you record.
-- **Makes a summary for a doctor:** a PDF of period dates, cycle lengths, symptoms, conditions and medicines over a span you choose, or the same as spreadsheet files. Intercourse is never included.
-- **Reminds you, if you want it to:** before a period is due, once if one is late, and at the times you set on each medicine. Notifications are made by the phone itself, and the lock screen shows no detail unless you turn it on.
-- **Keeps it private:** no account, no sync, no analytics. The database is encrypted on the phone, a backup can be protected with a passphrase, and an optional app lock asks for your fingerprint or PIN before showing anything.
+- **Looks up medicines and herbs:** US drug labelling, searched or browsed A to Z, and NCCIH's fact sheets on herbal supplements. It compares two or more medicines, or a herb and a medicine, based on what their labels and fact sheets state, and flags pairs among the medicines you record.
+- **Makes a summary for a doctor:** a PDF of period dates, cycle lengths, symptoms, conditions, and medicines over a span you choose, or the same as spreadsheet files. Intercourse details are excluded.
+- **Notifications and reminders:** before a period is due, once if one is late, and at the times you set for each medicine. Notifications are made by the phone itself, and the lock screen shows no detail unless you turn it on.
+- **Privacy & data consolidation:** no account, no sync, no analytics. The database is encrypted on the phone, a backup can be protected with a passphrase, and an optional app lock asks for your fingerprint or PIN before showing anything.
 
 Selene is not a contraceptive and does not give medical advice. It never tells you when you cannot get pregnant, and its medicine pages show US labelling, which can differ from the packet in front of you.
 
@@ -59,8 +59,8 @@ Selene/
 ├── PRIVACY_POLICY.md                 # Privacy Policy
 └── README.md                         # Project overview (this file)
 ```
-- The prediction model exists twice: a Python reference in `research/`, and the Dart version the app runs. Golden test vectors fail the build if the two ever disagree ([ADR-0002](docs/DECISIONS.md)).
-- Everything the app needs ships inside it: the model's priors, the medicines and herbs references, and every string. Nothing is fetched at run time, because the release build has no way to fetch anything.
+- The prediction model exists twice: a Python reference in `research/`, and the Dart version the app runs. Golden test vectors fail the build if the two ever disagree.
+- Everything the app needs ships inside it: the model's priors, the medicines and herbs references, and every string. Nothing is fetched at runtime as the release build has no way to fetch anything.
 
 ---
 
@@ -69,7 +69,7 @@ Selene/
 The app can be built and tested without touching the Python side. Steps 4 and 5 are only needed to change the bundled data or to ship a release.
 
 ### Step 1: Environment Setup
-You will need the Flutter SDK, a JDK and the Android SDK for the app. Python 3.11 and [uv](https://docs.astral.sh/uv/) are only needed for the research side.
+You will need the Flutter SDK, a JDK, and the Android SDK for the app. Python 3.11 and [uv](https://docs.astral.sh/uv/) are only needed for the research side.
 
 **Option A: FVM (Recommended)**
 
@@ -123,16 +123,10 @@ python3 tools/scripts/gen_medicines.py --check
 ```
 * **File Role:**
 
-    The same gates CI runs on every push and pull request:
-
-    - Formatting and the analyzer, where info-level findings fail too.
-    - Over a thousand unit, widget and golden tests, including copy rules that fail the build on wording the app has no basis for, such as calling a day "safe".
-    - No `DateTime.now()` outside `core/clock.dart`, so that every date in the app can be controlled in tests.
-    - The generated Dart matches the committed priors, medicines bundle, group names table and herbs reference.
-* **Output:** Pass or fail for each step. CI then also builds the release APKs, checks that none of them declares a network permission, and checks their size.
+    The CI runs on every push and pull request and also builds the release APKs in addition to checking that none of them declare a network permission.
 
 ### Step 4: Regenerating the Bundled Data
-Only needed when the priors, the medicines data or the herbs data change.
+Only needed when the priors, the medicines data, or the herbs data change.
 
 ```
 # Population priors, and the golden vectors that pin the Dart model to them
@@ -177,9 +171,9 @@ tools/scripts/release.sh                                          # or push the 
 
 | Document | What it covers |
 | --- | --- |
-| [`docs/PLAN.md`](docs/PLAN.md) | The project plan: scope, model, privacy posture and milestones |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Architecture decision records, each with the alternatives it rejected |
-| [`docs/PRIVACY.md`](docs/PRIVACY.md) | The privacy statement shown inside the app, word for word |
+| [`docs/PLAN.md`](docs/PLAN.md) | Project plan: scope, model, privacy posture and milestones |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Architecture decision records |
+| [`docs/PRIVACY.md`](docs/PRIVACY.md) | The privacy statement shown inside the app.|
 | [`docs/RELEASE.md`](docs/RELEASE.md) | Signing, release checks and refreshing the medicines data |
 | [`docs/ANDROID_TASKS.md`](docs/ANDROID_TASKS.md) | The Android work, broken into tasks |
 | [`docs/NUTRITION_SOURCES.md`](docs/NUTRITION_SOURCES.md), [`MOVEMENT_SOURCES.md`](docs/MOVEMENT_SOURCES.md), [`WEIGHT_SOURCES.md`](docs/WEIGHT_SOURCES.md) | The sources behind the reference pages in Learn |
@@ -191,8 +185,8 @@ tools/scripts/release.sh                                          # or push the 
 
 Selene is released under the [MIT License](LICENSE).
 
-Three things bundled with it keep their own terms:
+Three things bundled with it possess their own terms:
 
 - The Figtree font, under the SIL Open Font License 1.1 ([`app/assets/fonts/OFL.txt`](app/assets/fonts/OFL.txt)).
 - The drug labelling, from openFDA, under [openFDA's terms](https://open.fda.gov/terms/).
-- The herb fact sheets, from the US National Center for Complementary and Integrative Health's [Herbs at a Glance](https://www.nccih.nih.gov/health/herbsataglance), which are in the public domain. Their photographs are not, and are not bundled.
+- The herb fact sheets, from the US National Center for Complementary and Integrative Health's [Herbs at a Glance](https://www.nccih.nih.gov/health/herbsataglance), which are in the public domain. Note that their photographs are not, and are not bundled.
