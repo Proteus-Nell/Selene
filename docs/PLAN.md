@@ -124,8 +124,12 @@ Every number here is a testable budget, not an aspiration. Measure it by countin
 | Backdate a start by 1 to 3 days | **3 taps** | An inline day stepper beside the primary action, not a modal date picker |
 | Log symptoms for today | **4 taps** | Chips, not dropdowns. Last-used set surfaced first |
 | Correct a wrong entry | **3 taps** | Every logged day is long-press editable directly from the calendar |
+| Open any day in the current week | **1 tap** | The Today tab's date row is tappable, and swipes a week at a time to reach any other (ADR-0027) |
+| Change a day already in the past | **2 taps** | The day opens showing what was recorded; the second tap lifts the lock. Correcting several in a sitting can stand the lock down for half an hour |
 
 The design case to optimize is **"I am two days late noticing"**, not the same-day happy path. Real logging is retrospective, one-handed, and often wrong the first time.
+
+The budgets above are the floor, and ADR-0027's lock is the one deliberate exception to them: it adds a tap to changing history, on the screen that is open by default, because a prediction moved by an accidental tap on the home screen is worse than a tap. Nothing it guards is reachable by fewer taps than before; the row only ever added ways in.
 
 #### 2.4.3 Notification design
 

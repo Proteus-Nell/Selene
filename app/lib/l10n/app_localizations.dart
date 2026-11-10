@@ -256,6 +256,108 @@ abstract class AppLocalizations {
   /// **'{label}, bleeding logged'**
   String logWeekBleedingSuffix(String label);
 
+  /// No description provided for @logWeekPreviousWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous week'**
+  String get logWeekPreviousWeek;
+
+  /// What a screen reader says for the swipe that moves the date row forward. The row pages a whole week at a time.
+  ///
+  /// In en, this message translates to:
+  /// **'Next week'**
+  String get logWeekNextWeek;
+
+  /// No description provided for @logWeekBackToToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to today'**
+  String get logWeekBackToToday;
+
+  /// Announced when the date row pages, so a screen reader user knows which week is on screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Week of {date}'**
+  String logWeekOf(String date);
+
+  /// No description provided for @logDayNothingRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing recorded for this day.'**
+  String get logDayNothingRecorded;
+
+  /// Shown when a future day on the date row is opened. Writes for a future date are refused by CycleRepository, so the sheet does not offer an editor at all.
+  ///
+  /// In en, this message translates to:
+  /// **'That day has not happened yet, so there is nothing to record.'**
+  String get logDayFutureUnrecordable;
+
+  /// No description provided for @logDayRelativeDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Yesterday} other{{count} days ago}}'**
+  String logDayRelativeDaysAgo(int count);
+
+  /// The locked bar on a past day's sheet (ADR-0027). States the consequence rather than asking a question, because the unlock button beside it is the question.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes here can move your predicted dates.'**
+  String get logDayLockedTitle;
+
+  /// No description provided for @logDayUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get logDayUnlock;
+
+  /// No description provided for @logDayUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} can now be changed.'**
+  String logDayUnlocked(String date);
+
+  /// Offered only once more than three days have been changed inside ten minutes, which is someone catching up rather than correcting one day. Never permanent.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop asking for 30 minutes'**
+  String get logDayStandDown;
+
+  /// Confirms the half hour, with the clock time it ends, so it is not an open-ended switch.
+  ///
+  /// In en, this message translates to:
+  /// **'The app will not ask again until {time}.'**
+  String logDayStandDownDone(String time);
+
+  /// No description provided for @logDaySectionFlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Flow'**
+  String get logDaySectionFlow;
+
+  /// No description provided for @logDaySectionSymptoms.
+  ///
+  /// In en, this message translates to:
+  /// **'Symptoms'**
+  String get logDaySectionSymptoms;
+
+  /// No description provided for @logDaySectionIntercourse.
+  ///
+  /// In en, this message translates to:
+  /// **'Intercourse'**
+  String get logDaySectionIntercourse;
+
+  /// No description provided for @logDaySectionMeasurements.
+  ///
+  /// In en, this message translates to:
+  /// **'Measurements'**
+  String get logDaySectionMeasurements;
+
+  /// No description provided for @logDaySymptomWithSeverity.
+  ///
+  /// In en, this message translates to:
+  /// **'{symptom} · {severity}'**
+  String logDaySymptomWithSeverity(String symptom, String severity);
+
   /// No description provided for @logGreetingMorning.
   ///
   /// In en, this message translates to:

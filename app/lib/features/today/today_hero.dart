@@ -18,9 +18,13 @@
 ///     - _PhaseNote: The current phase, in one sentence, behind a tap.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/core/motion.dart';
 import 'package:period_tracker/core/theme.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/domain/cycles/cycle_phase.dart';
@@ -29,6 +33,7 @@ import 'package:period_tracker/domain/models/prediction.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/common/next_period_panel.dart';
 import 'package:period_tracker/features/today/cycle_ring.dart';
+import 'package:period_tracker/features/today/day_sheet.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
 
 /// Today hero: where you are, and when the next one is due.
@@ -290,7 +295,7 @@ class _Greeting extends ConsumerWidget {
 /// Attributes:
 ///     today (CivilDate): The day the week is built around.
 ///     logs (`List<DayLog>`): Every day the user has logged.
-class _WeekStrip extends StatelessWidget {
+class _WeekStrip extends StatefulWidget {
   /// Creates the strip.
   ///
   /// Args:
@@ -307,28 +312,173 @@ class _WeekStrip extends StatelessWidget {
   final List<DayLog> logs;
 
   @override
+  State<_WeekStrip> createState() => _WeekStripState();
+}
+
+/// State for [_WeekStrip]: which week is on screen.
+///
+/// The strip moves a whole week per swipe, in either direction, without limit.
+/// Unbounded on purpose: the weeks before the first logged day are empty rather
+/// than absent, and a strip that stopped at some particular Sunday would be
+/// asserting a rule the app does not have. That is also why [_backToToday]
+/// exists: with no end to reach, the way back has to be a control.
+///
+/// A drag and an [AnimatedSwitcher], not a `PageView`, which is how the
+/// calendar steps months. A PageView is the obvious choice and the wrong one
+/// here: it puts a second [Scrollable] inside the screen's own scroll view,
+/// and it needs a fixed cross-axis height, which overflowed at the 200% text
+/// scale `docs/PLAN.md` 2.4.4 requires. Stepping a whole week needs neither.
+///
+/// Attributes:
+///     _offset (int): Weeks away from today's week, negative into the past.
+///     _direction (int): Which way the last step went, so the week arriving
+///         comes from the side it was pushed from.
+class _WeekStripState extends State<_WeekStrip> {
+  /// Weeks away from today's week, negative into the past.
+  int _offset = 0;
+
+  /// Which way the last step went, positive forward.
+  int _direction = 1;
+
+  /// How fast a horizontal fling has to be to count as a swipe.
+  ///
+  /// Below this the finger is resting rather than flicking, and the week stays
+  /// where it is. In logical pixels per second.
+  static const double _flingVelocity = 120;
+
+  /// Move the strip by whole weeks.
+  ///
+  /// Args:
+  ///     by (int): How many weeks, positive forward. The sign is kept as
+  ///         [_direction] so the transition leaves the way it was pushed.
+  void _stepWeek(int by) {
+    setState(() {
+      _direction = by;
+      _offset += by;
+    });
+    _announce(_offset);
+  }
+
+  /// Step back to the week today is in.
+  void _backToToday() {
+    if (_offset == 0) return;
+    setState(() {
+      _direction = _offset > 0 ? -1 : 1;
+      _offset = 0;
+    });
+    _announce(0);
+  }
+
+  /// Say which week is now on screen.
+  ///
+  /// The week is the one thing here a screen reader cannot infer from what it
+  /// is about to read: the same seven cells, with different dates in them.
+  ///
+  /// Args:
+  ///     offset (int): The week now showing, as weeks from today's.
+  void _announce(int offset) {
+    if (!mounted) return;
+    unawaited(
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        AppLocalizations.of(
+          context,
+        ).logWeekOf(_sundayFor(offset).dayAndMonth(context)),
+        Directionality.of(context),
+      ),
+    );
+  }
+
+  /// The Sunday that starts the week [offset] weeks from today's.
+  ///
+  /// Args:
+  ///     offset (int): Weeks from today's week, negative into the past.
+  ///
+  /// Returns:
+  ///     CivilDate: That week's Sunday.
+  CivilDate _sundayFor(int offset) {
+    // Weekday 1 is Monday, so this lands on the Sunday that starts the week.
+    final thisWeek = widget.today.addDays(
+      -(widget.today.toLocalMidnight().weekday % 7),
+    );
+    return thisWeek.addDays(offset * 7);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final phases = PhaseColors.of(context);
-    // Weekday 1 is Monday, so this lands on the Sunday that starts the week.
-    final start = today.addDays(-(today.toLocalMidnight().weekday % 7));
+    final start = _sundayFor(_offset);
     final bleeding = <CivilDate>{
-      for (final log in logs)
+      for (final log in widget.logs)
         if (log.isBleedingDay) log.date,
     };
 
-    return Row(
+    return Column(
       children: <Widget>[
-        for (var i = 0; i < 7; i++)
-          Expanded(
-            child: _WeekDay(
-              date: start.addDays(i),
-              isToday: start.addDays(i) == today,
-              bleeding: bleeding.contains(start.addDays(i)),
-              accent: phases.menstrual,
-              theme: theme,
+        GestureDetector(
+          // Horizontal only, so the screen's vertical scroll is untouched: a
+          // vertical drag never reaches this recogniser.
+          onHorizontalDragEnd: (details) {
+            final velocity = details.velocity.pixelsPerSecond.dx;
+            if (velocity <= -_flingVelocity) {
+              _stepWeek(1);
+            } else if (velocity >= _flingVelocity) {
+              _stepWeek(-1);
+            }
+          },
+          child: AnimatedSwitcher(
+            duration: Motion.monthSlide(context),
+            switchInCurve: Motion.curve,
+            switchOutCurve: Motion.curve,
+            transitionBuilder: (child, animation) {
+              final entering = (child.key as ValueKey<int>?)?.value == _offset;
+              // As the calendar's months do: the week arriving comes from the
+              // side it was pushed from and the one leaving goes the other
+              // way, so the pair reads as one movement.
+              final from = entering ? _direction : -_direction;
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: Offset(from.toDouble(), 0),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: FadeTransition(opacity: animation, child: child),
+              );
+            },
+            child: Row(
+              key: ValueKey<int>(_offset),
+              children: <Widget>[
+                for (var i = 0; i < 7; i++)
+                  Expanded(
+                    child: _WeekDay(
+                      date: start.addDays(i),
+                      isToday: start.addDays(i) == widget.today,
+                      bleeding: bleeding.contains(start.addDays(i)),
+                      accent: phases.menstrual,
+                      theme: theme,
+                      onTap: () => showDaySheet(context, start.addDays(i)),
+                    ),
+                  ),
+              ],
             ),
           ),
+        ),
+        // Only once the strip has left this week, so nothing is added to the
+        // screen in the state it is almost always in.
+        AnimatedSize(
+          duration: Motion.monthSlide(context),
+          curve: Motion.curve,
+          child: _offset == 0
+              ? const SizedBox(width: double.infinity)
+              : Align(
+                  child: TextButton.icon(
+                    onPressed: _backToToday,
+                    icon: const Icon(Icons.today_outlined, size: 18),
+                    label: Text(l10n.logWeekBackToToday),
+                  ),
+                ),
+        ),
       ],
     );
   }
@@ -360,6 +510,7 @@ class _WeekDay extends StatelessWidget {
     required this.bleeding,
     required this.accent,
     required this.theme,
+    required this.onTap,
   });
 
   /// The day this cell shows.
@@ -377,6 +528,9 @@ class _WeekDay extends StatelessWidget {
   /// The theme, resolved once by the strip.
   final ThemeData theme;
 
+  /// Opens this day.
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
     final scheme = theme.colorScheme;
@@ -393,49 +547,57 @@ class _WeekDay extends StatelessWidget {
       // that way on six of the seven cells, because the label used to be
       // conditional and the exclusion with it.
       label: label,
+      button: true,
       excludeSemantics: true,
-      child: Column(
-        children: <Widget>[
-          Text(
-            initial,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Container(
-            width: 30,
-            height: 30,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: isToday ? scheme.primary : Colors.transparent,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              date.dayNumber(context),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: isToday ? scheme.onPrimary : scheme.onSurface,
-                fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+      // The whole cell, not the number inside it: a 30px circle is under the
+      // 48dp the accessibility gate requires (`docs/PLAN.md` 2.4.4), and the
+      // cell is as wide as a seventh of the screen.
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          children: <Widget>[
+            Text(
+              initial,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          // Reserved whether or not it is filled, so the row does not shift
-          // by four pixels the moment a day is logged.
-          SizedBox(
-            height: 5,
-            width: 5,
-            child: bleeding
-                ? DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: accent,
-                      shape: BoxShape.circle,
-                    ),
-                  )
-                : null,
-          ),
-        ],
+            const SizedBox(height: 5),
+            Container(
+              width: 30,
+              height: 30,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isToday ? scheme.primary : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                date.dayNumber(context),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: isToday ? scheme.onPrimary : scheme.onSurface,
+                  fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            // Reserved whether or not it is filled, so the row does not shift
+            // by four pixels the moment a day is logged.
+            SizedBox(
+              height: 5,
+              width: 5,
+              child: bleeding
+                  ? DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: accent,
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  : null,
+            ),
+          ],
+        ),
       ),
     );
   }
