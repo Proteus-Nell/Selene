@@ -35,6 +35,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0024](#adr-0024-the-summary-for-a-doctor-is-a-pdf-the-app-writes-itself-with-csv-files-of-the-same-data-and-neither-holds-intercourse) | The summary for a doctor is a PDF the app writes itself, with CSV files of the same data, and neither holds intercourse | Accepted | 2026-10-28 |
 | [0025](#adr-0025-the-late-period-check-in-has-a-switch-of-its-own-and-medicine-reminders-repeat-every-day-in-the-phones-own-time-zone) | The late-period check-in has a switch of its own, and medicine reminders repeat every day in the phone's own time zone | Accepted; clause 8 (inexact alarms) superseded by [0026](#adr-0026-medicine-reminders-are-scheduled-exactly-with-a-permission-asked-for-where-one-is-set) | 2026-10-28 |
 | [0026](#adr-0026-medicine-reminders-are-scheduled-exactly-with-a-permission-asked-for-where-one-is-set) | Medicine reminders are scheduled exactly, with a permission asked for where one is set | Accepted | 2026-10-29 |
+| [0027](#adr-0027-the-date-row-pages-by-the-week-and-a-past-day-opens-locked) | The date row pages by the week, and a past day opens locked | Accepted | 2026-11-10 |
 
 ---
 
@@ -1738,6 +1739,128 @@ the leak risk R16 exists for.
 - Android may still delay an exact alarm on a phone whose manufacturer kills
   background work (risk R12). The battery note in Settings and the
   missed-reminder banner both stay.
+
+---
+
+## ADR-0027: The date row pages by the week, and a past day opens locked
+
+**Status:** Accepted, 2026-11-10.
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for three things on the Today tab: to swipe the row of dates
+back and forward, to open any date and see what had been recorded for it, and
+for a confirmation before changing a day in the past.
+
+The row was seven read-only cells built from today, and nothing on it could be
+tapped. Editing a past day already had a home: the calendar, where a tap opens
+the day editor in a sheet. The error text for a day that is already logged even
+says so — "Press and hold it in the calendar to change it."
+
+What makes a confirmation awkward here is that `DayEditor` **writes on every
+tap**. There is no save button to put a question in front of, so a guard has to
+sit in front of the editor rather than in front of a write.
+
+### Decision
+
+1. **The row steps a whole week per swipe, in either direction, without
+   limit.** Seven cells, Sunday to Saturday, with the weekday letters staying
+   in their columns. Unbounded because the weeks before the first logged day
+   are empty rather than absent, and a strip that stopped at some particular
+   Sunday would assert a rule the app does not have. A "Back to today" button
+   appears once the row has left this week, since with no end to reach there is
+   nothing else to orient against.
+2. **By a horizontal drag and an `AnimatedSwitcher`**, the way the calendar
+   steps months, not a `PageView`. A PageView is the obvious choice and the
+   wrong one: it puts a second `Scrollable` inside the screen's own scroll
+   view, which broke every `scrollUntilVisible` in the suite that assumed one,
+   and it needs a fixed cross-axis height, which overflowed at the 200% text
+   scale 2.4.4 requires. Stepping by a whole week needs neither.
+3. **Tapping a day opens a sheet.** Today opens straight into the editor,
+   because the Today tab is where today is logged and asking about the day the
+   screen is named after would be noise.
+4. **A past day opens locked**: what was recorded is shown as text, with a bar
+   saying that changes here can move the predicted dates and an Unlock button
+   beside it. The bar states the consequence rather than asking a question,
+   because the button is the question.
+5. **Locked means the editor is not built**, not an editor behind a dimmed
+   layer. A control that is on screen and inert is still reachable by a screen
+   reader, and `IgnorePointer` does not take its actions away. So the locked
+   state is a read-only summary, and unlocking swaps the editor in.
+6. **A future day opens into neither.** `CycleRepository` refuses a
+   future-dated write, so an editor there would be a control whose every use
+   fails; the sheet says the day has not happened yet.
+7. **The summary lists intercourse with everything else**, at the owner's
+   direction, rather than omitting it as the doctor summary does
+   ([ADR-0024](#adr-0024-the-summary-for-a-doctor-is-a-pdf-the-app-writes-itself-with-csv-files-of-the-same-data-and-neither-holds-intercourse)).
+8. **Correcting several days in a row is offered a stand-down**: once more than
+   three distinct days have been unlocked inside ten minutes, the lock bar
+   offers "Stop asking for 30 minutes". Three is a correction; four is a
+   sitting. It expires on its own, and the half hour is stated **inside the
+   sheet**, on every past day opened until it ends, rather than in a snack bar.
+   A snack bar belongs to the `ScaffoldMessenger` below the sheet's route and
+   renders behind it, so the only statement of the expiry would never have been
+   seen; it also has to outlive a few seconds, because it answers the question
+   the missing lock raises on each day opened afterwards. Unlocking a single day
+   says nothing at all: the editor replacing the summary is the confirmation.
+9. **The summary says things the way the editor would.** Two display
+   preferences decide how the same stored values are *said* — temperatures in
+   the unit the user reads, and flow named by intensity only where they have
+   not simplified it to bleeding or not (AND-24) — and the summary honours both.
+   Saying them its own way would read as the app having changed its mind about
+   what it recorded, which is the reason the flow chips do not change shape
+   under the user either.
+10. **Paging publishes semantics actions.** A drag is a gesture, and assistive
+    technology cannot perform one; the `PageView` this replaced would have
+    published scroll actions for free. The row therefore carries
+    `onIncrease`/`onDecrease` with the week as its semantics value, so a screen
+    reader can change weeks. Without it the strip was reachable but frozen on
+    the current week, since "Back to today" only appears once it has moved.
+11. **There is no permanent "do not ask again", and nothing is persisted.**
+    Every setting this app stores travels in the user's export, and when they
+    edited days is behaviour rather than anything they recorded about
+    themselves. A stand-down that survived a force-quit would also be a guard
+    that was still down after the phone had been put away. Closing the app
+    restores the lock.
+12. **The calendar is unchanged.** It is the screen whose purpose is reviewing
+    and fixing history, and its own copy sends people there. A prompt in front
+    of it would be friction on the one screen that should not have it.
+
+### Runner-up and why rejected
+
+**A modal dialog before the editor opens** ("Change Tuesday, 4 November?").
+Simplest, and needs no change to the editor. Rejected because the day's values
+stay hidden until the question is answered, and the owner asked to see what was
+recorded first; a dialog answers a question the user cannot yet see the subject
+of.
+
+**A permanent "do not ask again" checkbox** on that dialog. Kindest for a
+catch-up session, and the version the owner first leaned towards. Rejected in
+discussion in favour of clause 8: a guard that one tap switches off for good is
+a guard most people will have off without remembering they turned it off, and
+it needed a settings key that would then travel in exports forever.
+
+**A read-only sheet with an Edit button** that opens the editor in a second
+sheet. One more surface for the same information, and the unlock bar does the
+same work in place.
+
+**Counting writes rather than unlocks** for clause 8. More literally "days
+changed", but it means diffing the log before and after each sheet. The unlock
+is the friction the stand-down relieves: someone who opens four days to correct
+them has met it four times whether or not the fourth needed a change.
+
+### Consequences
+
+- The strip is now the fastest way to reach any day, which the tap budgets in
+  `docs/PLAN.md` 2.4.2 did not account for. They are unchanged: everything they
+  measure still costs what it did.
+- Opening a past day costs one extra tap, and the eighth clause is what keeps
+  that from compounding over a catch-up session.
+- Whether the lock is on cannot be read off a screenshot, so
+  `week_strip_test.dart` asserts the editor's absence rather than its
+  appearance, and `past_edit_guard_test.dart` walks the two time windows, which
+  no widget test could do cheaply.
 
 ---
 

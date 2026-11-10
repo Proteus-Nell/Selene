@@ -256,6 +256,78 @@ abstract class AppLocalizations {
   /// **'{label}, bleeding logged'**
   String logWeekBleedingSuffix(String label);
 
+  /// No description provided for @logWeekBackToToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to today'**
+  String get logWeekBackToToday;
+
+  /// Announced when the date row pages, so a screen reader user knows which week is on screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Week of {date}'**
+  String logWeekOf(String date);
+
+  /// No description provided for @logDayNothingRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing recorded for this day.'**
+  String get logDayNothingRecorded;
+
+  /// Shown when a future day on the date row is opened. Writes for a future date are refused by CycleRepository, so the sheet does not offer an editor at all.
+  ///
+  /// In en, this message translates to:
+  /// **'That day has not happened yet, so there is nothing to record.'**
+  String get logDayFutureUnrecordable;
+
+  /// No description provided for @logDayRelativeDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Yesterday} other{{count} days ago}}'**
+  String logDayRelativeDaysAgo(int count);
+
+  /// The locked bar on a past day's sheet (ADR-0027). States the consequence rather than asking a question, because the unlock button beside it is the question.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes here can move your predicted dates.'**
+  String get logDayLockedTitle;
+
+  /// No description provided for @logDayUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get logDayUnlock;
+
+  /// Offered only once more than three days have been changed inside ten minutes, which is someone catching up rather than correcting one day. Never permanent.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop asking for 30 minutes'**
+  String get logDayStandDown;
+
+  /// Confirms the half hour, with the clock time it ends, so it is not an open-ended switch.
+  ///
+  /// In en, this message translates to:
+  /// **'The app will not ask again until {time}.'**
+  String logDayStandDownDone(String time);
+
+  /// Labels the symptoms on a day's read-only summary. Not logSymptomsTitle, which is the editor's prompt "Anything else today?" and reads as a question about today when it sits over a record of another day.
+  ///
+  /// In en, this message translates to:
+  /// **'Symptoms'**
+  String get logDaySymptomsRecorded;
+
+  /// A temperature on a day's summary, in the unit the user reads. The unit comes from temperatureUnitLabel and is a degree symbol with no leading space, so the two sit together as 36.5°C.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}{unit}'**
+  String logDayTemperatureWithUnit(String value, String unit);
+
+  /// No description provided for @logDaySymptomWithSeverity.
+  ///
+  /// In en, this message translates to:
+  /// **'{symptom} · {severity}'**
+  String logDaySymptomWithSeverity(String symptom, String severity);
+
   /// No description provided for @logGreetingMorning.
   ///
   /// In en, this message translates to:

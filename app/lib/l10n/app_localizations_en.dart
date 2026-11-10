@@ -99,6 +99,59 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get logWeekBackToToday => 'Back to today';
+
+  @override
+  String logWeekOf(String date) {
+    return 'Week of $date';
+  }
+
+  @override
+  String get logDayNothingRecorded => 'Nothing recorded for this day.';
+
+  @override
+  String get logDayFutureUnrecordable =>
+      'That day has not happened yet, so there is nothing to record.';
+
+  @override
+  String logDayRelativeDaysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days ago',
+      one: 'Yesterday',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get logDayLockedTitle => 'Changes here can move your predicted dates.';
+
+  @override
+  String get logDayUnlock => 'Unlock';
+
+  @override
+  String get logDayStandDown => 'Stop asking for 30 minutes';
+
+  @override
+  String logDayStandDownDone(String time) {
+    return 'The app will not ask again until $time.';
+  }
+
+  @override
+  String get logDaySymptomsRecorded => 'Symptoms';
+
+  @override
+  String logDayTemperatureWithUnit(String value, String unit) {
+    return '$value$unit';
+  }
+
+  @override
+  String logDaySymptomWithSeverity(String symptom, String severity) {
+    return '$symptom · $severity';
+  }
+
+  @override
   String get logGreetingMorning => 'Good morning';
 
   @override

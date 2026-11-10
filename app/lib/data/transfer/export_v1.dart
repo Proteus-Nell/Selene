@@ -85,7 +85,7 @@ const String exportSchemaFingerprintV3 =
 /// everything else has gone wrong. `transfer_test.dart` asserts it matches
 /// `pubspec.yaml`, so it cannot drift silently. Set both with
 /// `tools/scripts/release_version.py set <version>`.
-const String appVersion = '1.1.0+10100';
+const String appVersion = '1.2.0+10200';
 
 /// The version as people are shown it: the name, without the build number.
 ///
