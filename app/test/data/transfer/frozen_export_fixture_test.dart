@@ -333,16 +333,23 @@ void main() {
   test('every format this build restores has a frozen fixture', () {
     // From the oldest restorable format to the current one. A version that
     // restores but has no fixture is one nothing checks against a real file.
+    final restorable = List<int>.generate(
+      exportSchemaVersion - oldestRestorableExportVersion + 1,
+      (i) => oldestRestorableExportVersion + i,
+    );
     expect(
       <int>[
         for (final text in <String>[_v3Export, _v4Export]) _versionOf(text),
       ],
-      List<int>.generate(
-        exportSchemaVersion - oldestRestorableExportVersion + 1,
-        (i) => oldestRestorableExportVersion + i,
-      ),
+      restorable,
     );
-    expect(ImportV1.supportedVersions.keys.toList()..sort(), <int>[3, 4]);
+    // The same range, not a literal. The import decides what restores from
+    // this map and never reads oldestRestorableExportVersion, while the
+    // re-export banner and the release check in docs/RELEASE.md section 3
+    // read only the constant. Held to a literal, a format could be dropped
+    // from the map with the constant left where it was, and its backups would
+    // stop restoring with no warning anywhere.
+    expect(ImportV1.supportedVersions.keys.toList()..sort(), restorable);
   });
 
   group('every superseded export format', () {
