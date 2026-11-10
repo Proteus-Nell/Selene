@@ -256,18 +256,6 @@ abstract class AppLocalizations {
   /// **'{label}, bleeding logged'**
   String logWeekBleedingSuffix(String label);
 
-  /// No description provided for @logWeekPreviousWeek.
-  ///
-  /// In en, this message translates to:
-  /// **'Previous week'**
-  String get logWeekPreviousWeek;
-
-  /// What a screen reader says for the swipe that moves the date row forward. The row pages a whole week at a time.
-  ///
-  /// In en, this message translates to:
-  /// **'Next week'**
-  String get logWeekNextWeek;
-
   /// No description provided for @logWeekBackToToday.
   ///
   /// In en, this message translates to:
@@ -310,12 +298,6 @@ abstract class AppLocalizations {
   /// **'Unlock'**
   String get logDayUnlock;
 
-  /// No description provided for @logDayUnlocked.
-  ///
-  /// In en, this message translates to:
-  /// **'{date} can now be changed.'**
-  String logDayUnlocked(String date);
-
   /// Offered only once more than three days have been changed inside ten minutes, which is someone catching up rather than correcting one day. Never permanent.
   ///
   /// In en, this message translates to:
@@ -328,29 +310,17 @@ abstract class AppLocalizations {
   /// **'The app will not ask again until {time}.'**
   String logDayStandDownDone(String time);
 
-  /// No description provided for @logDaySectionFlow.
-  ///
-  /// In en, this message translates to:
-  /// **'Flow'**
-  String get logDaySectionFlow;
-
-  /// No description provided for @logDaySectionSymptoms.
+  /// Labels the symptoms on a day's read-only summary. Not logSymptomsTitle, which is the editor's prompt "Anything else today?" and reads as a question about today when it sits over a record of another day.
   ///
   /// In en, this message translates to:
   /// **'Symptoms'**
-  String get logDaySectionSymptoms;
+  String get logDaySymptomsRecorded;
 
-  /// No description provided for @logDaySectionIntercourse.
+  /// A temperature on a day's summary, in the unit the user reads. The unit comes from temperatureUnitLabel and is a degree symbol with no leading space, so the two sit together as 36.5°C.
   ///
   /// In en, this message translates to:
-  /// **'Intercourse'**
-  String get logDaySectionIntercourse;
-
-  /// No description provided for @logDaySectionMeasurements.
-  ///
-  /// In en, this message translates to:
-  /// **'Measurements'**
-  String get logDaySectionMeasurements;
+  /// **'{value}{unit}'**
+  String logDayTemperatureWithUnit(String value, String unit);
 
   /// No description provided for @logDaySymptomWithSeverity.
   ///

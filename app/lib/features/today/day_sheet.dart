@@ -14,9 +14,12 @@
 ///
 /// Includes:
 ///     - showDaySheet: Opens the sheet for one date.
-///     - _DaySheet: The sheet's own state, which is only whether it is open.
+///     - _DaySheet: One day, locked or not.
+///     - _DaySheetState: Whether the lock has been lifted on this sheet.
 ///     - _LockBar: The lock, and the two ways past it.
+///     - _StandDownNote: That the lock is standing down, and until when.
 ///     - _DaySummary: What was recorded, as text.
+///     - _Line: One labelled line of that summary.
 library;
 
 import 'package:flutter/material.dart';
@@ -24,9 +27,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
+import 'package:period_tracker/domain/models/temperature.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/common/log_labels.dart';
-import 'package:period_tracker/features/common/snack.dart';
 import 'package:period_tracker/features/log/day_editor.dart';
 import 'package:period_tracker/features/today/past_edit_guard.dart';
 import 'package:period_tracker/l10n/app_localizations.dart';
@@ -85,34 +88,28 @@ class _DaySheetState extends ConsumerState<_DaySheet> {
   /// because the unlock is the friction the stand-down exists to relieve: a
   /// user who opens four days to correct them has met it four times whether or
   /// not the fourth needed a change in the end.
+  ///
+  /// Says nothing: the editor appearing where the summary was is the whole
+  /// confirmation, and a message about it would have nowhere to go. A snack
+  /// bar belongs to the ScaffoldMessenger below this route and renders behind
+  /// the sheet, which is why the note the stand-down needs is drawn inside the
+  /// sheet instead.
   void _unlock() {
-    final clock = ref.read(clockProvider);
-    final now = clock.nowUtc();
+    final now = ref.read(clockProvider).nowUtc();
     final guard = ref.read(pastEditGuardProvider.notifier);
     guard.state = guard.state.changed(widget.date, now);
     setState(() => _unlocked = true);
-    showAppSnackBar(
-      context,
-      AppLocalizations.of(
-        context,
-      ).logDayUnlocked(widget.date.dayAndMonth(context)),
-    );
   }
 
-  /// Stand the lock down for half an hour, and say until when.
+  /// Stand the lock down for half an hour.
+  ///
+  /// The half hour is said by [_StandDownNote], which stays on screen for as
+  /// long as it lasts rather than for as long as a snack bar would.
   void _standDown() {
-    final clock = ref.read(clockProvider);
-    final now = clock.nowUtc();
+    final now = ref.read(clockProvider).nowUtc();
     final guard = ref.read(pastEditGuardProvider.notifier);
     guard.state = guard.state.standingDownFrom(now);
     setState(() => _unlocked = true);
-    final until = now.add(PastEditGuard.standDown).toLocal();
-    showAppSnackBar(
-      context,
-      AppLocalizations.of(context).logDayStandDownDone(
-        TimeOfDay.fromDateTime(until).format(context),
-      ),
-    );
   }
 
   @override
@@ -185,7 +182,13 @@ class _DaySheetState extends ConsumerState<_DaySheet> {
                   offersStandDown: guard.offersStandDown(now),
                   onUnlock: _unlock,
                   onStandDown: _standDown,
-                ),
+                )
+              // Drawn whenever the stand-down is in force, not only on the
+              // sheet that asked for it: it is the only place the half hour is
+              // stated, and it answers the question the missing lock raises on
+              // every past day opened until it expires.
+              else if (guard.standingDown(now))
+                _StandDownNote(until: guard.standDownUntil!),
               Flexible(
                 child: SingleChildScrollView(
                   child: locked
@@ -287,15 +290,78 @@ class _LockBar extends StatelessWidget {
   }
 }
 
+/// Says the lock is standing down, and until when.
+///
+/// Inside the sheet rather than in a snack bar, which would belong to the
+/// ScaffoldMessenger below this route and render behind it. It is also the
+/// only statement of the half hour anywhere, so it has to survive longer than
+/// a snack bar would: it is drawn on every past day opened until the
+/// stand-down expires.
+///
+/// Attributes:
+///     until (DateTime): When the lock comes back, as a UTC instant.
+class _StandDownNote extends StatelessWidget {
+  /// Creates the note.
+  ///
+  /// Args:
+  ///     until (DateTime): When the lock comes back, as a UTC instant. Shown
+  ///         as a local clock time.
+  const _StandDownNote({required this.until});
+
+  /// When the lock comes back, as a UTC instant.
+  final DateTime until;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: <Widget>[
+          Icon(
+            Icons.lock_open_outlined,
+            size: 20,
+            color: scheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              l10n.logDayStandDownDone(
+                TimeOfDay.fromDateTime(until.toLocal()).format(context),
+              ),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// What was recorded for a day, as text.
 ///
 /// Read-only by construction rather than by being disabled, which is what
 /// makes the lock a lock. Intercourse is listed with everything else, at the
 /// owner's direction.
 ///
+/// A consumer, because two display preferences decide how the same stored
+/// values are *said*, and the editor one tap away honours both: a temperature
+/// is shown in the unit the user reads, and flow is named by intensity only
+/// where they have not simplified it to bleeding or not. Saying it differently
+/// here would read as the app having changed its mind about what it recorded.
+///
 /// Attributes:
 ///     log (DayLog?): The day's entry, or null when nothing is recorded.
-class _DaySummary extends StatelessWidget {
+class _DaySummary extends ConsumerWidget {
   /// Creates the summary.
   ///
   /// Args:
@@ -306,7 +372,7 @@ class _DaySummary extends StatelessWidget {
   final DayLog? log;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final entry = log;
@@ -317,22 +383,36 @@ class _DaySummary extends StatelessWidget {
       );
     }
 
+    // Both default to the unsimplified, Celsius reading while the preference
+    // loads, which is what the editor defaults to as well.
+    final simplified = ref.watch(flowSimplifiedProvider).valueOrNull ?? false;
+    final fahrenheit =
+        ref.watch(temperatureFahrenheitProvider).valueOrNull ?? false;
+
     final symptoms = <String>[
-      for (final entry in entry.symptoms.entries)
-        if (entry.value != SymptomSeverity.none)
+      for (final symptom in entry.symptoms.entries)
+        if (symptom.value != SymptomSeverity.none)
           l10n.logDaySymptomWithSeverity(
-            symptomLabel(l10n, entry.key),
-            severityLabel(l10n, entry.value),
+            symptomLabel(l10n, symptom.key),
+            severityLabel(l10n, symptom.value),
           ),
     ];
+    final temperature = entry.basalTemperatureCelsius;
+    final progesterone = entry.progesteroneValue;
     final measurements = <String>[
-      if (entry.basalTemperatureCelsius != null)
-        '${entry.basalTemperatureCelsius!.toStringAsFixed(1)}°C',
+      if (temperature != null)
+        l10n.logDayTemperatureWithUnit(
+          Temperature.toShown(
+            temperature,
+            fahrenheit: fahrenheit,
+          ).toStringAsFixed(1),
+          temperatureUnitLabel(l10n, fahrenheit: fahrenheit),
+        ),
       if (entry.cervicalMucus != null) mucusLabel(l10n, entry.cervicalMucus!),
       if (entry.pdgStrip != null) pdgLabel(l10n, entry.pdgStrip!),
-      if (entry.progesteroneValue != null && entry.progesteroneUnit != null)
+      if (progesterone != null && entry.progesteroneUnit != null)
         [
-          '${entry.progesteroneValue}',
+          progesterone.toStringAsFixed(1),
           progesteroneUnitLabel(l10n, entry.progesteroneUnit!),
         ].join(' '),
     ];
@@ -341,9 +421,19 @@ class _DaySummary extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         if (entry.flow != FlowIntensity.none)
-          _Line(label: l10n.logFlowTitle, value: flowLabel(l10n, entry.flow)),
+          _Line(
+            label: l10n.logFlowTitle,
+            // Named by intensity only where the user has not put that
+            // vocabulary away (AND-24).
+            value: simplified
+                ? l10n.logBleedingYes
+                : flowLabel(l10n, entry.flow),
+          ),
         if (symptoms.isNotEmpty)
-          _Line(label: l10n.logSymptomsTitle, value: symptoms.join(', ')),
+          _Line(
+            label: l10n.logDaySymptomsRecorded,
+            value: symptoms.join(', '),
+          ),
         if (entry.intercourse != null)
           _Line(
             label: l10n.logIntercourseTitle,

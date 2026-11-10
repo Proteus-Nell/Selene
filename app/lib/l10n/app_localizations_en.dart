@@ -99,12 +99,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get logWeekPreviousWeek => 'Previous week';
-
-  @override
-  String get logWeekNextWeek => 'Next week';
-
-  @override
   String get logWeekBackToToday => 'Back to today';
 
   @override
@@ -137,11 +131,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logDayUnlock => 'Unlock';
 
   @override
-  String logDayUnlocked(String date) {
-    return '$date can now be changed.';
-  }
-
-  @override
   String get logDayStandDown => 'Stop asking for 30 minutes';
 
   @override
@@ -150,16 +139,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get logDaySectionFlow => 'Flow';
+  String get logDaySymptomsRecorded => 'Symptoms';
 
   @override
-  String get logDaySectionSymptoms => 'Symptoms';
-
-  @override
-  String get logDaySectionIntercourse => 'Intercourse';
-
-  @override
-  String get logDaySectionMeasurements => 'Measurements';
+  String logDayTemperatureWithUnit(String value, String unit) {
+    return '$value$unit';
+  }
 
   @override
   String logDaySymptomWithSeverity(String symptom, String severity) {

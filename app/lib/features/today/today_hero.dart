@@ -417,50 +417,80 @@ class _WeekStripState extends State<_WeekStrip> {
 
     return Column(
       children: <Widget>[
-        GestureDetector(
-          // Horizontal only, so the screen's vertical scroll is untouched: a
-          // vertical drag never reaches this recogniser.
-          onHorizontalDragEnd: (details) {
-            final velocity = details.velocity.pixelsPerSecond.dx;
-            if (velocity <= -_flingVelocity) {
-              _stepWeek(1);
-            } else if (velocity >= _flingVelocity) {
-              _stepWeek(-1);
-            }
-          },
-          child: AnimatedSwitcher(
-            duration: Motion.monthSlide(context),
-            switchInCurve: Motion.curve,
-            switchOutCurve: Motion.curve,
-            transitionBuilder: (child, animation) {
-              final entering = (child.key as ValueKey<int>?)?.value == _offset;
-              // As the calendar's months do: the week arriving comes from the
-              // side it was pushed from and the one leaving goes the other
-              // way, so the pair reads as one movement.
-              final from = entering ? _direction : -_direction;
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: Offset(from.toDouble(), 0),
-                  end: Offset.zero,
-                ).animate(animation),
-                child: FadeTransition(opacity: animation, child: child),
-              );
+        // A drag is a gesture, and a gesture is not an action: assistive
+        // technology cannot perform one, so without these the week could not
+        // be changed with a screen reader at all, and "Back to today" is no
+        // way out because it only appears once the strip has already moved.
+        // A `PageView` would have published its own scroll actions; this has
+        // to publish them itself.
+        Semantics(
+          container: true,
+          // Value, not label: increase and decrease move between values, and
+          // the framework asserts that an action which changes a value comes
+          // with the value it changes and the one it changes to.
+          value: l10n.logWeekOf(start.dayAndMonth(context)),
+          increasedValue: l10n.logWeekOf(
+            start.addDays(7).dayAndMonth(context),
+          ),
+          decreasedValue: l10n.logWeekOf(
+            start.addDays(-7).dayAndMonth(context),
+          ),
+          onIncrease: () => _stepWeek(1),
+          onDecrease: () => _stepWeek(-1),
+          child: GestureDetector(
+            // Horizontal only, so the screen's vertical scroll is untouched: a
+            // vertical drag never reaches this recogniser.
+            onHorizontalDragEnd: (details) {
+              final velocity = details.velocity.pixelsPerSecond.dx;
+              if (velocity <= -_flingVelocity) {
+                _stepWeek(1);
+              } else if (velocity >= _flingVelocity) {
+                _stepWeek(-1);
+              }
             },
-            child: Row(
-              key: ValueKey<int>(_offset),
-              children: <Widget>[
-                for (var i = 0; i < 7; i++)
-                  Expanded(
-                    child: _WeekDay(
-                      date: start.addDays(i),
-                      isToday: start.addDays(i) == widget.today,
-                      bleeding: bleeding.contains(start.addDays(i)),
-                      accent: phases.menstrual,
-                      theme: theme,
-                      onTap: () => showDaySheet(context, start.addDays(i)),
-                    ),
+            child: AnimatedSwitcher(
+              duration: Motion.monthSlide(context),
+              switchInCurve: Motion.curve,
+              switchOutCurve: Motion.curve,
+              transitionBuilder: (child, animation) {
+                final entering =
+                    (child.key as ValueKey<int>?)?.value == _offset;
+                // As the calendar's months do: the week arriving comes from the
+                // side it was pushed from and the one leaving goes the other
+                // way, so the pair reads as one movement.
+                final from = entering ? _direction : -_direction;
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: Offset(from.toDouble(), 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: FadeTransition(
+                    opacity: animation,
+                    // The week on its way out keeps its cells until the
+                    // transition ends, and a fade does not stop them being hit:
+                    // without this there are fourteen tappable dates in seven
+                    // columns for 180ms, and a tap can open a day a week away
+                    // from the one under the finger.
+                    child: IgnorePointer(ignoring: !entering, child: child),
                   ),
-              ],
+                );
+              },
+              child: Row(
+                key: ValueKey<int>(_offset),
+                children: <Widget>[
+                  for (var i = 0; i < 7; i++)
+                    Expanded(
+                      child: _WeekDay(
+                        date: start.addDays(i),
+                        isToday: start.addDays(i) == widget.today,
+                        bleeding: bleeding.contains(start.addDays(i)),
+                        accent: phases.menstrual,
+                        theme: theme,
+                        onTap: () => showDaySheet(context, start.addDays(i)),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),

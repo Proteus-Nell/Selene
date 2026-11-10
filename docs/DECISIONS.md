@@ -1797,14 +1797,33 @@ sit in front of the editor rather than in front of a write.
 8. **Correcting several days in a row is offered a stand-down**: once more than
    three distinct days have been unlocked inside ten minutes, the lock bar
    offers "Stop asking for 30 minutes". Three is a correction; four is a
-   sitting. It expires on its own and says the clock time it ends at.
-9. **There is no permanent "do not ask again", and nothing is persisted.**
-   Every setting this app stores travels in the user's export, and when they
-   edited days is behaviour rather than anything they recorded about
-   themselves. A stand-down that survived a force-quit would also be a guard
-   that was still down after the phone had been put away. Closing the app
-   restores the lock.
-10. **The calendar is unchanged.** It is the screen whose purpose is reviewing
+   sitting. It expires on its own, and the half hour is stated **inside the
+   sheet**, on every past day opened until it ends, rather than in a snack bar.
+   A snack bar belongs to the `ScaffoldMessenger` below the sheet's route and
+   renders behind it, so the only statement of the expiry would never have been
+   seen; it also has to outlive a few seconds, because it answers the question
+   the missing lock raises on each day opened afterwards. Unlocking a single day
+   says nothing at all: the editor replacing the summary is the confirmation.
+9. **The summary says things the way the editor would.** Two display
+   preferences decide how the same stored values are *said* — temperatures in
+   the unit the user reads, and flow named by intensity only where they have
+   not simplified it to bleeding or not (AND-24) — and the summary honours both.
+   Saying them its own way would read as the app having changed its mind about
+   what it recorded, which is the reason the flow chips do not change shape
+   under the user either.
+10. **Paging publishes semantics actions.** A drag is a gesture, and assistive
+    technology cannot perform one; the `PageView` this replaced would have
+    published scroll actions for free. The row therefore carries
+    `onIncrease`/`onDecrease` with the week as its semantics value, so a screen
+    reader can change weeks. Without it the strip was reachable but frozen on
+    the current week, since "Back to today" only appears once it has moved.
+11. **There is no permanent "do not ask again", and nothing is persisted.**
+    Every setting this app stores travels in the user's export, and when they
+    edited days is behaviour rather than anything they recorded about
+    themselves. A stand-down that survived a force-quit would also be a guard
+    that was still down after the phone had been put away. Closing the app
+    restores the lock.
+12. **The calendar is unchanged.** It is the screen whose purpose is reviewing
     and fixing history, and its own copy sends people there. A prompt in front
     of it would be friction on the one screen that should not have it.
 

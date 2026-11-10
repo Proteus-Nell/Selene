@@ -24,8 +24,8 @@ import 'package:period_tracker/core/date_utils.dart';
 /// Whether a past day is locked, and whether to offer to stop asking.
 ///
 /// Immutable: every change answers with a new guard, so a test can hold two
-/// points on the same timeline at once and the notifier below has one obvious
-/// place to replace state.
+/// points on the same timeline at once, and the provider below replaces one
+/// value with the next rather than mutating in place.
 ///
 /// Attributes:
 ///     changes (`Map<CivilDate, DateTime>`): When each day was last changed,

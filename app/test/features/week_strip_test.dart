@@ -18,6 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/core/date_utils.dart';
+import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/features/common/formatting.dart';
@@ -229,6 +230,125 @@ void main() {
       expect(editorInSheet(), findsNothing);
       expect(find.text(l10n.logDayUnlock), findsNothing);
     });
+  });
+
+  group('the summary says things the way the editor would', () {
+    // Two display preferences decide how the same stored values are said, and
+    // the editor one tap away honours both. A summary that said them its own
+    // way would read as the app having changed its mind about what it
+    // recorded, which is the reason day_editor.dart gives for not letting the
+    // flow chips change shape under the user.
+
+    testWidgets('a temperature is shown in the unit the user reads', (
+      tester,
+    ) async {
+      await db.settingsDao.writeBool(
+        SettingKey.temperatureFahrenheit,
+        value: true,
+      );
+      await db.dayLogDao.saveAll(<DayLog>[
+        DayLog(date: today.addDays(-1), basalTemperatureCelsius: 36.5),
+      ]);
+      await pump(tester);
+      await tester.tap(cellFor(tester, today.addDays(-1)));
+      await tester.pumpAndSettle();
+
+      // 36.5 C is 97.7 F. Celsius must not reach the screen.
+      expect(find.textContaining('97.7'), findsOneWidget);
+      expect(find.textContaining('36.5'), findsNothing);
+    });
+
+    testWidgets('flow is not named by an intensity the user put away', (
+      tester,
+    ) async {
+      await db.settingsDao.writeBool(SettingKey.flowSimplified, value: true);
+      await db.dayLogDao.saveAll(<DayLog>[
+        DayLog(date: today.addDays(-1), flow: FlowIntensity.medium),
+      ]);
+      await pump(tester);
+      await tester.tap(cellFor(tester, today.addDays(-1)));
+      await tester.pumpAndSettle();
+      final l10n = l10nOf(tester);
+
+      expect(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text(l10n.logBleedingYes),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(l10n.logFlowMedium), findsNothing);
+    });
+  });
+
+  group('the week in transition', () {
+    testWidgets('does not leave the outgoing week tappable', (tester) async {
+      // Both weeks are mounted while the switcher runs, and a fade does not
+      // stop a cell being hit: without the IgnorePointer there are fourteen
+      // tappable dates in seven columns, and a tap can open a day a week away
+      // from the one under the finger. Asserted on the guard itself, because
+      // a tap mid-transition lands wherever the two sliding rows happen to be.
+      await pump(tester);
+      await tester.fling(cellFor(tester, sunday), const Offset(200, 0), 600);
+      await tester.pump(const Duration(milliseconds: 60));
+
+      final guards = tester.widgetList<IgnorePointer>(
+        find.descendant(
+          of: find.byType(AnimatedSwitcher),
+          matching: find.byType(IgnorePointer),
+        ),
+      );
+      expect(guards.length, 2, reason: 'both weeks should be mounted');
+      expect(guards.where((guard) => guard.ignoring).length, 1);
+      expect(guards.where((guard) => !guard.ignoring).length, 1);
+
+      await tester.pumpAndSettle();
+    });
+  });
+
+  group('at a large text scale', () {
+    // An overflow throws during paint, so this catches it without a golden.
+    // The goldens cover the three screens and are generated on linux-x64, so
+    // a golden for a modal sheet would be both new artwork and unverifiable
+    // here; what is worth asserting is the thing that actually went wrong in
+    // this change, which is a fixed height meeting scaled text. The strip's
+    // first version overflowed by 14 pixels at 200%.
+    for (final scale in const <String, double>{'150': 1.5, '200': 2}.entries) {
+      testWidgets('the date row does not overflow at ${scale.key}%', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          harness(
+            const LogScreen(),
+            database: db,
+            textScaler: TextScaler.linear(scale.value),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('a locked day does not overflow at ${scale.key}%', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          harness(
+            const LogScreen(),
+            database: db,
+            textScaler: TextScaler.linear(scale.value),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(cellFor(tester, today.addDays(-1)));
+        await tester.pumpAndSettle();
+        expect(find.text(l10nOf(tester).logDayLockedTitle), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(find.text(l10nOf(tester).logDayUnlock));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 
   group('the offer to stop asking', () {
