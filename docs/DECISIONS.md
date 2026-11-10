@@ -36,6 +36,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0025](#adr-0025-the-late-period-check-in-has-a-switch-of-its-own-and-medicine-reminders-repeat-every-day-in-the-phones-own-time-zone) | The late-period check-in has a switch of its own, and medicine reminders repeat every day in the phone's own time zone | Accepted; clause 8 (inexact alarms) superseded by [0026](#adr-0026-medicine-reminders-are-scheduled-exactly-with-a-permission-asked-for-where-one-is-set) | 2026-10-28 |
 | [0026](#adr-0026-medicine-reminders-are-scheduled-exactly-with-a-permission-asked-for-where-one-is-set) | Medicine reminders are scheduled exactly, with a permission asked for where one is set | Accepted | 2026-10-29 |
 | [0027](#adr-0027-the-date-row-pages-by-the-week-and-a-past-day-opens-locked) | The date row pages by the week, and a past day opens locked | Accepted | 2026-11-10 |
+| [0028](#adr-0028-the-date-row-follows-the-finger-and-marks-intercourse-as-the-calendar-does) | The date row follows the finger, and marks intercourse as the calendar does | Accepted | 2026-11-11 |
 
 ---
 
@@ -1861,6 +1862,120 @@ them has met it four times whether or not the fourth needed a change.
   `week_strip_test.dart` asserts the editor's absence rather than its
   appearance, and `past_edit_guard_test.dart` walks the two time windows, which
   no widget test could do cheaply.
+
+---
+
+## ADR-0028: The date row follows the finger, and marks intercourse as the calendar does
+
+**Status:** Accepted, 2026-11-11. Adds to [ADR-0027](#adr-0027-the-date-row-pages-by-the-week-and-a-past-day-opens-locked); none of its clauses is changed.
+**Deciders:** Project owner
+
+### Context
+
+With V1.2.0 on a phone, the owner asked for two things on the Today tab's date
+row: a subtle swipe animation when moving between weeks, and for the heart the
+calendar draws on a day intercourse was recorded to be drawn on the row as
+well, for every day already recorded and not only from now on.
+
+The row already animated. ADR-0027 clause 2 brings the next week in with a
+slide and a fade over 180 ms once a swipe ends. What it did not do is move
+while the finger was still down: the swipe was read as a fling when the finger
+lifted, so nothing answered the gesture until it was over, and then the whole
+change happened in less time than the eye follows. The motion that was missing
+was the part under the finger.
+
+The row's marks were bleeding days only. `IntercourseMarker` existed in the
+calendar's grid: an open heart that says something was recorded, and not what.
+
+### Decision
+
+1. **The row moves with the finger while it is dragged, by less than the finger
+   moves.** A little over half the finger's travel at first, flattening towards
+   28 logical pixels and never reaching them. Less than the finger on purpose:
+   the week arriving is not on screen until the finger lifts, so a row that
+   kept up would uncover an empty space where next week should be. What it
+   gives is an answer to the touch, which is what "subtle" was asking for.
+2. **The week still arrives the way ADR-0027 clause 2 says**, by the
+   `AnimatedSwitcher`, from the side it was pushed from. The week leaving
+   starts its slide from where the finger left it, so the drag and the
+   transition read as one movement. There is still no `PageView`, for the
+   reasons given there.
+3. **A drag that was not a swipe lets the row settle back**, over
+   `Motion.quick`, the token for a control answering a finger.
+4. **A slow drag of 48 pixels turns the week without a flick.** Before this the
+   week turned only on a fling of 120 px/s. A row that visibly follows a slow,
+   deliberate drag and then springs back reads as the app refusing it. A cell
+   is about 48 pixels wide on a phone, which keeps a finger that wandered while
+   pressing a date from turning the week.
+5. **When the flick and the distance disagree, the flick wins.** It is the
+   later intent: a row dragged towards next week and flicked back was being put
+   back.
+6. **With "remove animations" on, the row does not follow the finger.** The
+   swipe still turns the week, on the frame it ends. Following a finger is
+   motion like any other, and AND-34's rule is that turning motion off drops
+   the movement and never the state change.
+7. **No new motion token.** AND-34 pins the vocabulary, and the two durations
+   this needs are already in it.
+8. **The row draws the calendar's marker under a day intercourse was recorded
+   on**: the same `IntercourseMarker` widget rather than a second one, so the
+   two screens cannot come to mean different things by it. It says that
+   something was recorded and never which answer, and the cell's screen-reader
+   label gains the calendar's own "intercourse logged" and nothing more. The
+   Today tab is the screen the app opens on, which makes it at least as
+   readable over a shoulder as the calendar, and the restraint that was right
+   there is right here.
+9. **Every day already recorded has its heart.** The row reads the same logged
+   days the calendar does, so nothing is migrated, backfilled or stored: a day
+   ticked a year ago shows it as soon as its week is on screen.
+10. **The marks share the nine pixels that were already under each date**: four
+    clear and a five-pixel dot. The heart is nine tall and takes all of them,
+    and the dot stays on the bottom edge, where it was. The row is therefore
+    the height it has always been whether or not a day carries a heart, nothing
+    moves when one is ticked, and the screens the goldens were taken of are
+    drawn exactly as before.
+11. **The column still does not travel.** Nothing here changes what
+    [ADR-0024](#adr-0024-the-summary-for-a-doctor-is-a-pdf-the-app-writes-itself-with-csv-files-of-the-same-data-and-neither-holds-intercourse)
+    and `intercourse_isolation_test.dart` hold: the prediction layer cannot
+    name the type, and the summary for a doctor has no field for it.
+
+### Runner-up and why rejected
+
+**A true pager: the neighbouring week under the finger, one to one.** The
+fullest reading of "swipe animation", and what a `PageView` gives. Rejected
+for the reasons ADR-0027 clause 2 rejected the `PageView`, and one more: with
+two weeks laid out during a drag there are fourteen dates in seven columns
+again, for as long as the finger is down rather than for 180 ms. The owner
+asked for subtle.
+
+**Lengthening the transition**, so that the slide already there is easier to
+see. `monthSlide` is 180 ms because stepping repeatedly through months at
+220 ms feels like waiting, and stepping through weeks is the same motion. It
+would also have left the gesture unanswered while the finger was down, which
+was the actual gap.
+
+**A filled or coloured heart**, to stand out more on the smaller strip. The
+calendar's is an outline in the neutral ink so that it is told apart by shape,
+in greyscale, and does not announce itself. A second style would be a second
+meaning.
+
+**Growing the space under the date**, so the heart has room of its own. Four
+pixels on every cell of the row for everyone, a shifted layout on the screen
+the app opens on, and every golden of it retaken, to show a mark most days do
+not carry.
+
+### Consequences
+
+- A slow drag now turns the week, which it did not before. A finger that
+  travels 48 pixels sideways across the row without lifting will page it.
+- `week_strip_test.dart` pins the part between the finger going down and
+  lifting, which no test of a fling looked at, including that the row holds
+  still with animations off.
+- The heart is in the accessibility gate and the text-scale tests, beside the
+  dot. The seeded histories those use hold bleeding days only and would
+  otherwise never put it on screen.
+- Whether the follow feels right is a question for a thumb, and no test can
+  answer it. `_pullLimit`, `_pullGain` and `_commitDistance` in
+  `today_hero.dart` are the three numbers to change if it does not.
 
 ---
 

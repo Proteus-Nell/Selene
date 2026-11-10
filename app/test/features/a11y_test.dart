@@ -9,7 +9,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:period_tracker/data/db/database.dart';
+import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/features/calendar/calendar_screen.dart';
+import 'package:period_tracker/features/calendar/day_cell.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/insights/insights_screen.dart';
 import 'package:period_tracker/features/log/log_screen.dart';
@@ -60,6 +62,37 @@ void main() {
       }
     });
   }
+
+  // The histories above hold bleeding days and nothing else, so the heart the
+  // date row draws under a day intercourse was recorded on (ADR-0028) is never
+  // on screen while those run. This puts it there, beside the dot.
+  group('the date row with every mark', () {
+    for (final brightness in Brightness.values) {
+      testWidgets('meets the guidelines in ${brightness.name}', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+        await seedHistory(db, const <int>[28, 29, 28, 30, 28, 29, 28]);
+        await db.dayLogDao.save(
+          DayLog(
+            date: testClock.today().addDays(-1),
+            flow: FlowIntensity.medium,
+            intercourse: Intercourse.protected,
+          ),
+        );
+        await tester.pumpWidget(
+          harness(const LogScreen(), database: db, brightness: brightness),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(IntercourseMarker), findsOneWidget);
+
+        await expectLater(tester, meetsGuideline(textContrastGuideline));
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+        handle.dispose();
+      });
+    }
+  });
 
   // The day sheet is not in the map above because it is not a screen: it is a
   // modal route, reachable only by tapping a date on the Today tab, so pumping
