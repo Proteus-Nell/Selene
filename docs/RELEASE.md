@@ -197,7 +197,9 @@ Checklist, in the order the failures actually happen:
 - [ ] Revoke that permission in Android's settings while the app is open: the
       Settings row goes back to "may arrive late", and reminders keep working
 - [ ] Keystore backups still exist and still open
-- [ ] **Release notes carry the re-export warning** — see below
+- [ ] **The re-export warning is in the notes, if this release needs it** —
+      most releases do not, and claiming it when it is untrue sends people
+      looking for data they have not lost; see below for the check
 - [ ] No claim in `docs/NUTRITION_SOURCES.md` is still marked `[VERIFY]`
 - [ ] The medicines bundle comes from a recent openFDA export — see below
 - [ ] The herbal supplements reference has been read from NCCIH recently — see
@@ -284,13 +286,31 @@ Two things to check by eye after fetching:
   under the line its list hangs from. `supplements_test.dart` fails if either
   stops, but look at it as a reader would.
 
-### The re-export warning (export format v2)
+### The re-export warning (only for a release that strands backups)
 
-**This release cannot restore backups taken before it.** Export format v2 adds
-conditions, and v1 files are refused rather than partially read — ADR-0011,
-decided knowingly. This app has no cloud sync and no Play Store restore, so the
-export file *is* the recovery path (risk R8): every backup a user is currently
-holding stops working the moment they update.
+**Most releases must not carry this.** It belongs in the notes only when a
+release stops restoring a format that the release before it could still read
+— that is, when it raises `oldestRestorableExportVersion` in
+`app/lib/data/transfer/export_v1.dart`. Compare it against the previous tag:
+
+```bash
+f=app/lib/data/transfer/export_v1.dart
+git show v<previous>:$f | grep oldestRestorable   # the last release
+grep oldestRestorable $f                          # this one
+```
+
+Unchanged, and no warning goes in: every backup that restored before this
+release restores after it. `exportSchemaVersion` is the wrong constant to read
+for this — v4 added fields and still restores v3 (ADR-0020), so it moves
+without stranding anything, and a warning sent out anyway tells people their
+backups are dead when they are not.
+
+If the number has gone up, the backups written in the formats that dropped out
+can no longer be restored by any route: this app has no cloud sync and no Play
+Store restore, so the export file *is* the recovery path (risk R8). Every one
+of them stops working the moment the user updates, and a phone lost after that
+point is total data loss. That was ADR-0011's position for v1 files, decided
+knowingly; ADR-0020 narrowed it to formats that actually drop something.
 
 The app shows a one-time banner on the log screen telling them so, and the
 release notes have to say the same thing, because a user who dismisses the
@@ -300,15 +320,15 @@ banner without reading it has no second chance:
 > version can no longer be restored — please export again after updating. Your
 > data in the app is not affected.
 
-Do not ship without that line. The banner alone is not enough: it appears once,
-it can be dismissed with a tap, and someone restoring onto a new phone after
-losing the old one will never have seen it.
+Do not ship a stranding release without that line. The banner alone is not
+enough: it appears once, it can be dismissed with a tap, and someone restoring
+onto a new phone after losing the old one will never have seen it.
 
 The one-time banner is driven by `SettingKey.exportFormatAcknowledged`, seeded
 at `onCreate` so that fresh installs are never warned about backups they have
-never taken. If a future release changes the export format again, bumping
-`exportSchemaVersion` makes the same mechanism fire without any new flag — and
-this section needs rewriting for the new version.
+never taken. Raising `oldestRestorableExportVersion` makes the same mechanism
+fire without any new flag — and when that happens, reread the quoted line
+above against what the release actually refuses before pasting it.
 
 ---
 
@@ -407,7 +427,8 @@ updating and checking the download, followed by the changes since the last tag.
 
 Then work through the checklist in section 3 with the draft's own APK: above
 all, that it installs **as an upgrade** over the previous release on a real
-phone. Add the re-export warning to the notes if the export format changed.
+phone. Add the re-export warning to the notes only if this release raises
+`oldestRestorableExportVersion` — section 3 has the check.
 Then publish the draft.
 
 ### Without the workflow
