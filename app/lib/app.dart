@@ -1,8 +1,8 @@
 /// The application widget.
 ///
-/// Wires the router, the themes, localisation and the lock gate, and nothing
-/// else. Everything with behaviour sits behind a provider so a widget test can
-/// replace it.
+/// Wires the router, the themes, localisation, the lock gate and the Reduce
+/// animations switch, and nothing else. Everything with behaviour sits behind
+/// a provider so a widget test can replace it.
 ///
 /// Includes:
 ///     - PeriodTrackerApp: The `MaterialApp.router` itself.
@@ -10,6 +10,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:period_tracker/core/app_binding.dart';
 import 'package:period_tracker/core/palette.dart';
 import 'package:period_tracker/core/theme.dart';
 import 'package:period_tracker/data/repositories/providers.dart';
@@ -34,6 +35,22 @@ class PeriodTrackerApp extends ConsumerWidget {
     final scheme =
         ref.watch(colourSchemeProvider).valueOrNull ?? AppScheme.fallback;
     final mode = ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.light;
+    // Selene's own switch, and not Android's "remove animations", which is
+    // deliberately never read (ADR-0029). Until the stream has emitted this is
+    // what the bootstrap read before the first frame, so no frame is built on
+    // a guess.
+    final reduceAnimations =
+        ref.watch(reduceAnimationsProvider).valueOrNull ??
+        // The type argument is load-bearing: left to inference, the fallback
+        // is read as nullable to match the left-hand side.
+        ref.watch<bool>(reduceAnimationsAtLaunchProvider);
+    // The framework's half of the same switch. A listener rather than a write
+    // during build, and it fires before the rebuild that carries the new
+    // MediaQuery below, so the two do not disagree for a frame.
+    ref.listen(reduceAnimationsProvider, (_, next) {
+      final reduced = next.valueOrNull;
+      if (reduced != null) setFrameworkAnimationsReduced(reduced: reduced);
+    });
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       theme: AppTheme.light(scheme),
@@ -50,7 +67,16 @@ class PeriodTrackerApp extends ConsumerWidget {
       // the lock screen gets the app's theme and localisations, and so it
       // covers every route including ones added later. Gating screen by screen
       // would leave the answer to whoever adds the next one.
-      builder: (context, child) => LockGate(child: child ?? const SizedBox()),
+      //
+      // The MediaQuery is replaced here for the same reason: above the
+      // Navigator, so every route, sheet and dialog reads the app's own answer
+      // about animations rather than the phone's.
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(disableAnimations: reduceAnimations),
+        child: LockGate(child: child ?? const SizedBox()),
+      ),
     );
   }
 }

@@ -8,7 +8,7 @@
 /// Pipeline:
 ///     1. Open the database, quarantining a damaged file or refusing a newer
 ///        one.
-///     2. Read the onboarding flag once.
+///     2. Read the onboarding flag and the Reduce animations switch once.
 ///     3. Build the provider scope, overriding the notification gateway with
 ///        the plugin-backed one.
 ///
@@ -26,6 +26,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:period_tracker/app.dart';
+import 'package:period_tracker/core/app_binding.dart';
 import 'package:period_tracker/core/clock.dart';
 import 'package:period_tracker/core/logging.dart';
 import 'package:period_tracker/data/db/connection.dart';
@@ -58,7 +59,10 @@ final Provider<File?> quarantinedDatabaseProvider = Provider<File?>(
 /// recovering, and the other means this build must not write to the file at
 /// all.
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // The app's own binding rather than WidgetsFlutterBinding: it is how the
+  // framework is told about Reduce animations by the app and not by Android
+  // (ADR-0029).
+  AppBinding.ensureInitialized();
 
   const clock = SystemClock();
   final logger = RingLogger(clock: clock)..info(LogEvent.appStarted);
@@ -138,6 +142,14 @@ Future<Widget> buildAppScope({
     SettingKey.onboardingComplete,
     orElse: false,
   );
+  // Read before the first frame as well, and handed to the framework here, so
+  // that nothing built on that frame moves for someone who switched movement
+  // off. After this the app root follows the stream (ADR-0029).
+  final reduceAnimations = await database.settingsDao.readBool(
+    SettingKey.reduceAnimations,
+    orElse: false,
+  );
+  setFrameworkAnimationsReduced(reduced: reduceAnimations);
 
   return ProviderScope(
     overrides: <Override>[
@@ -145,6 +157,7 @@ Future<Widget> buildAppScope({
       clockProvider.overrideWithValue(clock),
       loggerProvider.overrideWithValue(logger),
       onboardingCompleteProvider.overrideWithValue(onboarded),
+      reduceAnimationsAtLaunchProvider.overrideWithValue(reduceAnimations),
       quarantinedDatabaseProvider.overrideWithValue(quarantined),
       // The provider's own default is a no-op, so no widget test can schedule
       // a real notification by forgetting an override. This is the one place

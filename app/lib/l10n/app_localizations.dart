@@ -3851,6 +3851,18 @@ abstract class AppLocalizations {
   /// **'Off by default. The reference pages, and conditions and medication, appear only when this is on.'**
   String get settingsLearnTabSubtitle;
 
+  /// No description provided for @settingsReduceAnimations.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce animations'**
+  String get settingsReduceAnimations;
+
+  /// Under the Reduce animations switch. It has to say that the app ignores the phone's setting, because someone who turned animations off on their phone will otherwise expect Selene to have followed it.
+  ///
+  /// In en, this message translates to:
+  /// **'Off by default. When on, things change at once instead of sliding or fading. Selene decides this for itself and does not follow your phone\'s own animation setting.'**
+  String get settingsReduceAnimationsSubtitle;
+
   /// No description provided for @settingsPrivacySection.
   ///
   /// In en, this message translates to:

@@ -37,6 +37,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0026](#adr-0026-medicine-reminders-are-scheduled-exactly-with-a-permission-asked-for-where-one-is-set) | Medicine reminders are scheduled exactly, with a permission asked for where one is set | Accepted | 2026-10-29 |
 | [0027](#adr-0027-the-date-row-pages-by-the-week-and-a-past-day-opens-locked) | The date row pages by the week, and a past day opens locked | Accepted | 2026-11-10 |
 | [0028](#adr-0028-the-date-row-follows-the-finger-and-marks-intercourse-as-the-calendar-does) | The date row follows the finger, and marks intercourse as the calendar does | Accepted | 2026-11-11 |
+| [0029](#adr-0029-selene-has-its-own-reduce-animations-switch-and-androids-is-not-read) | Selene has its own Reduce animations switch, and Android's is not read | Accepted | 2026-11-11 |
 
 ---
 
@@ -1867,7 +1868,7 @@ them has met it four times whether or not the fourth needed a change.
 
 ## ADR-0028: The date row follows the finger, and marks intercourse as the calendar does
 
-**Status:** Accepted, 2026-11-11. Adds to [ADR-0027](#adr-0027-the-date-row-pages-by-the-week-and-a-past-day-opens-locked); none of its clauses is changed.
+**Status:** Accepted, 2026-11-11. Adds to [ADR-0027](#adr-0027-the-date-row-pages-by-the-week-and-a-past-day-opens-locked); none of its clauses is changed. Clause 6 is superseded by [ADR-0029](#adr-0029-selene-has-its-own-reduce-animations-switch-and-androids-is-not-read): the row holds still for Selene's own Reduce animations switch, not for Android's.
 **Deciders:** Project owner
 
 ### Context
@@ -1976,6 +1977,114 @@ not carry.
 - Whether the follow feels right is a question for a thumb, and no test can
   answer it. `_pullLimit`, `_pullGain` and `_commitDistance` in
   `today_hero.dart` are the three numbers to change if it does not.
+
+---
+
+## ADR-0029: Selene has its own Reduce animations switch, and Android's is not read
+
+**Status:** Accepted, 2026-11-11. Supersedes clause 6 of [ADR-0028](#adr-0028-the-date-row-follows-the-finger-and-marks-intercourse-as-the-calendar-does), and the rule from AND-34 that the phone's own setting is what turns the app's motion off.
+**Deciders:** Project owner
+
+### Context
+
+On the owner's phone, 1.2.1's date row did not move under the finger and did
+not slide between weeks, although both were built and tested. No phone was
+attached to confirm it, but the one cause that explains both is Android's own
+animation setting being off, and the owner's answer was to ask for Selene to
+stop following it. Selene obeyed that setting in two places, and knew about one
+of them.
+
+The one it knew about is `Motion`: every duration is read through
+`MediaQuery.disableAnimationsOf` and collapses to zero (AND-34). ADR-0028
+clause 6 extended the same rule to the row's movement under a finger.
+
+The one it did not know about is Flutter's own. `AnimationController` asks the
+binding whether animations are disabled before every run and, if they are,
+runs at a twentieth of the duration, which is a single frame. That is below
+anything a widget can reach, it applies to every animation in every Flutter
+app, and it answers from Android's flag directly.
+
+Android's switch is one switch for the whole phone. The owner wants the phone's
+animations off and Selene's on, which that switch cannot say, and asked for
+Selene to have a setting of its own, decoupled from Android's.
+
+### Decision
+
+1. **Reduce animations is a setting of Selene's own**: a switch under Display
+   in Settings, stored as `reduce_animations` like every other preference, and
+   so carried in exports with no change to their format.
+2. **Android's setting is not read, anywhere.** Not as a default, not as a
+   fallback, and not once at first launch to seed the switch. A phone with
+   "remove animations" on gets Selene's movement unless Selene's own switch is
+   on. Seeding from the phone would have left the owner's own phone, the one
+   this was asked for, starting with the switch on.
+3. **Off by default.**
+4. **The app root replaces the flag `Motion` reads.** It wraps everything
+   under the `MaterialApp` in a `MediaQuery` whose `disableAnimations` is the
+   switch, above the Navigator so that routes, sheets and dialogs are covered.
+   `Motion` and the date row still read `MediaQuery.disableAnimationsOf`, as
+   they always have; what it carries is now the app's answer. No call site
+   changed.
+5. **The app runs on its own binding, `AppBinding`, which answers
+   `disableAnimations` with the same value.** This is the half that matters on
+   a phone: without it the tokens would report full durations and the framework
+   would then run them in one frame. The binding is the only place the
+   framework asks, and subclassing `WidgetsFlutterBinding` is how Flutter
+   intends an app to change an answer there.
+6. **With the switch on, everything behaves as it did when Android's was on.**
+   The tokens are zero, the framework cuts its own animations short, the row
+   does not follow the finger, and every state change still happens on the
+   frame it was asked for. AND-34's rule about what turning motion off means is
+   unchanged. Only who turns it off has changed.
+7. **The switch is read before the first frame.** The bootstrap reads it with
+   the onboarding flag and hands it to the binding and to the app root, so
+   nothing built on the first frame moves for someone who switched movement
+   off, and nothing is skipped for someone who did not.
+8. **A test binding is left alone.** When the app is started from a test, the
+   test's binding already exists and there can be only one, so `AppBinding`
+   stands down and the test sets the flag the way tests always have.
+
+### Runner-up and why rejected
+
+**Following Android unless Selene's switch says otherwise**: three states,
+"follow the phone", on, and off. It keeps the phone's setting working for
+people who rely on it, and is the more conventional design. Rejected because
+the owner asked for the two to be decoupled, and because "follow the phone" as
+the default would have left their phone exactly as it was until they found the
+switch.
+
+**Seeding the switch from Android once, at first launch.** Addressed in clause
+2. It is also a coupling that would survive in the one place nobody would look
+for it: a restored backup would carry a value that was really the old phone's.
+
+**Overriding only the `MediaQuery`.** It is all the app's own code reads, and
+it was the first design. It would have changed nothing on the owner's phone,
+because the framework's shortening does not go through `MediaQuery`.
+
+**Setting `AnimationBehavior.preserve` on the app's controllers.** The app
+creates almost none of them. `AnimatedSwitcher`, the implicit widgets, routes
+and ink all make their own.
+
+### Consequences
+
+- **Someone who relies on Android's "remove animations" gets Selene's movement
+  until they find Selene's switch.** That is the cost of the decoupling, it is
+  an accessibility cost, and it was accepted knowingly. The switch's subtitle
+  says the app does not follow the phone, so the reason is findable where the
+  remedy is.
+- The whole app moves on a phone that has animations off, not only the date
+  row: tab changes, the calendar's months, the companion.
+- The binding's half cannot be seen by a widget test, which runs on the test
+  binding. `app_binding_test.dart` runs on the app's binding instead: it holds
+  the override, that a real `AnimationController` runs full length with the
+  platform's flag set against the switch, and that `main` starts on it.
+  `reduce_animations_test.dart` holds the `MediaQuery` half on the real app,
+  with the platform's flag set the other way each time. That the two together
+  move a real phone with Android's animations off is a device check, added to
+  `docs/RELEASE.md` section 3.
+- `docs/ANDROID_TASKS.md` AND-34 still describes the phone's setting being read
+  at the token. It is the record of that task as it was done and is left as
+  written; this ADR is what is true now.
 
 ---
 

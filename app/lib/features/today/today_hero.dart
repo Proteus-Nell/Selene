@@ -517,7 +517,7 @@ class _WeekStripState extends State<_WeekStrip> {
         if (log.intercourse != null) log.date,
     };
     // Following a finger is motion like any other, so it goes with the rest
-    // when the device asks for none. The swipe still turns the week.
+    // when Reduce animations is on. The swipe still turns the week.
     final travel = MediaQuery.disableAnimationsOf(context)
         ? 0.0
         : _travelFor(_pull);
@@ -631,7 +631,7 @@ class _WeekStripState extends State<_WeekStrip> {
         // layout, a run of no length completes on the spot, and the listener
         // that marks it for layout then fires inside the layout it is in. The
         // framework asserts on that, and did so on every swipe away from this
-        // week with "remove animations" on.
+        // week with animations off.
         if (grow == Duration.zero)
           wayBack
         else

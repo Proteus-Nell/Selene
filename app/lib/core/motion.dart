@@ -1,10 +1,9 @@
 /// Motion tokens.
 ///
 /// Holds every animation duration and the single easing curve the app uses, so
-/// that the "remove animations" accessibility setting is honoured in one place
-/// rather than at each call site. Exposes one static accessor per token, each
-/// taking a [BuildContext] and collapsing to [Duration.zero] when the device
-/// asks for no animation.
+/// that the Reduce animations setting is honoured in one place rather than at
+/// each call site. Exposes one static accessor per token, each taking a
+/// [BuildContext] and collapsing to [Duration.zero] when that setting is on.
 ///
 /// Includes:
 ///     - Motion: The token set, its curve, and the [Motion.all] roll-up the
@@ -24,11 +23,14 @@ import 'package:flutter/material.dart';
 /// reason below.
 ///
 /// **Every duration is read through a [BuildContext] and collapses to
-/// [Duration.zero] when the device asks for no animation.** Android's "remove
-/// animations" accessibility setting, and iOS's reduce-motion, arrive as
-/// [MediaQuery.disableAnimationsOf]. Honouring it is not optional: motion
-/// triggers nausea and migraine for some people, and a setting the system
-/// offers and an app ignores is worse than one it never had.
+/// [Duration.zero] when Reduce animations is on.** That is Selene's own
+/// switch, in Settings, and since ADR-0029 the only thing that decides it. The
+/// app root writes it into [MediaQuery.disableAnimationsOf] in place of what
+/// Android reports, so a phone with "remove animations" on still gets the
+/// app's movement unless the switch says otherwise. Honouring the switch is
+/// not optional: motion triggers nausea and migraine for some people, and a
+/// setting an app offers and then ignores in one corner is worse than one it
+/// never had.
 ///
 /// The check lives on the token rather than at each call site, because a call
 /// site is where it gets forgotten. That is the same argument the theme makes
@@ -93,7 +95,7 @@ abstract final class Motion {
   /// Return the gap between one entering card and the next.
   ///
   /// A duration rather than a delay constant so it collapses with everything
-  /// else: a stagger that survived "remove animations" would leave content
+  /// else: a stagger that survived Reduce animations would leave content
   /// appearing in sequence, which is the effect the setting exists to stop.
   ///
   /// Args:
@@ -141,10 +143,11 @@ abstract final class Motion {
   static const Duration _monthSlide = Duration(milliseconds: 180);
   static const Duration _stagger = Duration(milliseconds: 40); // card-to-card
 
-  /// Return [duration], or [Duration.zero] if the device wants no animation.
+  /// Return [duration], or [Duration.zero] if Reduce animations is on.
   ///
-  /// The single place the accessibility setting is read. Every public token
-  /// above goes through here, so none of them can forget it.
+  /// The single place the setting is read, as the flag the app root puts in
+  /// the [MediaQuery] (ADR-0029). Every public token above goes through here,
+  /// so none of them can forget it.
   ///
   /// Args:
   ///     context (BuildContext): Read for [MediaQuery.disableAnimationsOf].
