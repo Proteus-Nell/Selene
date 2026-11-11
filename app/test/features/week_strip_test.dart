@@ -1,4 +1,5 @@
-// The Today tab's date row: swiping it, and opening a day from it (ADR-0027).
+// The Today tab's date row: swiping it, and opening a day from it (ADR-0027),
+// and what it does under a finger and marks under a date (ADR-0028).
 //
 // The row used to be a read-only Row of seven cells. It now steps a week per
 // swipe in either direction without limit, and each cell opens that day. What
@@ -21,6 +22,7 @@ import 'package:period_tracker/core/date_utils.dart';
 import 'package:period_tracker/data/db/daos/settings_dao.dart';
 import 'package:period_tracker/data/db/database.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
+import 'package:period_tracker/features/calendar/day_cell.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/log/day_editor.dart';
 import 'package:period_tracker/features/log/log_screen.dart';
@@ -281,6 +283,222 @@ void main() {
     });
   });
 
+  group('the row under a finger', () {
+    // ADR-0028. The week arriving is still the switcher's work. What is pinned
+    // here is the part between the finger going down and lifting, which a
+    // fling that is then left to settle never looks at.
+
+    /// Where the row is drawn, by its first cell. It moves with the row.
+    double rowLeft(WidgetTester tester) =>
+        tester.getTopLeft(cellFor(tester, sunday)).dx;
+
+    /// Put a finger on the middle of the row and drag it [dx], in two moves.
+    ///
+    /// The first move is the touch slop that tells a drag from a tap. It is
+    /// not reported as travel, so it is spent before the move that counts.
+    Future<TestGesture> dragRow(WidgetTester tester, double dx) async {
+      final gesture = await tester.startGesture(
+        tester.getCenter(cellFor(tester, sunday.addDays(3))),
+      );
+      await gesture.moveBy(Offset(dx.sign * 30, 0));
+      await gesture.moveBy(Offset(dx, 0));
+      await tester.pump();
+      return gesture;
+    }
+
+    testWidgets('follows the drag, by less than the finger moved', (
+      tester,
+    ) async {
+      await pump(tester);
+      final rest = rowLeft(tester);
+      final gesture = await dragRow(tester, -30);
+
+      final moved = rest - rowLeft(tester);
+      expect(moved, greaterThan(0), reason: 'the row should follow');
+      expect(moved, lessThan(30), reason: 'but not as far as the finger');
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('stops short of its limit however far it is dragged', (
+      tester,
+    ) async {
+      // The week arriving is not on screen until the finger lifts, so a row
+      // that kept up with the finger would uncover the space it left.
+      await pump(tester);
+      final rest = rowLeft(tester);
+      final gesture = await dragRow(tester, -600);
+
+      // 28 is _pullLimit @ today_hero.dart.
+      expect(rest - rowLeft(tester), lessThan(28));
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('settles back where it was when the drag was not a swipe', (
+      tester,
+    ) async {
+      await pump(tester);
+      final rest = rowLeft(tester);
+      final gesture = await dragRow(tester, -20);
+      expect(rowLeft(tester), isNot(rest));
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(rowLeft(tester), rest);
+      expect(cellFor(tester, sunday), findsOneWidget);
+      expect(find.text(l10nOf(tester).logWeekBackToToday), findsNothing);
+    });
+
+    testWidgets('a slow drag far enough turns the week without a flick', (
+      tester,
+    ) async {
+      // It followed the finger, so springing back from a deliberate drag
+      // would read as the app refusing it.
+      await pump(tester);
+      final gesture = await dragRow(tester, -60);
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(cellFor(tester, sunday.addDays(7)), findsOneWidget);
+    });
+
+    testWidgets('a flick back the other way wins over how far it was dragged', (
+      tester,
+    ) async {
+      // The flick is the later intent: a row dragged towards next week and
+      // flicked back was being put back. The drag alone is far enough to have
+      // turned the week forward.
+      await pump(tester);
+      final gesture = await dragRow(tester, -120);
+      for (final ms in const <int>[500, 510, 520, 530]) {
+        await gesture.moveBy(
+          const Offset(15, 0),
+          timeStamp: Duration(milliseconds: ms),
+        );
+      }
+      await gesture.up(timeStamp: const Duration(milliseconds: 530));
+      await tester.pumpAndSettle();
+
+      expect(cellFor(tester, sunday.addDays(-7)), findsOneWidget);
+    });
+
+    testWidgets('with animations off the row stays put, and the swipe still '
+        'turns the week', (tester) async {
+      // AND-34: turning motion off drops the movement, never the state change.
+      await tester.pumpWidget(
+        harness(const LogScreen(), database: db, disableAnimations: true),
+      );
+      await tester.pumpAndSettle();
+      final rest = rowLeft(tester);
+      final gesture = await dragRow(tester, -60);
+      expect(rowLeft(tester), rest);
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(cellFor(tester, sunday.addDays(7)), findsOneWidget);
+    });
+  });
+
+  group('the heart under a date', () {
+    // ADR-0028: the calendar's marker, under the same days, saying as little.
+
+    /// The marker under [date], if it has one.
+    Finder heartUnder(WidgetTester tester, CivilDate date) => find.descendant(
+      of: cellFor(tester, date),
+      matching: find.byType(IntercourseMarker),
+    );
+
+    testWidgets('is drawn for a day intercourse was recorded on, and for no '
+        'other', (tester) async {
+      await db.dayLogDao.save(
+        DayLog(date: today.addDays(-1), intercourse: Intercourse.protected),
+      );
+      await pump(tester);
+
+      expect(heartUnder(tester, today.addDays(-1)), findsOneWidget);
+      expect(find.byType(IntercourseMarker), findsOneWidget);
+    });
+
+    testWidgets('says that something was recorded, never which answer', (
+      tester,
+    ) async {
+      // The screen the app opens on is read over a shoulder, and a screen
+      // reader is audible to the room. One mark and one phrase for both
+      // answers, so neither can be told from the other.
+      await db.dayLogDao.saveAll(<DayLog>[
+        DayLog(date: today.addDays(-1), intercourse: Intercourse.protected),
+        DayLog(date: today.addDays(-2), intercourse: Intercourse.unprotected),
+      ]);
+      await pump(tester);
+      final l10n = l10nOf(tester);
+      final context = tester.element(find.byType(LogScreen));
+
+      for (final date in <CivilDate>[today.addDays(-1), today.addDays(-2)]) {
+        expect(heartUnder(tester, date), findsOneWidget);
+        expect(
+          tester.getSemantics(cellFor(tester, date)).label,
+          l10n.calendarCellIntercourseSuffix(date.weekdayDayAndMonth(context)),
+        );
+      }
+    });
+
+    testWidgets('reaches back to a day recorded long before, once its week is '
+        'on screen', (tester) async {
+      // Nothing is migrated or stored for this: the row reads the same days
+      // the calendar does, so a day ticked before the row drew hearts has one.
+      final longAgo = today.addDays(-23);
+      await db.dayLogDao.save(
+        DayLog(date: longAgo, intercourse: Intercourse.unprotected),
+      );
+      await pump(tester);
+      expect(find.byType(IntercourseMarker), findsNothing);
+
+      await swipeWeeks(tester, -3);
+      expect(heartUnder(tester, longAgo), findsOneWidget);
+    });
+
+    testWidgets('appears the moment the day is ticked', (tester) async {
+      await pump(tester);
+      final ticked = find.descendant(
+        of: editorInSheet(),
+        matching: find.text(l10nOf(tester).logIntercourseProtected),
+      );
+      expect(find.byType(IntercourseMarker), findsNothing);
+
+      await tester.tap(cellFor(tester, today));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(ticked);
+      await tester.pumpAndSettle();
+      await tester.tap(ticked);
+      await tester.pumpAndSettle();
+
+      expect(heartUnder(tester, today), findsOneWidget);
+    });
+
+    testWidgets('shares the space under the date with the dot, and adds no '
+        'height', (tester) async {
+      // The row sits above everything else on the screen the app opens on. A
+      // mark that made its day taller would move all of it.
+      await db.dayLogDao.saveAll(<DayLog>[
+        DayLog(
+          date: today.addDays(-1),
+          flow: FlowIntensity.medium,
+          intercourse: Intercourse.protected,
+        ),
+        DayLog(date: today.addDays(-2), flow: FlowIntensity.medium),
+      ]);
+      await pump(tester);
+
+      // Tomorrow has nothing under it, which is the row at its plainest.
+      final plain = tester.getSize(cellFor(tester, today.addDays(1))).height;
+      expect(tester.getSize(cellFor(tester, today.addDays(-1))).height, plain);
+      expect(tester.getSize(cellFor(tester, today.addDays(-2))).height, plain);
+    });
+  });
+
   group('the week in transition', () {
     testWidgets('does not leave the outgoing week tappable', (tester) async {
       // Both weeks are mounted while the switcher runs, and a fade does not
@@ -325,6 +543,27 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('the date row with both marks under a date does not '
+          'overflow at ${scale.key}%', (tester) async {
+        await db.dayLogDao.save(
+          DayLog(
+            date: today.addDays(-1),
+            flow: FlowIntensity.medium,
+            intercourse: Intercourse.protected,
+          ),
+        );
+        await tester.pumpWidget(
+          harness(
+            const LogScreen(),
+            database: db,
+            textScaler: TextScaler.linear(scale.value),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(IntercourseMarker), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
 

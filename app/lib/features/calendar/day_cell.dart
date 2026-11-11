@@ -65,6 +65,10 @@ class PredictedMarker extends StatelessWidget {
 /// It says only that something was logged, never which answer. A calendar is
 /// the most over-the-shoulder-readable screen in the app, and the marker exists
 /// so the user can find the day again, not so the grid can broadcast it.
+///
+/// The Today tab's date row draws the same marker under its dates (ADR-0028),
+/// which is why it is one widget: the two screens cannot come to mean
+/// different things by it.
 class IntercourseMarker extends StatelessWidget {
   /// Creates the marker.
   const IntercourseMarker({super.key});

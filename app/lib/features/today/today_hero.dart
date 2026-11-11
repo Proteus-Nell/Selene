@@ -30,6 +30,7 @@ import 'package:period_tracker/data/repositories/providers.dart';
 import 'package:period_tracker/domain/cycles/cycle_phase.dart';
 import 'package:period_tracker/domain/models/day_log.dart';
 import 'package:period_tracker/domain/models/prediction.dart';
+import 'package:period_tracker/features/calendar/day_cell.dart';
 import 'package:period_tracker/features/common/formatting.dart';
 import 'package:period_tracker/features/common/next_period_panel.dart';
 import 'package:period_tracker/features/today/cycle_ring.dart';
@@ -285,12 +286,13 @@ class _Greeting extends ConsumerWidget {
   }
 }
 
-/// The seven days around today, with a mark under the ones logged as bleeding.
+/// A week of dates, with marks under the days that have something logged.
 ///
-/// Not interactive: tapping a day would be a second, worse calendar, and the
-/// calendar is one tab away. What it earns its place with is the marks: a
-/// glance says whether this week has been logged, which is the question the
-/// screen is otherwise silent about.
+/// It opens on the week today is in, steps a week per swipe, and opens a day
+/// when one is tapped (ADR-0027). What it earns its place with is the marks: a
+/// glance says whether a week has been logged, which is the question the
+/// screen is otherwise silent about. A dot is a bleeding day, and the
+/// calendar's open heart is a day intercourse was recorded on (ADR-0028).
 ///
 /// Attributes:
 ///     today (CivilDate): The day the week is built around.
@@ -301,8 +303,9 @@ class _WeekStrip extends StatefulWidget {
   /// Args:
   ///     today (CivilDate): The day the week is built around. The strip runs
   ///         from the Sunday of that week, not from today.
-  ///     logs (`List<DayLog>`): Every day the user has logged. Only the
-  ///         bleeding days reach the marks.
+  ///     logs (`List<DayLog>`): Every day the user has logged. Only whether
+  ///         a day was a bleeding day, and whether intercourse was recorded on
+  ///         it, reach the marks.
   const _WeekStrip({required this.today, required this.logs});
 
   /// The day the week is built around.
@@ -329,10 +332,18 @@ class _WeekStrip extends StatefulWidget {
 /// and it needs a fixed cross-axis height, which overflowed at the 200% text
 /// scale `docs/PLAN.md` 2.4.4 requires. Stepping a whole week needs neither.
 ///
+/// The row also moves under the finger while it is dragged (ADR-0028), by
+/// less than the finger does, so a swipe is answered before the week changes.
+/// That is all the drag adds: the week arriving is still brought in by the
+/// switcher once the finger lifts, and a drag that was not a swipe lets the
+/// row settle back where it was.
+///
 /// Attributes:
 ///     _offset (int): Weeks away from today's week, negative into the past.
 ///     _direction (int): Which way the last step went, so the week arriving
 ///         comes from the side it was pushed from.
+///     _pull (double): How far the drag in progress has travelled.
+///     _dragging (bool): Whether a finger is on the row.
 class _WeekStripState extends State<_WeekStrip> {
   /// Weeks away from today's week, negative into the past.
   int _offset = 0;
@@ -340,11 +351,59 @@ class _WeekStripState extends State<_WeekStrip> {
   /// Which way the last step went, positive forward.
   int _direction = 1;
 
+  /// How far the drag in progress has travelled, in logical pixels.
+  ///
+  /// Negative towards the next week, and zero whenever no finger is down.
+  double _pull = 0;
+
+  /// Whether a finger is on the row.
+  ///
+  /// While one is, the row is placed frame for frame rather than eased, since
+  /// easing towards a finger that is still moving reads as lag.
+  bool _dragging = false;
+
   /// How fast a horizontal fling has to be to count as a swipe.
   ///
   /// Below this the finger is resting rather than flicking, and the week stays
   /// where it is. In logical pixels per second.
   static const double _flingVelocity = 120;
+
+  /// How far a drag has to travel to change the week without a flick.
+  ///
+  /// The row follows the finger, so a slow, deliberate drag that sprang back
+  /// would read as the app refusing it. A cell is about this wide, which keeps
+  /// a finger that wandered while pressing a date from turning the week. In
+  /// logical pixels of finger travel once the drag has begun, not of row
+  /// travel.
+  static const double _commitDistance = 48;
+
+  /// The furthest the row moves under a drag, however far the finger goes.
+  ///
+  /// In logical pixels. Small on purpose: the week arriving is not on screen
+  /// until the finger lifts, so a row that travelled with the finger would
+  /// uncover an empty space where the next week should be.
+  static const double _pullLimit = 28;
+
+  /// How much of the finger's first movement the row takes up.
+  static const double _pullGain = 0.55;
+
+  /// Return how far the row sits from rest for a drag of [pull].
+  ///
+  /// travel = limit * gain * |pull| / (gain * |pull| + limit)
+  ///
+  /// A little over half the finger's travel to begin with, flattening towards
+  /// [_pullLimit] without reaching it, so the row never stops dead under a
+  /// finger that is still moving.
+  ///
+  /// Args:
+  ///     pull (double): The finger's travel, negative towards the next week.
+  ///
+  /// Returns:
+  ///     double: The row's offset in logical pixels, with the sign of [pull].
+  static double _travelFor(double pull) {
+    final taken = pull.abs() * _pullGain;
+    return pull.sign * _pullLimit * taken / (taken + _pullLimit);
+  }
 
   /// Move the strip by whole weeks.
   ///
@@ -355,6 +414,11 @@ class _WeekStripState extends State<_WeekStrip> {
     setState(() {
       _direction = by;
       _offset += by;
+      // The week leaving keeps the place the finger left it in, because the
+      // switcher holds the widget it was last built with. The one arriving
+      // starts at rest.
+      _pull = 0;
+      _dragging = false;
     });
     _announce(_offset);
   }
@@ -365,8 +429,40 @@ class _WeekStripState extends State<_WeekStrip> {
     setState(() {
       _direction = _offset > 0 ? -1 : 1;
       _offset = 0;
+      _pull = 0;
+      _dragging = false;
     });
     _announce(0);
+  }
+
+  /// End a drag: change the week if it was a swipe, and let the row go.
+  ///
+  /// Args:
+  ///     velocity (double): How fast the finger left, in logical pixels per
+  ///         second, negative towards the next week.
+  void _release(double velocity) {
+    // The flick is read first because it is the later intent: a row dragged
+    // one way and flicked back the other was being put back.
+    final int by;
+    if (velocity <= -_flingVelocity) {
+      by = 1;
+    } else if (velocity >= _flingVelocity) {
+      by = -1;
+    } else if (_pull <= -_commitDistance) {
+      by = 1;
+    } else if (_pull >= _commitDistance) {
+      by = -1;
+    } else {
+      by = 0;
+    }
+    if (by != 0) {
+      _stepWeek(by);
+      return;
+    }
+    setState(() {
+      _pull = 0;
+      _dragging = false;
+    });
   }
 
   /// Say which week is now on screen.
@@ -414,6 +510,29 @@ class _WeekStripState extends State<_WeekStrip> {
       for (final log in widget.logs)
         if (log.isBleedingDay) log.date,
     };
+    // Whether, never which answer: the mark is the calendar's, and says only
+    // that something was recorded (ADR-0028).
+    final intercourse = <CivilDate>{
+      for (final log in widget.logs)
+        if (log.intercourse != null) log.date,
+    };
+    // Following a finger is motion like any other, so it goes with the rest
+    // when the device asks for none. The swipe still turns the week.
+    final travel = MediaQuery.disableAnimationsOf(context)
+        ? 0.0
+        : _travelFor(_pull);
+    // Only once the strip has left this week, so nothing is added to the
+    // screen in the state it is almost always in.
+    final Widget wayBack = _offset == 0
+        ? const SizedBox(width: double.infinity)
+        : Align(
+            child: TextButton.icon(
+              onPressed: _backToToday,
+              icon: const Icon(Icons.today_outlined, size: 18),
+              label: Text(l10n.logWeekBackToToday),
+            ),
+          );
+    final grow = Motion.monthSlide(context);
 
     return Column(
       children: <Widget>[
@@ -440,14 +559,12 @@ class _WeekStripState extends State<_WeekStrip> {
           child: GestureDetector(
             // Horizontal only, so the screen's vertical scroll is untouched: a
             // vertical drag never reaches this recogniser.
-            onHorizontalDragEnd: (details) {
-              final velocity = details.velocity.pixelsPerSecond.dx;
-              if (velocity <= -_flingVelocity) {
-                _stepWeek(1);
-              } else if (velocity >= _flingVelocity) {
-                _stepWeek(-1);
-              }
-            },
+            onHorizontalDragUpdate: (details) => setState(() {
+              _dragging = true;
+              _pull += details.delta.dx;
+            }),
+            onHorizontalDragEnd: (details) =>
+                _release(details.velocity.pixelsPerSecond.dx),
             child: AnimatedSwitcher(
               duration: Motion.monthSlide(context),
               switchInCurve: Motion.curve,
@@ -475,53 +592,65 @@ class _WeekStripState extends State<_WeekStrip> {
                   ),
                 );
               },
-              child: Row(
+              // The key is on the week's outermost widget, which is what the
+              // switcher compares, and the offset rides inside it so the week
+              // leaving keeps the place it was dragged to.
+              child: TweenAnimationBuilder<double>(
                 key: ValueKey<int>(_offset),
-                children: <Widget>[
-                  for (var i = 0; i < 7; i++)
-                    Expanded(
-                      child: _WeekDay(
-                        date: start.addDays(i),
-                        isToday: start.addDays(i) == widget.today,
-                        bleeding: bleeding.contains(start.addDays(i)),
-                        accent: phases.menstrual,
-                        theme: theme,
-                        onTap: () => showDaySheet(context, start.addDays(i)),
+                tween: Tween<double>(end: travel),
+                // Placed, not eased, while the finger is down; eased only on
+                // the way back to rest from a drag that was not a swipe.
+                duration: _dragging ? Duration.zero : Motion.quick(context),
+                curve: Motion.curve,
+                builder: (context, dx, week) =>
+                    Transform.translate(offset: Offset(dx, 0), child: week),
+                child: Row(
+                  children: <Widget>[
+                    for (var i = 0; i < 7; i++)
+                      Expanded(
+                        child: _WeekDay(
+                          date: start.addDays(i),
+                          isToday: start.addDays(i) == widget.today,
+                          bleeding: bleeding.contains(start.addDays(i)),
+                          hasIntercourse: intercourse.contains(
+                            start.addDays(i),
+                          ),
+                          accent: phases.menstrual,
+                          theme: theme,
+                          onTap: () => showDaySheet(context, start.addDays(i)),
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
-        // Only once the strip has left this week, so nothing is added to the
-        // screen in the state it is almost always in.
-        AnimatedSize(
-          duration: Motion.monthSlide(context),
-          curve: Motion.curve,
-          child: _offset == 0
-              ? const SizedBox(width: double.infinity)
-              : Align(
-                  child: TextButton.icon(
-                    onPressed: _backToToday,
-                    icon: const Icon(Icons.today_outlined, size: 18),
-                    label: Text(l10n.logWeekBackToToday),
-                  ),
-                ),
-        ),
+        // No AnimatedSize at all with animations off, rather than one given a
+        // zero duration. Its render object restarts its controller during
+        // layout, a run of no length completes on the spot, and the listener
+        // that marks it for layout then fires inside the layout it is in. The
+        // framework asserts on that, and did so on every swipe away from this
+        // week with "remove animations" on.
+        if (grow == Duration.zero)
+          wayBack
+        else
+          AnimatedSize(duration: grow, curve: Motion.curve, child: wayBack),
       ],
     );
   }
 }
 
-/// One day of the week strip: an initial, a number, and a mark under it.
+/// One day of the week strip: an initial, a number, and the marks under it.
 ///
 /// Attributes:
 ///     date (CivilDate): The day this cell shows.
 ///     isToday (bool): Whether it is the current day.
 ///     bleeding (bool): Whether it was logged as a bleeding day.
-///     accent (Color): The colour of the mark.
+///     hasIntercourse (bool): Whether intercourse was recorded on it.
+///     accent (Color): The colour of the bleeding mark.
 ///     theme (ThemeData): The theme, resolved once by the strip.
+///     onTap (VoidCallback): Opens this day.
 class _WeekDay extends StatelessWidget {
   /// Creates one day of the strip.
   ///
@@ -530,14 +659,18 @@ class _WeekDay extends StatelessWidget {
   ///     isToday (bool): Whether it is the current day, which fills the
   ///         number's circle.
   ///     bleeding (bool): Whether it was logged as a bleeding day, which
-  ///         fills the mark beneath.
-  ///     accent (Color): The colour of that mark.
+  ///         puts a dot beneath.
+  ///     hasIntercourse (bool): Whether intercourse was recorded, which puts
+  ///         the calendar's open heart beneath. Not which answer was given.
+  ///     accent (Color): The colour of the dot.
   ///     theme (ThemeData): The theme. Resolved once by the strip and passed
   ///         down rather than read seven times.
+  ///     onTap (VoidCallback): Opens this day.
   const _WeekDay({
     required this.date,
     required this.isToday,
     required this.bleeding,
+    required this.hasIntercourse,
     required this.accent,
     required this.theme,
     required this.onTap,
@@ -552,7 +685,10 @@ class _WeekDay extends StatelessWidget {
   /// Whether it was logged as a bleeding day.
   final bool bleeding;
 
-  /// The colour of the mark beneath the number.
+  /// Whether intercourse was recorded. Not which answer.
+  final bool hasIntercourse;
+
+  /// The colour of the dot beneath a bleeding day's number.
   final Color accent;
 
   /// The theme, resolved once by the strip.
@@ -568,6 +704,9 @@ class _WeekDay extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     var label = date.weekdayDayAndMonth(context);
     if (bleeding) label = l10n.logWeekBleedingSuffix(label);
+    // "Intercourse logged", never which answer, in the calendar's own words:
+    // a screen reader is audible to whoever is in the room.
+    if (hasIntercourse) label = l10n.calendarCellIntercourseSuffix(label);
     if (isToday) label = l10n.calendarCellTodaySuffix(label);
 
     return Semantics(
@@ -611,20 +750,32 @@ class _WeekDay extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 4),
-            // Reserved whether or not it is filled, so the row does not shift
-            // by four pixels the moment a day is logged.
+            // Nine pixels whether or not anything is in them, so the row does
+            // not shift the moment a day is logged, and the same nine it has
+            // always had: four clear and a five-pixel dot. The heart is nine
+            // tall and takes all of it. Marks sit on the bottom edge, so the
+            // dots of a week stay on one line whichever days carry a heart.
             SizedBox(
-              height: 5,
-              width: 5,
-              child: bleeding
-                  ? DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: accent,
-                        shape: BoxShape.circle,
+              height: 9,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[
+                  if (bleeding)
+                    SizedBox(
+                      height: 5,
+                      width: 5,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: accent,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    )
-                  : null,
+                    ),
+                  if (bleeding && hasIntercourse) const SizedBox(width: 3),
+                  if (hasIntercourse) const IntercourseMarker(),
+                ],
+              ),
             ),
           ],
         ),
