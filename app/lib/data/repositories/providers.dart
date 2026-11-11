@@ -246,6 +246,24 @@ final StreamProvider<bool> temperatureFahrenheitProvider = StreamProvider<bool>(
       ref.watch(appDatabaseProvider).settingsDao.watchTemperatureFahrenheit(),
 );
 
+/// Whether Selene keeps its own movement to a minimum (ADR-0029).
+///
+/// The app's own switch, in Settings. Android's "remove animations" is not
+/// consulted: the app root writes this into the `MediaQuery` that `Motion`
+/// reads, and into the framework through `AppBinding`.
+final StreamProvider<bool> reduceAnimationsProvider = StreamProvider<bool>(
+  (ref) => ref.watch(appDatabaseProvider).settingsDao.watchReduceAnimations(),
+);
+
+/// What [reduceAnimationsProvider] held when the app started.
+///
+/// Read once before the first frame and overridden by the bootstrap, then
+/// used only until the stream above has emitted. Without it the first frame
+/// would be built on a guess, and either guess is wrong for someone.
+final Provider<bool> reduceAnimationsAtLaunchProvider = Provider<bool>(
+  (ref) => false,
+);
+
 /// Asks the device to prove who is holding it (AND-29).
 ///
 /// Overridden in tests with a fake, so the gate's behaviour is exercised

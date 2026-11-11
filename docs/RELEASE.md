@@ -196,6 +196,13 @@ Checklist, in the order the failures actually happen:
       see any of this: the permission does not exist off a device
 - [ ] Revoke that permission in Android's settings while the app is open: the
       Settings row goes back to "may arrive late", and reminders keep working
+- [ ] With Android's "Remove animations" **on** and Selene's Reduce
+      animations **off**, the date row on the Today tab moves under a finger
+      and slides to the next week, and the calendar's months slide. Then turn
+      Selene's switch on: both stop moving, and still change. No test can see
+      the first half: it is the framework's own shortening of every animation,
+      answered by `AppBinding` (ADR-0029), and a widget test runs on a
+      different binding
 - [ ] Keystore backups still exist and still open
 - [ ] **The re-export warning is in the notes, if this release needs it** —
       most releases do not, and claiming it when it is untrue sends people

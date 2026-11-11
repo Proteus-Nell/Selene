@@ -629,6 +629,11 @@ class _DisplaySettings extends ConsumerWidget {
     final ovulation =
         ref.watch(showOvulationWindowProvider).valueOrNull ?? false;
     final learnTab = ref.watch(showLearnTabProvider).valueOrNull ?? false;
+    final reduceAnimations =
+        ref.watch(reduceAnimationsProvider).valueOrNull ??
+        // The type argument is load-bearing: left to inference, the fallback
+        // is read as nullable to match the left-hand side.
+        ref.watch<bool>(reduceAnimationsAtLaunchProvider);
     return Column(
       children: <Widget>[
         SwitchListTile(
@@ -674,6 +679,17 @@ class _DisplaySettings extends ConsumerWidget {
               settings.writeBool(SettingKey.showLearnTab, value: value),
           title: Text(l10n.settingsLearnTab),
           subtitle: Text(l10n.settingsLearnTabSubtitle),
+        ),
+        // Selene's own, and deliberately not Android's: the phone's "remove
+        // animations" is never read (ADR-0029). This is therefore the only
+        // place the app's movement is decided, and the subtitle has to say so,
+        // or someone who set it on their phone would look for the reason there.
+        SwitchListTile(
+          value: reduceAnimations,
+          onChanged: (value) =>
+              settings.writeBool(SettingKey.reduceAnimations, value: value),
+          title: Text(l10n.settingsReduceAnimations),
+          subtitle: Text(l10n.settingsReduceAnimationsSubtitle),
         ),
       ],
     );

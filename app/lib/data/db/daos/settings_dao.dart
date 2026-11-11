@@ -143,6 +143,13 @@ enum SettingKey {
   /// what the app did before there was a setting at all.
   themeMode('theme_mode'),
 
+  /// Whether Selene keeps its own movement to a minimum (ADR-0029).
+  ///
+  /// The app's own switch, and the only thing that decides it: Android's
+  /// "remove animations" is not read. Off by default. Display only, like
+  /// [flowSimplified]: nothing recorded changes with it.
+  reduceAnimations('reduce_animations'),
+
   /// Whether the notification permission has already been asked for.
   ///
   /// Recorded so the app asks once. On Android 13+ a denial is close to final,
@@ -366,6 +373,15 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   ///     write.
   Stream<bool> watchTemperatureFahrenheit() =>
       watchBool(SettingKey.temperatureFahrenheit, orElse: false);
+
+  /// Whether Selene keeps its own movement to a minimum (ADR-0029).
+  ///
+  /// Defaults to **off**. The app's own switch: Android's "remove animations"
+  /// is not consulted anywhere.
+  /// Returns:
+  ///     `Stream<bool>`: Whether the switch is on. Re-emitted on every write.
+  Stream<bool> watchReduceAnimations() =>
+      watchBool(SettingKey.reduceAnimations, orElse: false);
 
   /// Whether the calendar names the cycle phase (AND-25).
   ///

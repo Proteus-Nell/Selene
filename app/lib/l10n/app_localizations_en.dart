@@ -2404,6 +2404,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Off by default. The reference pages, and conditions and medication, appear only when this is on.';
 
   @override
+  String get settingsReduceAnimations => 'Reduce animations';
+
+  @override
+  String get settingsReduceAnimationsSubtitle =>
+      'Off by default. When on, things change at once instead of sliding or fading. Selene decides this for itself and does not follow your phone\'s own animation setting.';
+
+  @override
   String get settingsPrivacySection => 'Privacy';
 
   @override
