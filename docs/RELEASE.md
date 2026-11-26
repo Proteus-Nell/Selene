@@ -184,8 +184,12 @@ Checklist, in the order the failures actually happen:
 - [ ] `integration_test/e2e_smoke_test.dart` passes on that device
 - [ ] Export writes a file to a directory you chose, and importing it into a
       wiped install restores the same days
-- [ ] Notification permission is asked for once: after a cycle exists, or when
-      a medicine reminder is set
+- [ ] Notification permission is asked for once: after a cycle exists, when
+      a medicine reminder is set, or when a notification switch in Settings is
+      turned on while notifications are not allowed
+- [ ] With notifications refused for Selene, no notification switch in
+      Settings goes on. The dialog says why, and "Open phone settings" opens
+      Selene's notification settings (ADR-0030)
 - [ ] A medicine reminder set a few minutes ahead arrives within a few minutes
       of its time, naming the medicine only with lock-screen detail on. This is
       the only check that runs `MainActivity`'s time zone channel (ADR-0025)

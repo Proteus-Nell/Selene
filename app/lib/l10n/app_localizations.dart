@@ -1461,6 +1461,24 @@ abstract class AppLocalizations {
   /// **'Turn on reminders'**
   String get settingsNotificationPermissionAllow;
 
+  /// No description provided for @settingsNotificationsBlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are off for Selene'**
+  String get settingsNotificationsBlockedTitle;
+
+  /// Shown when a notification switch is turned on but the phone refuses the permission. The switch stays off.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone does not let Selene show notifications, so this stays off. Allow notifications for Selene in your phone\'s settings, then turn this on again.'**
+  String get settingsNotificationsBlockedBody;
+
+  /// No description provided for @settingsNotificationsBlockedOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open phone settings'**
+  String get settingsNotificationsBlockedOpen;
+
   /// No description provided for @settingsExactRemindersTitle.
   ///
   /// In en, this message translates to:

@@ -836,6 +836,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsNotificationPermissionAllow => 'Turn on reminders';
 
   @override
+  String get settingsNotificationsBlockedTitle =>
+      'Notifications are off for Selene';
+
+  @override
+  String get settingsNotificationsBlockedBody =>
+      'Your phone does not let Selene show notifications, so this stays off. Allow notifications for Selene in your phone\'s settings, then turn this on again.';
+
+  @override
+  String get settingsNotificationsBlockedOpen => 'Open phone settings';
+
+  @override
   String get settingsExactRemindersTitle => 'Let reminders arrive on time?';
 
   @override

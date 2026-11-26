@@ -203,6 +203,22 @@ abstract interface class NotificationGateway {
   ///     `Future<bool>`: Whether it was granted.
   Future<bool> requestPermission();
 
+  /// Whether the app may post notifications now.
+  ///
+  /// Shows nothing. False when the permission was refused, or when Selene's
+  /// notifications were turned off in the phone's own settings, which on
+  /// Android before 13 is the only way they can be off (ADR-0030).
+  ///
+  /// Returns:
+  ///     `Future<bool>`: Whether a notification posted now would be shown.
+  Future<bool> canPostNotifications();
+
+  /// Open the phone's notification settings for this app.
+  ///
+  /// The way back once Android stops showing the permission dialog, which it
+  /// does after the second refusal on Android 13 and later.
+  Future<void> openNotificationSettings();
+
   /// Whether the platform will let a reminder be scheduled for an exact time.
   ///
   /// False means a medicine reminder can only be asked for roughly, and so
@@ -378,6 +394,31 @@ final class LocalNotificationGateway implements NotificationGateway {
           AndroidFlutterLocalNotificationsPlugin
         >();
     return await android?.requestNotificationsPermission() ?? false;
+  }
+
+  @override
+  Future<bool> canPostNotifications() async {
+    final android = plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    // False when the platform cannot be asked at all: a switch that turned on
+    // there would promise notifications nothing can show.
+    return await android?.areNotificationsEnabled() ?? false;
+  }
+
+  @override
+  Future<void> openNotificationSettings() async {
+    final android = plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    try {
+      await android?.openAppNotificationSettings();
+    } on PlatformException {
+      // No screen to open on this device. The dialog that offered it has
+      // already said where the setting is.
+    }
   }
 
   @override

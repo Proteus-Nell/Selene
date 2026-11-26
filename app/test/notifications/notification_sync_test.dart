@@ -34,6 +34,12 @@ class _Platform implements NotificationGateway {
   Future<bool> requestPermission() async => false;
 
   @override
+  Future<bool> canPostNotifications() async => false;
+
+  @override
+  Future<void> openNotificationSettings() async {}
+
+  @override
   Future<bool> canScheduleExact() async => true;
 
   @override

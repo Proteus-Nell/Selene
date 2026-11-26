@@ -38,6 +38,7 @@ Lightweight ADRs for Period-Tracker. One decision per entry, newest at the botto
 | [0027](#adr-0027-the-date-row-pages-by-the-week-and-a-past-day-opens-locked) | The date row pages by the week, and a past day opens locked | Accepted | 2026-11-10 |
 | [0028](#adr-0028-the-date-row-follows-the-finger-and-marks-intercourse-as-the-calendar-does) | The date row follows the finger, and marks intercourse as the calendar does | Accepted | 2026-11-11 |
 | [0029](#adr-0029-selene-has-its-own-reduce-animations-switch-and-androids-is-not-read) | Selene has its own Reduce animations switch, and Android's is not read | Accepted | 2026-11-11 |
+| [0030](#adr-0030-a-notification-switch-goes-on-only-when-the-phone-lets-selene-post-notifications) | A notification switch goes on only when the phone lets Selene post notifications | Accepted | 2026-11-27 |
 
 ---
 
@@ -2085,6 +2086,69 @@ and ink all make their own.
 - `docs/ANDROID_TASKS.md` AND-34 still describes the phone's setting being read
   at the token. It is the record of that task as it was done and is left as
   written; this ADR is what is true now.
+
+---
+
+## ADR-0030: A notification switch goes on only when the phone lets Selene post notifications
+
+**Status:** Accepted, 2026-11-27.
+**Deciders:** Project owner
+
+### Context
+
+The owner asked for every notification setting to check that the app may show
+notifications before it is turned on.
+
+Before this, the switches in Settings wrote their value and nothing else. On a
+phone where notifications were refused, or turned off for Selene in the phone's
+own settings, a switch could be turned on and say that reminders would arrive
+when nothing could arrive. The permission was asked for at two moments only:
+after the first logged cycle, and when a medicine reminder was set.
+
+### Decision
+
+1. **Turning on any of the four notification switches checks the permission
+   first**: reminders before a period, the late-period check-in, the logging
+   nudge, and lock-screen detail. The detail switch is included because
+   detail on notifications that cannot be shown is a promise about nothing.
+2. **The phone is asked first, and the user only when the phone says no.**
+   Nothing is shown when the permission is held.
+3. **When it is not held, Android's own dialog is shown**, and the request
+   counts as the one in-context request, as a medicine reminder's does, so the
+   question after a first cycle is not put again on top of it.
+4. **When the answer is still no, the switch stays off**, and a dialog says
+   why and offers to open the phone's notification settings for Selene.
+   Android 13 and later stop showing their dialog after the second refusal,
+   so the phone's settings are the only way back from then on.
+5. **Turning a switch off never asks anything.**
+6. **The exact-alarm row waits for the same check** ([ADR-0026](#adr-0026-medicine-reminders-are-scheduled-exactly-with-a-permission-asked-for-where-one-is-set)).
+   Arriving on time is a promise about notifications, so Android's "Alarms and
+   reminders" screen is not opened while no notification can be shown.
+7. **A medicine reminder is unchanged.** It already asks when a time is set,
+   and keeps the reminder when refused, so that it arrives once notifications
+   are allowed. A time is not a switch, and losing a dose reminder because a
+   dialog was dismissed would be worse than keeping one that waits.
+
+### Runner-up and why rejected
+
+**Showing every switch as off while the permission is missing**, whatever is
+stored. It would make the screen tell the truth at every moment, not only when
+a switch is turned on, but it changes what a switch means: one turned on
+before the permission was taken away would read as off, and turning it on
+again would change nothing that was stored. Left for a later decision.
+
+**Asking without the app's own explanation afterwards.** After the second
+refusal Android shows nothing at all, so the switch would not move and nothing
+would say why.
+
+### Consequences
+
+- The two switches that are on by default can still show on while the
+  permission is missing, until they are turned off and on again. That is the
+  case the runner-up would cover.
+- `settings_test.dart` drives every switch against a gateway that refuses, and
+  fails if any of them goes on. That Android's own dialog and settings screen
+  open is a device check in `docs/RELEASE.md` section 3.
 
 ---
 
