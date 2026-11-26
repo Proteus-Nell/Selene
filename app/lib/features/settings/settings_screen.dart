@@ -726,6 +726,46 @@ class _SectionHeading extends StatelessWidget {
   }
 }
 
+/// Make sure notifications can be posted before a switch for them goes on.
+///
+/// Asks the phone first, and asks the user only when the phone says no
+/// (ADR-0030). When the answer is still no, it says why the switch stays off
+/// and offers the phone's own settings, because Android stops showing its
+/// dialog after the second refusal.
+///
+/// Args:
+///     context (BuildContext): What to open the explanation over.
+///     ref (WidgetRef): For the scheduler.
+///
+/// Returns:
+///     `Future<bool>`: Whether notifications can be posted, so the switch can
+///     go on.
+Future<bool> _notificationsAllowed(BuildContext context, WidgetRef ref) async {
+  final scheduler = ref.read(notificationSchedulerProvider);
+  if (await scheduler.allowNotifications()) return true;
+  if (!context.mounted) return false;
+  final l10n = AppLocalizations.of(context);
+  final open = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(l10n.settingsNotificationsBlockedTitle),
+      content: Text(l10n.settingsNotificationsBlockedBody),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: Text(l10n.commonNotNow),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: Text(l10n.settingsNotificationsBlockedOpen),
+        ),
+      ],
+    ),
+  );
+  if (open ?? false) await scheduler.openNotificationSettings();
+  return false;
+}
+
 /// Whether medicine reminders may be scheduled for the minute they are set
 /// for, and the way to allow it (ADR-0026).
 ///
@@ -796,6 +836,9 @@ class _ExactReminderSettingState extends ConsumerState<_ExactReminderSetting>
     if (_busy) return;
     setState(() => _busy = true);
     try {
+      // On time is a promise about notifications, so it waits until they
+      // can be shown at all (ADR-0030).
+      if (!await _notificationsAllowed(context, ref)) return;
       final scheduler = ref.read(notificationSchedulerProvider);
       final allowed = await scheduler.requestExactReminders();
       if (allowed) {
@@ -839,6 +882,9 @@ class _ExactReminderSettingState extends ConsumerState<_ExactReminderSetting>
 /// is the only notification that is neither a prediction nor actionable, and
 /// lock-screen detail is the one place this project's privacy story would
 /// otherwise leak by default (risk R16).
+///
+/// None of the four goes on until the phone lets the app post notifications
+/// (ADR-0030). Turning one off never asks anything.
 class _ReminderSettings extends ConsumerStatefulWidget {
   /// Creates the reminder preferences.
   const _ReminderSettings();
@@ -954,6 +1000,7 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
           // looking for it will be (risk R16).
           subtitle: Text(l10n.settingsReminderSubtitle),
           onChanged: (value) async {
+            if (value && !await _notificationsAllowed(context, ref)) return;
             setState(() => _enabled = value);
             // The check-in follows this switch until it is set itself. Set
             // now to what its own switch shows, so that it does not quietly
@@ -980,6 +1027,7 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
             ),
           ),
           onChanged: (value) async {
+            if (value && !await _notificationsAllowed(context, ref)) return;
             setState(() => _lateCheckIn = value);
             await settings.writeBool(
               SettingKey.lateCheckInEnabled,
@@ -993,6 +1041,7 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
           title: Text(l10n.settingsNudgeEnabled),
           subtitle: Text(l10n.settingsNudgeSubtitle),
           onChanged: (value) async {
+            if (value && !await _notificationsAllowed(context, ref)) return;
             setState(() => _nudge = value);
             await settings.writeBool(SettingKey.nudgeEnabled, value: value);
             _resync();
@@ -1003,6 +1052,9 @@ class _ReminderSettingsState extends ConsumerState<_ReminderSettings> {
           title: Text(l10n.settingsDetailedNotifications),
           subtitle: Text(l10n.settingsDetailedNotificationsSubtitle),
           onChanged: (value) async {
+            // Detail on notifications that cannot be shown would be a promise
+            // about nothing, so this one waits for the permission too.
+            if (value && !await _notificationsAllowed(context, ref)) return;
             setState(() => _detailed = value);
             await settings.writeBool(
               SettingKey.detailedNotifications,

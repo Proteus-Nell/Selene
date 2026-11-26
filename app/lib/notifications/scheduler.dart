@@ -234,6 +234,27 @@ class NotificationScheduler {
     return granted;
   }
 
+  /// Make sure notifications can be posted, and ask only if they cannot.
+  ///
+  /// For a notification switch that is being turned on (ADR-0030). Someone
+  /// who turns one on has asked for notifications, so the question is in
+  /// context, as it is for a medicine reminder, and it counts as the one
+  /// request in the same way. Nothing is asked when the permission is held.
+  ///
+  /// Returns:
+  ///     `Future<bool>`: Whether notifications can now be posted.
+  Future<bool> allowNotifications() async {
+    if (await _gateway.canPostNotifications()) return true;
+    return requestPermissionForReminder();
+  }
+
+  /// Open the phone's notification settings for this app.
+  ///
+  /// Returns:
+  ///     `Future<void>`: Completes once the platform has been asked.
+  Future<void> openNotificationSettings() =>
+      _gateway.openNotificationSettings();
+
   /// Whether a medicine reminder can currently be scheduled for its minute.
   ///
   /// Returns:
@@ -390,6 +411,12 @@ final class NoopNotificationGateway implements NotificationGateway {
 
   @override
   Future<bool> requestPermission() async => false;
+
+  @override
+  Future<bool> canPostNotifications() async => false;
+
+  @override
+  Future<void> openNotificationSettings() async {}
 
   @override
   Future<bool> canScheduleExact() async => false;

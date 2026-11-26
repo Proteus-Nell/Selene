@@ -127,6 +127,12 @@ class _PermissionGateway implements NotificationGateway {
   }
 
   @override
+  Future<bool> canPostNotifications() async => requests > 0 && grant;
+
+  @override
+  Future<void> openNotificationSettings() async {}
+
+  @override
   Future<bool> canScheduleExact() async {
     if (exact) return true;
     // Granted by the request, as the real one is, so what the screen says

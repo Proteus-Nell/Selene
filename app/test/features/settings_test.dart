@@ -19,12 +19,27 @@ import 'package:period_tracker/notifications/scheduler.dart';
 
 import 'harness.dart';
 
-/// A gateway that answers the exact-alarm question as told, and counts it.
+/// A gateway that answers both permission questions as told, and counts
+/// them.
 ///
-/// Schedules nothing: the row under test only asks what the platform allows
-/// and asks it to allow more.
+/// Schedules nothing: the rows under test only ask what the platform allows
+/// and ask it to allow more. Notifications are allowed unless told otherwise,
+/// so a test about something else does not meet the permission gate.
 class _ExactGateway implements NotificationGateway {
-  _ExactGateway({this.allowed = false});
+  _ExactGateway({this.allowed = false, this.notifications = true});
+
+  /// Whether notifications may be posted. Set by a granted request, as the
+  /// real one is.
+  bool notifications;
+
+  /// What the next notification permission request answers.
+  bool grantNotifications = false;
+
+  /// How many times the notification permission was asked for.
+  int notificationRequests = 0;
+
+  /// How many times the phone's notification settings were opened.
+  int settingsOpened = 0;
 
   /// Whether exact alarms are allowed. Set by a granted request, as the real
   /// one is, so the row shows what actually happened.
@@ -49,7 +64,16 @@ class _ExactGateway implements NotificationGateway {
   Future<void> initialize(NotificationCopy copy) async {}
 
   @override
-  Future<bool> requestPermission() async => false;
+  Future<bool> requestPermission() async {
+    notificationRequests++;
+    return notifications = grantNotifications;
+  }
+
+  @override
+  Future<bool> canPostNotifications() async => notifications;
+
+  @override
+  Future<void> openNotificationSettings() async => settingsOpened++;
 
   @override
   Future<void> cancelAll() async {}
@@ -425,7 +449,8 @@ void main() {
       // It came with those reminders before it had a switch (ADR-0025), so
       // someone who had turned them off finds it off too.
       await db.settingsDao.writeBool(SettingKey.reminderEnabled, value: false);
-      await pumpSettings(tester);
+      // Notifications allowed, so the switch can go on (ADR-0030).
+      await pumpSettings(tester, gateway: _ExactGateway());
       final l10n = l10nOf(tester);
       final container = ProviderScope.containerOf(
         tester.element(find.byType(SettingsScreen)),
@@ -550,6 +575,154 @@ void main() {
       await tester.tap(row);
       await tester.pumpAndSettle();
       expect(gateway.requests, 0);
+    });
+  });
+
+  group('a notification switch', () {
+    // ADR-0030: none goes on until the phone lets the app post notifications.
+
+    /// The switch titled [title], scrolled into view.
+    Future<Finder> switchTitled(WidgetTester tester, String title) async {
+      final tile = find.widgetWithText(SwitchListTile, title);
+      await scrollSettingsTo(tester, tile);
+      return tile;
+    }
+
+    testWidgets('goes on without asking when notifications are allowed', (
+      tester,
+    ) async {
+      final gateway = _ExactGateway();
+      await pumpSettings(tester, gateway: gateway);
+      final nudge = await switchTitled(
+        tester,
+        l10nOf(tester).settingsNudgeEnabled,
+      );
+      await tester.tap(nudge);
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<SwitchListTile>(nudge).value, isTrue);
+      expect(gateway.notificationRequests, 0);
+      expect(
+        await db.settingsDao.readBool(SettingKey.nudgeEnabled, orElse: false),
+        isTrue,
+      );
+    });
+
+    testWidgets('asks once when they are not, and goes on when allowed', (
+      tester,
+    ) async {
+      final gateway = _ExactGateway(notifications: false)
+        ..grantNotifications = true;
+      await pumpSettings(tester, gateway: gateway);
+      final nudge = await switchTitled(
+        tester,
+        l10nOf(tester).settingsNudgeEnabled,
+      );
+      await tester.tap(nudge);
+      await tester.pumpAndSettle();
+
+      expect(gateway.notificationRequests, 1);
+      expect(tester.widget<SwitchListTile>(nudge).value, isTrue);
+      // It was the one request, so the question after a first cycle is not
+      // put again on top of it.
+      expect(
+        await db.settingsDao.readBool(
+          SettingKey.notificationPermissionAsked,
+          orElse: false,
+        ),
+        isTrue,
+      );
+    });
+
+    testWidgets('stays off when refused, says why, and offers the phone '
+        'settings', (tester) async {
+      final gateway = _ExactGateway(notifications: false);
+      await pumpSettings(tester, gateway: gateway);
+      final l10n = l10nOf(tester);
+      final nudge = await switchTitled(tester, l10n.settingsNudgeEnabled);
+      await tester.tap(nudge);
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.settingsNotificationsBlockedTitle), findsOneWidget);
+      await tester.tap(find.text(l10n.settingsNotificationsBlockedOpen));
+      await tester.pumpAndSettle();
+
+      expect(gateway.settingsOpened, 1);
+      expect(tester.widget<SwitchListTile>(nudge).value, isFalse);
+      expect(
+        await db.settingsDao.readBool(SettingKey.nudgeEnabled, orElse: false),
+        isFalse,
+      );
+    });
+
+    testWidgets('all four wait for the permission', (tester) async {
+      // The two that default to on are stored off first, so each can be
+      // turned on here.
+      await db.settingsDao.writeBool(SettingKey.reminderEnabled, value: false);
+      await db.settingsDao.writeBool(
+        SettingKey.lateCheckInEnabled,
+        value: false,
+      );
+      final gateway = _ExactGateway(notifications: false);
+      await pumpSettings(tester, gateway: gateway);
+      final l10n = l10nOf(tester);
+
+      for (final title in <String>[
+        l10n.settingsReminderEnabled,
+        l10n.settingsLateCheckIn,
+        l10n.settingsNudgeEnabled,
+        l10n.settingsDetailedNotifications,
+      ]) {
+        final tile = await switchTitled(tester, title);
+        await tester.tap(tile);
+        await tester.pumpAndSettle();
+        expect(
+          find.text(l10n.settingsNotificationsBlockedTitle),
+          findsOneWidget,
+          reason: '"$title" went on without the permission',
+        );
+        await tester.tap(find.text(l10n.commonNotNow));
+        await tester.pumpAndSettle();
+        expect(tester.widget<SwitchListTile>(tile).value, isFalse);
+      }
+      expect(gateway.notificationRequests, 4);
+    });
+
+    testWidgets('asks nothing when it is turned off', (tester) async {
+      final gateway = _ExactGateway(notifications: false);
+      await pumpSettings(tester, gateway: gateway);
+      final l10n = l10nOf(tester);
+      // On by default, so a tap turns it off.
+      final reminders = await switchTitled(
+        tester,
+        l10n.settingsReminderEnabled,
+      );
+      await tester.tap(reminders);
+      await tester.pumpAndSettle();
+
+      expect(gateway.notificationRequests, 0);
+      expect(find.text(l10n.settingsNotificationsBlockedTitle), findsNothing);
+      expect(tester.widget<SwitchListTile>(reminders).value, isFalse);
+    });
+
+    testWidgets('the on-time row waits for notifications too', (
+      tester,
+    ) async {
+      // Arriving on time is a promise about notifications, so the exact-alarm
+      // screen is not opened while none can be shown at all.
+      final gateway = _ExactGateway(notifications: false)..grant = true;
+      await pumpSettings(tester, gateway: gateway);
+      final l10n = l10nOf(tester);
+      final row = find.text(l10n.settingsExactRemindersOff);
+      await scrollSettingsTo(tester, row);
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.settingsNotificationsBlockedTitle), findsOneWidget);
+      await tester.tap(find.text(l10n.commonNotNow));
+      await tester.pumpAndSettle();
+      expect(gateway.requests, 0);
+      expect(find.text(l10n.settingsExactRemindersOff), findsOneWidget);
     });
   });
 

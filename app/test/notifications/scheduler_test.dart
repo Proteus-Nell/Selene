@@ -31,6 +31,8 @@ class RecordingGateway implements NotificationGateway {
   bool grantPermission = true;
   int exactRequests = 0;
   bool exactAllowed = false;
+  bool notificationsAllowed = false;
+  int settingsOpened = 0;
 
   @override
   Future<void> initialize(NotificationCopy copy) async =>
@@ -41,6 +43,12 @@ class RecordingGateway implements NotificationGateway {
     permissionRequests++;
     return grantPermission;
   }
+
+  @override
+  Future<bool> canPostNotifications() async => notificationsAllowed;
+
+  @override
+  Future<void> openNotificationSettings() async => settingsOpened++;
 
   @override
   Future<bool> canScheduleExact() async => exactAllowed;
@@ -263,6 +271,27 @@ void main() {
 
       gateway.grantPermission = false;
       expect(await scheduler.requestPermissionForReminder(), isFalse);
+    });
+
+    test('is not put for a switch when notifications are already allowed, '
+        'and is put once, and counted, when they are not', () async {
+      // ADR-0030: a notification switch going on asks the phone first.
+      gateway.notificationsAllowed = true;
+      expect(await scheduler.allowNotifications(), isTrue);
+      expect(gateway.permissionRequests, 0);
+
+      gateway
+        ..notificationsAllowed = false
+        ..grantPermission = false;
+      expect(await scheduler.allowNotifications(), isFalse);
+      expect(gateway.permissionRequests, 1);
+      expect(
+        await db.settingsDao.readBool(
+          SettingKey.notificationPermissionAsked,
+          orElse: false,
+        ),
+        isTrue,
+      );
     });
 
     test('does not count a symptom-only day as a logged cycle', () async {
